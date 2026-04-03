@@ -348,3 +348,8 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+Calcpad-Symbolic-portable-win-x64.exe
+Calcpad-Symbolic-win-x64.zip
+Installer/
+publish/
+*.exe

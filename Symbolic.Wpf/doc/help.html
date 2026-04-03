@@ -885,6 +885,56 @@
             </span>
         </li>
         <li style="list-style-type: none;">
+            <span class="exp" id="btn_viz">+</span><b>Interactive FEM Visualization ($Fem2D, $Fem3D, $Chart, $Mesh):</b><br />
+            <span id="list_viz" style="display: none;">
+                <b>$Fem2D</b>{x_j; y_j; e_j; s_j; values @ options} — interactive 2D FEM mesh (Three.js);<br />
+                <b>$Fem3D</b>{x_j; y_j; z_j; e_j; values @ options} — interactive 3D FEM with rotation/zoom;<br />
+                <b>$Chart</b>{x1; y1; x2; y2 @ options} — interactive charts with customizable styling;<br />
+                <b>$Mesh</b>{x_j; y_j; e_j; s_j; f_j @ w=400} — SVG 2D mesh with supports and loads;<br />
+                <b>$MeshResults</b>{x_j; y_j; e_j; values @ w=400} — color-mapped results on mesh;<br />
+                Powered by calcpad-viz TypeScript library (Three.js).
+            </span>
+        </li>
+        <li style="list-style-type: none;">
+            <span class="exp" id="btn_units">+</span><b>Unit Operators Enhanced (& and | with Arrays):</b><br />
+            <span id="list_units" style="display: none;">
+                <b>Adimensionalization with arrays (&amp;):</b><br />
+                <code>u = lsolve(K; F) &amp; [cm; cm; rad]</code> — strips ALL units (to SI), computes, then stamps each element with specified unit.<br />
+                <code>K &amp; [tonf/m; tonf | tonf; tonf*m]</code> — matrix unit stamping per cell.<br />
+                <br />
+                <b>Conversion with arrays (|):</b><br />
+                <code>u | [cm; cm; rad]</code> — converts each element to specified unit (compatible units required).<br />
+                <code>K | [kN/m; kN | kN; kN*m]</code> — matrix per-cell conversion.<br />
+                <br />
+                The <code>&amp;</code> operator first adimensionalizes everything to SI base units, performs the operation, then multiplies by the target units.<br />
+                The <code>|</code> operator converts between compatible units without adimensionalizing.
+            </span>
+        </li>
+        <li style="list-style-type: none;">
+            <span class="exp" id="btn_matfuncs">+</span><b>New Matrix Functions:</b><br />
+            <span id="list_matfuncs" style="display: none;">
+                <b>lsolve</b>(K; F) — solve linear system Kx=F;<br />
+                <b>clsolve</b>(K; F) — complex linear solver;<br />
+                <b>slsolve</b>(K; F) — sparse linear solver;<br />
+                <b>smsolve</b>(K; F) — sparse matrix solver;<br />
+                <b>hprod</b>(A; B) — Hadamard product (element-wise);<br />
+                <b>fprod</b>(A; B) — Frobenius product (matrix inner product);<br />
+                <b>kprod</b>(A; B) — Kronecker product;<br />
+                <b>matrix_hp</b>, <b>diagonal_hp</b>, <b>column_hp</b> — high-precision variants;<br />
+                Vectors display vertically (column format) like standard math notation.
+            </span>
+        </li>
+        <li style="list-style-type: none;">
+            <span class="exp" id="btn_fem_lib">+</span><b>FEM Graphics Library (Include/FEM_Graphics.cpd):</b><br />
+            <span id="list_fem_lib" style="display: none;">
+                Macro library with SVG functions for FEM diagrams:<br />
+                <b>fem_rect$</b>, <b>fem_joint$</b>, <b>fem_nlabel$</b>, <b>fem_elabel$</b> — elements and labels;<br />
+                <b>fem_pin$</b>, <b>fem_fixed_h$</b>, <b>fem_fixed_v$</b>, <b>fem_roller$</b> — boundary conditions;<br />
+                <b>fem_qload$</b>, <b>fem_force$</b>, <b>fem_moment$</b> — loading;<br />
+                <b>fem_color$</b> — color mapping (blue→green→yellow→red gradient).
+            </span>
+        </li>
+        <li style="list-style-type: none;">
             <span class="exp" id="btn11">+</span>Breakpoints for step-by-step execution:<br />
             <span id="list11" style="display: none;">
                 <a href="#0" data-text="#pause"><span class="cond">#pause</span></a> - calculates down to the current line and waits for the user to resume manually;<br />
