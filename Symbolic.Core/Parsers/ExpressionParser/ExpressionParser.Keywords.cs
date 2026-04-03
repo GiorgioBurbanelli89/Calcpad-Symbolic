@@ -1418,6 +1418,142 @@ namespace Calcpad.Core
             }
         }
 
+        // ─── Inline versions (no <p> wrapper, for use inside text lines) ───
+
+        /// <summary>Inline #sym — renders without &lt;p&gt; wrapper</summary>
+        private void ParseInlineSym(string command)
+        {
+            if (string.IsNullOrEmpty(command)) return;
+            var result = SymbolicProcessor.Process(command);
+            if (result.IsError) { _sb.Append($"<span class=\"err\">{System.Web.HttpUtility.HtmlEncode(result.Error)}</span>"); return; }
+
+            var savedIsVal = _isVal;
+            _isVal = -1;
+            _parser.IsCalculation = false;
+            var hw = new HtmlWriter(Settings.Math, _parser.Phasor);
+            var sb2 = new System.Text.StringBuilder();
+
+            for (int i = 0; i < result.Parts.Length; i++)
+            {
+                var part = result.Parts[i]?.Trim();
+                if (string.IsNullOrEmpty(part)) continue;
+                if (i > 0) sb2.Append(" = ");
+
+                if (part.StartsWith(SymbolicProcessor.TAG_NARY))
+                {
+                    var data = part[SymbolicProcessor.TAG_NARY.Length..];
+                    var segs = data.Split('|');
+                    if (segs.Length >= 4)
+                    {
+                        var subHtml = string.IsNullOrEmpty(segs[1]) ? "" : SymRenderExpr(segs[1]);
+                        var supHtml = segs[2] == "0" ? "" : SymRenderExpr(segs[2]);
+                        sb2.Append(hw.FormatNary(segs[0], subHtml, supHtml, SymRenderExpr(segs[3])));
+                    }
+                }
+                else if (part.StartsWith(SymbolicProcessor.TAG_DERIV))
+                {
+                    var data = part[SymbolicProcessor.TAG_DERIV.Length..];
+                    var segs = data.Split('|');
+                    if (segs.Length >= 3)
+                    {
+                        sb2.Append(hw.FormatDivision(SymRenderExpr(segs[0]), SymRenderExpr(segs[1]), 0));
+                        sb2.Append("\u2009");
+                        sb2.Append(hw.AddBrackets(SymRenderExpr(segs[2])));
+                    }
+                }
+                else if (part.StartsWith(SymbolicProcessor.TAG_FRAC))
+                {
+                    var data = part[SymbolicProcessor.TAG_FRAC.Length..];
+                    var pipe = data.IndexOf('|');
+                    if (pipe > 0)
+                        sb2.Append(hw.FormatDivision(SymRenderExpr(data[..pipe]), SymRenderExpr(data[(pipe + 1)..]), 0));
+                }
+                else if (part.StartsWith(SymbolicProcessor.TAG_NABLA))
+                {
+                    const string nabla = "<span style=\"font-size:120%;color:#C080F0;font-family:Georgia Pro Light,serif\">\u2207</span>";
+                    var data = part[SymbolicProcessor.TAG_NABLA.Length..];
+                    var pipe = data.IndexOf('|');
+                    var type = pipe > 0 ? data[..pipe] : data;
+                    var body = pipe > 0 ? data[(pipe + 1)..] : "";
+                    switch (type)
+                    {
+                        case "grad": sb2.Append(nabla + hw.AddBrackets(SymRenderExpr(body))); break;
+                        case "div": sb2.Append(nabla + " \u00B7 <b>" + SymRenderExpr(body) + "</b>"); break;
+                        case "curl": sb2.Append(nabla + " \u00D7 <b>" + SymRenderExpr(body) + "</b>"); break;
+                        case "lap": sb2.Append(nabla + "\u00B2" + hw.AddBrackets(SymRenderExpr(body))); break;
+                    }
+                }
+                else if (part.StartsWith(SymbolicProcessor.TAG_HTML))
+                    sb2.Append(ResolveCalcpadMarkers(part[SymbolicProcessor.TAG_HTML.Length..]));
+                else if (part.StartsWith(SymbolicProcessor.TAG_TAYLOR))
+                {
+                    var data = part[SymbolicProcessor.TAG_TAYLOR.Length..];
+                    var pipe = data.IndexOf('|');
+                    if (pipe > 0)
+                    {
+                        sb2.Append("<b>Taylor</b>" + hw.AddBrackets(SymRenderExpr(data[..pipe])));
+                        sb2.Append($"<sub><var>n</var> = {data[(pipe + 1)..]}</sub>");
+                    }
+                }
+                else if (part.StartsWith(SymbolicProcessor.TAG_SOLVE))
+                {
+                    var data = part[SymbolicProcessor.TAG_SOLVE.Length..];
+                    var segs = data.Split('|');
+                    if (segs.Length >= 2)
+                    {
+                        sb2.Append(SymRenderExpr(segs[0]) + " = { ");
+                        for (int j = 1; j < segs.Length; j++)
+                        {
+                            if (j > 1) sb2.Append(" ;\u2009 ");
+                            sb2.Append(SymRenderExpr(segs[j]));
+                        }
+                        sb2.Append(" }");
+                    }
+                }
+                else
+                    sb2.Append(SymRenderExpr(part));
+            }
+
+            _isVal = savedIsVal;
+            _parser.IsCalculation = _isVal != -1;
+            if (sb2.Length > 0)
+                _sb.Append($"<span class=\"eq\">{sb2}</span>");
+        }
+
+        /// <summary>Inline #deq — renders without &lt;p&gt; wrapper</summary>
+        private void ParseInlineDeq(string expr)
+        {
+            if (string.IsNullOrEmpty(expr)) return;
+            var parts = SplitByEqualsOutsideBrackets(expr);
+            var savedIsVal = _isVal;
+            _isVal = -1;
+            _parser.IsCalculation = false;
+            var sb2 = new System.Text.StringBuilder();
+            for (int i = 0; i < parts.Count; i++)
+            {
+                var part = parts[i].Trim();
+                if (string.IsNullOrEmpty(part)) continue;
+                try
+                {
+                    _parser.Parse(part, false);
+                    var html = _parser.ToHtml();
+                    if (string.IsNullOrWhiteSpace(html))
+                        html = new HtmlWriter(Settings.Math, _parser.Phasor).FormatVariable(part, string.Empty, false);
+                    if (i > 0) sb2.Append(" = ");
+                    sb2.Append(html);
+                }
+                catch
+                {
+                    if (i > 0) sb2.Append(" = ");
+                    sb2.Append(new HtmlWriter(Settings.Math, _parser.Phasor).FormatVariable(part, string.Empty, false));
+                }
+            }
+            _isVal = savedIsVal;
+            _parser.IsCalculation = _isVal != -1;
+            if (sb2.Length > 0)
+                _sb.Append($"<span class=\"eq\">{sb2}</span>");
+        }
+
         private static List<string> SplitByEqualsOutsideBrackets(string s)
         {
             var parts = new List<string>();

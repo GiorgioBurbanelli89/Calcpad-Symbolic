@@ -564,6 +564,21 @@ namespace Calcpad.Core
                 var token = tokens[i];
                 if (token.Type == TokenTypes.Expression)
                 {
+                    // Inline #sym: 'text '#sym diff(x^2; x)' more text'
+                    if (token.Value.TrimStart().StartsWith("#sym ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (isOutput)
+                            ParseInlineSym(token.Value.TrimStart()[5..].Trim());
+                        continue;
+                    }
+                    // Inline #deq: 'text '#deq f(x) = expr' more text'
+                    if (token.Value.TrimStart().StartsWith("#deq ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (isOutput)
+                            ParseInlineDeq(token.Value.TrimStart()[5..].Trim());
+                        continue;
+                    }
+
                     try
                     {
                         var cacheID = token.CacheID;
