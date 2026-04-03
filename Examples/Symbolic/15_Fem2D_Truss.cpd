@@ -1,0 +1,24 @@
+"2D Truss — $Fem2D Visualization
+
+"Nodes (x; y coordinates)
+x_n = [0; 3; 6; 3]
+y_n = [0; 0; 0; 3]
+
+"Elements (node1; node2 connectivity)
+e = [1; 2 | 2; 3 | 1; 4 | 2; 4 | 3; 4]
+
+"Support conditions (node; dof)
+s = [1; 1 | 1; 2 | 3; 2]
+
+"Axial forces (results per element)
+N = [50; -30; 70; 20; -40]
+
+"Interactive 2D FEM visualization
+$Fem2D{x_n; y_n; e; s; N}
+
+"Node displacements
+u_x = [0; 0.5; 1.0; 0.3]
+u_y = [0; -0.2; 0; -0.8]
+
+"Deformed shape
+$Fem2D{x_n; y_n; e; s; u_y @ deformed = 100}

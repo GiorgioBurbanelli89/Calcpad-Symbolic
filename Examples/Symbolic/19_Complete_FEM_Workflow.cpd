@@ -1,0 +1,43 @@
+"Complete FEM Workflow — Symbolic + Numeric + Visualization
+
+"1. Symbolic: Shape Functions
+#deq N_1 = 1 - ξ
+#deq N_2 = ξ
+#sym diff(1-t; t)
+#sym diff(t; t)
+#deq B = [-1/L; 1/L]
+
+"2. Material and Geometry
+E = 200000MPa
+A = 50cm^2
+L_1 = 3m
+L_2 = 4m
+
+"3. Element Stiffness
+#function AxialK(E; A; L)
+k = E*A/L
+AxialK = k*[1; -1 | -1; 1]
+#end function
+
+K_1 = AxialK(E; A; L_1)
+K_2 = AxialK(E; A; L_2)
+
+"4. Assembly (3 DOF: u1, u2, u3)
+'Node 1 fixed, load at node 3
+K = [K_1.(1;1) + 0; K_1.(1;2); 0 | K_1.(2;1); K_1.(2;2) + K_2.(1;1); K_2.(1;2) | 0; K_2.(2;1); K_2.(2;2)]
+
+"5. Boundary Conditions
+'Remove DOF 1 (fixed):
+K_R = [K.(2;2); K.(2;3) | K.(3;2); K.(3;3)]
+F_R = [0kN; 100kN]
+
+"6. Solve
+u_R = lsolve(K_R; F_R)
+u_R|[mm; mm]
+
+"7. Symbolic verification
+#deq K_axial = E*A/L*[1; -1 | -1; 1]
+#sym det(K_R.(1;1); K_R.(1;2); K_R.(2;1); K_R.(2;2))
+
+"8. Eigenvalues
+#sym eigen(K_R.(1;1); K_R.(1;2); K_R.(2;1); K_R.(2;2))

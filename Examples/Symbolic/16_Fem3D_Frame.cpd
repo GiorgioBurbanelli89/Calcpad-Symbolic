@@ -1,0 +1,15 @@
+"3D Frame — $Fem3D Visualization
+
+"Nodes (x; y; z)
+x_n = [0; 5; 10; 0; 5; 10]
+y_n = [0; 0; 0; 0; 0; 0]
+z_n = [0; 0; 0; 4; 4; 4]
+
+"Elements (connectivity)
+e = [1; 4 | 2; 5 | 3; 6 | 4; 5 | 5; 6]
+
+"Moment diagram values per element
+M = [120; 80; 90; -50; -30]
+
+"Interactive 3D FEM visualization with rotation and zoom
+$Fem3D{x_n; y_n; z_n; e; M}

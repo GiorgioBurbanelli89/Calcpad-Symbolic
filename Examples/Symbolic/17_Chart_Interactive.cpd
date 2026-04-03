@@ -1,0 +1,20 @@
+"Interactive Charts — $Chart
+
+"Simple sine/cosine
+n = 50
+#for i = 0 : n
+x_1.(i) = i*2*π/n
+y_1.(i) = sin(x_1.(i))
+y_2.(i) = cos(x_1.(i))
+#loop
+
+$Chart{x_1; y_1; x_1; y_2 @ title = "sin(x) vs cos(x)" & legend = "sin;cos"}
+
+"Structural response: Load-Displacement
+n_p = 10
+#for j = 0 : n_p
+P.(j) = j*10
+d.(j) = P.(j)^2/1000 + P.(j)*0.5
+#loop
+
+$Chart{d; P @ title = "Load-Displacement Curve" & xlabel = "Displacement (mm)" & ylabel = "Load (kN)"}
