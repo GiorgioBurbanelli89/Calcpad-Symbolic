@@ -602,6 +602,46 @@ namespace Calcpad.Core
                     catch (MathParserException ex)
                     {
                         _parser.ResetStack();
+
+                        // If the expression has multiple '=' (like f(x)=x^2+1=0),
+                        // try rendering as #deq (display-only double equality)
+                        if (isOutput && token.Value.IndexOf('=') != token.Value.LastIndexOf('='))
+                        {
+                            try
+                            {
+                                var savedIsVal = _isVal;
+                                _isVal = -1;
+                                _parser.IsCalculation = false;
+                                var parts = SplitByEqualsOutsideBrackets(token.Value);
+                                var sb2 = new System.Text.StringBuilder();
+                                for (int j = 0; j < parts.Count; j++)
+                                {
+                                    var part = parts[j].Trim();
+                                    if (string.IsNullOrEmpty(part)) continue;
+                                    if (j > 0) sb2.Append(" = ");
+                                    try
+                                    {
+                                        _parser.Parse(part, false);
+                                        var html2 = _parser.ToHtml();
+                                        sb2.Append(!string.IsNullOrWhiteSpace(html2) ? html2 :
+                                            new HtmlWriter(Settings.Math, _parser.Phasor).FormatVariable(part, string.Empty, false));
+                                    }
+                                    catch
+                                    {
+                                        sb2.Append(new HtmlWriter(Settings.Math, _parser.Phasor).FormatVariable(part, string.Empty, false));
+                                    }
+                                }
+                                _isVal = savedIsVal;
+                                _parser.IsCalculation = _isVal != -1;
+                                if (sb2.Length > 0)
+                                {
+                                    _sb.Append($"<span class=\"eq\">{sb2}</span>");
+                                    continue;
+                                }
+                            }
+                            catch { /* fall through to error display */ }
+                        }
+
                         string errText;
                         if (!_calculate && token.Value.Contains('?'))
                             errText = token.Value.Replace("?", "<input type=\"text\" size=\"2\" name=\"Var\">");
