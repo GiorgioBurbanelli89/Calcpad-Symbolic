@@ -1,0 +1,29 @@
+"User-Defined Functions (#function)
+
+"Axial Stiffness
+#function AxialKe(E; A; L)
+k = E*A/L
+AxialKe = k*[1; -1 | -1; 1]
+#end function
+
+"Test
+E = 200000
+A = 0.01
+L = 3
+K = AxialKe(E; A; L)
+
+"Sum Function
+#function Suma(a; b)
+c = a + b
+Suma = c
+#end function
+
+R = Suma(10; 25)
+
+"Beam Element
+#function BeamKe(E; I; L)
+c = E*I/L^3
+BeamKe = c*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2 | -12; -6*L; 12; -6*L | 6*L; 2*L^2; -6*L; 4*L^2]
+#end function
+
+K_beam = BeamKe(200000; 0.0001; 5)

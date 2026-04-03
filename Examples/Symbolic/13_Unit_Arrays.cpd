@@ -1,0 +1,29 @@
+"Unit Arrays — & and | Operators
+
+"Standard units
+L = 6m
+'Convert with |:
+L|cm
+
+"Adimensionalize with &
+'6m & cm = first makes dimensionless (6), then stamps cm unit
+L&cm
+
+"Stiffness matrix with mixed units
+E = 200000MPa
+A = 100cm^2
+L_beam = 3m
+k = E*A/L_beam
+K = k*[1; -1 | -1; 1]
+
+"Force vector
+F = [0kN; 100kN]
+
+"Solve
+u = lsolve(K; F)
+
+"Apply unit array — each DOF gets its own unit
+u|[mm; mm]
+
+"Matrix unit conversion
+K|[kN/mm; kN/mm | kN/mm; kN/mm]

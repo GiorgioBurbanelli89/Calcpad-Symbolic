@@ -1,0 +1,46 @@
+"OpenSeesPy — Cantilever Beam (#python)
+'Requires: pip install openseespy
+
+"Model: Cantilever 5m, P=10kN, E=200GPa, A=0.01m2, I=8.333e-6 m4
+
+#python
+import openseespy.opensees as ops
+ops.wipe()
+ops.model('basic', '-ndm', 2, '-ndf', 3)
+ops.node(1, 0.0, 0.0)
+ops.node(2, 5.0, 0.0)
+ops.fix(1, 1, 1, 1)
+E = 200000.0
+A = 0.01
+I = 8.333e-6
+ops.geomTransf('Linear', 1)
+ops.element('elasticBeamColumn', 1, 1, 2, A, E, I, 1)
+ops.timeSeries('Linear', 1)
+ops.pattern('Plain', 1, 1)
+ops.load(2, 0.0, -10.0, 0.0)
+ops.system('BandSPD')
+ops.numberer('RCM')
+ops.constraints('Plain')
+ops.integrator('LoadControl', 1.0)
+ops.algorithm('Linear')
+ops.analysis('Static')
+ops.analyze(1)
+ux = ops.nodeDisp(2, 1)
+uy = ops.nodeDisp(2, 2)
+rz = ops.nodeDisp(2, 3)
+print(f"ux = {ux:.6e}")
+print(f"uy = {uy:.6e}")
+print(f"rz = {rz:.6e}")
+P = 10.0
+L = 5.0
+uy_exact = -P*L**3/(3*E*I)
+print(f"uy_exact = {uy_exact:.6e}")
+print(f"error = {abs(uy-uy_exact)/abs(uy_exact)*100:.4f}%")
+print(f"CALCPAD:uy={uy}")
+print(f"CALCPAD:rz={rz}")
+ops.wipe()
+#end python
+
+"Results in Calcpad
+uy
+rz

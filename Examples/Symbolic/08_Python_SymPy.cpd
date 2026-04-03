@@ -1,0 +1,28 @@
+"Python with SymPy (#python)
+'Requires: pip install sympy
+
+#python
+from sympy import symbols, diff, integrate, solve, sin, cos, pi
+x = symbols('x')
+print(f"diff(x^3) = {diff(x**3, x)}")
+print(f"integrate(sin(x)) = {integrate(sin(x), x)}")
+print(f"solve(x^2-4) = {solve(x**2 - 4, x)}")
+print(f"Taylor sin(x) = {sin(x).series(x, 0, 6)}")
+#end python
+
+"Python with NumPy
+'Requires: pip install numpy
+
+#python
+import numpy as np
+K = np.array([[4, -2], [-2, 4]])
+eigenvalues = np.linalg.eigvals(K)
+det = np.linalg.det(K)
+print(f"K = {K.tolist()}")
+print(f"eigenvalues = {eigenvalues.tolist()}")
+print(f"det(K) = {det:.1f}")
+print(f"CALCPAD:det_K={det}")
+#end python
+
+'Exported from Python:
+det_K

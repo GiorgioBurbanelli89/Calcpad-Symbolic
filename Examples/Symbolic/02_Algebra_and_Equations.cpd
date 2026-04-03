@@ -1,0 +1,19 @@
+"Algebra and Equations (#sym)
+
+"Simplify
+#sym simplify((x^2 - 1)/(x - 1))
+
+"Expand
+#sym expand((a + b)^3)
+
+"Factor
+#sym factor(x^2 - 5*x + 6)
+
+"Solve
+#sym solve(x^2 - 4; x)
+#sym solve(x^2 + 2*x - 3; x)
+#sym solve(3*x^2 - 6*x + 2; x)
+
+"Evaluate and Substitute
+#sym eval(sqrt(2))
+#sym subs(x^2 + 2*x + 1; x; 3)
