@@ -1,32 +1,33 @@
 "Cantilever Beam — Symbolic + Numeric + OpenSeesPy
-'Compare analytical, matrix method, and OpenSeesPy
 
-"Given
-E = 200000MPa
-I = 8333cm^4
-L = 5m
-P = 10kN
+"Given (pure numeric: kN, m, rad)
+'E=200000000 kN/m², I=0.00008333 m⁴, L=5m, P=10kN
+E_v = 200000000
+I_v = 0.00008333
+L_v = 5
+P_v = 10
 
 "1. Analytical Solution
-#deq δ = P*L^3/(3*E*I)
-δ_exact = P*L^3/(3*E*I)
-δ_exact|mm
-
-#deq θ = P*L^2/(2*E*I)
-θ_exact = P*L^2/(2*E*I)
+'δ = PL³/3EI (m):
+δ_m = P_v*L_v^3/(3*E_v*I_v)
+'δ (mm):
+δ_mm = δ_m*1000
 
 "2. Matrix Method (2 DOF)
-k = E*I/L^3
-K = k*[12; 6*L | 6*L; 4*L^2]
-F = [P; 0kN*m]
+k = E_v*I_v/L_v^3
+K = k*[12; 6*L_v | 6*L_v; 4*L_v^2]
+F = [P_v; 0]
 u = lsolve(K; F)
-u|[mm; rad]
+'w (mm):
+u.(1)*1000
+'θ (rad):
+u.(2)
 
-"3. Symbolic Verification
+"3. Symbolic: B matrix
 #sym diff(1 - 3*t^2 + 2*t^3; t; 2)
 #sym integrate((-6+12*t)^2; t; 0; 1)
 
-"4. OpenSeesPy Verification
+"4. OpenSeesPy
 #python
 import openseespy.opensees as ops
 ops.wipe()
@@ -35,7 +36,7 @@ ops.node(1, 0.0, 0.0)
 ops.node(2, 5.0, 0.0)
 ops.fix(1, 1, 1, 1)
 ops.geomTransf('Linear', 1)
-ops.element('elasticBeamColumn', 1, 1, 2, 0.01, 200000e3, 8.333e-6, 1)
+ops.element('elasticBeamColumn', 1, 1, 2, 0.01, 200000000, 0.00008333, 1)
 ops.timeSeries('Linear', 1)
 ops.pattern('Plain', 1, 1)
 ops.load(2, 0.0, -10.0, 0.0)
@@ -54,6 +55,11 @@ ops.wipe()
 
 "5. Comparison
 'Exact:
-δ_exact|mm
+δ_mm
+'mm
+'Matrix:
+u.(1)*1000
+'mm
 'OpenSeesPy:
 uy_ops
+'mm

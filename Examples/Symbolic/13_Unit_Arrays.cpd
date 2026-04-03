@@ -1,58 +1,23 @@
-"Unit Arrays — & and | Operators
+"Unit Arrays — | Operator
 
-"═══════════════════════════════════
-"| OPERATOR — CONVERSION (escalar)
-"═══════════════════════════════════
+"| scalar conversion
 L = 6m
 L|cm
 L|mm
-L|in
 
-"═══════════════════════════════════
-"& OPERATOR — ADIMENSIONALIZE + STAMP
-"═══════════════════════════════════
-'& primero adimensionaliza todo a SI
-'luego hace la operacion
-'al final multiplica por la unidad indicada
-
-"Ejemplo: cuantia de acero (adimensional)
-A_s = 5cm^2
-A_c = 30cm*50cm
-ρ = A_s/A_c
-
-"Ejemplo con & escalar
-'14/fy es adimensional (cuantia balanceada)
-f_y = 4200kgf/cm^2
-ρ_b = 14/f_y&1
-
-"═══════════════════════════════════
-"| con VECTORES — conversion por elemento
-"═══════════════════════════════════
+"| vector conversion per element
 v = [5m; 3m; 0.02rad]
 v|[cm; mm; rad]
 
-"═══════════════════════════════════
-"& con VECTORES — adimensionalizar + stamp
-"═══════════════════════════════════
-'Caso FEM: K tiene unidades mixtas (kN/m, kN, kN*m)
-'lsolve necesita todo en SI (adimensional)
-'Despues del solve, stampar unidades a cada DOF
-
+"Matrix with units
 E = 200000MPa
-I = 8333cm^4
-L_v = 5m
+A = 100cm^2
+L_b = 3m
+k_a = E*A/L_b
+K = k_a*[1; -1 | -1; 1]
+K|[kN/m; kN/m | kN/m; kN/m]
 
-"Rigidez de viga 2x2 simplificada
-k_f = E*I/L_v^3
-K = k_f*[12; 6*L_v | 6*L_v; 4*L_v^2]
-F = [10kN; 0kN*m]
-u = lsolve(K; F)
-'Resultado en SI (m, rad):
-u
-'Convertir cada DOF a su unidad:
-u|[mm; rad]
-
-"═══════════════════════════════════
-"| con MATRICES — conversion por celda
-"═══════════════════════════════════
-K|[kN/m; kN | kN; kN*m]
+"Simple solve without units
+K_n = [4; -2 | -2; 4]
+F_n = [10; 0]
+u_n = lsolve(K_n; F_n)
