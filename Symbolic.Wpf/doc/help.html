@@ -792,6 +792,99 @@
             </span>
         </li>
         <li style="list-style-type: none;">
+            <span class="exp" id="btn_sym">+</span><b>Symbolic Math (#sym) — AngouriMath engine:</b><br />
+            <span id="list_sym" style="display: none;">
+                <b>Calculus:</b><br />
+                <a href="#0" data-text="#sym diff(x^2+3*x; x)"><span class="cond">#sym diff</span>(expr; var)</a> - derivative;<br />
+                <a href="#0" data-text="#sym diff(x^3; x; 2)"><span class="cond">#sym diff</span>(expr; var; n)</a> - nth derivative;<br />
+                <a href="#0" data-text="#sym integrate(x^2; x)"><span class="cond">#sym integrate</span>(expr; var)</a> - indefinite integral;<br />
+                <a href="#0" data-text="#sym integrate(x^2; x; 0; 1)"><span class="cond">#sym integrate</span>(expr; var; a; b)</a> - definite integral;<br />
+                <a href="#0" data-text="#sym limit(sin(x)/x; x; 0)"><span class="cond">#sym limit</span>(expr; var; value)</a> - limit;<br />
+                <a href="#0" data-text="#sym series(sin(x); x; 5)"><span class="cond">#sym series</span>(expr; var; n)</a> - Taylor series;<br />
+                <a href="#0" data-text="#sym pdiff(x^2*y+y^3; x)"><span class="cond">#sym pdiff</span>(expr; var)</a> - partial derivative (∂);<br />
+                <br />
+                <b>Algebra:</b><br />
+                <a href="#0" data-text="#sym simplify((x^2-1)/(x-1))"><span class="cond">#sym simplify</span>(expr)</a> - simplify;<br />
+                <a href="#0" data-text="#sym expand((a+b)^3)"><span class="cond">#sym expand</span>(expr)</a> - expand;<br />
+                <a href="#0" data-text="#sym factor(x^2-5*x+6)"><span class="cond">#sym factor</span>(expr)</a> - factorize;<br />
+                <a href="#0" data-text="#sym solve(x^2-4; x)"><span class="cond">#sym solve</span>(expr; var)</a> - solve equation = 0;<br />
+                <a href="#0" data-text="#sym eval(sqrt(2))"><span class="cond">#sym eval</span>(expr)</a> - evaluate numerically;<br />
+                <a href="#0" data-text="#sym subs(x^2; x; 3)"><span class="cond">#sym subs</span>(expr; var; value)</a> - substitute;<br />
+                <br />
+                <b>Vector Calculus / FEM:</b><br />
+                <a href="#0" data-text="#sym gradient(x^2+y^2; x; y)"><span class="cond">#sym gradient</span>(f; x; y; z)</a> - gradient ∇f;<br />
+                <a href="#0" data-text="#sym divergence(x^2; y^2; z^2; x; y; z)"><span class="cond">#sym divergence</span>(F1; F2; F3; x; y; z)</a> - divergence ∇·F;<br />
+                <a href="#0" data-text="#sym curl(y*z; x*z; x*y; x; y; z)"><span class="cond">#sym curl</span>(F1; F2; F3; x; y; z)</a> - curl ∇×F;<br />
+                <a href="#0" data-text="#sym laplacian(x^2+y^2; x; y)"><span class="cond">#sym laplacian</span>(f; x; y; z)</a> - Laplacian ∇²f;<br />
+                <a href="#0" data-text="#sym jacobian(x^2; y^2; x; y)"><span class="cond">#sym jacobian</span>(f1; f2; x; y)</a> - Jacobian matrix;<br />
+                <a href="#0" data-text="#sym hessian(x^3+x*y^2; x; y)"><span class="cond">#sym hessian</span>(f; x; y)</a> - Hessian matrix;<br />
+                <a href="#0" data-text="#sym strain(x^2*y; x*y^2; x; y)"><span class="cond">#sym strain</span>(u; v; x; y)</a> - strain tensor 2D/3D;<br />
+                <a href="#0" data-text="#sym stress(0.001; 0.002; 0.0005; 200000; 0.3)"><span class="cond">#sym stress</span>(ε11; ε22; ε12; E; ν)</a> - stress tensor (Hooke);<br />
+                <a href="#0" data-text="#sym voigt(a; b; c; d)"><span class="cond">#sym voigt</span>(a; b; c; d)</a> - Voigt notation;<br />
+                <a href="#0" data-text="#sym invariants(3; 1; 1; 2)"><span class="cond">#sym invariants</span>(a; b; c; d)</a> - tensor invariants;<br />
+                <a href="#0" data-text="#sym dyadic(1; 2; 3; 4)"><span class="cond">#sym dyadic</span>(a1; a2; b1; b2)</a> - dyadic product ⊗;<br />
+                <br />
+                <b>Laplace Transform:</b><br />
+                <a href="#0" data-text="#sym laplace(sin(t); t; s)"><span class="cond">#sym laplace</span>(f; t; s)</a> - Laplace transform ℒ{f(t)};<br />
+                <a href="#0" data-text="#sym ilaplace(1/s; s; t)"><span class="cond">#sym ilaplace</span>(F; s; t)</a> - inverse Laplace ℒ⁻¹{F(s)};<br />
+                <br />
+                <b>ODE Solver:</b><br />
+                <a href="#0" data-text="#sym ode1(2)"><span class="cond">#sym ode1</span>(a)</a> - 1st order: y' + ay = 0;<br />
+                <a href="#0" data-text="#sym ode2(0; 4)"><span class="cond">#sym ode2</span>(a; b)</a> - 2nd order: y'' + ay' + by = 0;<br />
+                <br />
+                <b>Matrix Operations:</b><br />
+                <a href="#0" data-text="#sym det(a; b; c; d)"><span class="cond">#sym det</span>(a; b; c; d)</a> - determinant 2x2/3x3;<br />
+                <a href="#0" data-text="#sym inv(a; b; c; d)"><span class="cond">#sym inv</span>(a; b; c; d)</a> - inverse 2x2;<br />
+                <a href="#0" data-text="#sym eigen(4; -2; -2; 4)"><span class="cond">#sym eigen</span>(a; b; c; d)</a> - eigenvalues 2x2;<br />
+                <a href="#0" data-text="#sym transp(a; b; c; d)"><span class="cond">#sym transp</span>(a; b; c; d)</a> - transpose 2x2;<br />
+                <br />
+                <b>Block mode:</b> Use <span class="cond">#sym</span> alone to start a block, <span class="cond">#end sym</span> to close:<br />
+                <code>#sym<br />diff(x^2; x)<br />integrate(sin(x); x)<br />solve(x^2-4; x)<br />#end sym</code>
+            </span>
+        </li>
+        <li style="list-style-type: none;">
+            <span class="exp" id="btn_deq">+</span><b>Display Equations (#deq):</b><br />
+            <span id="list_deq" style="display: none;">
+                <a href="#0" data-text="#deq f(x) = x^2 + 3*x + 1"><span class="cond">#deq</span> expr = expr = expr</a> - display-only symbolic equations with double/triple equality. No computation performed.<br />
+                Example: <code>#deq K = E*I/L^3*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2]</code>
+            </span>
+        </li>
+        <li style="list-style-type: none;">
+            <span class="exp" id="btn_func">+</span><b>User-Defined Functions (#function):</b><br />
+            <span id="list_func" style="display: none;">
+                <span class="cond">#function</span> Name(param1; param2) — defines a multi-line function<br />
+                <span class="cond">#end function</span> — closes the function definition<br />
+                The last line <code>Name = expr</code> defines the return value. Variables are isolated.<br />
+                Example:<br />
+                <code>#function FrameKe(E; A; L)<br />k = E*A/L<br />FrameKe = k*[1; -1 | -1; 1]<br />#end function<br />K = FrameKe(200000; 0.01; 3)</code>
+            </span>
+        </li>
+        <li style="list-style-type: none;">
+            <span class="exp" id="btn_python">+</span><b>Python Code Blocks (#python):</b><br />
+            <span id="list_python" style="display: none;">
+                <span class="cond">#python</span> ... <span class="cond">#end python</span> — execute Python code, output rendered with CalcpadCE template.<br />
+                Works with SymPy, NumPy, OpenSeesPy, and any Python library.<br />
+                Export variables: <code>print(f"CALCPAD:varname={value}")</code><br />
+                Example:<br />
+                <code>#python<br />from sympy import *<br />x = symbols('x')<br />print(f"diff(x^3) = {diff(x**3, x)}")<br />#end python</code>
+            </span>
+        </li>
+        <li style="list-style-type: none;">
+            <span class="exp" id="btn_maxima">+</span><b>Maxima CAS Blocks (#maxima):</b><br />
+            <span id="list_maxima" style="display: none;">
+                <span class="cond">#maxima</span> ... <span class="cond">#end maxima</span> — execute Maxima CAS code.<br />
+                Lines ending with <code>;</code> produce output. Lines ending with <code>$</code> are silent.<br />
+                Example:<br />
+                <code>#maxima<br />diff(x^2+3*x+1, x);<br />laplace(sin(t), t, s);<br />ode2('diff(y,x,2)+4*y=0, y, x);<br />#end maxima</code>
+            </span>
+        </li>
+        <li style="list-style-type: none;">
+            <span class="exp" id="btn_pip">+</span><b>Install Python Packages (#pip):</b><br />
+            <span id="list_pip" style="display: none;">
+                <a href="#0" data-text="#pip install numpy sympy"><span class="cond">#pip install</span> package1 package2</a> - install Python packages via pip.<br />
+            </span>
+        </li>
+        <li style="list-style-type: none;">
             <span class="exp" id="btn11">+</span>Breakpoints for step-by-step execution:<br />
             <span id="list11" style="display: none;">
                 <a href="#0" data-text="#pause"><span class="cond">#pause</span></a> - calculates down to the current line and waits for the user to resume manually;<br />
