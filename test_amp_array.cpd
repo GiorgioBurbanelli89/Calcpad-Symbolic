@@ -1,0 +1,50 @@
+"Test & con vector de unidades y adimensionalización
+'<hr/>
+"1. Escalar & (debe convertir como antes)
+
+L = 6*m
+L & cm
+L & mm
+
+F = 10*kN
+F & N
+F & tonf
+
+'<hr/>
+"2. Rigidez con unidades mixtas
+
+E = 2100000*kgf/cm^2
+A = 100*cm^2
+I = 5000*cm^4
+Lv = 400*cm
+
+k1 = E*A/Lv
+k2 = 12*E*I/Lv^3
+k3 = 6*E*I/Lv^2
+k4 = 4*E*I/Lv
+
+'<p>k1 (kgf/cm):</p>
+k1
+'<p>k2 (kgf/cm):</p>
+k2
+'<p>k3 (kgf):</p>
+k3
+'<p>k4 (kgf·cm):</p>
+k4
+
+'<hr/>
+"3. Matriz K y vector F — lsolve con & [unidades]
+'<p>K tiene unidades mixtas por celda</p>
+'<p>F tiene unidades mixtas: [kgf; kgf; kgf·cm]</p>
+'<p>& adimensionaliza TODO antes de lsolve, luego aplica unidades al resultado</p>
+
+K = [k1; 0*kgf/cm; 0*kgf | 0*kgf/cm; k2; k3 | 0*kgf; k3; k4]
+Fv = [52500*kgf; 97.65625*kgf; 26250*kgf*cm]
+
+'<h4>Resolver con & [cm; cm; rad]</h4>
+u = lsolve(K; Fv) & [cm; cm; rad]
+
+'<hr/>
+"4. Verificación manual
+'<p>u debería ser aproximadamente [0.1; 0.05; 0.001]</p>
+u

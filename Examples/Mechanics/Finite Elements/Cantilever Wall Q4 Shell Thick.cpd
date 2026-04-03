@@ -1,0 +1,390 @@
+"Finite Element Analysis of Cantilever Wall — Q4 Shell Thick (6 DOFs/node)
+'<hr/>
+'<h4>Input data</h4>
+'<table><tr><td>
+'Wall dimensions -'W = 5'm,'H = 3'm
+'Thickness -'t = 0.2'm
+'Lateral load -'P = 100'kN
+'Modulus of elasticity -'E = 25000'MPa = 25000000'kN/m²
+'Poisson`s ratio -'ν = 0.2
+'Shear correction factor -'κ = 5/6
+'Drilling DOF factor -'α = 0.5
+'</td><td><img src="https://calcpad.eu/media/mechanics/elastic/slab.png" style="height:100pt; margin-left:30pt;"></td></tr></table>
+'<h4>Derived quantities</h4>
+'Shear modulus:
+G = E/(2*(1 + ν))
+'Flexural rigidity:
+D_b = E*t^3/(12*(1 - ν^2))
+'Shear rigidity:
+D_s = κ*G*t
+'<h4>Finite element mesh</h4>
+'<b>Shell thick Q4</b> — 6 DOFs per node: u, v, w, θₓ, θᵧ, θ_z
+'<br/>Matching Hekatan Struct mesh (MITC4 shell thick)
+n_dof = 6
+'Number of elements -'n_x = 8', 'n_y = 6
+'Total elements -'n_e = n_x*n_y
+'Total joints -'n_j = (n_x + 1)*(n_y + 1)
+'Element dimensions -'d_x = W/n_x', 'd_y = H/n_y
+'Total DOFs -'n_total = n_dof*n_j
+'Element area:
+A_e = d_x*d_y
+#hide
+'═══════════════════════════════════
+' Generate mesh nodes (row by row, same as Hekatan Struct)
+'═══════════════════════════════════
+n_1 = n_x + 1
+x_j = vector(n_j)
+y_j = vector(n_j)
+#for j = 0 : n_y
+	#for i = 0 : n_x
+		k = j*n_1 + i + 1
+		x_j.k = i*d_x
+		y_j.k = j*d_y
+	#loop
+#loop
+' Element connectivity: Q4 CCW (BL, BR, TR, TL)
+e_j = matrix(n_e; 4)
+#for j = 0 : n_y - 1
+	#for i = 0 : n_x - 1
+		e = j*n_x + i + 1
+		bl = j*n_1 + i + 1
+		e_j.(e; 1) = bl
+		e_j.(e; 2) = bl + 1
+		e_j.(e; 3) = bl + n_1 + 1
+		e_j.(e; 4) = bl + n_1
+	#loop
+#loop
+' Supported joints (base: j=0, all i)
+n_sup = n_1
+s_j = vector(n_sup)
+#for i = 1 : n_sup
+	s_j.i = i
+#loop
+' Loaded joints (top, lateral → negative for $Mesh arrows)
+n_top = n_1
+f_j = vector(n_top)
+#for i = 1 : n_top
+	f_j.i = -(n_y*n_1 + i)
+#loop
+#show
+$Mesh{x_j; y_j; e_j; s_j; f_j @ w = 400}
+'<h4>Shape functions</h4>
+'<p><b>Bilinear Q4</b> in natural coordinates (ξ, η ∈ [-1, 1]):</p>
+'<table><tr><td>Shape functions
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+'</td><td>∂N/∂ξ
+dN_1ξ(η) = -(1 - η)/4
+dN_2ξ(η) = (1 - η)/4
+dN_3ξ(η) = (1 + η)/4
+dN_4ξ(η) = -(1 + η)/4
+'</td><td>∂N/∂η
+dN_1η(ξ) = -(1 - ξ)/4
+dN_2η(ξ) = -(1 + ξ)/4
+dN_3η(ξ) = (1 + ξ)/4
+dN_4η(ξ) = (1 - ξ)/4
+'</td></tr></table>
+'<h4>Constitutive matrices</h4>
+'<p><b>Membrane</b> (plane stress, 3×3):</p>
+c_m = E*t/(1 - ν^2)
+D_mem = c_m*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+'<p><b>Bending</b> (3×3):</p>
+D_bend = D_b*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+'<p><b>Shear</b> (2×2):</p>
+D_shear = D_s*[1; 0|0; 1]
+'<p><b>Drilling</b> DOF stiffness per node:</p>
+k_drill = α*G*t*A_e/4
+k_drill'kN/m
+'<h4>Jacobian</h4>
+'For rectangular elements (constant):
+J_11 = d_x/2
+J_22 = d_y/2
+det_J = J_11*J_22
+'<h4>Element stiffness matrix (24×24)</h4>
+'K_e = K_membrane + K_plate + K_drilling
+'<br/>DOFs per node: [u, v, w, θₓ, θᵧ, θ_z] → indices 1-6
+'<br/>Membrane → DOFs 1,2 | Plate → DOFs 3,4,5 | Drilling → DOF 6
+'<p><b>Gauss quadrature</b>: 2×2 for membrane+bending, 1-point for shear</p>
+g = 1/sqr(3)
+'Gauss point: ±'g
+'Helper function for shape derivatives:
+dN_dx(i; η) = take(i; dN_1ξ(η); dN_2ξ(η); dN_3ξ(η); dN_4ξ(η))/J_11
+dN_dy(i; ξ) = take(i; dN_1η(ξ); dN_2η(ξ); dN_3η(ξ); dN_4η(ξ))/J_22
+N_val(i; ξ; η) = take(i; N_1(ξ; η); N_2(ξ; η); N_3(ξ; η); N_4(ξ; η))
+#hide
+'═══════════════════════════════════════════
+' Build K_membrane (8×8) — 2×2 Gauss
+'═══════════════════════════════════════════
+n_km = 2*4
+K_mem = symmetric(n_km)
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g','η_g = -g
+	#else if ig ≡ 2
+		ξ_g = g','η_g = -g
+	#else if ig ≡ 3
+		ξ_g = g','η_g = g
+	#else
+		ξ_g = -g','η_g = g
+	#end if
+	dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+	dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+	dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+	dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+	B_m = [dNdx_1; 0; dNdx_2; 0; dNdx_3; 0; dNdx_4; 0 | _
+	       0; dNdy_1; 0; dNdy_2; 0; dNdy_3; 0; dNdy_4 | _
+	       dNdy_1; dNdx_1; dNdy_2; dNdx_2; dNdy_3; dNdx_3; dNdy_4; dNdx_4]
+	BtDB = transp(B_m)*D_mem*B_m*det_J
+	#for i = 1 : n_km
+		#for j = i : n_km
+			K_mem.(i; j) = K_mem.(i; j) + BtDB.(i; j)
+		#loop
+	#loop
+#loop
+
+'═══════════════════════════════════════════
+' Build K_plate (12×12) = K_bending + K_shear
+' Bending: 2×2 Gauss | Shear: 1-point reduced
+'═══════════════════════════════════════════
+n_kp = 3*4
+K_plt = symmetric(n_kp)
+
+' --- Bending part: 2×2 Gauss ---
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g','η_g = -g
+	#else if ig ≡ 2
+		ξ_g = g','η_g = -g
+	#else if ig ≡ 3
+		ξ_g = g','η_g = g
+	#else
+		ξ_g = -g','η_g = g
+	#end if
+	#for i = 1 : 4
+		dNdx_i = dN_dx(i; η_g)
+		dNdy_i = dN_dy(i; ξ_g)
+		col = 3*(i - 1)
+		#for j = i : 4
+			dNdx_j = dN_dx(j; η_g)
+			dNdy_j = dN_dy(j; ξ_g)
+			col_j = 3*(j - 1)
+			k_22 = (D_bend.(1; 1)*dNdx_i*dNdx_j + D_bend.(3; 3)*dNdy_i*dNdy_j)*det_J
+			k_23 = (D_bend.(1; 2)*dNdx_i*dNdy_j + D_bend.(3; 3)*dNdy_i*dNdx_j)*det_J
+			k_32 = (D_bend.(2; 1)*dNdy_i*dNdx_j + D_bend.(3; 3)*dNdx_i*dNdy_j)*det_J
+			k_33 = (D_bend.(2; 2)*dNdy_i*dNdy_j + D_bend.(3; 3)*dNdx_i*dNdx_j)*det_J
+			r1 = col + 2','c1 = col_j + 2
+			K_plt.(r1; c1) = K_plt.(r1; c1) + k_22
+			r1 = col + 2','c1 = col_j + 3
+			#if c1 > r1
+				K_plt.(r1; c1) = K_plt.(r1; c1) + k_23
+			#end if
+			r1 = col + 3','c1 = col_j + 2
+			#if c1 > r1
+				K_plt.(r1; c1) = K_plt.(r1; c1) + k_32
+			#end if
+			r1 = col + 3','c1 = col_j + 3
+			K_plt.(r1; c1) = K_plt.(r1; c1) + k_33
+		#loop
+	#loop
+#loop
+
+' --- Shear part: 1-point reduced (ξ=0, η=0) ---
+ξ_0 = 0','η_0 = 0','w_s = 4
+#for i = 1 : 4
+	dNdx_i = dN_dx(i; η_0)
+	dNdy_i = dN_dy(i; ξ_0)
+	Ni = N_val(i; ξ_0; η_0)
+	col = 3*(i - 1)
+	#for j = i : 4
+		dNdx_j = dN_dx(j; η_0)
+		dNdy_j = dN_dy(j; ξ_0)
+		Nj = N_val(j; ξ_0; η_0)
+		col_j = 3*(j - 1)
+		k_11 = D_s*(dNdx_i*dNdx_j + dNdy_i*dNdy_j)*det_J*w_s
+		k_12 = -D_s*dNdx_i*Nj*det_J*w_s
+		k_13 = -D_s*dNdy_i*Nj*det_J*w_s
+		k_21 = -D_s*Ni*dNdx_j*det_J*w_s
+		k_s22 = D_s*Ni*Nj*det_J*w_s
+		k_s33 = D_s*Ni*Nj*det_J*w_s
+		r1 = col + 1','c1 = col_j + 1
+		K_plt.(r1; c1) = K_plt.(r1; c1) + k_11
+		r1 = col + 1','c1 = col_j + 2
+		#if c1 > r1
+			K_plt.(r1; c1) = K_plt.(r1; c1) + k_12
+		#end if
+		r1 = col + 1','c1 = col_j + 3
+		#if c1 > r1
+			K_plt.(r1; c1) = K_plt.(r1; c1) + k_13
+		#end if
+		r1 = col + 2','c1 = col_j + 1
+		#if c1 > r1
+			K_plt.(r1; c1) = K_plt.(r1; c1) + k_21
+		#end if
+		r1 = col + 2','c1 = col_j + 2
+		K_plt.(r1; c1) = K_plt.(r1; c1) + k_s22
+		r1 = col + 3','c1 = col_j + 3
+		K_plt.(r1; c1) = K_plt.(r1; c1) + k_s33
+	#loop
+#loop
+
+'═══════════════════════════════════════════
+' Assemble K_e (24×24) from membrane + plate + drilling
+' DOF mapping per node i:
+'   membrane: local 2*(i-1)+1,2 → global 6*(i-1)+1,2
+'   plate:    local 3*(i-1)+1,2,3 → global 6*(i-1)+3,4,5
+'   drilling: → global 6*(i-1)+6
+'═══════════════════════════════════════════
+n_ke = n_dof*4
+K_e = symmetric(n_ke)
+
+' Map membrane (8×8 → 24×24)
+#for i = 1 : 4
+	#for j = i : 4
+		' 2×2 membrane block
+		rm = 2*(i - 1)','cm = 2*(j - 1)
+		rg = 6*(i - 1)','cg = 6*(j - 1)
+		#for a = 1 : 2
+			#for b = 1 : 2
+				r1 = rg + a','c1 = cg + b
+				#if c1 >= r1
+					K_e.(r1; c1) = K_e.(r1; c1) + K_mem.(rm + a; cm + b)
+				#end if
+			#loop
+		#loop
+	#loop
+#loop
+
+' Map plate (12×12 → 24×24)
+#for i = 1 : 4
+	#for j = i : 4
+		' 3×3 plate block
+		rp = 3*(i - 1)','cp = 3*(j - 1)
+		rg = 6*(i - 1) + 2','cg = 6*(j - 1) + 2
+		#for a = 1 : 3
+			#for b = 1 : 3
+				r1 = rg + a','c1 = cg + b
+				#if c1 >= r1
+					K_e.(r1; c1) = K_e.(r1; c1) + K_plt.(rp + a; cp + b)
+				#end if
+			#loop
+		#loop
+	#loop
+#loop
+
+' Drilling DOF (diagonal, DOF 6 of each node)
+#for i = 1 : 4
+	d6 = 6*i
+	K_e.(d6; d6) = k_drill
+#loop
+
+#show
+'<p><b>Element stiffness matrix</b> K_e (24×24):</p>
+Precision = 10^-1
+K_e
+'<h4>Solution</h4>
+'<p><b>Global assembly</b></p>
+#hide
+K = symmetric(n_total)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		#for j = i : 4
+			j_1 = e_j.(e; i)
+			j_2 = e_j.(e; j)
+			i_1 = n_dof*(j_1 - 1) + 1
+			i_2 = n_dof*(j_2 - 1) + 1
+			k_ij = submatrix(K_e; n_dof*(i - 1) + 1; n_dof*i; n_dof*(j - 1) + 1; n_dof*j)
+			#if j_1 > j_2
+				add(transp(k_ij); K; i_2; i_1)
+			#else
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+
+' Supports: penalty method (all 6 DOFs = 0 at base nodes)
+k_p = 10^20
+#for i = 1 : n_sup
+	#for d = 0 : n_dof - 1
+		j = n_dof*(s_j.i - 1) + 1 + d
+		K.(j; j) = K.(j; j) + k_p
+	#loop
+#loop
+
+' Global load vector: P distributed at top nodes (u-direction, DOF 1)
+F = vector(n_total)
+p_n = P/n_top
+#for i = 1 : n_top
+	j_top = n_y*n_1 + i
+	dof_u = n_dof*(j_top - 1) + 1
+	F.dof_u = p_n
+#loop
+#show
+'Global stiffness matrix: 'n_total' × 'n_total
+'<br/>Solving K·u = F (shell thick, 6 DOFs/node)...
+Z = clsolve(K; F)
+'<h4>Results</h4>
+'<p><b>Horizontal displacements (u) at top nodes</b></p>
+#hide
+u_disp = vector(n_j)
+v_disp = vector(n_j)
+w_disp = vector(n_j)
+#for i = 1 : n_j
+	u_disp.i = Z.(n_dof*(i - 1) + 1)
+	v_disp.i = Z.(n_dof*(i - 1) + 2)
+	w_disp.i = Z.(n_dof*(i - 1) + 3)
+#loop
+u_max = 0','u_node = 0
+#for i = 1 : n_top
+	j_top = n_y*n_1 + i
+	u_i = u_disp.j_top
+	#if abs(u_i) > abs(u_max)
+		u_max = u_i
+		u_node = j_top
+	#end if
+#loop
+#show
+'Maximum horizontal displacement at top:
+u_max'm
+'at node 'u_node
+'<p><b>Top node displacements:</b></p>
+#hide
+'<table class="centered"><tr><th>Node</th><th>u (m)</th><th>v (m)</th></tr>
+$Repeat{'<tr><td>'n_y*n_1 + i'</td><td>'round(u_disp.(n_y*n_1 + i)*100000)/100000'</td><td>'round(v_disp.(n_y*n_1 + i)*100000)/100000'</td></tr> @ i = 1 : n_top}
+'</table>
+#show
+'<p><b>Displacement color map (u)</b></p>
+#hide
+U_grid = matrix(n_x + 1; n_y + 1)
+#for i_x = 0 : n_x
+	#for i_y = 0 : n_y
+		k = i_y*n_1 + i_x + 1
+		U_grid.(i_x + 1; i_y + 1) = u_disp.k
+	#loop
+#loop
+u_map(x; y) = spline(1 + x/d_x; 1 + y/d_y; U_grid)
+PlotWidth = 50*W
+PlotHeight = 50*H
+PlotStep = 10
+#show
+$Map{u_map(x; y) @ x = 0 : W & y = 0 : H}
+'<h4>Validation</h4>
+'<p><b>Euler-Bernoulli beam theory</b> (cantilever):</p>
+I_w = t*W^3/12
+I_w'm^4
+'Tip deflection:
+δ_beam = P*H^3/(3*E*I_w)
+δ_beam'm
+'<p><b>Comparison:</b></p>
+'<table class="centered">
+'<tr><th>Method</th><th>u_max (m)</th><th>Ratio vs Beam</th></tr>
+'<tr><td>Euler-Bernoulli beam</td><td>'round(δ_beam*100000)/100000'</td><td>1.000</td></tr>
+'<tr><td>CalcpadCE Shell Thick Q4 ('n_x'×'n_y')</td><td>'round(u_max*100000)/100000'</td><td>'round(u_max/δ_beam*1000)/1000'</td></tr>
+'</table>
+'<p><b>Note:</b> For in-plane loading, shell thick result ≈ membrane result.
+'<br/>The out-of-plane DOFs (w, θₓ, θᵧ) remain zero for this load case.
+'<br/>The drilling DOF (θ_z) uses α = 'α' penalty factor (same as Hekatan Struct).</p>
+'<p><b>Element type match:</b> This uses the same formulation as Hekatan Struct
+'<br/>(Q4 shell thick = membrane + Mindlin-Reissner + drilling), 6 DOFs/node.</p>

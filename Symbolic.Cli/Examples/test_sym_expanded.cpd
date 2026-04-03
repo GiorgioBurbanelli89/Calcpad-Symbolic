@@ -1,0 +1,30 @@
+"#sym Expandido — Matrices, Laplace, Eigenvalues
+
+"1. Determinante simbólico 2x2
+#sym det(a; b; c; d)
+
+"2. Inversa simbólica 2x2
+#sym inv(a; b; c; d)
+
+"3. Eigenvalues 2x2
+#sym eigen(a; b; c; d)
+
+"4. Ejemplo numérico: K = [4; -2; -2; 4]
+#sym det(4; -2; -2; 4)
+#sym inv(4; -2; -2; 4)
+#sym eigen(4; -2; -2; 4)
+
+"5. Transpuesta
+#sym transp(a; b; c; d)
+
+"6. Transformada de Laplace
+#sym laplace(1; t; s)
+#sym laplace(t; t; s)
+#sym laplace(sin(t); t; s)
+#sym laplace(cos(t); t; s)
+
+"7. Combinación #sym + cálculo
+'Derivada + simplificación en cadena
+#sym diff(x^3 - 3*x^2 + 2*x; x)
+#sym diff(x^3 - 3*x^2 + 2*x; x; 2)
+#sym solve(3*x^2 - 6*x + 2; x)

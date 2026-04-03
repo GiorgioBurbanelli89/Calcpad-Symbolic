@@ -1,0 +1,16 @@
+"Test: Unidades en matrices FEM
+'Caso 1: Escalar con unidades
+L = 6m
+E = 200000MPa
+I = 0.0001m^4
+P = -100kN
+'Rigidez:
+k_11 = 12*E*I/L^3
+k_12 = 6*E*I/L^2
+k_22 = 4*E*I/L
+'Caso 2: Vector con unidades
+F = [0kN; 0kN*m; P; 0kN*m]
+'Caso 3: Matriz con unidades mixtas
+K = [k_11; k_12|k_12; k_22]
+'Caso 4: Solve
+u = lsolve(K; [P; 0kN*m])

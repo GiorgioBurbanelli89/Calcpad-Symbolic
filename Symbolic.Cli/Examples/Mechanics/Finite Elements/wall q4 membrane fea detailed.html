@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Created with Calcpad</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <script src="https://calcpad.local/file:///C:/Users/j-b-j/Documents/Hekatan Calc 1.0.0/CalcpadCE-main/Calcpad.Cli/bin/Debug/net10.0/doc/jquery-3.6.3.min.js"></script>
+    <script src="file:///C:/Users/j-b-j/Documents/Hekatan Calc 1.0.0/CalcpadCE-main/Calcpad.Cli/bin/Debug/net10.0/doc/calcpad-viz.umd.cjs"></script>
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-size: 11pt;
+            font-family: 'Segoe UI', 'Arial Nova', Helvetica, sans-serif;
+            margin-left: 5mm;
+            max-width: 190mm;
+        }
+
+        h1, h2, h3, h4, h5, h6, .errorHeader, .roundBox {
+            font-family: 'Arial Nova', Helvetica, sans-serif;
+            margin: 0.5em 0 0.5em 0;
+            padding: 0;
+            line-height: 150%;
+        }
+
+        h1 {font-size: 2.1em;}
+        h2 {font-size: 1.7em;}
+        h3 {font-size: 1.4em;}
+        h4 {font-size: 1.2em;}
+        h5 {font-size: 1.1em;}
+        h6 {font-size: 1em;}
+
+        p, li {
+            margin: 0.3em 0 0.3em 0;
+            padding: 0;
+            line-height: 150%;
+        }
+
+        select, kbd {
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        a:hover {
+            background-color: #e9f6ff;
+        }
+
+        .eq, input[type="text"], table.matrix {
+            font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+        }
+
+            .eq var {
+                color: #06d;
+                font-size: 105%;
+            }
+
+            .eq i {
+                color: #086;
+                font-style: normal;
+                font-size: 90%;
+            }
+
+            i.unit {
+                color: #043!important;
+                font-size: 90%!important;
+                vertical-align: -1pt;
+            }
+
+            sup.unit {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 70%!important;
+            }
+
+            .eq b {
+                font-weight: 600;
+            }
+
+            .eq sub {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 80%;
+                vertical-align: -18%;
+                margin-left: 1pt;
+            }
+
+            .eq sup {
+                display: inline-block;
+                margin-left: 1pt;
+                margin-top: -3pt;
+                font-size: 75%;
+            }
+
+            .eq small {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 70%;
+            }
+
+                .eq small var {
+                    font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+                    font-size: 8.5pt;
+                }
+
+                .eq small i {
+                    font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+                    font-size: 6pt;
+                }
+
+            .eq u, input, select {
+                background-color: LightYellow;
+            }
+
+                input[type="text"], select {
+                    font-size: 10pt;
+                    padding: 0.2em 0.4em;
+                    border: 0.5pt solid #CCC;
+                    border-radius: 0.35em;
+                    box-shadow: 0.06em 0.06em 0.5em #ddd;
+                    min-width: 3em;
+                }
+
+                input[type="text"] {
+                    text-align: right;
+                }
+
+                input[type="checkbox"],
+                input[type="radio"] {
+                    vertical-align: baseline;
+                    position: relative;
+                    bottom: -1pt;
+                    margin-right: 1pt;
+                }
+
+                    input[type="checkbox"].post:disabled:not(:checked),
+                    input[type="checkbox"].post:disabled:not(:checked) + label,
+                    input[type="radio"].post:disabled:not(:checked),
+                    input[type="radio"].post:disabled:not(:checked) + label {
+                        display: none;
+                    }
+
+                select:disabled {
+                    background: none;
+                    color: #444;
+                }
+
+                select.post:disabled {
+                    font-size: 12pt;
+                    border: none;
+                    box-shadow: none;
+                    color: red;
+                    background: none;
+                    appearance: none;
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                }
+
+                select.post:disabled::-ms-expand {
+                    display: none;
+                }
+
+                input[type="text"]:focus {
+                    box-shadow: 0.1em 0.1em 1em #ccc;
+                    color: black;
+                }
+
+        td, th {
+            padding: 2pt 4pt 2pt 4pt;
+            vertical-align: top;
+        }
+
+        small {
+            font-weight: normal;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+            table.bordered {
+                margin-top: 1em;
+            }
+
+                table.bordered th {
+                    background-color: #F0F0F0;
+                    border: solid 1pt #AAAAAA;
+                }
+
+                table.bordered td {
+                    border: solid 1pt #CCCCCC;
+                }
+
+            table.centered td, .matrix .td {
+                text-align: center;
+            }
+
+            table.data td {
+                text-align: right;
+            }
+
+                table.data td:first-child {
+                    text-align: left;
+                    padding-left: 0;
+                }
+
+        .matrix {
+            display: inline-table;
+        }
+
+            .matrix .tr {
+                display: table-row;
+            }
+
+            .matrix .td {
+                white-space: nowrap;
+                padding: 0 2pt 0 2pt;
+                min-width: 10pt;
+                display: table-cell;
+                font-size: 10pt;
+            }
+
+                .matrix .td:first-child,
+                .matrix .td:last-child {
+                    width: 0.75pt;
+                    min-width: 0.75pt;
+                    max-width: 0.75pt;
+                    padding: 0 1pt 0 1pt;
+                }
+
+                .matrix .td:first-child {
+                    border-left: solid 1pt black;
+                }
+
+                .matrix .td:last-child {
+                    border-right: solid 1pt black;
+                }
+
+            .matrix .tr:first-child .td:first-child,
+            .matrix .tr:first-child .td:last-child {
+                border-top: solid 1pt black;
+            }
+
+            .matrix .tr:last-child .td:first-child,
+            .matrix .tr:last-child .td:last-child {
+                border-bottom: solid 1pt black;
+            }
+
+        .block {
+            display: inline-block;
+            vertical-align: middle;
+            padding-left: 4pt;
+            margin-left: -1pt;
+            border-left: solid 1pt #80b0e8;
+            background: linear-gradient(to right, rgba(0, 192, 255, 0.06), rgba(0, 192, 255, 0.03));
+        }
+
+            .block .block {
+                background: linear-gradient(to right, rgba(0, 192, 255, 0.04), rgba(0, 192, 255, 0.02));
+            }
+
+        .dvcs:has(.block):not(.block *) {
+            display: inline-block;
+            border-left: solid 1pt #80b0e8;
+            padding-left: 0;
+            margin-left: 3pt;
+        }
+
+            .dvcs:has(.block):not(.block *)::before {
+                content: " 🞀";
+                font-size: 9pt;
+                color: #90c4f0;
+                margin-left: -4.5pt;
+            }
+
+        .arr {
+            color: #90c4f0;
+        }
+
+        .r0, .r1, .r2, .r3,
+        .o0, .o1, .o2, .o3,
+        .b1, .b2, .b3,
+        .c1, .c2, .c3, .c4,
+        .c5, .c6, .c7, .c8 {
+            display: inline-block;
+        }
+
+        .r0, .r1, .r2, .r3 {
+            margin-top: -1.5pt;
+            margin-right: 1.5pt;
+            vertical-align: top;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: right top;
+        }
+
+        .o0, .o1, .o2, .o3 {
+            border-top: solid 0.75pt;
+            line-height: 130%;
+            vertical-align: middle;
+            margin-top: 0.75pt;
+            padding-top: 1.25pt;
+            padding-left: 1pt;
+            padding-right: 1pt;
+        }
+
+        .r {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 150%;
+            display: inline-block;
+            vertical-align: top;
+            margin-left: -9.5pt;
+            position: relative;
+            top: 1pt;
+        }
+
+        .r0 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDEwIDIwIiBoZWlnaHQ9IjE1cHQiIHdpZHRoPSIxMHB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMCwxMyAyLDEyIDUsMTkgOSwwIiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MC42cHQ7IHN0cm9rZS1saW5lam9pbjpyb3VuZDsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IGZpbGw6bm9uZSIgLz4NCiAgPGxpbmUgeDE9IjIuMiIgeTE9IjEyLjMiIHgyPSI0LjYiIHkyPSIxOC43IiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MC44cHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 8pt;
+            height: 16pt;
+            margin-left: -8pt;
+        }
+
+        .r1 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDE1IDQwIiBoZWlnaHQ9IjMwcHQiIHdpZHRoPSIxNXB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMSwyNiAzLDI0IDgsMzggMTQsMCIgc3R5bGU9InN0cm9rZTpibGFjazsgc3Ryb2tlLXdpZHRoOjAuNnB0OyBzdHJva2UtbGluZWpvaW46cm91bmQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyBmaWxsOm5vbmUiIC8+DQogIDxsaW5lIHgxPSIzLjIiIHkxPSIyNC40IiB4Mj0iNy42IiB5Mj0iMzcuNiIgc3R5bGU9InN0cm9rZTpibGFjazsgc3Ryb2tlLXdpZHRoOjFwdDsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IiAvPg0KPC9zdmc+");
+            width: 12pt;
+            height: 32pt;
+            margin-left: -12pt;
+        }
+
+        .r2 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDIwIDYwIiBoZWlnaHQ9IjQ1cHQiIHdpZHRoPSIyMHB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMiwzNyA1LDM0IDExLDU1IDE5LDAiIHN0eWxlPSJzdHJva2U6YmxhY2s7IHN0cm9rZS13aWR0aDowLjZwdDsgc3Ryb2tlLWxpbmVqb2luOnJvdW5kOyBzdHJva2UtbGluZWNhcDpyb3VuZDsgZmlsbDpub25lIiAvPg0KICA8bGluZSB4MT0iNS4xIiB5MT0iMzQuNiIgeDI9IjEwLjYiIHkyPSI1NC40IiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MS4ycHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 16pt;
+            height: 48pt;
+            margin-left: -16pt;
+        }
+
+        .r3 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDI1IDgwIiBoZWlnaHQ9IjYwcHQiIHdpZHRoPSIyNXB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMyw1MCA3LDQ2IDE1LDc0IDI0LDAiIHN0eWxlPSJzdHJva2U6YmxhY2s7IHN0cm9rZS13aWR0aDowLjZwdDsgc3Ryb2tlLWxpbmVqb2luOnJvdW5kOyBzdHJva2UtbGluZWNhcDpyb3VuZDsgZmlsbDpub25lIiAvPg0KICA8bGluZSB4MT0iNy4xIiB5MT0iNDYuOCIgeDI9IjE0LjUiIHkyPSI3My4yIiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MS4ycHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 19pt;
+            height: 62pt;
+            margin-left: -19pt;
+        }
+
+        .nth {
+            position: relative;
+            bottom: 1pt;
+        }
+
+        .eq small.nth {font-size: 70%;}
+        .dvr small {font-size: 70%;}
+        .dvr small var {font-size: 105%;}
+        sup.raised {vertical-align: top;}
+        sup .r0, sup .r1, sup .r2, sup .r3 {
+            zoom: 0.7;
+            -moz-transform: scale(0.7);
+            -webkit-transform: scale(0.7);
+            transform: scale(0.7);
+            transform-origin: top right;
+            max-height: none;
+        }
+
+        sup .r0 { margin-left: -5pt; }
+        sup .r1 { margin-left: -11pt; }
+        sup .r2 { margin-left: -13pt; }
+        sup .r3 { margin-left: -16pt; }
+
+        .b1, .b2, .b3, .c1, .c2, .c3, .c4, .c5, .c6, .c7, .c8 {
+            vertical-align: middle;
+            font-weight: 100;
+            font-stretch: ultra-condensed;
+        }
+
+        .b2, .b3, .c2, .c3, .c4, .c5, .c6, .c7, .c8 {
+            font-family: 'Jost* Hairline', sans-serif;
+        }
+
+        .b0, .b1, .c1 {
+            font-family: 'Jost* Thin', sans-serif;
+        }
+
+        .b0 {
+            font-size: 120%;
+            font-weight: 600;
+            padding: 0 1pt 0 1pt;
+        }
+
+        .b1 {
+            font-size: 240%;
+            margin-top: -3pt;
+            margin-left: -1pt;
+            margin-right: -1pt;
+        }
+
+        .b2 {
+            font-size: 370%;
+            margin-top: -5pt;
+            margin-left: -3pt;
+            margin-right: -3pt;
+        }
+
+        .b3 {
+            font-size: 520%;
+            margin-top: -8pt;
+            margin-left: -5pt;
+            margin-right: -5pt;
+        }
+
+        .c1 {
+            font-size: 240%;
+            margin-top: -4pt;
+        }
+
+        .c2 {
+            font-size: 360%;
+            margin-top: -6pt;
+            margin-left: -2.5pt;
+            margin-right: -0.5pt;
+        }
+
+        .c3 {
+            font-size: 480%;
+            margin-top: -8pt;
+            margin-left: -3pt;
+            margin-right: -1pt;
+        }
+
+        .c4 {
+            font-size: 600%;
+            margin-top: -10pt;
+            margin-left: -4pt;
+            margin-right: -2pt;
+            transform: scaleX(0.9);
+        }
+
+        .c5 {
+            font-size: 710%;
+            margin-top: -11.5pt;
+            margin-left: -6pt;
+            margin-right: -4pt;
+            transform: scaleX(0.8);
+        }
+
+        .c6 {
+            font-size: 820%;
+            margin-top: -13pt;
+            margin-left: -7pt;
+            margin-right: -5pt;
+            transform: scaleX(0.7);
+        }
+
+        .c7 {
+            font-size: 930%;
+            margin-top: -14.5pt;
+            margin-left: -8pt;
+            margin-right: -6pt;
+            transform: scaleX(0.6);
+        }
+
+        .c8 {
+            font-size: 1040%;
+            margin-top: -16pt;
+            margin-left: -9pt;
+            margin-right: -7pt;
+            transform: scaleX(0.5);
+        }
+
+        .dvc, .dvr, .dvs {
+            display: inline-block;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .dvc {
+            padding-left: 2pt;
+            padding-right: 2pt;
+            text-align: center;
+            line-height: 110%;
+        }
+
+        .dvr {
+            text-align: center;
+            line-height: 110%;
+            position: relative;
+            top: -3pt;
+        }
+
+        .dvs {
+            text-align: left;
+            line-height: 110%;
+        }
+
+        .dvl {
+            display: block;
+            border-bottom: solid 1pt black;
+            margin-top: 1pt;
+            margin-bottom: 1pt;
+        }
+
+        .nary {
+            color: #C080F0;
+            font-size: 240%;
+            font-family: Georgia Pro Light, serif;
+            font-weight: 200;
+            line-height: 70%;
+            display: block;
+            margin: 0 1pt 2.5pt 1pt;
+        }
+
+            .nary em {
+                display: block;
+                transform: scaleX(0.7) rotate(7deg);
+            }
+
+        .dvc.down {
+            position: relative;
+            top: 0.5em;
+        }
+
+        .dvc.up {
+            position: relative;
+            bottom: 0.6em;
+        }
+
+        .low {
+            font-size: 70%;
+            display: inline-block;
+            position: relative;
+            top: 1.2em;
+        }
+
+        .cond {
+            color: #E000D0;
+        }
+
+        .err {
+            color: Crimson;
+            background-color: #FEE;
+        }
+
+        .ok {
+            color: Green;
+            background-color: #F0FFF0;
+        }
+
+        .ref {
+            float: right;
+            margin-left: 18pt;
+            color: Green;
+            background-color: #F8FFF0;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        .side {
+            float: right;
+            max-width: 50%;
+        }
+
+        .plot {
+            max-width: 100%
+        }
+
+        .indent {
+            border-left: 0.75pt solid #dddddd;
+            padding-left: 2em;
+        }
+
+        span.indent {
+            display: inline-block;
+        }
+
+        .fold {
+            height: 2.4em;
+            overflow: hidden;
+        }
+
+        .unfold {
+            height: auto;
+            overflow: auto;
+        }
+
+            .fold > :first-child, .unfold > :first-child {
+                cursor: pointer;
+            }
+
+                .fold > :first-child:hover, .unfold > :first-child:hover {
+                    color: #0066bb;
+                    text-decoration: underline;
+                }
+
+                .fold > :first-child::after {
+                    content: " ... ▼";
+                    font-size: 80%;
+                }
+
+                .unfold > :first-child::after {
+                    content: " ▲";
+                    font-size: 80%;
+                }
+
+        .vec {
+            font-family: 'Cambria Math', serif;
+            color: #8af;
+            font-style: normal;
+            display: inline-block;
+            vertical-align: 2pt;
+            margin-left: 3pt;
+            margin-right: -7pt;
+        }
+
+        small .vec, sup .vec {
+            margin-left: 2pt;
+            margin-right: -6pt;
+        }
+
+        #Units {
+            float: right;
+        }
+
+        @media screen {
+            .no-screen {
+                display: none;
+            }
+        }
+
+        @media print {
+            .side {
+                zoom: 0.8;
+                -moz-transform: scale(0.8);
+            }
+
+            body {
+                margin: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+
+        @page {
+            size: A4 portrait;
+            margin-left: 20mm;
+            margin-right: 10mm;
+            margin-top: 10mm;
+            margin-bottom: 10mm;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .value {
+            position: relative;
+            background-color: #f4fbff;
+            border-radius: 3pt;
+        }
+
+            .value:after {
+                content: "";
+                position: absolute;
+                left: 100%;
+                top: -100%;
+                transform: translateY(-50%);
+                margin-left: 2pt;
+                height: 16pt;
+                line-height: 16pt;
+                vertical-align: middle;
+                width: fit-content;
+                white-space: nowrap;
+                min-width: 10pt;
+                z-index: 1;
+                padding: 0 6pt 0 6pt;
+                border-radius: 6pt 6pt 6pt 0;
+                background: #000;
+                color: #fff;
+                font-family: 'Segoe UI', sans-serif;
+                font-style: normal;
+                font-size: 10pt;
+                text-align: center;
+                display: none;
+                opacity: 0;
+                transition: opacity 2s;
+                user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                -moz-user-select: none;
+            }
+
+            .value:hover:after {
+                content: attr(data-value);
+                display: block;
+                opacity: 1;
+            }
+
+        .errorHeader {
+            color: white;
+            background-color: crimson;
+            font-size: 10pt;
+            position: fixed;
+            top: 0;
+            left: 0;
+            margin-top: 0;
+            width: 100vw;
+            max-width: 100%;
+            height: 1.8em;
+            line-height: 1.2em;
+            padding-left: 6pt;
+            overflow-x: hidden;
+        }
+
+        .roundBox {
+            background-color: #fee;
+            color: crimson;
+            font-size: 9pt;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            display: inline-block;
+            border-radius: 4pt;
+            min-width: 1.1em;
+            padding-left: 2pt;
+            padding-right: 2pt;
+            margin-top: 2pt;
+        }
+
+            .roundBox:hover {
+                background-color: white;
+            }
+
+        .lineLink {
+            background: none;
+            color: #b0e0ff;
+            font-family: Calibri, sans-serif;
+            font-size: 10pt;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: left;
+            display: inline-block;
+            position: absolute;
+            left: 0;
+            width: 2em;
+            height: 4em;
+            z-index: 1;
+        }
+
+            .lineLink:hover {
+                background: none;
+                color: #09e;
+            }
+    </style>
+</head>
+<body>
+    <script>
+        var contextMenu = false;
+        function getVerticalPosition(line) { return document.querySelector("[data-text='" + line + "']").getBoundingClientRect().top; }
+        function isNumeric(s) { return s.match(/^-?\d+(?:\.\d+)?$/); }
+        if (window.jQuery) {
+            function getHtmlWithInput() {
+                $("input[type=text]").each(function () {
+                    $(this).attr("value", $(this).val());
+                });
+                $("input[type=hidden]").each(function () {
+                    $(this).attr("value", $(this).val());
+                });
+                $("textarea").each(function () {
+                    $(this).html($(this).val());
+                });
+                $("input[type=radio]").each(function () {
+                    if (this.checked)
+                        $(this).attr("checked", "checked");
+                    else
+                        $(this).removeAttr("checked");
+                });
+                $("input[type=checkbox]").each(function () {
+                    if (this.checked)
+                        $(this).attr("checked", "checked");
+                    else
+                        $(this).removeAttr("checked");
+                });
+                $("select option").each(function () {
+                    if (this.selected) {
+                        $(this).attr("selected", "true");
+                    }
+                    else
+                        $(this).removeAttr("selected");
+                });
+                return document.body.outerHTML;
+            }
+
+            function getTargetId(element) {
+                var id = $(element).attr("name");
+                if (id != null && id.length > 0)
+                    return id;
+
+                return $(element).data("target");
+            }
+
+            function getValue(id, source) {
+                var value = "";
+                var target = $("#" + id + " input");
+                var domObj = target.get(0);
+                if (domObj == null || domObj.Length == 0) {
+                    target = $("#" + id + " .eq u");
+                    target.each(function () {
+                        value += $(this).text() + ";";
+                    });
+                    $(source).prop('disabled', true);
+                }
+                else {
+                    target.each(function () {
+                        value += $(this).val() + ";";
+                    });
+                }
+                if (value.length > 1) {
+                    value = value.slice(0, -1);
+                }
+                return value;
+            }
+
+            $(document).ready(function () {
+
+                $(".dvcs:has(.block) > :first-child").html("&hairsp;");
+
+                $("#Units").change(function () { $(".Units").text($(this).val()); });
+
+                $(".fold > :first-child").click(function () {
+                    if ($(this).parent().hasClass("fold")) {
+                        $(this).parent().removeClass("fold").addClass("unfold");
+                    }
+                    else {
+                        $(this).parent().removeClass("unfold").addClass("fold");
+                    }
+                });
+
+                $("select").each(function (index) {
+                    if ($(this).prop("id") != "Units") {
+                        var id = getTargetId(this);
+                        if (id != null && id.length > 0) {
+                            var value = getValue(id, this);
+                            $(this).val(value);
+                        }
+                    }
+
+                });
+
+                $("select").change(function () {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var target = $("#" + id + " input");
+                        if (target != null) {
+                            var values = $(this).val().split(";");
+                            target.each(function (index) {
+                                $(this).val(values[index]);
+                            });
+                        }
+                    }
+                });
+
+                $("input:radio, input:checkbox").each(function (index) {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var value = getValue(id, this);
+                        $(this).prop("checked", $(this).val() == value);
+                    }
+                });
+
+                $("input:radio, input:checkbox").change(function () {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var target = $("#" + id + " input");
+                        if (target != null) {
+                            if ($(this).prop("checked")) {
+                                var values = $(this).val().split(";");
+                                target.each(function (index) {
+                                    $(this).val(values[index]);
+                                });
+                            }
+                            else if ($(this).prop("type") == "checkbox") {
+                                target.each(function () {
+                                    $(this).val("0");
+                                });
+                            }
+                        }
+                    }
+                });
+
+                $(".line:not(style, script)").each(function () {
+                    var line = $(this).prop("id").split("-")[1];
+                    var $lineLink = $('<a class="lineLink" href="#0" data-text="' + line + '" title="Code line ' + line + '">&larr;</a>');
+                    $(this).append($lineLink);
+                    $lineLink.hide();
+                    $(this).hover(function () {
+                        $(".lineLink").hide();
+                        $lineLink.show();
+                    });
+                    $(window).scroll(function () {
+                        $lineLink.hide();
+                    });
+                });
+
+                $("body").mouseleave(function () {
+                    $(".lineLink").hide();
+                });
+
+                $(".roundBox").click(function () {
+                    var line = $(this).data("line");
+                    var e = document.getElementById("line-" + line);
+                    if (e) {
+                        window.scrollTo(0, e.offsetTop - $(this).outerHeight() - 20);
+                    }
+                });
+                $(".money").each(function () { $(this).text(Number(($(this).text())).toFixed(2)); });
+
+                $("input").change(function() {
+                    var e = $(this);
+                    var s = e.val();
+                    if (isNumeric(s)) {
+                        e.css("color", "black");
+                        e.removeAttr("title");
+                    } else {
+                        e.css("color", "red");
+                        e.attr("title", "Invalid number");
+                    }
+                });
+
+                $("a").click(function () {
+                    chrome.webview.postMessage('clicked');
+                });
+
+                window.addEventListener('click', () => {
+                    chrome.webview.postMessage('focused');
+                });
+            });
+        }
+        document.oncontextmenu = function () { contextMenu = true; };
+        document.onmousedown = function () { contextMenu = false; };
+    </script><h3>Muro Cantilever Q4 — Membrana FEA (Paso a paso) </h3>
+<h3>Elemento Q4 de 4 nodos, esfuerzo plano, 2 DOFs/nodo </h3>
+<hr/> 
+<h3>1. Datos de entrada </h3>
+<p>Unidades: kN, m </p>
+<p>Ancho del muro - <span class="eq"><var>W</var> = 5</span></p>
+<p>Altura del muro - <span class="eq"><var>H</var> = 3</span></p>
+<p>Espesor - <span class="eq"><var>t</var> = 0.2</span></p>
+<p>Carga lateral en el tope - <span class="eq"><var>P</var> = 100</span></p>
+<p>Módulo de elasticidad (25 GPa) - <span class="eq"><var>E</var> = 25000000</span></p>
+<p>Razón de Poisson - <span class="eq"><var>ν</var> = 0.2</span></p>
+<hr/> 
+<h3>2. Funciones de forma bilineales Q4 </h3>
+<p>El elemento Q4 tiene 4 nodos en coordenadas naturales ξ, η ∈ [-1, 1]:</p> 
+<p>Nodo 1: (-1,-1) esquina inferior izquierda</p> 
+<p>Nodo 2: (+1,-1) esquina inferior derecha</p> 
+<p>Nodo 3: (+1,+1) esquina superior derecha</p> 
+<p>Nodo 4: (-1,+1) esquina superior izquierda</p> 
+<p><b>Funciones de forma:</b></p> 
+<p><span class="eq"><var>N</var><sub>1</sub> ( <var>ξ</var>; <var>η</var> )  = <span class="dvc"> ( 1 − <var>ξ</var> )  ·  ( 1 − <var>η</var> ) <span class="dvl"></span>4</span></span></p>
+<p><span class="eq"><var>N</var><sub>2</sub> ( <var>ξ</var>; <var>η</var> )  = <span class="dvc"> ( 1 + <var>ξ</var> )  ·  ( 1 − <var>η</var> ) <span class="dvl"></span>4</span></span></p>
+<p><span class="eq"><var>N</var><sub>3</sub> ( <var>ξ</var>; <var>η</var> )  = <span class="dvc"> ( 1 + <var>ξ</var> )  ·  ( 1 + <var>η</var> ) <span class="dvl"></span>4</span></span></p>
+<p><span class="eq"><var>N</var><sub>4</sub> ( <var>ξ</var>; <var>η</var> )  = <span class="dvc"> ( 1 − <var>ξ</var> )  ·  ( 1 + <var>η</var> ) <span class="dvl"></span>4</span></span></p>
+<p><b>Propiedad de partición de la unidad:</b> N₁+N₂+N₃+N₄ = 1 en cualquier punto</p> 
+<p>En el centro (0, 0): </p>
+<p><span class="eq"><var>N</var><sub>1</sub>  ( 0; 0 )  + <var>N</var><sub>2</sub>  ( 0; 0 )  + <var>N</var><sub>3</sub>  ( 0; 0 )  + <var>N</var><sub>4</sub>  ( 0; 0 )  = 1</span></p>
+<p>En un punto arbitrario (0.7, -0.4): </p>
+<p><span class="eq"><var>N</var><sub>1</sub>  ( 0.7; -0.4 )  + <var>N</var><sub>2</sub>  ( 0.7; -0.4 )  + <var>N</var><sub>3</sub>  ( 0.7; -0.4 )  + <var>N</var><sub>4</sub>  ( 0.7; -0.4 )  = 1</span></p>
+<p><b>Valores en los nodos:</b> N_i vale 1 en su nodo y 0 en los demás</p> 
+<p>N₁ en nodo 1 (-1,-1): </p>
+<p><span class="eq"><var>N</var><sub>1</sub>  ( -1; -1 )  = 1</span></p>
+<p>N₁ en nodo 2 (+1,-1): </p>
+<p><span class="eq"><var>N</var><sub>1</sub>  ( 1; -1 )  = 0</span></p>
+<p><b>Derivadas respecto a ξ:</b></p> 
+<p><span class="eq"><var>dN1</var><sub>dξ</sub> ( <var>η</var> )  = <span class="dvc">- ( 1 − <var>η</var> ) <span class="dvl"></span>4</span></span></p>
+<p><span class="eq"><var>dN2</var><sub>dξ</sub> ( <var>η</var> )  = <span class="dvc">1 − <var>η</var><span class="dvl"></span>4</span></span></p>
+<p><span class="eq"><var>dN3</var><sub>dξ</sub> ( <var>η</var> )  = <span class="dvc">1 + <var>η</var><span class="dvl"></span>4</span></span></p>
+<p><span class="eq"><var>dN4</var><sub>dξ</sub> ( <var>η</var> )  = <span class="dvc">- ( 1 + <var>η</var> ) <span class="dvl"></span>4</span></span></p>
+<p><b>Derivadas respecto a η:</b></p> 
+<p><span class="eq"><var>dN1</var><sub>dη</sub> ( <var>ξ</var> )  = <span class="dvc">- ( 1 − <var>ξ</var> ) <span class="dvl"></span>4</span></span></p>
+<p><span class="eq"><var>dN2</var><sub>dη</sub> ( <var>ξ</var> )  = <span class="dvc">- ( 1 + <var>ξ</var> ) <span class="dvl"></span>4</span></span></p>
+<p><span class="eq"><var>dN3</var><sub>dη</sub> ( <var>ξ</var> )  = <span class="dvc">1 + <var>ξ</var><span class="dvl"></span>4</span></span></p>
+<p><span class="eq"><var>dN4</var><sub>dη</sub> ( <var>ξ</var> )  = <span class="dvc">1 − <var>ξ</var><span class="dvl"></span>4</span></span></p>
+<p><b>Verificación:</b> Suma de derivadas = 0</p> 
+<p><span class="eq"><var>dN1</var><sub>dξ</sub>  ( 0 )  + <var>dN2</var><sub>dξ</sub>  ( 0 )  + <var>dN3</var><sub>dξ</sub>  ( 0 )  + <var>dN4</var><sub>dξ</sub>  ( 0 )  = 0</span></p>
+<p><span class="eq"><var>dN1</var><sub>dη</sub>  ( 0 )  + <var>dN2</var><sub>dη</sub>  ( 0 )  + <var>dN3</var><sub>dη</sub>  ( 0 )  + <var>dN4</var><sub>dη</sub>  ( 0 )  = 0</span></p>
+<hr/> 
+<h3>3. Malla de elementos finitos </h3>
+<p>Malla:  <span class="eq"><var>n</var><sub>x</sub> = 8</span>  ×  <span class="eq"><var>n</var><sub>y</sub> = 6</span>  (igual que Hekatan Struct) </p>
+<p><span class="eq"><var>n</var><sub>e</sub> = <var>n</var><sub>x</sub> · <var>n</var><sub>y</sub> = 8 · 6 = 48</span></p>
+<p><span class="eq"><var>n</var><sub>j</sub> =  ( <var>n</var><sub>x</sub> + 1 )  ·  ( <var>n</var><sub>y</sub> + 1 )  =  ( 8 + 1 )  ·  ( 6 + 1 )  = 63</span></p>
+<p><span class="eq"><var>dx</var> = <span class="dvc"><var>W</var><span class="dvl"></span><var>n</var><sub>x</sub></span> = <span class="dvc">5<span class="dvl"></span>8</span> = 0.625</span></p>
+<p><span class="eq"><var>dy</var> = <span class="dvc"><var>H</var><span class="dvl"></span><var>n</var><sub>y</sub></span> = <span class="dvc">3<span class="dvl"></span>6</span> = 0.5</span></p>
+<p><span class="eq"><var>n</var><sub>dof</sub> = 2 · <var>n</var><sub>j</sub> = 2 · 63 = 126</span></p>
+<p>Elementos:  <span class="eq"><var>n</var><sub>e</sub> = 48</span> , Nodos:  <span class="eq"><var>n</var><sub>j</sub> = 63</span> , DOFs:  <span class="eq"><var>n</var><sub>dof</sub> = 126</span></p>
+<div id="cviz_0" style="display:inline-block"></div><script>CalcpadViz.fem2d("cviz_0",{nodes:[[0,0],[0.625,0],[1.25,0],[1.875,0],[2.5,0],[3.125,0],[3.75,0],[4.375,0],[5,0],[0,0.5],[0.625,0.5],[1.25,0.5],[1.875,0.5],[2.5,0.5],[3.125,0.5],[3.75,0.5],[4.375,0.5],[5,0.5],[0,1],[0.625,1],[1.25,1],[1.875,1],[2.5,1],[3.125,1],[3.75,1],[4.375,1],[5,1],[0,1.5],[0.625,1.5],[1.25,1.5],[1.875,1.5],[2.5,1.5],[3.125,1.5],[3.75,1.5],[4.375,1.5],[5,1.5],[0,2],[0.625,2],[1.25,2],[1.875,2],[2.5,2],[3.125,2],[3.75,2],[4.375,2],[5,2],[0,2.5],[0.625,2.5],[1.25,2.5],[1.875,2.5],[2.5,2.5],[3.125,2.5],[3.75,2.5],[4.375,2.5],[5,2.5],[0,3],[0.625,3],[1.25,3],[1.875,3],[2.5,3],[3.125,3],[3.75,3],[4.375,3],[5,3]],elements:[[0,1,10,9],[1,2,11,10],[2,3,12,11],[3,4,13,12],[4,5,14,13],[5,6,15,14],[6,7,16,15],[7,8,17,16],[9,10,19,18],[10,11,20,19],[11,12,21,20],[12,13,22,21],[13,14,23,22],[14,15,24,23],[15,16,25,24],[16,17,26,25],[18,19,28,27],[19,20,29,28],[20,21,30,29],[21,22,31,30],[22,23,32,31],[23,24,33,32],[24,25,34,33],[25,26,35,34],[27,28,37,36],[28,29,38,37],[29,30,39,38],[30,31,40,39],[31,32,41,40],[32,33,42,41],[33,34,43,42],[34,35,44,43],[36,37,46,45],[37,38,47,46],[38,39,48,47],[39,40,49,48],[40,41,50,49],[41,42,51,50],[42,43,52,51],[43,44,53,52],[45,46,55,54],[46,47,56,55],[47,48,57,56],[48,49,58,57],[49,50,59,58],[50,51,60,59],[51,52,61,60],[52,53,62,61]],supports:[0,1,2,3,4,5,6,7,8],loads:[[54,11.11111111,0],[55,11.11111111,0],[56,11.11111111,0],[57,11.11111111,0],[58,11.11111111,0],[59,11.11111111,0],[60,11.11111111,0],[61,11.11111111,0],[62,11.11111111,0]],options:{width:500,height:380,title:"Muro cantilever 8x6 Q4",}});</script><hr/> 
+<h3>4. Matriz constitutiva D (esfuerzo plano) </h3>
+<p>Para esfuerzo plano (plane stress): </p>
+<p><span class="eq"><var>c</var><sub>D</sub> = <span class="dvc"><var>E</var> · <var>t</var><span class="dvl"></span>1 − <var>ν</var><sup>2</sup></span> = <span class="dvc">25000000 · 0.2<span class="dvl"></span>1 − 0.2<sup>2</sup></span> = 5208333.333</span></p>
+<p><span class="eq"><b><var>D</var></b> = <var>c</var><sub>D</sub> · <span class="matrix"><span class="tr"><span class="td"></span><span class="td">1</span><span class="td"><var>ν</var></span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td"><var>ν</var></span><span class="td">1</span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td">0</span><span class="td"><span class="dvc">1 − <var>ν</var><span class="dvl"></span>2</span></span><span class="td"></span></span></span> = 5208333.333 · <span class="matrix"><span class="tr"><span class="td"></span><span class="td">1</span><span class="td">0.2</span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0.2</span><span class="td">1</span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td">0</span><span class="td"><span class="dvc">1 − 0.2<span class="dvl"></span>2</span></span><span class="td"></span></span></span> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">5208333.333</span><span class="td">1041666.667</span><span class="td">0</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">1041666.667</span><span class="td">5208333.333</span><span class="td">0</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">0</span><span class="td">0</span><span class="td">2083333.333</span><span class="td"></span></span>
+</span>
+</span></p>
+<hr/> 
+<h3>5. Jacobiano </h3>
+<p>Para elementos rectangulares uniformes, el Jacobiano es constante: </p>
+<p><span class="eq"><var>J</var><sub>11</sub> = <span class="dvc"><var>dx</var><span class="dvl"></span>2</span> = <span class="dvc">0.625<span class="dvl"></span>2</span> = 0.3125</span></p>
+<p><span class="eq"><var>J</var><sub>22</sub> = <span class="dvc"><var>dy</var><span class="dvl"></span>2</span> = <span class="dvc">0.5<span class="dvl"></span>2</span> = 0.25</span></p>
+<p><span class="eq"><var>det</var><sub>J</sub> = <var>J</var><sub>11</sub> · <var>J</var><sub>22</sub> = 0.3125 · 0.25 = 0.078125</span></p>
+<p>Jacobiano inverso: </p>
+<p>J⁻¹₁₁ = 1/J₁₁ =  <span class="eq"><var>J</var><sub>inv11</sub> = <span class="dvc">1<span class="dvl"></span><var>J</var><sub>11</sub></span> = <span class="dvc">1<span class="dvl"></span>0.3125</span> = 3.2</span></p>
+<p>J⁻¹₂₂ = 1/J₂₂ =  <span class="eq"><var>J</var><sub>inv22</sub> = <span class="dvc">1<span class="dvl"></span><var>J</var><sub>22</sub></span> = <span class="dvc">1<span class="dvl"></span>0.25</span> = 4</span></p>
+<hr/> 
+<h3>6. Matriz B (deformación-desplazamiento) </h3>
+<p>Para esfuerzo plano, las deformaciones son:</p> 
+<p>ε_xx = ∂u/∂x, ε_yy = ∂v/∂y, γ_xy = ∂u/∂y + ∂v/∂x </p>
+<p>La matriz B para cada nodo i tiene la forma:</p> 
+<p>B_i = [∂N_i/∂x, 0 | 0, ∂N_i/∂y | ∂N_i/∂y, ∂N_i/∂x] </p>
+<p><b>Ejemplo:</b> B en el punto de Gauss 1 (ξ=-g, η=-g):</p> 
+<p><span class="eq"><var>g</var><sub>1</sub> = <span class="dvc">1<span class="dvl"></span>&ensp;&hairsp;&hairsp;<span class="o0"><span class="r">√</span>&hairsp;3</span></span> = 0.5773503</span></p>
+<p>Derivadas físicas en el punto de Gauss 1: </p>
+<p><span class="eq"><var>dNdx</var><sub>1</sub> = <span class="dvc"><var>dN1</var><sub>dξ</sub>  ( -<var>g</var><sub>1</sub> ) <span class="dvl"></span><var>J</var><sub>11</sub></span> = <span class="dvc"><var>dN1</var><sub>dξ</sub>  ( -0.5773503 ) <span class="dvl"></span>0.3125</span> = -1.26188</span></p>
+<p><span class="eq"><var>dNdy</var><sub>1</sub> = <span class="dvc"><var>dN1</var><sub>dη</sub>  ( -<var>g</var><sub>1</sub> ) <span class="dvl"></span><var>J</var><sub>22</sub></span> = <span class="dvc"><var>dN1</var><sub>dη</sub>  ( -0.5773503 ) <span class="dvl"></span>0.25</span> = -1.57735</span></p>
+<p><span class="eq"><var>dNdx</var><sub>2</sub> = <span class="dvc"><var>dN2</var><sub>dξ</sub>  ( -<var>g</var><sub>1</sub> ) <span class="dvl"></span><var>J</var><sub>11</sub></span> = <span class="dvc"><var>dN2</var><sub>dξ</sub>  ( -0.5773503 ) <span class="dvl"></span>0.3125</span> = 1.26188</span></p>
+<p><span class="eq"><var>dNdy</var><sub>2</sub> = <span class="dvc"><var>dN2</var><sub>dη</sub>  ( -<var>g</var><sub>1</sub> ) <span class="dvl"></span><var>J</var><sub>22</sub></span> = <span class="dvc"><var>dN2</var><sub>dη</sub>  ( -0.5773503 ) <span class="dvl"></span>0.25</span> = -0.4226497</span></p>
+<p><span class="eq"><var>dNdx</var><sub>3</sub> = <span class="dvc"><var>dN3</var><sub>dξ</sub>  ( -<var>g</var><sub>1</sub> ) <span class="dvl"></span><var>J</var><sub>11</sub></span> = <span class="dvc"><var>dN3</var><sub>dξ</sub>  ( -0.5773503 ) <span class="dvl"></span>0.3125</span> = 0.3381198</span></p>
+<p><span class="eq"><var>dNdy</var><sub>3</sub> = <span class="dvc"><var>dN3</var><sub>dη</sub>  ( -<var>g</var><sub>1</sub> ) <span class="dvl"></span><var>J</var><sub>22</sub></span> = <span class="dvc"><var>dN3</var><sub>dη</sub>  ( -0.5773503 ) <span class="dvl"></span>0.25</span> = 0.4226497</span></p>
+<p><span class="eq"><var>dNdx</var><sub>4</sub> = <span class="dvc"><var>dN4</var><sub>dξ</sub>  ( -<var>g</var><sub>1</sub> ) <span class="dvl"></span><var>J</var><sub>11</sub></span> = <span class="dvc"><var>dN4</var><sub>dξ</sub>  ( -0.5773503 ) <span class="dvl"></span>0.3125</span> = -0.3381198</span></p>
+<p><span class="eq"><var>dNdy</var><sub>4</sub> = <span class="dvc"><var>dN4</var><sub>dη</sub>  ( -<var>g</var><sub>1</sub> ) <span class="dvl"></span><var>J</var><sub>22</sub></span> = <span class="dvc"><var>dN4</var><sub>dη</sub>  ( -0.5773503 ) <span class="dvl"></span>0.25</span> = 1.57735</span></p>
+<p>B completa (3×8) en el punto de Gauss 1:</p> 
+<p><span class="eq"><b><var>B</var></b><sub>gp1</sub> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td"><var>dNdx</var><sub>1</sub></span><span class="td">0</span><span class="td"><var>dNdx</var><sub>2</sub></span><span class="td">0</span><span class="td"><var>dNdx</var><sub>3</sub></span><span class="td">0</span><span class="td"><var>dNdx</var><sub>4</sub></span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"><var>dNdy</var><sub>1</sub></span><span class="td">0</span><span class="td"><var>dNdy</var><sub>2</sub></span><span class="td">0</span><span class="td"><var>dNdy</var><sub>3</sub></span><span class="td">0</span><span class="td"><var>dNdy</var><sub>4</sub></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td"><var>dNdy</var><sub>1</sub></span><span class="td"><var>dNdx</var><sub>1</sub></span><span class="td"><var>dNdy</var><sub>2</sub></span><span class="td"><var>dNdx</var><sub>2</sub></span><span class="td"><var>dNdy</var><sub>3</sub></span><span class="td"><var>dNdx</var><sub>3</sub></span><span class="td"><var>dNdy</var><sub>4</sub></span><span class="td"><var>dNdx</var><sub>4</sub></span><span class="td"></span></span></span> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">-1.26188</span><span class="td">0</span><span class="td">1.26188</span><span class="td">0</span><span class="td">0.3381198</span><span class="td">0</span><span class="td">-0.3381198</span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td">-1.57735</span><span class="td">0</span><span class="td">-0.4226497</span><span class="td">0</span><span class="td">0.4226497</span><span class="td">0</span><span class="td">1.57735</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">-1.57735</span><span class="td">-1.26188</span><span class="td">-0.4226497</span><span class="td">1.26188</span><span class="td">0.4226497</span><span class="td">0.3381198</span><span class="td">1.57735</span><span class="td">-0.3381198</span><span class="td"></span></span></span> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">-1.26188</span><span class="td">0</span><span class="td">1.26188</span><span class="td">0</span><span class="td">0.3381198</span><span class="td">0</span><span class="td">-0.3381198</span><span class="td">0</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">0</span><span class="td">-1.57735</span><span class="td">0</span><span class="td">-0.4226497</span><span class="td">0</span><span class="td">0.4226497</span><span class="td">0</span><span class="td">1.57735</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-1.57735</span><span class="td">-1.26188</span><span class="td">-0.4226497</span><span class="td">1.26188</span><span class="td">0.4226497</span><span class="td">0.3381198</span><span class="td">1.57735</span><span class="td">-0.3381198</span><span class="td"></span></span>
+</span>
+</span></p>
+<hr/> 
+<h3>7. Matriz de rigidez del elemento </h3>
+<p>K_e = Σ (BᵀDB) · det(J) · peso</p> 
+<p>Cuadratura de Gauss 2×2: 4 puntos, peso = 1 cada uno</p> 
+<p>K_e (8×8 — rigidez del elemento): </p>
+<p><span class="eq"><var>Precision</var> = 10<sup>-1</sup> = 0.1</span></p>
+<p><span class="eq"><b><var>K</var></b><sub>e</sub> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">2256944.444</span><span class="td">781250</span><span class="td">-954861.1111</span><span class="td">-260416.6667</span><span class="td">-1128472.222</span><span class="td">-781250</span><span class="td">-173611.1111</span><span class="td">260416.6667</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">781250</span><span class="td">2725694.444</span><span class="td">260416.6667</span><span class="td">529513.8889</span><span class="td">-781250</span><span class="td">-1362847.222</span><span class="td">-260416.6667</span><span class="td">-1892361.111</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-954861.1111</span><span class="td">260416.6667</span><span class="td">2256944.444</span><span class="td">-781250</span><span class="td">-173611.1111</span><span class="td">-260416.6667</span><span class="td">-1128472.222</span><span class="td">781250</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-260416.6667</span><span class="td">529513.8889</span><span class="td">-781250</span><span class="td">2725694.444</span><span class="td">260416.6667</span><span class="td">-1892361.111</span><span class="td">781250</span><span class="td">-1362847.222</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-1128472.222</span><span class="td">-781250</span><span class="td">-173611.1111</span><span class="td">260416.6667</span><span class="td">2256944.444</span><span class="td">781250</span><span class="td">-954861.1111</span><span class="td">-260416.6667</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-781250</span><span class="td">-1362847.222</span><span class="td">-260416.6667</span><span class="td">-1892361.111</span><span class="td">781250</span><span class="td">2725694.444</span><span class="td">260416.6667</span><span class="td">529513.8889</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-173611.1111</span><span class="td">-260416.6667</span><span class="td">-1128472.222</span><span class="td">781250</span><span class="td">-954861.1111</span><span class="td">260416.6667</span><span class="td">2256944.444</span><span class="td">-781250</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">260416.6667</span><span class="td">-1892361.111</span><span class="td">781250</span><span class="td">-1362847.222</span><span class="td">-260416.6667</span><span class="td">529513.8889</span><span class="td">-781250</span><span class="td">2725694.444</span><span class="td"></span></span>
+</span>
+</span></p>
+<hr/> 
+<h3>8. Ensamblaje global y solución </h3>
+<p>Sistema:  <span class="eq"><var>n</var><sub>dof</sub> = 126</span>  ×  <span class="eq"><var>n</var><sub>dof</sub> = 126</span>  ( <span class="eq"><var>n</var><sub>j</sub> = 63</span>  nodos × 2 DOFs) </p>
+<p>Carga por nodo en el tope: P/n_top =  <span class="eq"><var>p</var><sub>n</sub> = 11.111111</span>  kN </p>
+<p><span class="eq"><var><span class="vec">⃗</span>Z</var> = <b><var>K</var></b><sup>−1</sup> · <var><span class="vec">⃗</span>F</var> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">0</span><span class="td">0</span><span class="td">0</span><span class="td">2.980245×10<sup>-19</sup></span><span class="td">0</span><span class="td">0</span><span class="td">0</span><span class="td">0</span><span class="td">0</span><span class="td">0</span><span class="td">0</span><span class="td">0</span><span class="td">0</span><span class="td">0</span><span class="td">0</span><span class="td">-2.980245×10<sup>-19</sup></span><span class="td">0</span><span class="td">0</span><span class="td">6.482501×10<sup>-6</sup></span><span class="td">9.112852×10<sup>-6</sup></span><span class="td" title="105 elements skipped.">⋯</span><span class="td">-2.945895×10<sup>-5</sup></span><span class="td"></span></span>
+</span>
+</span></p>
+<hr/> 
+<h3>9. Resultados </h3>
+<p><b>Desplazamiento horizontal máximo en el tope:</b></p> 
+<p>Nodo:  <span class="eq"><var>j</var><sub>max</sub> = 55</span></p>
+<p>u_max (m): </p>
+<p><span class="eq"><var>u</var><sub>max</sub> = 5.89036×10<sup>-5</sup></span></p>
+<p>u_max (mm): </p>
+<p><span class="eq"><var>u</var><sub>max</sub> · 1000 = 5.89036×10<sup>-5</sup> · 1000 = 0.0589036</span></p>
+<p><b>Mapa de desplazamientos 2D con cargas y deformada</b></p> 
+<div id="cviz_1" style="display:inline-block"></div><script>CalcpadViz.fem2d("cviz_1",{nodes:[[0,0],[0.625,0],[1.25,0],[1.875,0],[2.5,0],[3.125,0],[3.75,0],[4.375,0],[5,0],[0,0.5],[0.625,0.5],[1.25,0.5],[1.875,0.5],[2.5,0.5],[3.125,0.5],[3.75,0.5],[4.375,0.5],[5,0.5],[0,1],[0.625,1],[1.25,1],[1.875,1],[2.5,1],[3.125,1],[3.75,1],[4.375,1],[5,1],[0,1.5],[0.625,1.5],[1.25,1.5],[1.875,1.5],[2.5,1.5],[3.125,1.5],[3.75,1.5],[4.375,1.5],[5,1.5],[0,2],[0.625,2],[1.25,2],[1.875,2],[2.5,2],[3.125,2],[3.75,2],[4.375,2],[5,2],[0,2.5],[0.625,2.5],[1.25,2.5],[1.875,2.5],[2.5,2.5],[3.125,2.5],[3.75,2.5],[4.375,2.5],[5,2.5],[0,3],[0.625,3],[1.25,3],[1.875,3],[2.5,3],[3.125,3],[3.75,3],[4.375,3],[5,3]],elements:[[0,1,10,9],[1,2,11,10],[2,3,12,11],[3,4,13,12],[4,5,14,13],[5,6,15,14],[6,7,16,15],[7,8,17,16],[9,10,19,18],[10,11,20,19],[11,12,21,20],[12,13,22,21],[13,14,23,22],[14,15,24,23],[15,16,25,24],[16,17,26,25],[18,19,28,27],[19,20,29,28],[20,21,30,29],[21,22,31,30],[22,23,32,31],[23,24,33,32],[24,25,34,33],[25,26,35,34],[27,28,37,36],[28,29,38,37],[29,30,39,38],[30,31,40,39],[31,32,41,40],[32,33,42,41],[33,34,43,42],[34,35,44,43],[36,37,46,45],[37,38,47,46],[38,39,48,47],[39,40,49,48],[40,41,50,49],[41,42,51,50],[42,43,52,51],[43,44,53,52],[45,46,55,54],[46,47,56,55],[47,48,57,56],[48,49,58,57],[49,50,59,58],[50,51,60,59],[51,52,61,60],[52,53,62,61]],supports:[0,1,2,3,4,5,6,7,8],values:[7.925810117E-17,9.878169727E-17,1.197309442E-16,1.330330257E-16,1.383924632E-16,1.330330257E-16,1.197309442E-16,9.878169727E-17,7.925810117E-17,0.006482501023,0.005326674128,0.005505636433,0.005805481882,0.005932195881,0.005805481882,0.005505636433,0.005326674128,0.006482501023,0.01377185786,0.01283100515,0.01268858435,0.01295720918,0.01309298195,0.01295720918,0.01268858435,0.01283100515,0.01377185786,0.02209044191,0.02133700155,0.02116980599,0.02128076398,0.02134901319,0.02128076398,0.02116980599,0.02133700155,0.02209044191,0.03145952567,0.03084788932,0.03059214981,0.03034740545,0.03024250828,0.03034740545,0.03059214981,0.03084788932,0.03145952567,0.04247655532,0.04188359842,0.04059636846,0.03942784759,0.03899218954,0.03942784759,0.04059636846,0.04188359842,0.04247655532,0.05890360045,0.054424769,0.05015888951,0.04741022696,0.04646357492,0.04741022696,0.05015888951,0.054424769,0.05890360045],deformed:[[7.925810117E-20,2.861124692E-19],[9.878169727E-20,2.980244885E-19],[1.197309442E-19,1.489187743E-19],[1.330330257E-19,6.363910903E-20],[1.383924632E-19,2.325663692E-34],[1.330330257E-19,-6.363910903E-20],[1.197309442E-19,-1.489187743E-19],[9.878169727E-20,-2.980244885E-19],[7.925810117E-20,-2.861124692E-19],[6.482501023E-06,9.112852237E-06],[5.326674128E-06,4.048013729E-06],[5.505636433E-06,2.073300216E-06],[5.805481882E-06,8.468441557E-07],[5.932195881E-06,3.403668289E-21],[5.805481882E-06,-8.468441557E-07],[5.505636433E-06,-2.073300216E-06],[5.326674128E-06,-4.048013729E-06],[6.482501023E-06,-9.112852237E-06],[1.377185786E-05,1.5547342E-05],[1.283100515E-05,8.022051745E-06],[1.268858435E-05,3.872377091E-06],[1.295720918E-05,1.541788759E-06],[1.309298195E-05,5.906863998E-21],[1.295720918E-05,-1.541788759E-06],[1.268858435E-05,-3.872377091E-06],[1.283100515E-05,-8.022051745E-06],[1.377185786E-05,-1.5547342E-05],[2.209044191E-05,2.044785919E-05],[2.133700155E-05,1.116866337E-05],[2.116980599E-05,5.342873228E-06],[2.128076398E-05,2.058750243E-06],[2.134901319E-05,8.002990759E-21],[2.128076398E-05,-2.058750243E-06],[2.116980599E-05,-5.342873228E-06],[2.133700155E-05,-1.116866337E-05],[2.209044191E-05,-2.044785919E-05],[3.145952567E-05,2.438004705E-05],[3.084788932E-05,1.329968124E-05],[3.059214981E-05,6.255037564E-06],[3.034740545E-05,2.392798992E-06],[3.024250828E-05,1.007075813E-20],[3.034740545E-05,-2.392798992E-06],[3.059214981E-05,-6.255037564E-06],[3.084788932E-05,-1.329968124E-05],[3.145952567E-05,-2.438004705E-05],[4.247655532E-05,2.762926627E-05],[4.188359842E-05,1.425579641E-05],[4.059636846E-05,6.727613298E-06],[3.942784759E-05,2.606177471E-06],[3.899218954E-05,1.005524374E-20],[3.942784759E-05,-2.606177471E-06],[4.059636846E-05,-6.727613298E-06],[4.188359842E-05,-1.425579641E-05],[4.247655532E-05,-2.762926627E-05],[5.890360045E-05,2.94589494E-05],[5.4424769E-05,1.477830437E-05],[5.015888951E-05,7.191176371E-06],[4.741022696E-05,2.846152184E-06],[4.646357492E-05,1.013905787E-20],[4.741022696E-05,-2.846152184E-06],[5.015888951E-05,-7.191176371E-06],[5.4424769E-05,-1.477830437E-05],[5.890360045E-05,-2.94589494E-05]],options:{width:550,height:400,palette:"jet",title:"Desplazamiento u (mm)",scale:5000,}});</script><p><b>Vista 3D — Deformada del muro</b></p> 
+<div id="cviz_2" style="display:inline-block"></div><script>CalcpadViz.fem3d("cviz_2",{nodes:[[0,0,0],[0.625,0,0],[1.25,0,0],[1.875,0,0],[2.5,0,0],[3.125,0,0],[3.75,0,0],[4.375,0,0],[5,0,0],[0,0.5,0],[0.625,0.5,0],[1.25,0.5,0],[1.875,0.5,0],[2.5,0.5,0],[3.125,0.5,0],[3.75,0.5,0],[4.375,0.5,0],[5,0.5,0],[0,1,0],[0.625,1,0],[1.25,1,0],[1.875,1,0],[2.5,1,0],[3.125,1,0],[3.75,1,0],[4.375,1,0],[5,1,0],[0,1.5,0],[0.625,1.5,0],[1.25,1.5,0],[1.875,1.5,0],[2.5,1.5,0],[3.125,1.5,0],[3.75,1.5,0],[4.375,1.5,0],[5,1.5,0],[0,2,0],[0.625,2,0],[1.25,2,0],[1.875,2,0],[2.5,2,0],[3.125,2,0],[3.75,2,0],[4.375,2,0],[5,2,0],[0,2.5,0],[0.625,2.5,0],[1.25,2.5,0],[1.875,2.5,0],[2.5,2.5,0],[3.125,2.5,0],[3.75,2.5,0],[4.375,2.5,0],[5,2.5,0],[0,3,0],[0.625,3,0],[1.25,3,0],[1.875,3,0],[2.5,3,0],[3.125,3,0],[3.75,3,0],[4.375,3,0],[5,3,0]],elements:[[0,1,10,9],[1,2,11,10],[2,3,12,11],[3,4,13,12],[4,5,14,13],[5,6,15,14],[6,7,16,15],[7,8,17,16],[9,10,19,18],[10,11,20,19],[11,12,21,20],[12,13,22,21],[13,14,23,22],[14,15,24,23],[15,16,25,24],[16,17,26,25],[18,19,28,27],[19,20,29,28],[20,21,30,29],[21,22,31,30],[22,23,32,31],[23,24,33,32],[24,25,34,33],[25,26,35,34],[27,28,37,36],[28,29,38,37],[29,30,39,38],[30,31,40,39],[31,32,41,40],[32,33,42,41],[33,34,43,42],[34,35,44,43],[36,37,46,45],[37,38,47,46],[38,39,48,47],[39,40,49,48],[40,41,50,49],[41,42,51,50],[42,43,52,51],[43,44,53,52],[45,46,55,54],[46,47,56,55],[47,48,57,56],[48,49,58,57],[49,50,59,58],[50,51,60,59],[51,52,61,60],[52,53,62,61]],values:[7.925810117E-17,9.878169727E-17,1.197309442E-16,1.330330257E-16,1.383924632E-16,1.330330257E-16,1.197309442E-16,9.878169727E-17,7.925810117E-17,0.006482501023,0.005326674128,0.005505636433,0.005805481882,0.005932195881,0.005805481882,0.005505636433,0.005326674128,0.006482501023,0.01377185786,0.01283100515,0.01268858435,0.01295720918,0.01309298195,0.01295720918,0.01268858435,0.01283100515,0.01377185786,0.02209044191,0.02133700155,0.02116980599,0.02128076398,0.02134901319,0.02128076398,0.02116980599,0.02133700155,0.02209044191,0.03145952567,0.03084788932,0.03059214981,0.03034740545,0.03024250828,0.03034740545,0.03059214981,0.03084788932,0.03145952567,0.04247655532,0.04188359842,0.04059636846,0.03942784759,0.03899218954,0.03942784759,0.04059636846,0.04188359842,0.04247655532,0.05890360045,0.054424769,0.05015888951,0.04741022696,0.04646357492,0.04741022696,0.05015888951,0.054424769,0.05890360045],options:{width:600,height:450,palette:"jet",title:"Muro deformado 3D",scale:5000,}});</script><hr/> 
+<h3>10. Validación </h3>
+<table><tr><td> 
+<b>Solver</b></td><td><b>u_max (m)</b></td></tr> 
+<tr><td>CalcpadCE Q4 (8×6)</td><td> <span class="eq"><var>u</var><sub>max</sub> = 5.89036×10<sup>-5</sup></span> </td></tr> 
+<tr><td>Hekatan Struct WASM</td><td>4.646e-5</td></tr> 
+<tr><td>ETABS</td><td>4.582e-5</td></tr> 
+<tr><td>OpenSees</td><td>4.602e-5</td></tr> 
+</table> 
+<p>Desplazamiento en el centro del tope (nodo  <span class="eq"><var>j</var><sub>center_top</sub> = 59</span> ): </p>
+<p>u_center (m): </p>
+<p><span class="eq"><var>u</var><sub>center</sub> = 4.646357×10<sup>-5</sup></span></p>
+<p>Ratio CalcpadCE / ETABS: </p>
+<p><span class="eq"><var>ratio</var> = <span class="dvc"><var>u</var><sub>center</sub><span class="dvl"></span><var>u</var><sub>etabs</sub></span> = <span class="dvc">4.646357×10<sup>-5</sup><span class="dvl"></span>4.582×10<sup>-5</sup></span> = 1.014046</span></p>
+<p>Ratio CalcpadCE / Hekatan: </p>
+<p><span class="eq"><var>ratio</var><sub>h</sub> = <span class="dvc"><var>u</var><sub>center</sub><span class="dvl"></span><var>u</var><sub>hekatan</sub></span> = <span class="dvc">4.646357×10<sup>-5</sup><span class="dvl"></span>4.646×10<sup>-5</sup></span> = 1.000077</span></p>
+ </body></html>

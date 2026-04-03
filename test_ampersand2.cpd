@@ -1,0 +1,69 @@
+"Test & con conversión real
+'<hr/>
+"1. Longitud
+
+L1 = 6*m
+'& cm (6m → SI:6 → /cm_factor → 600):
+L1 & cm
+'& mm:
+L1 & mm
+'& in:
+L1 & in
+
+'<hr/>
+"2. Fuerza
+
+F1 = 10*kN
+'& N:
+F1 & N
+'& tonf:
+F1 & tonf
+'& lbf:
+F1 & lbf
+
+'<hr/>
+"3. Presión
+
+sigma = 200*MPa
+'& GPa:
+sigma & GPa
+'& kPa:
+sigma & kPa
+'& psi:
+sigma & psi
+
+'<hr/>
+"4. Momento
+
+M1 = 50*kN*m
+'& tonf*m:
+M1 & tonf*m
+'& kN*cm:
+M1 & kN*cm
+'& lbf*ft:
+M1 & lbf*ft
+
+'<hr/>
+"5. Verificación | vs &
+
+L2 = 600*cm
+'| m (display):
+L2|m
+'& m (debe dar 6 m):
+L2 & m
+'& tonf (cambio de dimensión, 6*tonf):
+L2 & tonf
+
+'<hr/>
+"6. FEM — adimensionalizar
+
+E = 200000*MPa
+A = 50*cm^2
+L = 3*m
+
+'Rigidez con unidades:
+k_u = E*A/L
+k_u|kN/m
+
+'& kN/m (adimensionalizar a sistema kN,m):
+k_u & kN/m

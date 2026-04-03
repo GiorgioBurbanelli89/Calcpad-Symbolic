@@ -1,0 +1,342 @@
+﻿using System.Collections.Frozen;
+using System.Collections.Generic;
+
+namespace Calcpad.Core
+{
+    public partial class MathParser
+    {
+        private sealed class SyntaxAnalyser
+        {
+            private readonly struct MultiFunctionStackItem
+            {
+                internal readonly Token Token;
+                internal readonly int CountOfBrackets;
+                internal readonly int CountOfDivisors;
+                internal MultiFunctionStackItem(Token token, int countOfBrackets, int countOfDivisors)
+                {
+                    Token = token;
+                    CountOfBrackets = countOfBrackets;
+                    CountOfDivisors = countOfDivisors;
+                }
+            }
+
+            private static readonly FrozenDictionary<TokenTypes, int> OrderIndex =
+            new Dictionary<TokenTypes, int>()
+            {
+                {TokenTypes.None, 0 },
+                {TokenTypes.Error, 0 },
+                {TokenTypes.Solver, 1 },
+                {TokenTypes.Constant, 1 },
+                {TokenTypes.Variable, 1 },
+                {TokenTypes.Unit, 1 },
+                {TokenTypes.Input, 1 },
+                {TokenTypes.Operator, 2 },
+                {TokenTypes.Function, 3 },
+                {TokenTypes.Function2, 3 },
+                {TokenTypes.Function3, 3 },
+                {TokenTypes.MultiFunction, 3 },
+                {TokenTypes.Interpolation, 3 },
+                {TokenTypes.VectorFunction, 3 },
+                {TokenTypes.VectorFunction2, 3 },
+                {TokenTypes.VectorFunction3, 3 },
+                {TokenTypes.VectorMultiFunction, 3 },
+                {TokenTypes.MatrixFunction, 3 },
+                {TokenTypes.MatrixFunction2, 3 },
+                {TokenTypes.MatrixFunction3, 3 },
+                {TokenTypes.MatrixFunction4, 3 },
+                {TokenTypes.MatrixFunction5, 3 },
+                {TokenTypes.MatrixIterativeFunction, 3 },
+                {TokenTypes.MatrixOptionalFunction, 3 },
+                {TokenTypes.MatrixMultiFunction, 3 },
+                {TokenTypes.CustomFunction, 3 },
+                {TokenTypes.BracketLeft, 4 },
+                {TokenTypes.BracketRight, 5 },
+                {TokenTypes.SquareBracketLeft, 4 },
+                {TokenTypes.SquareBracketRight, 5 },
+                {TokenTypes.Divisor, 6 },
+                {TokenTypes.RowDivisor, 6 },
+                {TokenTypes.Vector, 7 },
+                {TokenTypes.Matrix, 7 },
+                {TokenTypes.Array, 7 },
+                {TokenTypes.VectorIndex, 8 },
+                {TokenTypes.MatrixIndex, 8 },
+                {TokenTypes.ArrayIndex, 8 },
+            }.ToFrozenDictionary();
+            private static readonly int indexOrder = OrderIndex[TokenTypes.ArrayIndex];
+            private static readonly int functionOrder = OrderIndex[TokenTypes.Function];
+
+            private static readonly bool[,] CorrectOrder =
+            {
+               // None   Const  Oper   Func   Left   Right  Div    Vec    Index
+                {true,  true,  true,  true,  true,  true,  true,  true,  false}, // None
+                {true,  false, true,  false, false, true,  true,  false, false}, // Constant
+                {true,  true,  false, true,  true,  false, false, true,  false}, // Operator
+                {true,  false, false, false, true,  false, false, false, false}, // Function
+                {true,  true,  false, true,  true,  false, false, true,  false}, // Left Bracket
+                {true,  false, true,  false, false, true,  true,  false, true},  // Right Bracket
+                {true,  true,  false, true,  true,  false, false, true,  false}, // Divisor
+                {true,  false, true,  false, false, true,  true,  false, true},  // Vector                                             // V
+                {false, true,  false, true,  true,  false, false, true,  false}, // Index                                             // I
+            };
+
+            private readonly Container<CustomFunction> _functions;
+
+            internal SyntaxAnalyser(Container<CustomFunction> functions)
+            {
+                _functions = functions;
+            }
+
+            internal void Check(Queue<Token> input, bool isCalculating, out bool isFunctionDefinition)
+            {
+                isFunctionDefinition = false;
+                if (input.Count == 0)
+                    return;
+
+                var countOfBrackets = 0;
+                var countOfOperators = 0;
+                var countOfDivisors = 0;
+                var indexNum = 0;
+                var isFunctionInIndex = false;
+                var multiFunctionStack = new Stack<MultiFunctionStackItem>();
+                var optionalFunctionStack = new Stack<MultiFunctionStackItem>();
+                var vectorStack = new Stack<MultiFunctionStackItem>();
+                var indexStack = new Stack<MultiFunctionStackItem>();
+                var pt = new Token(string.Empty, TokenTypes.None);
+                var firstToken = input.Peek();
+                foreach (var t in input)
+                {
+                    switch (t.Type)
+                    {
+                        case TokenTypes.Function2:
+                        case TokenTypes.VectorFunction2:
+                        case TokenTypes.MatrixFunction2:
+                            --countOfDivisors;
+                            break;
+                        case TokenTypes.MatrixIterativeFunction:
+                            if (MatrixCalculator.IsLastParameterOptional((int)t.Index))
+                                optionalFunctionStack.Push(new MultiFunctionStackItem(t, countOfBrackets, countOfDivisors));
+
+                            --countOfDivisors;
+                            break;
+                        case TokenTypes.Function3:
+                        case TokenTypes.VectorFunction3:
+                        case TokenTypes.MatrixFunction3:
+                            countOfDivisors -= 2;
+                            break;
+                        case TokenTypes.MatrixFunction4:
+                            countOfDivisors -= 3;
+                            break;
+                        case TokenTypes.MatrixFunction5:
+                            countOfDivisors -= 4;
+                            break;
+                        case TokenTypes.MultiFunction:
+                        case TokenTypes.Interpolation:
+                        case TokenTypes.VectorMultiFunction:
+                        case TokenTypes.MatrixMultiFunction:
+                            multiFunctionStack.Push(new MultiFunctionStackItem(t, countOfBrackets, countOfDivisors));
+                            break;
+                        case TokenTypes.CustomFunction:
+                            if (t.Index < 0)
+                            {
+                                if (isFunctionDefinition && t.Content == firstToken.Content)
+                                    throw Exceptions.RecursionNotAllowed(t.Content);
+
+                                if (t is FunctionToken)
+                                    multiFunctionStack.Push(new MultiFunctionStackItem(t, countOfBrackets, countOfDivisors));
+                            }
+                            else
+                                countOfDivisors += 1 - _functions[t.Index].ParameterCount;
+                            break;
+                        case TokenTypes.BracketLeft:
+                            if (indexNum != 0)
+                            {
+                                indexStack.Push(new MultiFunctionStackItem(pt, countOfBrackets, countOfDivisors));
+                                if (OrderIndex[pt.Type] == indexOrder)
+                                    countOfDivisors += 1 - indexNum;
+                                else
+                                    isFunctionInIndex = true;
+                            }
+                            ++countOfBrackets;
+                            break;
+                        case TokenTypes.BracketRight:
+                            --countOfBrackets;
+                            if (countOfBrackets < 0)
+                                throw Exceptions.MissingLeftBracket();
+
+                            if (multiFunctionStack.TryPeek(out var mfStackItem) &&
+                                countOfBrackets == mfStackItem.CountOfBrackets)
+                            {
+                                multiFunctionStack.Pop();
+                                if (mfStackItem.Token is FunctionToken ft)
+                                    ft.ParameterCount = countOfDivisors - mfStackItem.CountOfDivisors + 1;
+                                else
+                                    throw Exceptions.InvalidFunction(mfStackItem.Token.Content);
+
+                                countOfDivisors = mfStackItem.CountOfDivisors;
+                            }
+                            else if (indexStack.TryPeek(out var indStackItem) &&
+                                countOfBrackets == indStackItem.CountOfBrackets)
+                            {
+                                var index = indexStack.Pop();
+                                if (isFunctionInIndex)
+                                    isFunctionInIndex = false;
+                                else
+                                {
+                                    var indexToken = index.Token;
+                                    var indexDivisorsCount = countOfDivisors - index.CountOfDivisors;
+                                    if (indexToken.Type == TokenTypes.ArrayIndex)
+                                    {
+                                        var indexParamCount = indexDivisorsCount - 1;
+                                        if (indexParamCount == 1)
+                                            indexToken.Type = TokenTypes.VectorIndex;
+                                        else if (indexParamCount == 2)
+                                            indexToken.Type = TokenTypes.MatrixIndex;
+                                        else
+                                            throw Exceptions.InvalidNumberOfIndexes();
+                                    }
+                                    else if (indexDivisorsCount != 0)
+                                        throw Exceptions.InvalidNumberOfIndexes();
+
+                                    countOfDivisors = index.CountOfDivisors;
+                                }
+                            }
+                            else if (optionalFunctionStack.TryPeek(out var ofStackItem) &&
+                                countOfBrackets == ofStackItem.CountOfBrackets &&
+                                countOfDivisors == ofStackItem.CountOfDivisors - 1)
+                            {
+                                ++countOfDivisors;
+                                ofStackItem.Token.Type = TokenTypes.MatrixOptionalFunction;
+                            }
+
+                            break;
+                        case TokenTypes.SquareBracketLeft:
+                            vectorStack.Push(new MultiFunctionStackItem(t, countOfBrackets, countOfDivisors));
+                            break;
+                        case TokenTypes.SquareBracketRight:
+
+                            if (!vectorStack.TryPop(out var vecstItem))
+                                throw Exceptions.MissingVectorOpeningBracket();
+
+                            if (countOfBrackets != vecstItem.CountOfBrackets)
+                                throw Exceptions.BracketMismatch();
+
+                            countOfDivisors = vecstItem.CountOfDivisors;
+                            break;
+                        case TokenTypes.Divisor:
+                            ++countOfDivisors;
+                            break;
+                        case TokenTypes.Operator:
+                            if (indexStack.Count == 0)
+                                ++countOfOperators;
+                            if (IsAssignment(t.Content))
+                            {
+                                if (firstToken.Type == TokenTypes.CustomFunction)
+                                {
+                                    countOfDivisors = 0;
+                                    isFunctionDefinition = true;
+                                }
+                                else if (isCalculating)
+                                {
+                                    if (
+                                       pt.Type != TokenTypes.Variable &&
+                                       pt.Type != TokenTypes.Unit &&
+                                       firstToken.Type != TokenTypes.Vector &&
+                                       firstToken.Type != TokenTypes.Matrix && 
+                                       firstToken.Type != TokenTypes.Array
+                                    )
+                                        throw Exceptions.AssignmentPreceded();
+                                    else if (countOfOperators != 1)
+                                        throw Exceptions.AssignmentNotFirst();
+                                }
+                            }
+                            break;
+                        case TokenTypes.VectorIndex:
+                            indexNum = 1;
+                            break;
+                        case TokenTypes.MatrixIndex:
+                            indexNum = 2;
+                            break;
+                        case TokenTypes.ArrayIndex:
+                            indexNum = -1;
+                            break;
+                    }
+                    CheckOrder(pt, t);
+                    if (pt.Type == TokenTypes.ArrayIndex && t.Type != TokenTypes.BracketLeft)
+                        pt.Type = TokenTypes.VectorIndex;
+
+                    pt = t;
+                    // Only indexes and functions can open brackets without breaking previous indexes
+                    // Otherwise, indexNum is reset
+                    if (indexNum != 0)
+                    {
+                        var order = OrderIndex[t.Type];
+                        if (order != indexOrder && order != functionOrder)
+                            indexNum = 0;
+                    }
+                }
+                pt = new Token(string.Empty, TokenTypes.None);
+                foreach (var t in input)
+                {
+                    if (pt.Type == TokenTypes.Array)
+                    {
+                        if (t.Type == TokenTypes.VectorIndex)
+                            pt.Type = TokenTypes.Vector;
+                        else if (t.Type == TokenTypes.MatrixIndex)
+                            pt.Type = TokenTypes.Matrix;
+                    }
+                    pt = t;
+                }
+                if (pt.Type != TokenTypes.None &&
+                    pt.Type != TokenTypes.Constant &&
+                    pt.Type != TokenTypes.Variable &&
+                    pt.Type != TokenTypes.Unit &&
+                    pt.Type != TokenTypes.Input &&
+                    pt.Type != TokenTypes.Vector &&
+                    pt.Type != TokenTypes.Matrix &&
+                    pt.Type != TokenTypes.Array &&
+                    pt.Type != TokenTypes.BracketRight &&
+                    pt.Type != TokenTypes.SquareBracketRight &&
+                    pt.Type != TokenTypes.Solver &&
+                    pt.Type != TokenTypes.Error &&
+                    pt.Content != "!")
+                    throw Exceptions.IncompleteExpression();
+
+                if (firstToken.Type == TokenTypes.CustomFunction &&
+                    firstToken.Index < 0 &&
+                    !isFunctionDefinition &&
+                    isCalculating)
+                    throw Exceptions.InvalidFunction(firstToken.Content);
+
+                if (countOfBrackets > 0)
+                    throw Exceptions.MissingRightBracket();
+
+                if (vectorStack.Count > 0)
+                    throw Exceptions.MissingVectorClosingBracket();
+
+                if (countOfDivisors > 0)
+                    throw Exceptions.UnexpectedDelimiter();
+
+                if (countOfDivisors < 0)
+                    throw Exceptions.InvalidNumberOfArguments();
+            }
+
+            private static void CheckOrder(Token pt, Token ct)
+            {
+                var ptt = pt.Type;
+                var ctt = ct.Type;
+                if (pt.Content == NegateString)
+                    ptt = TokenTypes.Operator;
+                else if (pt.Content == "!")
+                    ptt = TokenTypes.Constant;
+                else if (ct.Content == "!")
+                    ctt = TokenTypes.Operator;
+                else if (ct.Content == NegateString)
+                    ctt = TokenTypes.Function;
+
+                var correctOrder = CorrectOrder[OrderIndex[ptt], OrderIndex[ctt]];
+                if (!correctOrder)
+                    throw Exceptions.InvalidSyntax(pt.Content, ct.Content);
+            }
+        }
+    }
+}

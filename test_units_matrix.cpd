@@ -1,0 +1,73 @@
+"Ejemplo: Matriz de rigidez con unidades mixtas
+'<hr/>
+"1. Propiedades
+
+E = 2100000*kgf/cm^2
+A = 100*cm^2
+I = 5000*cm^4
+L = 400*cm
+
+'<hr/>
+"2. Componentes de rigidez (3 DOFs: u, v, θ)
+
+'<h4>Axial (kgf/cm)</h4>
+k1 = E*A/L
+k1
+
+'<h4>Cortante (kgf/cm)</h4>
+k2 = 12*E*I/L^3
+k2
+
+'<h4>Acoplamiento cortante-rotación (kgf)</h4>
+k3 = 6*E*I/L^2
+k3
+
+'<h4>Flexión (kgf·cm)</h4>
+k4 = 4*E*I/L
+k4
+
+'<hr/>
+"3. Matriz de rigidez local (3×3)
+'<p>DOFs: [u (cm), v (cm), θ (rad)]</p>
+'<p>K tiene unidades mixtas por celda:</p>
+'<p>Fila 1 (fuerza axial): kgf/cm, 0, 0</p>
+'<p>Fila 2 (fuerza cortante): 0, kgf/cm, kgf</p>
+'<p>Fila 3 (momento): 0, kgf, kgf·cm</p>
+
+K = [k1; 0*kgf/cm; 0*kgf/cm | 0*kgf/cm; k2; k3 | 0*kgf; k3; k4]
+
+'<hr/>
+"4. Desplazamientos
+'<p>u=0.1cm, v=0.05cm, θ=0.001rad</p>
+u_vec = [0.1*cm; 0.05*cm; 0.001*rad]
+
+'<hr/>
+"5. Fuerzas = K·u
+'<p>Resultado debería ser [kgf; kgf; kgf·cm]</p>
+'<p>Pero cada fila tiene unidad diferente:</p>
+'<p>F₁ = k1·u = (kgf/cm)·cm = kgf</p>
+'<p>F₂ = k2·v + k3·θ = (kgf/cm)·cm + kgf·rad = kgf</p>
+'<p>F₃ = k3·v + k4·θ = kgf·cm + (kgf·cm)·rad = kgf·cm</p>
+
+'<h4>Cálculo manual por componente</h4>
+F1 = k1*0.1*cm
+F1
+F2 = k2*0.05*cm + k3*0.001*rad
+F2
+F3 = k3*0.05*cm + k4*0.001*rad
+F3
+
+'<hr/>
+"6. Lo que necesitamos con &
+'<p>Idealmente:</p>
+'<p>F = K*u & [kgf; kgf; kgf*cm]</p>
+'<p>Cada elemento del vector resultado se adimensionaliza a la unidad correspondiente</p>
+
+'<h4>Hoy en día, manual:</h4>
+F1|kgf
+F2|kgf
+F3|kgf*cm
+
+'<h4>Vector resultado unificado (adimensional manual):</h4>
+F_num = [F1/kgf; F2/kgf; F3/(kgf*cm)]
+F_num

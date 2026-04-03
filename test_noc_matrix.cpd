@@ -1,0 +1,24 @@
+"Test #noc — ecuación simbólica de matriz
+'<hr/>
+"Ecuación P = K · δ
+#noc
+P = [EA/L; 0; 0; 0; 0; 0 | 0; 12*E*I_z/L^3; 0; 0; 0; 6*E*I_z/L^2 | 0; 0; 12*E*I_y/L^3; 0; -6*E*I_y/L^2; 0 | 0; 0; 0; G*J/L; 0; 0 | 0; 0; -6*E*I_y/L^2; 0; 4*E*I_y/L; 0 | 0; 6*E*I_z/L^2; 0; 0; 0; 4*E*I_z/L]*δ
+#noc
+
+'<hr/>
+"Ecuación simple 3×3
+#noc
+K = [k_1; 0; 0 | 0; k_2; k_3 | 0; k_3; k_4]
+#noc
+
+'<hr/>
+"Vector
+#noc
+F = [F_1; F_2; M_1]
+#noc
+
+'<hr/>
+"Escalar
+#noc
+σ = M*y/I_x
+#noc

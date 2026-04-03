@@ -1,0 +1,82 @@
+"Capítulo 13 — Análisis Dinámico de Pórticos Espaciales
+"Mario Paz — Structural Dynamics, 6th Ed. — Ejemplo 13.1
+'<hr/>
+"1. Ecuaciones de referencia (Eq. 13.1 — Rigidez 12×12)
+#deq {P} = [K]*{δ}
+
+'<hr/>
+"2. Datos del modelo (Table 13.1)
+
+'<h4>Material</h4>
+E = 30*10^6*psi
+G = 12*10^6*psi
+
+'<h4>Elementos 1 y 3 (columnas principales)</h4>
+A_1 = 50*in^2
+I_y1 = 200*in^4
+I_z1 = 200*in^4
+J_1 = 40*in^4
+m_1 = 0.2*lb*s^2/in^2
+I_o1 = 205*in^4
+
+'<h4>Elementos 2 y 4 (vigas)</h4>
+A_2 = 28*in^2
+I_y2 = 64*in^4
+I_z2 = 64*in^4
+J_2 = 12.8*in^4
+m_2 = 0.1*lb*s^2/in^2
+I_o2 = 68*in^4
+
+'<h4>Nodos (in)</h4>
+'<p>Nodo 1: (0, 0, 0) — libre (6 DOFs)</p>
+'<p>Nodo 2: (0, 0, -200) — empotrado</p>
+'<p>Nodo 3: (0, 200, 0) — empotrado</p>
+'<p>Nodo 4: (-200, 0, 0) — empotrado</p>
+'<p>Nodo 5: (0, -200, 0) — empotrado</p>
+
+'<hr/>
+"3. Funciones de rigidez y masa (#function)
+
+'<h4>Rigidez local 12×12 (Eq. 13.1)</h4>
+#function SpaceFrameKe_local(E; A; Iy; Iz; G; J; L)
+    a1 = E*A/L
+    a2 = 12*E*Iz/L^3
+    a3 = 12*E*Iy/L^3
+    a4 = G*J/L
+    a5 = 6*E*Iy/L^2
+    a6 = 6*E*Iz/L^2
+    a7 = 4*E*Iy/L
+    a8 = 4*E*Iz/L
+    a9 = 2*E*Iy/L
+    a10 = 2*E*Iz/L
+    SpaceFrameKe_local = [a1;0;0;0;0;0;-a1;0;0;0;0;0 | 0;a2;0;0;0;a6;0;-a2;0;0;0;a6 | 0;0;a3;0;-a5;0;0;0;-a3;0;-a5;0 | 0;0;0;a4;0;0;0;0;0;-a4;0;0 | 0;0;-a5;0;a7;0;0;0;a5;0;a9;0 | 0;a6;0;0;0;a8;0;-a6;0;0;0;a10 | -a1;0;0;0;0;0;a1;0;0;0;0;0 | 0;-a2;0;0;0;-a6;0;a2;0;0;0;-a6 | 0;0;-a3;0;a5;0;0;0;a3;0;a5;0 | 0;0;0;-a4;0;0;0;0;0;a4;0;0 | 0;0;-a5;0;a9;0;0;0;a5;0;a7;0 | 0;a6;0;0;0;a10;0;-a6;0;0;0;a8]
+#end function
+
+'<h4>Componentes de rigidez (verificación)</h4>
+'<p>Elemento 1: Nodo 1→2, L = 200 in</p>
+#hide
+L_1 = 200
+Ev = E/psi
+Av1 = A_1/in^2
+Iy1v = I_y1/in^4
+Iz1v = I_z1/in^4
+Gv = G/psi
+Jv1 = J_1/in^4
+#show
+k_EA1 = Ev*Av1/L_1
+k_12EIz1 = 12*Ev*Iz1v/L_1^3
+k_GJ1 = Gv*Jv1/L_1
+
+'<hr/>
+"4. Carga
+F_0 = 5000*lbf
+'<p>Fuerza aplicada en DOF 3 (eje z) del nodo 1</p>
+'<p>Para respuesta dinámica: pulso de 0.1 s</p>
+
+'<hr/>
+"5. Resultados de referencia (MATLAB)
+
+'<h4>Frecuencias naturales y respuesta máxima</h4>
+'<p>u₁_max = 8.814 × 10⁻⁵ in</p>
+'<p>u₂_max = 2.6552 × 10⁻⁷ in</p>
+'<p>u₃_max = 0.9827 rad</p>

@@ -1,0 +1,14 @@
+"Test: Constantes vs operaciones en matrices
+'Caso 1 — Constantes puras (NO debe duplicar):
+va = [-1; 0; 1]
+B = [1; 2; 3|4; 5; 6]
+'Caso 2 — Con operaciones (SÍ debe mostrar proceso):
+a = 2
+b = 3
+c = 10
+v2 = [a + b; c + 1]
+M2 = [a + b; c*2|a - b; c/2]
+'Caso 3 — Funciones (SÍ debe mostrar proceso):
+I_3 = identity(3)
+'Caso 4 — Operaciones entre matrices:
+R = B*transp(B)

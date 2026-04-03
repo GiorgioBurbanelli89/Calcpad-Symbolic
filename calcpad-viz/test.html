@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>calcpad-viz test</title>
+  <script src="dist/calcpad-viz.umd.cjs"></script>
+  <style>
+    body { background: #111; color: #eee; font-family: sans-serif; padding: 20px; }
+    .viz-container { display: inline-block; margin: 10px; vertical-align: top; }
+    h2 { color: #4af; }
+  </style>
+</head>
+<body>
+  <h1>calcpad-viz — Test</h1>
+
+  <h2>$Fem2D — Malla 4x3 con resultados</h2>
+  <div id="fem2d_test" class="viz-container"></div>
+
+  <h2>$Fem3D — Malla 3D</h2>
+  <div id="fem3d_test" class="viz-container"></div>
+
+  <h2>$Chart — Gráfica 2D</h2>
+  <div id="chart_test" class="viz-container"></div>
+
+  <script>
+    // --- Test $Fem2D ---
+    // Malla 4x3 de una losa rectangular
+    var nodes = [];
+    var nx = 4, ny = 3;
+    for (var i = 0; i <= nx; i++)
+      for (var j = 0; j <= ny; j++)
+        nodes.push([i * 1.5, j * 1.0]);
+
+    var elements = [];
+    for (var i = 0; i < nx; i++)
+      for (var j = 0; j < ny; j++) {
+        var n0 = i * (ny + 1) + j;
+        elements.push([n0, n0 + ny + 1, n0 + ny + 2, n0 + 1]);
+      }
+
+    // Valores simulados (desplazamiento parabólico)
+    var values = nodes.map(function(n) {
+      var x = n[0] / (nx * 1.5), y = n[1] / (ny * 1.0);
+      return -Math.sin(Math.PI * x) * Math.sin(Math.PI * y) * 5;
+    });
+
+    // Soportes: bordes
+    var supports = [];
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i][0] === 0 || nodes[i][0] === nx * 1.5 ||
+          nodes[i][1] === 0 || nodes[i][1] === ny * 1.0)
+        supports.push(i);
+    }
+
+    // Cargas: nodo central
+    var centerNode = Math.floor(nodes.length / 2);
+    var loads = [[centerNode, 0, -10]];
+
+    CalcpadViz.fem2d("fem2d_test", {
+      nodes: nodes,
+      elements: elements,
+      values: values,
+      supports: supports,
+      loads: loads,
+      options: { width: 700, height: 450, palette: "jet", title: "Desplazamientos de losa", showLabels: true }
+    });
+
+    // --- Test $Fem3D ---
+    var nodes3d = [];
+    for (var i = 0; i <= 3; i++)
+      for (var j = 0; j <= 3; j++)
+        nodes3d.push([i, j, 0]);
+
+    var elems3d = [];
+    for (var i = 0; i < 3; i++)
+      for (var j = 0; j < 3; j++) {
+        var n0 = i * 4 + j;
+        elems3d.push([n0, n0 + 4, n0 + 5, n0 + 1]);
+      }
+
+    var vals3d = nodes3d.map(function(n) {
+      return -Math.sin(Math.PI * n[0] / 3) * Math.sin(Math.PI * n[1] / 3) * 2;
+    });
+
+    var def3d = nodes3d.map(function(n) {
+      return [0, 0, -Math.sin(Math.PI * n[0] / 3) * Math.sin(Math.PI * n[1] / 3) * 0.5];
+    });
+
+    CalcpadViz.fem3d("fem3d_test", {
+      nodes: nodes3d,
+      elements: elems3d,
+      values: vals3d,
+      deformed: def3d,
+      options: { width: 700, height: 450, scale: 1, palette: "jet", title: "Losa 3D deformada" }
+    });
+
+    // --- Test $Chart ---
+    var xdata = [], ysin = [], ycos = [];
+    for (var i = 0; i <= 50; i++) {
+      var x = i * 0.1 * Math.PI;
+      xdata.push(x);
+      ysin.push(Math.sin(x));
+      ycos.push(Math.cos(x));
+    }
+
+    CalcpadViz.chart("chart_test", {
+      series: [
+        { x: xdata, y: ysin, label: "sin(x)", type: "line" },
+        { x: xdata, y: ycos, label: "cos(x)", type: "line", color: "#f64" }
+      ],
+      options: { width: 700, height: 350, title: "Funciones trigonométricas", xLabel: "x (rad)", yLabel: "f(x)", grid: true }
+    });
+  </script>
+</body>
+</html>

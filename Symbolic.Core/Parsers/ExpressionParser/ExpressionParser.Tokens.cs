@@ -1,0 +1,109 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace Calcpad.Core
+{
+    public partial class ExpressionParser
+    {
+        private sealed class Token
+        {
+            internal string Value { get; set; }
+            internal TokenTypes Type;
+            internal int CacheID = -1;
+            internal Token(string value, TokenTypes type)
+            {
+                Value = value;
+                Type = type;
+            }
+            public override string ToString() => Value;
+        }
+
+        private enum TokenTypes
+        {
+            Expression,
+            Heading,
+            Text,
+            Html,
+            Error
+        }
+
+        private List<Token> GetTokens(ReadOnlySpan<char> s)
+        {
+            var tokens = new List<Token>();
+            var ts = new TextSpan(s);
+            var currentSeparator = ' ';
+            for (int i = 0, len = s.Length; i < len; ++i)
+            {
+                var c = s[i];
+                if (c == '\'' || c == '\"')
+                {
+                    if (currentSeparator == ' ' || currentSeparator == c)
+                    {
+                        if (currentSeparator == c)
+                        {
+                            var i1 = i + 1;
+                            if (i1 < len && s[i1] == currentSeparator)
+                            {
+                                ts.Expand();
+                                ts.Expand();
+                                i = i1;
+                                continue;
+                            }
+                        }
+                        if (!ts.IsEmpty)
+                            AddToken(tokens, ts.Cut(), currentSeparator);
+
+                        ts.Reset(i + 1);
+                        currentSeparator = currentSeparator == c ? ' ' : c;
+                    }
+                    else if (currentSeparator != ' ')
+                        ts.Expand();
+                }
+                else
+                    ts.Expand();
+            }
+            if (!ts.IsEmpty)
+                AddToken(tokens, ts.Cut(), currentSeparator);
+
+            return tokens;
+        }
+
+        private void AddToken(List<Token> tokens, ReadOnlySpan<char> value, char separator)
+        {
+            var tokenValue = value.ToString().Replace("\"\"", "&quot;").Replace("''", "&apos;");
+            var tokenType = GetTokenType(separator);
+            if (tokenType == TokenTypes.Expression)
+            {
+                if (value.IsWhiteSpace())
+                    return;
+            }
+            else if (_isVal < 1)
+            {
+                if (tokens.Count == 0)
+                    tokenValue += " ";
+                else
+                    tokenValue = string.Concat(" ", tokenValue," ");
+            }
+
+            var token = new Token(tokenValue, tokenType);
+            if (token.Type == TokenTypes.Text)
+            {
+                tokenValue = tokenValue.TrimStart();
+                if (tokenValue.Length > 0 && tokenValue[0] == '<')
+                    token.Type = TokenTypes.Html;
+            }
+            tokens.Add(token);
+        }
+
+        private static TokenTypes GetTokenType(char separator)
+        {
+            return separator switch
+            {
+                ' ' => TokenTypes.Expression,
+                '\"' => TokenTypes.Heading,
+                '\'' => TokenTypes.Text,
+                _ => TokenTypes.Error,
+            };
+        }
+    }
+}

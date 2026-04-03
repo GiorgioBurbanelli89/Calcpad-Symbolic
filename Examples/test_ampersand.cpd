@@ -1,0 +1,19 @@
+"Test operador &amp; (force-unit)
+'Caso 1: Módulo de elasticidad ACI - √(kgf/cm²) no simplifica
+fc = 210*kgf/cm^2
+E = 1500*sqr(fc) & kgf/cm^2
+
+'Caso 2: Cortante ACI - misma situación
+b = 30*cm
+d = 50*cm
+Vc = 0.53*sqr(fc)*b*d & kgf
+
+'Caso 3: fc en MPa, resultado en kgf/cm²
+fc_mpa = 21*MPa
+E2 = 1500*sqr(fc_mpa) & kgf/cm^2
+
+'Caso 4: Vector con & para FEA
+F = [10; 5; -3; 8; 0; 2] & kN
+
+'Caso 5: Matriz con &
+M = [1; 2| 3; 4] & tonf

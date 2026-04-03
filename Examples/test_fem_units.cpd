@@ -1,0 +1,71 @@
+"Análisis Estructural Completo - Pórtico 2 Pisos
+"1. Datos del Pórtico
+'Propiedades de columnas
+E = 2100*tonf/cm^2
+I = 5000*cm^4
+h = 300*cm
+n_col = 4
+
+'Rigidez lateral por piso
+k = n_col*12*E*I/(h^3) | tonf/cm
+
+'Masas de piso
+m_1 = 50*tonf*s^2/m
+m_2 = 30*tonf*s^2/m
+
+"2. Análisis Estático - Fuerzas Laterales
+'Fuerzas sísmicas estáticas
+F = [20; 40]tonf
+
+'Matriz de rigidez lateral
+K = [2*k; -k| -k; k]
+
+'Desplazamientos u = K⁻¹·F
+u = K^-1*F | cm
+
+'Fuerzas en resortes (verificación)
+F_check = K*u | tonf
+
+"3. Cortantes de piso
+V_2 = F.(2) | tonf
+V_1 = F.(1) + F.(2) | tonf
+
+"4. Análisis Modal
+'Valores numéricos para ecuación característica
+k_n = k | kN/m
+m1_n = m_1 | tonf*s^2/m
+m2_n = m_2 | tonf*s^2/m
+
+'Ecuación: m1·m2·λ² - (2k·m2 + k·m1)·λ + k² = 0
+a_c = m1_n*m2_n
+b_c = -(2*k_n*m2_n + k_n*m1_n)
+c_c = k_n^2
+D = b_c^2 - 4*a_c*c_c
+
+'Eigenvalores
+λ_1 = (-b_c - sqr(D))/(2*a_c) & 1/s^2
+λ_2 = (-b_c + sqr(D))/(2*a_c) & 1/s^2
+
+'Frecuencias circulares
+ω_1 = sqr(λ_1) & rad/s
+ω_2 = sqr(λ_2) & rad/s
+
+'Frecuencias naturales
+f_1 = ω_1/(2*π) & Hz
+f_2 = ω_2/(2*π) & Hz
+
+'Periodos
+T_1 = 1/f_1 & s
+T_2 = 1/f_2 & s
+
+"5. Resumen de Resultados
+'Desplazamientos
+u
+
+'Frecuencias
+f_1
+f_2
+
+'Periodos
+T_1
+T_2

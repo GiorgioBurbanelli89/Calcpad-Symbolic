@@ -1,0 +1,75 @@
+"Test & — tres modos: escalar, vector, matriz
+'<hr/>
+"1. ESCALAR — & unidad
+
+E = 200000*MPa
+'Convertir a GPa:
+E & GPa
+'Convertir a psi:
+E & psi
+'Convertir a kgf/cm^2:
+E & kgf/cm^2
+
+F = 50*kN
+F & tonf
+F & lbf
+F & N
+
+'<hr/>
+"2. VECTOR — & [u1; u2; u3]
+
+'<h4>Viga: 2 DOFs traslación + 1 rotación</h4>
+E_v = 2100000*kgf/cm^2
+A_v = 100*cm^2
+I_v = 5000*cm^4
+L_v = 400*cm
+
+'Rigidez:
+k_a = E_v*A_v/L_v
+k_f = 3*E_v*I_v/L_v^3
+
+'Vector de fuerzas mixto:
+Fv = [k_a*0.1*cm; k_f*0.2*cm; 0*kgf*cm]
+'<p>F tiene kgf y kgf·cm mezclados</p>
+Fv
+
+'& vector de unidades:
+Fv & [kgf; kgf; kgf*cm]
+
+'<h4>Desplazamiento con unidades por DOF</h4>
+u_test = [0.5*cm; 0.3*cm; 0.002*rad]
+u_test
+u_test & [mm; mm; rad]
+
+'<hr/>
+"3. MATRIZ — & [u1;u2 | u3;u4]
+
+'<h4>Matriz de rigidez 2×2 con unidades mixtas</h4>
+K_2 = [k_a; 0*kgf/cm | 0*kgf/cm; k_f]
+K_2
+
+'& matriz de unidades:
+K_2 & [kgf/cm; kgf/cm | kgf/cm; kgf/cm]
+
+'& cambio de sistema:
+K_2 & [tonf/m; tonf/m | tonf/m; tonf/m]
+
+'<h4>Matriz 3×3 con 3 tipos de unidad</h4>
+'<p>DOFs: [u(cm), v(cm), θ(rad)]</p>
+'<p>K tiene: kgf/cm, kgf, kgf·cm por celda</p>
+k3 = 6*E_v*I_v/L_v^2
+k4 = 4*E_v*I_v/L_v
+K_3 = [k_a; 0*kgf/cm; 0*kgf | 0*kgf/cm; k_f; k3 | 0*kgf; k3; k4]
+K_3
+
+'& con unidades por celda:
+K_3 & [kgf/cm; kgf/cm; kgf | kgf/cm; kgf/cm; kgf | kgf; kgf; kgf*cm]
+
+'<hr/>
+"4. lsolve con & vector
+
+'<h4>Sistema K·u = F</h4>
+F_3 = [52500*kgf; 5.859375*kgf; 393750*kgf*cm]
+u_sol = lsolve(K_3; F_3) & [cm; cm; rad]
+u_sol
+'<p>Esperado: ~[0.1; 0.05; 0.001]</p>

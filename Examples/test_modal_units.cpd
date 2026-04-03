@@ -1,0 +1,43 @@
+"Análisis Modal - Pórtico 2 Pisos
+'Datos
+E = 2100*tonf/cm^2
+I = 5000*cm^4
+h = 300*cm
+
+'Rigidez lateral por piso (4 columnas empotradas)
+k = 4*12*E*I/(h^3) | tonf/cm
+
+'Masas de piso
+m1 = 50*tonf*s^2/m
+m2 = 30*tonf*s^2/m
+
+'Matriz de rigidez 2x2
+K = [2*k; -k| -k; k]
+
+'Solución analítica de la ecuación característica
+'det(K - λM) = 0 → m1·m2·λ² - (2k·m2 + k·m1)·λ + k² = 0
+k_v = k | kN/m
+m1_v = m1 | tonf*s^2/m
+m2_v = m2 | tonf*s^2/m
+
+'Coeficientes (trabajamos adimensional)
+a = m1_v*m2_v
+b = -(2*k_v*m2_v + k_v*m1_v)
+c = k_v^2
+D = b^2 - 4*a*c
+
+'Eigenvalores (ω² en rad²/s²)
+lambda_1 = (-b - sqr(D))/(2*a) & 1/s^2
+lambda_2 = (-b + sqr(D))/(2*a) & 1/s^2
+
+'Frecuencias circulares
+omega_1 = sqr(lambda_1) & rad/s
+omega_2 = sqr(lambda_2) & rad/s
+
+'Frecuencias naturales
+f_1 = omega_1/(2*π) & Hz
+f_2 = omega_2/(2*π) & Hz
+
+'Periodos
+T_1 = 1/f_1 & s
+T_2 = 1/f_2 & s

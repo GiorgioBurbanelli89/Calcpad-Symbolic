@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Calcpad.wpf": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}

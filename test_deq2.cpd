@@ -1,0 +1,24 @@
+"Test #deq — símbolos avanzados
+'<hr/>
+"1. Integrales
+#deq M(x) = $Integral{0; L}(q*x)*dx = q*L^2/2
+
+'<hr/>
+"2. Derivadas
+#deq V(x) = dM/dx = q*x
+
+'<hr/>
+"3. Ecuación diferencial
+#deq E*I*d^2*y/dx^2 = M(x) = -P*x
+
+'<hr/>
+"4. Matriz de rigidez con doble igualdad
+#deq K_e = E*I/L^3*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2 | -12; -6*L; 12; -6*L | 6*L; 2*L^2; -6*L; 4*L^2]
+
+'<hr/>
+"5. Ecuación matricial completa
+#deq [F_1; M_1; F_2; M_2] = E*I/L^3*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2 | -12; -6*L; 12; -6*L | 6*L; 2*L^2; -6*L; 4*L^2]*[v_1; θ_1; v_2; θ_2]
+
+'<hr/>
+"6. Triple igualdad con fracciones
+#deq ω_n = sqr(k/m) = sqr(E*I/(ρ*A*L^4)) = 2*π*f_n

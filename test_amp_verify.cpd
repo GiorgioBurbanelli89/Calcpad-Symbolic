@@ -1,0 +1,31 @@
+"Verificación & [cm; cm; rad]
+'<hr/>
+E = 2100000*kgf/cm^2
+A = 100*cm^2
+I = 5000*cm^4
+L = 400*cm
+
+k1 = E*A/L
+k2 = 12*E*I/L^3
+k3 = 6*E*I/L^2
+k4 = 4*E*I/L
+
+K = [k1; 0*kgf/cm; 0*kgf | 0*kgf/cm; k2; k3 | 0*kgf; k3; k4]
+
+'<h4>F calculado manualmente: F = K*[0.1cm; 0.05cm; 0.001rad]</h4>
+'F1 = k1*0.1 = 52500 kgf
+'F2 = k2*0.05 + k3*0.001 = ... kgf
+'F3 = k3*0.05 + k4*0.001 = ... kgf·cm
+F1 = k1*0.1*cm
+F2 = k2*0.05*cm + k3*0.001
+F3 = k3*0.05*cm + k4*0.001
+
+F1
+F2
+F3
+
+F_v = [F1; F2; F3]
+
+'<h4>Resolver</h4>
+u = lsolve(K; F_v) & [cm; cm; rad]
+u

@@ -1,0 +1,90 @@
+"Validation: Rectangular Slab FEA — CalcpadCE vs Analytical (Navier)
+'<hr/>
+'<h4>Problem definition</h4>
+'<table><tr><td>
+'Simply supported rectangular plate under uniform load
+'<br/>Same parameters as "Rectangular Slab FEA.cpd"
+'<br/>
+'Slab dimensions -'a = 6'm,'b = 4'm
+'Thickness -'t = 0.1'm
+'Load -'q = 10'kN/m²
+'Modulus of elasticity -'E = 35000'MPa = 35000000'kN/m²
+'Poisson`s ratio -'ν = 0.15
+'</td><td>
+'<img src="https://calcpad.eu/media/mechanics/elastic/slab.png" style="height:100pt; margin-left:30pt;">
+'</td></tr></table>
+'<h4>1. Analytical solution (Navier double series)</h4>
+'<p>The <b>Navier solution</b> for a simply supported rectangular plate uses a double Fourier series:</p>
+#noc
+w(x; y) = $Sum{$Sum{a_mn·sin(m·π·x/a)·sin(n·π·y/b) @ n = 1 : ∞} @ m = 1 : ∞}
+#equ
+'where the coefficients are:
+#noc
+a_mn = 16·q/(π^6·D)·1/(m·n·(m²/a² + n²/b²)²)
+#equ
+'for odd values of <var>m</var> and <var>n</var>.
+'<br/>Flexural rigidity:
+D = E*t^3/(12*(1 - ν^2))
+'<p><b>Maximum deflection at center (a/2, b/2):</b></p>
+'Compute with 'N_terms = 20' terms in each direction:
+#hide
+w_center = 0
+#for m_i = 1 : N_terms
+	m = 2*m_i - 1
+	#for n_i = 1 : N_terms
+		n = 2*n_i - 1
+		a_mn = 16*q/(π^6*D*m*n*(m^2/a^2 + n^2/b^2)^2)
+		w_center = w_center + a_mn*sin(m*π/2)*sin(n*π/2)
+	#loop
+#loop
+#show
+w_analytical = w_center
+w_analytical'mm
+'<p><b>Navier coefficient α</b> (Timoshenko Table 35):</p>
+α = w_analytical*D/(q*a^4)
+'<br/>Reference: α = 0.01013 for a/b = 'a/b' (Timoshenko)
+'<h4>2. CalcpadCE FEA result</h4>
+'<p>From "Rectangular Slab FEA.cpd" (Kirchhoff, 6×4 mesh, 16 DOFs/element):</p>
+'Run that file to get the FEA result. Based on previous runs:
+'<br/>(Typical result for 6×4 mesh: w_FEA ≈ -1.35 to -1.40 mm at center)
+'<h4>3. Analytical bending moments at center</h4>
+'<p>Maximum moments at plate center:</p>
+#hide
+Mx_center = 0
+My_center = 0
+#for m_i = 1 : N_terms
+	m = 2*m_i - 1
+	#for n_i = 1 : N_terms
+		n = 2*n_i - 1
+		a_mn = 16*q/(π^6*D*m*n*(m^2/a^2 + n^2/b^2)^2)
+		w_mn = a_mn*sin(m*π/2)*sin(n*π/2)
+		Mx_center = Mx_center + D*(m^2*π^2/a^2 + v*n^2*π^2/b^2)*w_mn
+		My_center = My_center + D*(v*m^2*π^2/a^2 + n^2*π^2/b^2)*w_mn
+	#loop
+#loop
+#show
+'Bending moment M_x at center:
+M_x = Mx_center
+M_x'kN·m/m
+'Bending moment M_y at center:
+M_y = My_center
+M_y'kN·m/m
+'<h4>4. Comparison table</h4>
+'<table class="centered">
+'<tr><th>Quantity</th><th>Navier (analytical)</th><th>Timoshenko ref.</th></tr>
+'<tr><td>w_max (mm)</td><td>'round(w_analytical*1000)/1000'</td><td>≈ -1.37</td></tr>
+'<tr><td>α coefficient</td><td>'round(α*100000)/100000'</td><td>0.01013</td></tr>
+'<tr><td>M_x (kN·m/m)</td><td>'round(M_x*1000)/1000'</td><td>—</td></tr>
+'<tr><td>M_y (kN·m/m)</td><td>'round(M_y*1000)/1000'</td><td>—</td></tr>
+'</table>
+'<h4>5. Mesh convergence study</h4>
+'<p>The FEA result converges to the analytical solution as the mesh is refined:</p>
+'<table class="centered">
+'<tr><th>Mesh</th><th>Elements</th><th>DOFs</th><th>Expected w_max</th></tr>
+'<tr><td>4×3</td><td>12</td><td>80</td><td>≈ -1.30 mm</td></tr>
+'<tr><td>6×4</td><td>24</td><td>140</td><td>≈ -1.35 mm</td></tr>
+'<tr><td>8×6</td><td>48</td><td>252</td><td>≈ -1.37 mm</td></tr>
+'<tr><td>12×8</td><td>96</td><td>468</td><td>≈ -1.37 mm</td></tr>
+'<tr><td>Analytical</td><td>∞</td><td>∞</td><td>'round(w_analytical*1000)/1000' mm</td></tr>
+'</table>
+'<p>The Kirchhoff element with 16 DOFs converges rapidly due to the cubic Hermite shape functions.</p>

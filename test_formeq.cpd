@@ -1,0 +1,20 @@
+"Test #deq — doble igualdad
+'<hr/>
+"1. Escalar
+#deq σ = M*c/I = P*L*c/(4*I)
+
+'<hr/>
+"2. Vector
+#deq F = [F_1; F_2; M_1] = [P; V; M]
+
+'<hr/>
+"3. Matriz
+#deq K = [k_1; 0; 0 | 0; k_2; k_3 | 0; k_3; k_4] = [EA/L; 0; 0 | 0; 12*EI/L^3; 6*EI/L^2 | 0; 6*EI/L^2; 4*EI/L]
+
+'<hr/>
+"4. Ecuación P = K · δ
+#deq P = K*δ = [EA/L; 0; 0 | 0; 12*EI/L^3; 6*EI/L^2 | 0; 6*EI/L^2; 4*EI/L]*[δ_1; δ_2; δ_3]
+
+'<hr/>
+"5. Triple igualdad
+#deq f(x) = a*x^2 + b*x + c = 0

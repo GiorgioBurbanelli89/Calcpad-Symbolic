@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OutputType>Exe</OutputType>
+    <DefineConstants>LINUX</DefineConstants>
+    <AssemblyName>Symbolic.Server</AssemblyName>
+    <RootNamespace>Calcpad.Server</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Self-contained properties for publishing only -->
+  <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
+    <SelfContained>true</SelfContained>
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishReadyToRun>false</PublishReadyToRun>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Symbolic.Server.Core.csproj" />
+  </ItemGroup>
+
+</Project>

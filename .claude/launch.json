@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "examples-server",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8766"],
+      "cwd": "Calcpad.Cli/Examples",
+      "port": 8766
+    }
+  ]
+}

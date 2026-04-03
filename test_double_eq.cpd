@@ -1,0 +1,6 @@
+"Test doble igualdad en #noc
+#noc
+f = a + b = c
+σ = M*c/I = P*L*c/(4*I)
+K_e = [EA/L; 0 | 0; 12*EI/L^3] = [k_1; 0 | 0; k_2]
+#noc

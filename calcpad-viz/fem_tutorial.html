@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Created with Calcpad</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <script src="dist/jquery-3.6.3.min.js"></script>
+    <script src="dist/calcpad-viz.umd.cjs"></script>
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-size: 11pt;
+            font-family: 'Segoe UI', 'Arial Nova', Helvetica, sans-serif;
+            margin-left: 5mm;
+            max-width: 190mm;
+        }
+
+        h1, h2, h3, h4, h5, h6, .errorHeader, .roundBox {
+            font-family: 'Arial Nova', Helvetica, sans-serif;
+            margin: 0.5em 0 0.5em 0;
+            padding: 0;
+            line-height: 150%;
+        }
+
+        h1 {font-size: 2.1em;}
+        h2 {font-size: 1.7em;}
+        h3 {font-size: 1.4em;}
+        h4 {font-size: 1.2em;}
+        h5 {font-size: 1.1em;}
+        h6 {font-size: 1em;}
+
+        p, li {
+            margin: 0.3em 0 0.3em 0;
+            padding: 0;
+            line-height: 150%;
+        }
+
+        select, kbd {
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        a:hover {
+            background-color: #e9f6ff;
+        }
+
+        .eq, input[type="text"], table.matrix {
+            font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+        }
+
+            .eq var {
+                color: #06d;
+                font-size: 105%;
+            }
+
+            .eq i {
+                color: #086;
+                font-style: normal;
+                font-size: 90%;
+            }
+
+            i.unit {
+                color: #043!important;
+                font-size: 90%!important;
+                vertical-align: -1pt;
+            }
+
+            sup.unit {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 70%!important;
+            }
+
+            .eq b {
+                font-weight: 600;
+            }
+
+            .eq sub {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 80%;
+                vertical-align: -18%;
+                margin-left: 1pt;
+            }
+
+            .eq sup {
+                display: inline-block;
+                margin-left: 1pt;
+                margin-top: -3pt;
+                font-size: 75%;
+            }
+
+            .eq small {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 70%;
+            }
+
+                .eq small var {
+                    font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+                    font-size: 8.5pt;
+                }
+
+                .eq small i {
+                    font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+                    font-size: 6pt;
+                }
+
+            .eq u, input, select {
+                background-color: LightYellow;
+            }
+
+                input[type="text"], select {
+                    font-size: 10pt;
+                    padding: 0.2em 0.4em;
+                    border: 0.5pt solid #CCC;
+                    border-radius: 0.35em;
+                    box-shadow: 0.06em 0.06em 0.5em #ddd;
+                    min-width: 3em;
+                }
+
+                input[type="text"] {
+                    text-align: right;
+                }
+
+                input[type="checkbox"],
+                input[type="radio"] {
+                    vertical-align: baseline;
+                    position: relative;
+                    bottom: -1pt;
+                    margin-right: 1pt;
+                }
+
+                    input[type="checkbox"].post:disabled:not(:checked),
+                    input[type="checkbox"].post:disabled:not(:checked) + label,
+                    input[type="radio"].post:disabled:not(:checked),
+                    input[type="radio"].post:disabled:not(:checked) + label {
+                        display: none;
+                    }
+
+                select:disabled {
+                    background: none;
+                    color: #444;
+                }
+
+                select.post:disabled {
+                    font-size: 12pt;
+                    border: none;
+                    box-shadow: none;
+                    color: red;
+                    background: none;
+                    appearance: none;
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                }
+
+                select.post:disabled::-ms-expand {
+                    display: none;
+                }
+
+                input[type="text"]:focus {
+                    box-shadow: 0.1em 0.1em 1em #ccc;
+                    color: black;
+                }
+
+        td, th {
+            padding: 2pt 4pt 2pt 4pt;
+            vertical-align: top;
+        }
+
+        small {
+            font-weight: normal;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+            table.bordered {
+                margin-top: 1em;
+            }
+
+                table.bordered th {
+                    background-color: #F0F0F0;
+                    border: solid 1pt #AAAAAA;
+                }
+
+                table.bordered td {
+                    border: solid 1pt #CCCCCC;
+                }
+
+            table.centered td, .matrix .td {
+                text-align: center;
+            }
+
+            table.data td {
+                text-align: right;
+            }
+
+                table.data td:first-child {
+                    text-align: left;
+                    padding-left: 0;
+                }
+
+        .matrix {
+            display: inline-table;
+        }
+
+            .matrix .tr {
+                display: table-row;
+            }
+
+            .matrix .td {
+                white-space: nowrap;
+                padding: 0 2pt 0 2pt;
+                min-width: 10pt;
+                display: table-cell;
+                font-size: 10pt;
+            }
+
+                .matrix .td:first-child,
+                .matrix .td:last-child {
+                    width: 0.75pt;
+                    min-width: 0.75pt;
+                    max-width: 0.75pt;
+                    padding: 0 1pt 0 1pt;
+                }
+
+                .matrix .td:first-child {
+                    border-left: solid 1pt black;
+                }
+
+                .matrix .td:last-child {
+                    border-right: solid 1pt black;
+                }
+
+            .matrix .tr:first-child .td:first-child,
+            .matrix .tr:first-child .td:last-child {
+                border-top: solid 1pt black;
+            }
+
+            .matrix .tr:last-child .td:first-child,
+            .matrix .tr:last-child .td:last-child {
+                border-bottom: solid 1pt black;
+            }
+
+        .block {
+            display: inline-block;
+            vertical-align: middle;
+            padding-left: 4pt;
+            margin-left: -1pt;
+            border-left: solid 1pt #80b0e8;
+            background: linear-gradient(to right, rgba(0, 192, 255, 0.06), rgba(0, 192, 255, 0.03));
+        }
+
+            .block .block {
+                background: linear-gradient(to right, rgba(0, 192, 255, 0.04), rgba(0, 192, 255, 0.02));
+            }
+
+        .dvcs:has(.block):not(.block *) {
+            display: inline-block;
+            border-left: solid 1pt #80b0e8;
+            padding-left: 0;
+            margin-left: 3pt;
+        }
+
+            .dvcs:has(.block):not(.block *)::before {
+                content: " 🞀";
+                font-size: 9pt;
+                color: #90c4f0;
+                margin-left: -4.5pt;
+            }
+
+        .arr {
+            color: #90c4f0;
+        }
+
+        .r0, .r1, .r2, .r3,
+        .o0, .o1, .o2, .o3,
+        .b1, .b2, .b3,
+        .c1, .c2, .c3, .c4,
+        .c5, .c6, .c7, .c8 {
+            display: inline-block;
+        }
+
+        .r0, .r1, .r2, .r3 {
+            margin-top: -1.5pt;
+            margin-right: 1.5pt;
+            vertical-align: top;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: right top;
+        }
+
+        .o0, .o1, .o2, .o3 {
+            border-top: solid 0.75pt;
+            line-height: 130%;
+            vertical-align: middle;
+            margin-top: 0.75pt;
+            padding-top: 1.25pt;
+            padding-left: 1pt;
+            padding-right: 1pt;
+        }
+
+        .r {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 150%;
+            display: inline-block;
+            vertical-align: top;
+            margin-left: -9.5pt;
+            position: relative;
+            top: 1pt;
+        }
+
+        .r0 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDEwIDIwIiBoZWlnaHQ9IjE1cHQiIHdpZHRoPSIxMHB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMCwxMyAyLDEyIDUsMTkgOSwwIiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MC42cHQ7IHN0cm9rZS1saW5lam9pbjpyb3VuZDsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IGZpbGw6bm9uZSIgLz4NCiAgPGxpbmUgeDE9IjIuMiIgeTE9IjEyLjMiIHgyPSI0LjYiIHkyPSIxOC43IiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MC44cHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 8pt;
+            height: 16pt;
+            margin-left: -8pt;
+        }
+
+        .r1 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDE1IDQwIiBoZWlnaHQ9IjMwcHQiIHdpZHRoPSIxNXB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMSwyNiAzLDI0IDgsMzggMTQsMCIgc3R5bGU9InN0cm9rZTpibGFjazsgc3Ryb2tlLXdpZHRoOjAuNnB0OyBzdHJva2UtbGluZWpvaW46cm91bmQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyBmaWxsOm5vbmUiIC8+DQogIDxsaW5lIHgxPSIzLjIiIHkxPSIyNC40IiB4Mj0iNy42IiB5Mj0iMzcuNiIgc3R5bGU9InN0cm9rZTpibGFjazsgc3Ryb2tlLXdpZHRoOjFwdDsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IiAvPg0KPC9zdmc+");
+            width: 12pt;
+            height: 32pt;
+            margin-left: -12pt;
+        }
+
+        .r2 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDIwIDYwIiBoZWlnaHQ9IjQ1cHQiIHdpZHRoPSIyMHB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMiwzNyA1LDM0IDExLDU1IDE5LDAiIHN0eWxlPSJzdHJva2U6YmxhY2s7IHN0cm9rZS13aWR0aDowLjZwdDsgc3Ryb2tlLWxpbmVqb2luOnJvdW5kOyBzdHJva2UtbGluZWNhcDpyb3VuZDsgZmlsbDpub25lIiAvPg0KICA8bGluZSB4MT0iNS4xIiB5MT0iMzQuNiIgeDI9IjEwLjYiIHkyPSI1NC40IiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MS4ycHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 16pt;
+            height: 48pt;
+            margin-left: -16pt;
+        }
+
+        .r3 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDI1IDgwIiBoZWlnaHQ9IjYwcHQiIHdpZHRoPSIyNXB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMyw1MCA3LDQ2IDE1LDc0IDI0LDAiIHN0eWxlPSJzdHJva2U6YmxhY2s7IHN0cm9rZS13aWR0aDowLjZwdDsgc3Ryb2tlLWxpbmVqb2luOnJvdW5kOyBzdHJva2UtbGluZWNhcDpyb3VuZDsgZmlsbDpub25lIiAvPg0KICA8bGluZSB4MT0iNy4xIiB5MT0iNDYuOCIgeDI9IjE0LjUiIHkyPSI3My4yIiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MS4ycHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 19pt;
+            height: 62pt;
+            margin-left: -19pt;
+        }
+
+        .nth {
+            position: relative;
+            bottom: 1pt;
+        }
+
+        .eq small.nth {font-size: 70%;}
+        .dvr small {font-size: 70%;}
+        .dvr small var {font-size: 105%;}
+        sup.raised {vertical-align: top;}
+        sup .r0, sup .r1, sup .r2, sup .r3 {
+            zoom: 0.7;
+            -moz-transform: scale(0.7);
+            -webkit-transform: scale(0.7);
+            transform: scale(0.7);
+            transform-origin: top right;
+            max-height: none;
+        }
+
+        sup .r0 { margin-left: -5pt; }
+        sup .r1 { margin-left: -11pt; }
+        sup .r2 { margin-left: -13pt; }
+        sup .r3 { margin-left: -16pt; }
+
+        .b1, .b2, .b3, .c1, .c2, .c3, .c4, .c5, .c6, .c7, .c8 {
+            vertical-align: middle;
+            font-weight: 100;
+            font-stretch: ultra-condensed;
+        }
+
+        .b2, .b3, .c2, .c3, .c4, .c5, .c6, .c7, .c8 {
+            font-family: 'Jost* Hairline', sans-serif;
+        }
+
+        .b0, .b1, .c1 {
+            font-family: 'Jost* Thin', sans-serif;
+        }
+
+        .b0 {
+            font-size: 120%;
+            font-weight: 600;
+            padding: 0 1pt 0 1pt;
+        }
+
+        .b1 {
+            font-size: 240%;
+            margin-top: -3pt;
+            margin-left: -1pt;
+            margin-right: -1pt;
+        }
+
+        .b2 {
+            font-size: 370%;
+            margin-top: -5pt;
+            margin-left: -3pt;
+            margin-right: -3pt;
+        }
+
+        .b3 {
+            font-size: 520%;
+            margin-top: -8pt;
+            margin-left: -5pt;
+            margin-right: -5pt;
+        }
+
+        .c1 {
+            font-size: 240%;
+            margin-top: -4pt;
+        }
+
+        .c2 {
+            font-size: 360%;
+            margin-top: -6pt;
+            margin-left: -2.5pt;
+            margin-right: -0.5pt;
+        }
+
+        .c3 {
+            font-size: 480%;
+            margin-top: -8pt;
+            margin-left: -3pt;
+            margin-right: -1pt;
+        }
+
+        .c4 {
+            font-size: 600%;
+            margin-top: -10pt;
+            margin-left: -4pt;
+            margin-right: -2pt;
+            transform: scaleX(0.9);
+        }
+
+        .c5 {
+            font-size: 710%;
+            margin-top: -11.5pt;
+            margin-left: -6pt;
+            margin-right: -4pt;
+            transform: scaleX(0.8);
+        }
+
+        .c6 {
+            font-size: 820%;
+            margin-top: -13pt;
+            margin-left: -7pt;
+            margin-right: -5pt;
+            transform: scaleX(0.7);
+        }
+
+        .c7 {
+            font-size: 930%;
+            margin-top: -14.5pt;
+            margin-left: -8pt;
+            margin-right: -6pt;
+            transform: scaleX(0.6);
+        }
+
+        .c8 {
+            font-size: 1040%;
+            margin-top: -16pt;
+            margin-left: -9pt;
+            margin-right: -7pt;
+            transform: scaleX(0.5);
+        }
+
+        .dvc, .dvr, .dvs {
+            display: inline-block;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .dvc {
+            padding-left: 2pt;
+            padding-right: 2pt;
+            text-align: center;
+            line-height: 110%;
+        }
+
+        .dvr {
+            text-align: center;
+            line-height: 110%;
+            position: relative;
+            top: -3pt;
+        }
+
+        .dvs {
+            text-align: left;
+            line-height: 110%;
+        }
+
+        .dvl {
+            display: block;
+            border-bottom: solid 1pt black;
+            margin-top: 1pt;
+            margin-bottom: 1pt;
+        }
+
+        .nary {
+            color: #C080F0;
+            font-size: 240%;
+            font-family: Georgia Pro Light, serif;
+            font-weight: 200;
+            line-height: 70%;
+            display: block;
+            margin: 0 1pt 2.5pt 1pt;
+        }
+
+            .nary em {
+                display: block;
+                transform: scaleX(0.7) rotate(7deg);
+            }
+
+        .dvc.down {
+            position: relative;
+            top: 0.5em;
+        }
+
+        .dvc.up {
+            position: relative;
+            bottom: 0.6em;
+        }
+
+        .low {
+            font-size: 70%;
+            display: inline-block;
+            position: relative;
+            top: 1.2em;
+        }
+
+        .cond {
+            color: #E000D0;
+        }
+
+        .err {
+            color: Crimson;
+            background-color: #FEE;
+        }
+
+        .ok {
+            color: Green;
+            background-color: #F0FFF0;
+        }
+
+        .ref {
+            float: right;
+            margin-left: 18pt;
+            color: Green;
+            background-color: #F8FFF0;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        .side {
+            float: right;
+            max-width: 50%;
+        }
+
+        .plot {
+            max-width: 100%
+        }
+
+        .indent {
+            border-left: 0.75pt solid #dddddd;
+            padding-left: 2em;
+        }
+
+        span.indent {
+            display: inline-block;
+        }
+
+        .fold {
+            height: 2.4em;
+            overflow: hidden;
+        }
+
+        .unfold {
+            height: auto;
+            overflow: auto;
+        }
+
+            .fold > :first-child, .unfold > :first-child {
+                cursor: pointer;
+            }
+
+                .fold > :first-child:hover, .unfold > :first-child:hover {
+                    color: #0066bb;
+                    text-decoration: underline;
+                }
+
+                .fold > :first-child::after {
+                    content: " ... ▼";
+                    font-size: 80%;
+                }
+
+                .unfold > :first-child::after {
+                    content: " ▲";
+                    font-size: 80%;
+                }
+
+        .vec {
+            font-family: 'Cambria Math', serif;
+            color: #8af;
+            font-style: normal;
+            display: inline-block;
+            vertical-align: 2pt;
+            margin-left: 3pt;
+            margin-right: -7pt;
+        }
+
+        small .vec, sup .vec {
+            margin-left: 2pt;
+            margin-right: -6pt;
+        }
+
+        #Units {
+            float: right;
+        }
+
+        @media screen {
+            .no-screen {
+                display: none;
+            }
+        }
+
+        @media print {
+            .side {
+                zoom: 0.8;
+                -moz-transform: scale(0.8);
+            }
+
+            body {
+                margin: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+
+        @page {
+            size: A4 portrait;
+            margin-left: 20mm;
+            margin-right: 10mm;
+            margin-top: 10mm;
+            margin-bottom: 10mm;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .value {
+            position: relative;
+            background-color: #f4fbff;
+            border-radius: 3pt;
+        }
+
+            .value:after {
+                content: "";
+                position: absolute;
+                left: 100%;
+                top: -100%;
+                transform: translateY(-50%);
+                margin-left: 2pt;
+                height: 16pt;
+                line-height: 16pt;
+                vertical-align: middle;
+                width: fit-content;
+                white-space: nowrap;
+                min-width: 10pt;
+                z-index: 1;
+                padding: 0 6pt 0 6pt;
+                border-radius: 6pt 6pt 6pt 0;
+                background: #000;
+                color: #fff;
+                font-family: 'Segoe UI', sans-serif;
+                font-style: normal;
+                font-size: 10pt;
+                text-align: center;
+                display: none;
+                opacity: 0;
+                transition: opacity 2s;
+                user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                -moz-user-select: none;
+            }
+
+            .value:hover:after {
+                content: attr(data-value);
+                display: block;
+                opacity: 1;
+            }
+
+        .errorHeader {
+            color: white;
+            background-color: crimson;
+            font-size: 10pt;
+            position: fixed;
+            top: 0;
+            left: 0;
+            margin-top: 0;
+            width: 100vw;
+            max-width: 100%;
+            height: 1.8em;
+            line-height: 1.2em;
+            padding-left: 6pt;
+            overflow-x: hidden;
+        }
+
+        .roundBox {
+            background-color: #fee;
+            color: crimson;
+            font-size: 9pt;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            display: inline-block;
+            border-radius: 4pt;
+            min-width: 1.1em;
+            padding-left: 2pt;
+            padding-right: 2pt;
+            margin-top: 2pt;
+        }
+
+            .roundBox:hover {
+                background-color: white;
+            }
+
+        .lineLink {
+            background: none;
+            color: #b0e0ff;
+            font-family: Calibri, sans-serif;
+            font-size: 10pt;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: left;
+            display: inline-block;
+            position: absolute;
+            left: 0;
+            width: 2em;
+            height: 4em;
+            z-index: 1;
+        }
+
+            .lineLink:hover {
+                background: none;
+                color: #09e;
+            }
+    </style>
+</head>
+<body>
+    <script>
+        var contextMenu = false;
+        function getVerticalPosition(line) { return document.querySelector("[data-text='" + line + "']").getBoundingClientRect().top; }
+        function isNumeric(s) { return s.match(/^-?\d+(?:\.\d+)?$/); }
+        if (window.jQuery) {
+            function getHtmlWithInput() {
+                $("input[type=text]").each(function () {
+                    $(this).attr("value", $(this).val());
+                });
+                $("input[type=hidden]").each(function () {
+                    $(this).attr("value", $(this).val());
+                });
+                $("textarea").each(function () {
+                    $(this).html($(this).val());
+                });
+                $("input[type=radio]").each(function () {
+                    if (this.checked)
+                        $(this).attr("checked", "checked");
+                    else
+                        $(this).removeAttr("checked");
+                });
+                $("input[type=checkbox]").each(function () {
+                    if (this.checked)
+                        $(this).attr("checked", "checked");
+                    else
+                        $(this).removeAttr("checked");
+                });
+                $("select option").each(function () {
+                    if (this.selected) {
+                        $(this).attr("selected", "true");
+                    }
+                    else
+                        $(this).removeAttr("selected");
+                });
+                return document.body.outerHTML;
+            }
+
+            function getTargetId(element) {
+                var id = $(element).attr("name");
+                if (id != null && id.length > 0)
+                    return id;
+
+                return $(element).data("target");
+            }
+
+            function getValue(id, source) {
+                var value = "";
+                var target = $("#" + id + " input");
+                var domObj = target.get(0);
+                if (domObj == null || domObj.Length == 0) {
+                    target = $("#" + id + " .eq u");
+                    target.each(function () {
+                        value += $(this).text() + ";";
+                    });
+                    $(source).prop('disabled', true);
+                }
+                else {
+                    target.each(function () {
+                        value += $(this).val() + ";";
+                    });
+                }
+                if (value.length > 1) {
+                    value = value.slice(0, -1);
+                }
+                return value;
+            }
+
+            $(document).ready(function () {
+
+                $(".dvcs:has(.block) > :first-child").html("&hairsp;");
+
+                $("#Units").change(function () { $(".Units").text($(this).val()); });
+
+                $(".fold > :first-child").click(function () {
+                    if ($(this).parent().hasClass("fold")) {
+                        $(this).parent().removeClass("fold").addClass("unfold");
+                    }
+                    else {
+                        $(this).parent().removeClass("unfold").addClass("fold");
+                    }
+                });
+
+                $("select").each(function (index) {
+                    if ($(this).prop("id") != "Units") {
+                        var id = getTargetId(this);
+                        if (id != null && id.length > 0) {
+                            var value = getValue(id, this);
+                            $(this).val(value);
+                        }
+                    }
+
+                });
+
+                $("select").change(function () {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var target = $("#" + id + " input");
+                        if (target != null) {
+                            var values = $(this).val().split(";");
+                            target.each(function (index) {
+                                $(this).val(values[index]);
+                            });
+                        }
+                    }
+                });
+
+                $("input:radio, input:checkbox").each(function (index) {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var value = getValue(id, this);
+                        $(this).prop("checked", $(this).val() == value);
+                    }
+                });
+
+                $("input:radio, input:checkbox").change(function () {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var target = $("#" + id + " input");
+                        if (target != null) {
+                            if ($(this).prop("checked")) {
+                                var values = $(this).val().split(";");
+                                target.each(function (index) {
+                                    $(this).val(values[index]);
+                                });
+                            }
+                            else if ($(this).prop("type") == "checkbox") {
+                                target.each(function () {
+                                    $(this).val("0");
+                                });
+                            }
+                        }
+                    }
+                });
+
+                $(".line:not(style, script)").each(function () {
+                    var line = $(this).prop("id").split("-")[1];
+                    var $lineLink = $('<a class="lineLink" href="#0" data-text="' + line + '" title="Code line ' + line + '">&larr;</a>');
+                    $(this).append($lineLink);
+                    $lineLink.hide();
+                    $(this).hover(function () {
+                        $(".lineLink").hide();
+                        $lineLink.show();
+                    });
+                    $(window).scroll(function () {
+                        $lineLink.hide();
+                    });
+                });
+
+                $("body").mouseleave(function () {
+                    $(".lineLink").hide();
+                });
+
+                $(".roundBox").click(function () {
+                    var line = $(this).data("line");
+                    var e = document.getElementById("line-" + line);
+                    if (e) {
+                        window.scrollTo(0, e.offsetTop - $(this).outerHeight() - 20);
+                    }
+                });
+                $(".money").each(function () { $(this).text(Number(($(this).text())).toFixed(2)); });
+
+                $("input").change(function() {
+                    var e = $(this);
+                    var s = e.val();
+                    if (isNumeric(s)) {
+                        e.css("color", "black");
+                        e.removeAttr("title");
+                    } else {
+                        e.css("color", "red");
+                        e.attr("title", "Invalid number");
+                    }
+                });
+
+                $("a").click(function () {
+                    chrome.webview.postMessage('clicked');
+                });
+
+                window.addEventListener('click', () => {
+                    chrome.webview.postMessage('focused');
+                });
+            });
+        }
+        document.oncontextmenu = function () { contextMenu = true; };
+        document.onmousedown = function () { contextMenu = false; };
+    </script><h3>Tutorial FEM: De la ecuación diferencial a K·d = F </h3>
+<h3>Viga simplemente apoyada con carga puntual </h3>
+<hr/> 
+<h3>1. El problema </h3>
+<p>Unidades: kN, m </p>
+<p>Una viga simplemente apoyada de longitud L con carga P en el centro. </p>
+<p><span class="eq"><var>L</var> = 6</span></p>
+<p><span class="eq"><var>E</var> = 200000000</span></p>
+<p><span class="eq"><var>I</var> = 0.0001</span></p>
+<p><span class="eq"><var>P</var> = -100</span></p>
+<p><b>Solución analítica (exacta):</b></p> 
+<p><span class="eq"><var>w</var><sub>max</sub> = <span class="dvc"><var>P</var> · <var>L</var><sup>3</sup><span class="dvl"></span>48 · <var>E</var> · <var>I</var></span></span></p>
+<p><span class="eq"><var>w</var><sub>exacto</sub> = <span class="dvc"><var>P</var> · <var>L</var><sup>3</sup><span class="dvl"></span>48 · <var>E</var> · <var>I</var></span> = <span class="dvc">-100 · 6<sup>3</sup><span class="dvl"></span>48 · 200000000 · 0.0001</span> = -0.0225</span></p>
+<p>w exacto (mm): </p>
+<p><span class="eq"><var>w</var><sub>exacto</sub> · 1000 = -0.0225 · 1000 = -22.5</span></p>
+<hr/> 
+<h3>2. Discretización </h3>
+<p>Dividimos la viga en 2 elementos de igual longitud: </p>
+<p><span class="eq"><var>n</var><sub>elem</sub> = 2</span></p>
+<p><span class="eq"><var>L</var><sub>e</sub> = <span class="dvc"><var>L</var><span class="dvl"></span><var>n</var><sub>elem</sub></span> = <span class="dvc">6<span class="dvl"></span>2</span> = 3</span></p>
+<p>3 nodos, 2 DOFs/nodo (w, θ), total 6 DOFs </p>
+<hr/> 
+<h3>3. Funciones de forma (Hermite cúbicas) </h3>
+<p>Dentro de cada elemento, asumimos:</p> 
+<p class="eq"><var>w</var>(ξ) = <var>N</var><sub>1</sub>·<var>w</var><sub>1</sub> + <var>N</var><sub>2</sub>·θ<sub>1</sub> + <var>N</var><sub>3</sub>·<var>w</var><sub>2</sub> + <var>N</var><sub>4</sub>·θ<sub>2</sub></p> 
+<p>Donde ξ = x/L_e ∈ [0, 1]. Definimos las funciones de forma y sus derivadas:</p> 
+<table><tr><td>Funciones de forma 
+<p><span class="eq"><var>N</var><sub>1L_e</sub> ( <var>ξ</var> )  = 1 − <var>ξ</var><sup>2</sup> ·  ( 3 − 2 · <var>ξ</var> ) </span></p>
+<p><span class="eq"><var>N</var><sub>2L_e</sub> ( <var>ξ</var> )  = <var>ξ</var> · <var>L</var><sub>e</sub> ·  ( 1 − <var>ξ</var> ) <sup>2</sup></span></p>
+<p><span class="eq"><var>N</var><sub>3L_e</sub> ( <var>ξ</var> )  = <var>ξ</var><sup>2</sup> ·  ( 3 − 2 · <var>ξ</var> ) </span></p>
+<p><span class="eq"><var>N</var><sub>4L_e</sub> ( <var>ξ</var> )  = <var>ξ</var><sup>2</sup> · <var>L</var><sub>e</sub> ·  ( <var>ξ</var> − 1 ) </span></p>
+</td><td>Primera derivada (pendiente) 
+<p><span class="eq"><var>N′</var><sub>1L_e</sub> ( <var>ξ</var> )  = -6 · <span class="dvc"><var>ξ</var><span class="dvl"></span><var>L</var><sub>e</sub></span> ·  ( 1 − <var>ξ</var> ) </span></p>
+<p><span class="eq"><var>N′</var><sub>2L_e</sub> ( <var>ξ</var> )  = 1 − <var>ξ</var> ·  ( 4 − 3 · <var>ξ</var> ) </span></p>
+<p><span class="eq"><var>N′</var><sub>3L_e</sub> ( <var>ξ</var> )  = 6 · <span class="dvc"><var>ξ</var><span class="dvl"></span><var>L</var><sub>e</sub></span> ·  ( 1 − <var>ξ</var> ) </span></p>
+<p><span class="eq"><var>N′</var><sub>4L_e</sub> ( <var>ξ</var> )  = -<var>ξ</var> ·  ( 2 − 3 · <var>ξ</var> ) </span></p>
+</td><td>Segunda derivada (curvatura) 
+<p><span class="eq"><var>N″</var><sub>1L_e</sub> ( <var>ξ</var> )  = - <span class="dvc">6<span class="dvl"></span><var>L</var><sub>e</sub><sup>2</sup></span> ·  ( 1 − 2 · <var>ξ</var> ) </span></p>
+<p><span class="eq"><var>N″</var><sub>2L_e</sub> ( <var>ξ</var> )  = - <span class="dvc">2<span class="dvl"></span><var>L</var><sub>e</sub></span> ·  ( 2 − 3 · <var>ξ</var> ) </span></p>
+<p><span class="eq"><var>N″</var><sub>3L_e</sub> ( <var>ξ</var> )  = <span class="dvc">6<span class="dvl"></span><var>L</var><sub>e</sub><sup>2</sup></span> ·  ( 1 − 2 · <var>ξ</var> ) </span></p>
+<p><span class="eq"><var>N″</var><sub>4L_e</sub> ( <var>ξ</var> )  = - <span class="dvc">2<span class="dvl"></span><var>L</var><sub>e</sub></span> ·  ( 1 − 3 · <var>ξ</var> ) </span></p>
+</td></tr></table> 
+<p><b>Verificación: N vale 1 en su nodo, 0 en los demás</b></p> 
+<p>N₁(0) =  <span class="eq"><var>N</var><sub>1L_e</sub>  ( 0 )  = 1</span> , N₁(1) =  <span class="eq"><var>N</var><sub>1L_e</sub>  ( 1 )  = 0</span></p>
+<p>N₃(0) =  <span class="eq"><var>N</var><sub>3L_e</sub>  ( 0 )  = 0</span> , N₃(1) =  <span class="eq"><var>N</var><sub>3L_e</sub>  ( 1 )  = 1</span></p>
+<p><b>Gráfica de las 4 funciones de forma:</b></p> 
+<div id="cviz_0" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_0",{series:[{x:[0,0.02564102564,0.05128205128,0.07692307692,0.1025641026,0.1282051282,0.1538461538,0.1794871795,0.2051282051,0.2307692308,0.2564102564,0.2820512821,0.3076923077,0.3333333333,0.358974359,0.3846153846,0.4102564103,0.4358974359,0.4615384615,0.4871794872,0.5128205128,0.5384615385,0.5641025641,0.5897435897,0.6153846154,0.641025641,0.6666666667,0.6923076923,0.7179487179,0.7435897436,0.7692307692,0.7948717949,0.8205128205,0.8461538462,0.8717948718,0.8974358974,0.9230769231,0.9487179487,0.9743589744,1],y:[1,0.9980613294,0.9923801817,0.983158853,0.9705996392,0.9549048366,0.936276741,0.9149176486,0.8910298555,0.8648156577,0.8364773513,0.8062172323,0.7742375967,0.7407407407,0.7059289604,0.6700045517,0.6331698107,0.5956270335,0.5575785162,0.5192265547,0.4807734453,0.4424214838,0.4043729665,0.3668301893,0.3299954483,0.2940710396,0.2592592593,0.2257624033,0.1937827677,0.1635226487,0.1351843423,0.1089701445,0.08508235135,0.06372325899,0.04509516344,0.02940036076,0.01684114702,0.007619818271,0.001938670578,0],type:"line",label:"N1"},{x:[0,0.02564102564,0.05128205128,0.07692307692,0.1025641026,0.1282051282,0.1538461538,0.1794871795,0.2051282051,0.2307692308,0.2564102564,0.2820512821,0.3076923077,0.3333333333,0.358974359,0.3846153846,0.4102564103,0.4358974359,0.4615384615,0.4871794872,0.5128205128,0.5384615385,0.5641025641,0.5897435897,0.6153846154,0.641025641,0.6666666667,0.6923076923,0.7179487179,0.7435897436,0.7692307692,0.7948717949,0.8205128205,0.8461538462,0.8717948718,0.8974358974,0.9230769231,0.9487179487,0.9743589744,1],y:[0,0.001938670578,0.007619818271,0.01684114702,0.02940036076,0.04509516344,0.06372325899,0.08508235135,0.1089701445,0.1351843423,0.1635226487,0.1937827677,0.2257624033,0.2592592593,0.2940710396,0.3299954483,0.3668301893,0.4043729665,0.4424214838,0.4807734453,0.5192265547,0.5575785162,0.5956270335,0.6331698107,0.6700045517,0.7059289604,0.7407407407,0.7742375967,0.8062172323,0.8364773513,0.8648156577,0.8910298555,0.9149176486,0.936276741,0.9549048366,0.9705996392,0.983158853,0.9923801817,0.9980613294,1],type:"line",label:"N3"}],options:{width:550,height:350,title:"N1 (desplaz.) y N3 (desplaz.)",xLabel:"xi",yLabel:"N",}});</script><div id="cviz_1" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_1",{series:[{x:[0,0.02564102564,0.05128205128,0.07692307692,0.1025641026,0.1282051282,0.1538461538,0.1794871795,0.2051282051,0.2307692308,0.2564102564,0.2820512821,0.3076923077,0.3333333333,0.358974359,0.3846153846,0.4102564103,0.4358974359,0.4615384615,0.4871794872,0.5128205128,0.5384615385,0.5641025641,0.5897435897,0.6153846154,0.641025641,0.6666666667,0.6923076923,0.7179487179,0.7435897436,0.7692307692,0.7948717949,0.8205128205,0.8461538462,0.8717948718,0.8974358974,0.9230769231,0.9487179487,0.9743589744,1],y:[0,0.07302887776,0.1384716533,0.1966317706,0.2478126738,0.2923178071,0.3304506145,0.36251454,0.3888130279,0.4096495221,0.4253274667,0.436150306,0.4424214838,0.4444444444,0.4425226319,0.4369594902,0.4280584636,0.416122996,0.4014565316,0.3843625145,0.3651443888,0.3441055985,0.3215495878,0.2977798007,0.2730996814,0.2478126738,0.2222222222,0.1966317706,0.1713447631,0.1466646437,0.1228948566,0.1003388459,0.07930005563,0.0600819299,0.04298791281,0.02832144844,0.01638598088,0.007484954231,0.001921812573,0],type:"line",label:"N2"},{x:[0,0.02564102564,0.05128205128,0.07692307692,0.1025641026,0.1282051282,0.1538461538,0.1794871795,0.2051282051,0.2307692308,0.2564102564,0.2820512821,0.3076923077,0.3333333333,0.358974359,0.3846153846,0.4102564103,0.4358974359,0.4615384615,0.4871794872,0.5128205128,0.5384615385,0.5641025641,0.5897435897,0.6153846154,0.641025641,0.6666666667,0.6923076923,0.7179487179,0.7435897436,0.7692307692,0.7948717949,0.8205128205,0.8461538462,0.8717948718,0.8974358974,0.9230769231,0.9487179487,0.9743589744,1],y:[-0,-0.001921812573,-0.007484954231,-0.01638598088,-0.02832144844,-0.04298791281,-0.0600819299,-0.07930005563,-0.1003388459,-0.1228948566,-0.1466646437,-0.1713447631,-0.1966317706,-0.2222222222,-0.2478126738,-0.2730996814,-0.2977798007,-0.3215495878,-0.3441055985,-0.3651443888,-0.3843625145,-0.4014565316,-0.416122996,-0.4280584636,-0.4369594902,-0.4425226319,-0.4444444444,-0.4424214838,-0.436150306,-0.4253274667,-0.4096495221,-0.3888130279,-0.36251454,-0.3304506145,-0.2923178071,-0.2478126738,-0.1966317706,-0.1384716533,-0.07302887776,0],type:"line",label:"N4"}],options:{width:550,height:350,title:"N2 (rotacion) y N4 (rotacion)",xLabel:"xi",yLabel:"N",}});</script><hr/> 
+<h3>4. De las funciones de forma a la rigidez K </h3>
+<p>La curvatura es: κ = d²w/dx² = <b>B</b>·<b>d</b></p> 
+<p>Donde <b>B</b> = [N″₁, N″₂, N″₃, N″₄] es el vector de segundas derivadas.</p> 
+<p>El momento flector: <b>M</b> = E·I·κ = E·I·<b>B</b>·<b>d</b></p> 
+<p>La energía de deformación (Principio de Trabajo Virtual):</p> 
+<p class="eq">U = ½·<b>d</b><sup>T</sup>·(∫ E·I·<b>B</b><sup>T</sup>·<b>B</b> dx)·<b>d</b> = ½·<b>d</b><sup>T</sup>·<b>K</b>·<b>d</b></p> 
+<p><b>Entonces K = ∫₀ᴸ E·I·Bᵀ·B dx</b></p> 
+<p><b>Ejemplo: K₂₂ = ∫ E·I·(N″₂)² dx</b></p> 
+<p>N″₂(ξ) = -(2/L_e)·(2 - 3ξ) </p>
+<p>[N″₂]² = (4/L_e²)·(2 - 3ξ)² = (4/L_e²)·(4 - 12ξ + 9ξ²) </p>
+<p>∫₀¹ [N″₂]² dξ = (4/L_e²)·[4ξ - 6ξ² + 3ξ³]₀¹ = (4/L_e²)·(4 - 6 + 3) = 4/L_e² </p>
+<p>K₂₂ = E·I·L_e·(4/L_e²) = <b>4·E·I/L_e</b> </p>
+<p><span class="eq"><var>K</var><sub>22</sub> = <span class="dvc">4 · <var>E</var> · <var>I</var><span class="dvl"></span><var>L</var><sub>e</sub></span> = <span class="dvc">4 · 200000000 · 0.0001<span class="dvl"></span>3</span> = 26666.66667</span></p>
+<hr/> 
+<h3>5. Matriz K_e completa (integración numérica) </h3>
+<p>Cuadratura de Gauss 2 puntos (exacta para polinomios ≤ grado 5):</p> 
+<p><span class="eq"><var>g</var> = <span class="dvc">1<span class="dvl"></span>&ensp;&hairsp;&hairsp;<span class="o0"><span class="r">√</span>&hairsp;3</span></span> = 0.5773503</span></p>
+<p>Puntos: ξ₁ =  <span class="eq"><span class="dvc">1 − <var>g</var><span class="dvl"></span>2</span> = <span class="dvc">1 − 0.5773503<span class="dvl"></span>2</span> = 0.2113249</span> , ξ₂ =  <span class="eq"><span class="dvc">1 + <var>g</var><span class="dvl"></span>2</span> = <span class="dvc">1 + 0.5773503<span class="dvl"></span>2</span> = 0.7886751</span> , pesos = 1 </p>
+<p>K_e (4×4): </p>
+<p><span class="eq"><b><var>K</var></b><sub>e</sub> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">8888.888889</span><span class="td">13333.33333</span><span class="td">-8888.888889</span><span class="td">13333.33333</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">13333.33333</span><span class="td">26666.66667</span><span class="td">-13333.33333</span><span class="td">13333.33333</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-8888.888889</span><span class="td">-13333.33333</span><span class="td">8888.888889</span><span class="td">-13333.33333</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">13333.33333</span><span class="td">13333.33333</span><span class="td">-13333.33333</span><span class="td">26666.66667</span><span class="td"></span></span>
+</span>
+</span></p>
+<p><b>Verificación con fórmulas conocidas:</b></p> 
+<table><tr><td> 
+<p>K₁₁ = 12EI/L³ =  <span class="eq"><b><var>K</var></b><sub>e.1,1</sub> = 8888.888889</span></p>
+<p>K₁₂ = 6EI/L² =  <span class="eq"><b><var>K</var></b><sub>e.1,2</sub> = 13333.33333</span></p>
+<p>K₂₂ = 4EI/L =  <span class="eq"><b><var>K</var></b><sub>e.2,2</sub> = 26666.66667</span></p>
+</td><td> 
+<p>12EI/L³ =  <span class="eq"><span class="dvc">12 · <var>E</var> · <var>I</var><span class="dvl"></span><var>L</var><sub>e</sub><sup>3</sup></span> = <span class="dvc">12 · 200000000 · 0.0001<span class="dvl"></span>3<sup>3</sup></span> = 8888.888889</span></p>
+<p>6EI/L² =  <span class="eq"><span class="dvc">6 · <var>E</var> · <var>I</var><span class="dvl"></span><var>L</var><sub>e</sub><sup>2</sup></span> = <span class="dvc">6 · 200000000 · 0.0001<span class="dvl"></span>3<sup>2</sup></span> = 13333.33333</span></p>
+<p>4EI/L =  <span class="eq"><span class="dvc">4 · <var>E</var> · <var>I</var><span class="dvl"></span><var>L</var><sub>e</sub></span> = <span class="dvc">4 · 200000000 · 0.0001<span class="dvl"></span>3</span> = 26666.66667</span></p>
+</td></tr></table> 
+<hr/> 
+<h3>6. Ensamblaje global </h3>
+<p>2 elementos → K global 6×6. El nodo 2 es compartido.</p> 
+<p><span class="eq"><var>K</var><sub>global</sub> = <var>K</var><sub>e1</sub> + <var>K</var><sub>e2</sub></span></p>
+<p>K global (6×6): </p>
+<p><span class="eq"><b><var>K</var></b> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">8888.888889</span><span class="td">13333.33333</span><span class="td">-8888.888889</span><span class="td">13333.33333</span><span class="td">0</span><span class="td">0</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">13333.33333</span><span class="td">26666.66667</span><span class="td">-13333.33333</span><span class="td">13333.33333</span><span class="td">0</span><span class="td">0</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-8888.888889</span><span class="td">-13333.33333</span><span class="td">17777.77778</span><span class="td">0</span><span class="td">-8888.888889</span><span class="td">13333.33333</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">13333.33333</span><span class="td">13333.33333</span><span class="td">0</span><span class="td">53333.33333</span><span class="td">-13333.33333</span><span class="td">13333.33333</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">0</span><span class="td">0</span><span class="td">-8888.888889</span><span class="td">-13333.33333</span><span class="td">8888.888889</span><span class="td">-13333.33333</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">0</span><span class="td">0</span><span class="td">13333.33333</span><span class="td">13333.33333</span><span class="td">-13333.33333</span><span class="td">26666.66667</span><span class="td"></span></span>
+</span>
+</span></p>
+<hr/> 
+<h3>7. Condiciones de contorno y carga </h3>
+<p>Simplemente apoyada: w₁ = 0 (DOF 1), w₃ = 0 (DOF 5) </p>
+<p>Penalización: K(i,i) += 10²⁰ </p>
+<p>Carga P en nodo 2 (DOF 3): </p>
+<p><span class="eq"><var><span class="vec">⃗</span>F</var> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">0</span><span class="td">0</span><span class="td">-100</span><span class="td">0</span><span class="td">0</span><span class="td">0</span><span class="td"></span></span>
+</span>
+</span></p>
+<hr/> 
+<h3>8. Solución </h3>
+<p><span class="eq"><b><var>K</var></b> · <var>d</var> = <var><span class="vec">⃗</span>F</var></span></p>
+<p><span class="eq"><var><span class="vec">⃗</span>d</var> = <b><var>K</var></b><sup>−1</sup> · <var><span class="vec">⃗</span>F</var> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">0</span><span class="td">-0.01125</span><span class="td">-0.0225</span><span class="td">0</span><span class="td">0</span><span class="td">0.01125</span><span class="td"></span></span>
+</span>
+</span></p>
+<p><b>Resultados:</b></p> 
+<table><tr><td><b>DOF</b></td><td><b>Valor</b></td><td><b>Significado</b></td></tr> 
+<tr><td>w₁</td><td> <span class="eq"><var><span class="vec">⃗</span>d</var><sub>1</sub> = -5×10<sup>-19</sup></span> </td><td>Apoyo izq. (≈0)</td></tr> 
+<tr><td>θ₁</td><td> <span class="eq"><var><span class="vec">⃗</span>d</var><sub>2</sub> = -0.01125</span> </td><td>Rotación izquierda</td></tr> 
+<tr><td>w₂</td><td> <span class="eq"><var><span class="vec">⃗</span>d</var><sub>3</sub> = -0.0225</span> </td><td>Deflexión centro</td></tr> 
+<tr><td>θ₂</td><td> <span class="eq"><var><span class="vec">⃗</span>d</var><sub>4</sub> = 8.062266×10<sup>-19</sup></span> </td><td>Rotación centro (≈0)</td></tr> 
+<tr><td>w₃</td><td> <span class="eq"><var><span class="vec">⃗</span>d</var><sub>5</sub> = -5×10<sup>-19</sup></span> </td><td>Apoyo der. (≈0)</td></tr> 
+<tr><td>θ₃</td><td> <span class="eq"><var><span class="vec">⃗</span>d</var><sub>6</sub> = 0.01125</span> </td><td>Rotación derecha</td></tr></table> 
+<hr/> 
+<h3>9. Comparación </h3>
+<table><tr><td><b>Método</b></td><td><b>w centro (mm)</b></td></tr> 
+<tr><td>FEM (2 elementos)</td><td> <span class="eq"><var><span class="vec">⃗</span>d</var><sub>3</sub> · 1000 = -22.5</span> </td></tr> 
+<tr><td>Exacto PL³/48EI</td><td> <span class="eq"><var>w</var><sub>exacto</sub> · 1000 = -0.0225 · 1000 = -22.5</span> </td></tr></table> 
+<p><span class="eq"><var>error</var> = <span class="dvc"><b class="b0">|</b>&hairsp;<var><span class="vec">⃗</span>d</var><sub>3</sub> − <var>w</var><sub>exacto</sub>&hairsp;<b class="b0">|</b><span class="dvl"></span><b class="b0">|</b>&hairsp;<var>w</var><sub>exacto</sub>&hairsp;<b class="b0">|</b></span> · 100 = <span class="dvc"><b class="b0">|</b>&hairsp;-0.0225 −  ( -0.0225 ) &hairsp;<b class="b0">|</b><span class="dvl"></span><b class="b0">|</b>&hairsp;-0.0225&hairsp;<b class="b0">|</b></span> · 100 = 3.083953×10<sup>-14</sup></span></p>
+<p><b>Error ≈ 0%</b> — Las funciones Hermite cúbicas son la solución exacta de EI·w⁴=0</p> 
+<hr/> 
+<h3>10. Deformada y momentos </h3>
+<div id="cviz_2" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_2",{series:[{x:[0,0.1224489796,0.2448979592,0.3673469388,0.4897959184,0.612244898,0.7346938776,0.8571428571,0.9795918367,1.102040816,1.224489796,1.346938776,1.469387755,1.591836735,1.714285714,1.836734694,1.959183673,2.081632653,2.204081633,2.326530612,2.448979592,2.571428571,2.693877551,2.816326531,2.93877551,3.06122449,3.183673469,3.306122449,3.428571429,3.551020408,3.673469388,3.795918367,3.918367347,4.040816327,4.163265306,4.285714286,4.408163265,4.530612245,4.653061224,4.775510204,4.897959184,5.020408163,5.142857143,5.265306122,5.387755102,5.510204082,5.632653061,5.755102041,5.87755102,6],y:[-5E-16,-1.376786033,-2.748982142,-4.111998402,-5.461244889,-6.79213168,-8.100068849,-9.380466472,-10.62873463,-11.84028339,-13.01052283,-14.13486302,-15.20871406,-16.227486,-17.18658892,-18.08143291,-18.90742803,-19.65998436,-20.33451198,-20.92642096,-21.43112139,-21.84402332,-22.16053685,-22.37607204,-22.48603898,-22.48603898,-22.37607204,-22.16053685,-21.84402332,-21.43112139,-20.92642096,-20.33451198,-19.65998436,-18.90742803,-18.08143291,-17.18658892,-16.227486,-15.20871406,-14.13486302,-13.01052283,-11.84028339,-10.62873463,-9.380466472,-8.100068849,-6.79213168,-5.461244889,-4.111998402,-2.748982142,-1.376786033,-5E-16],type:"line",label:"FEM"}],options:{width:600,height:350,title:"Deformada w(x)",xLabel:"x (m)",yLabel:"w (mm)",}});</script><div id="cviz_3" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_3",{series:[{x:[0,0.1224489796,0.2448979592,0.3673469388,0.4897959184,0.612244898,0.7346938776,0.8571428571,0.9795918367,1.102040816,1.224489796,1.346938776,1.469387755,1.591836735,1.714285714,1.836734694,1.959183673,2.081632653,2.204081633,2.326530612,2.448979592,2.571428571,2.693877551,2.816326531,2.93877551,3.06122449,3.183673469,3.306122449,3.428571429,3.551020408,3.673469388,3.795918367,3.918367347,4.040816327,4.163265306,4.285714286,4.408163265,4.530612245,4.653061224,4.775510204,4.897959184,5.020408163,5.142857143,5.265306122,5.387755102,5.510204082,5.632653061,5.755102041,5.87755102,6],y:[-1.074968821E-14,6.12244898,12.24489796,18.36734694,24.48979592,30.6122449,36.73469388,42.85714286,48.97959184,55.10204082,61.2244898,67.34693878,73.46938776,79.59183673,85.71428571,91.83673469,97.95918367,104.0816327,110.2040816,116.3265306,122.4489796,128.5714286,134.6938776,140.8163265,146.9387755,146.9387755,140.8163265,134.6938776,128.5714286,122.4489796,116.3265306,110.2040816,104.0816327,97.95918367,91.83673469,85.71428571,79.59183673,73.46938776,67.34693878,61.2244898,55.10204082,48.97959184,42.85714286,36.73469388,30.6122449,24.48979592,18.36734694,12.24489796,6.12244898,6.938893904E-14],type:"line",label:"M"}],options:{width:600,height:350,title:"Momento flector M(x)",xLabel:"x (m)",yLabel:"M (kN·m)",}});</script><p>Momento máximo en el centro: </p>
+<p><span class="eq"><var>M</var><sub>max</sub> = <var>E</var> · <var>I</var> ·  ( <var>N″</var><sub>1L_e</sub>  ( 1 )  · <var><span class="vec">⃗</span>d</var><sub>1</sub> + <var>N″</var><sub>2L_e</sub>  ( 1 )  · <var><span class="vec">⃗</span>d</var><sub>2</sub> + <var>N″</var><sub>3L_e</sub>  ( 1 )  · <var><span class="vec">⃗</span>d</var><sub>3</sub> + <var>N″</var><sub>4L_e</sub>  ( 1 )  · <var><span class="vec">⃗</span>d</var><sub>4</sub> )  = 200000000 · 0.0001 ·  ( <var>N″</var><sub>1L_e</sub>  ( 1 )  ·  ( -5×10<sup>-19</sup> )  + <var>N″</var><sub>2L_e</sub>  ( 1 )  ·  ( -0.01125 )  + <var>N″</var><sub>3L_e</sub>  ( 1 )  ·  ( -0.0225 )  + <var>N″</var><sub>4L_e</sub>  ( 1 )  · 8.062266×10<sup>-19</sup> )  = 150</span></p>
+<p>Exacto PL/4: </p>
+<p><span class="eq"><var>M</var><sub>exacto</sub> = <span class="dvc"><var>P</var> · <var>L</var><span class="dvl"></span>4</span> = <span class="dvc">-100 · 6<span class="dvl"></span>4</span> = -150</span></p>
+<hr/> 
+<h3>11. Resumen </h3>
+<p>1. <b>Discretizar</b> → dividir en elementos</p> 
+<p>2. <b>Funciones de forma N(ξ)</b> → aproximar w(x) como polinomio</p> 
+<p>3. <b>Derivar B = d²N/dx²</b> → curvatura</p> 
+<p>4. <b>Integrar K = ∫ EI·BᵀB dx</b> → rigidez (Trabajo Virtual)</p> 
+<p>5. <b>Ensamblar</b> → sumar elementos en K global</p> 
+<p>6. <b>Resolver K·d = F</b> → desplazamientos</p> 
+<p>7. <b>Post-proceso M = EI·B·d</b> → esfuerzos</p> 
+ </body></html>

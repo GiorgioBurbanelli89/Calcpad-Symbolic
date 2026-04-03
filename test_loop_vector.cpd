@@ -1,0 +1,14 @@
+"Test: reasignación de vectores en #for loop
+K = [2; -1 | -1; 2]
+u = [0; 0]
+F = [1; 0]
+'Iteración simple (Jacobi):
+#hide
+#for i = 1 : 5
+    u = lsolve(K; F)
+    F = F + [0.1*i; 0]
+#loop
+#show
+'Resultado después de 5 iteraciones:
+u
+F

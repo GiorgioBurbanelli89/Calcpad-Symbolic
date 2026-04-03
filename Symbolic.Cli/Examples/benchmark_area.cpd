@@ -1,0 +1,13 @@
+"Benchmark: $Area integración numérica
+f(x; y) = x^2 + y^2
+'Integral simple:
+I_1 = $Area{$Area{f(x; y) @ y = 0 : 1} @ x = 0 : 1}
+'Resultado: 'I_1' (debe ser 2/3 = 0.6667)
+'Ahora 100 integrales:
+#hide
+s = 0
+#for k = 1 : 100
+	s = s + $Area{$Area{f(x; y) @ y = 0 : 1} @ x = 0 : 1}
+#loop
+#show
+'100 integrales: s = 's

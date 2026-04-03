@@ -1,0 +1,45 @@
+"Test | y & con vectores y matrices
+'<hr/>
+"1. | escalar (ya funcionaba)
+L = 6*m
+L|cm
+L|mm
+
+'<hr/>
+"2. | [vector] — conversión por elemento
+u = [0.001*m; 0.0005*m; 0.002*rad]
+u
+u | [cm; cm; rad]
+u | [mm; mm; rad]
+
+'<hr/>
+"3. & [vector] — adimensionalizar + stamp
+E = 2100000*kgf/cm^2
+A = 100*cm^2
+I = 5000*cm^4
+Lv = 400*cm
+k1 = E*A/Lv
+k2 = 12*E*I/Lv^3
+k3 = 6*E*I/Lv^2
+k4 = 4*E*I/Lv
+K = [k1; 0*kgf/cm; 0*kgf | 0*kgf/cm; k2; k3 | 0*kgf; k3; k4]
+
+'F calculado para u=[0.1cm, 0.05cm, 0.001rad]:
+F1 = k1*0.1*cm
+F2 = k2*0.05*cm + k3*0.001
+F3 = k3*0.05*cm + k4*0.001
+Fv = [F1; F2; F3]
+
+'<h4>lsolve con & [cm; cm; rad]</h4>
+u_sol = lsolve(K; Fv) & [cm; cm; rad]
+u_sol
+
+'<h4>Mismo resultado con | [cm; cm; rad]</h4>
+u_raw = lsolve(K; Fv)
+u_raw | [cm; cm; rad]
+
+'<hr/>
+"4. | [matriz] — conversión por celda
+K2 = [100*kN/m; 50*kN | 50*kN; 200*kN*m]
+K2
+K2 | [tonf/m; tonf | tonf; tonf*m]

@@ -1,0 +1,12 @@
+"Test sintaxis ]unidad
+'Con multiplicación explícita
+v1 = [10; 5; -3]*kN
+
+'Sin multiplicación (pegado al bracket)
+v2 = [10; 5; -3]kN
+
+'Matriz con *
+M1 = [1; 2| 3; 4]*tonf
+
+'Matriz sin *
+M2 = [1; 2| 3; 4]tonf
