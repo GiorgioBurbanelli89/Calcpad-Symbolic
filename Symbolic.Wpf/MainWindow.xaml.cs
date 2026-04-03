@@ -294,7 +294,7 @@ namespace Calcpad.Wpf
         {
             if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
             {
-                DocumentPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\Calcpad";
+                DocumentPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\Calcpad-Symbolic";
                 if (!Directory.Exists(DocumentPath))
                     Directory.CreateDirectory(DocumentPath);
             }
