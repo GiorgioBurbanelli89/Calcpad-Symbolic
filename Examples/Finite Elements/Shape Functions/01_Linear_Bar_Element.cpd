@@ -1,0 +1,43 @@
+"Linear Bar Element — Shape Functions
+'From polynomial to stiffness matrix (Logan Ch.3)
+
+"1. The Problem
+'A bar has 2 nodes. Each node has 1 DOF (axial displacement u).
+'We need to find u(x) at any point between the nodes.
+
+"2. Polynomial Assumption
+'With 2 nodes we have 2 conditions → linear polynomial (degree 1):
+#deq u(ξ) = a_0 + a_1*ξ
+
+"3. Boundary Conditions
+#deq u(0) = u_1 = a_0
+#deq u(1) = u_2 = a_0 + a_1
+'From these: a₀ = u₁, a₁ = u₂ - u₁
+
+"4. Shape Functions
+#deq N_1(ξ) = 1 - ξ
+#deq N_2(ξ) = ξ
+#deq u(ξ) = N_1*u_1 + N_2*u_2
+
+"5. Verification with #sym
+#sym subs(1-t; t; 0)
+#sym subs(1-t; t; 1)
+#sym subs(t; t; 0)
+#sym subs(t; t; 1)
+
+"6. B Matrix (strain-displacement)
+'Strain = du/dx = dN/dx * u
+#sym diff(1-t; t)
+#sym diff(t; t)
+#deq B = [-1/L; 1/L]
+
+"7. Stiffness Matrix
+'K = ∫ Bᵀ·E·A·B dx = Bᵀ·E·A·B·L
+#deq K = E*A/L*[1; -1 | -1; 1]
+
+"8. Numerical Example
+E = 200000MPa
+A = 50cm^2
+L = 3m
+K_num = E*A/L*[1; -1 | -1; 1]
+K_num|[kN/m; kN/m | kN/m; kN/m]

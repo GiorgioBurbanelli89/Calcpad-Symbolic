@@ -1,0 +1,18 @@
+"Torsion Stiffness Matrix
+'K = ∫ Bᵀ·G·J·B dx — same form as axial
+
+"Shape Functions (linear)
+#deq N_1 = 1 - ξ
+#deq N_2 = ξ
+#sym diff(1-t; t)
+#sym diff(t; t)
+
+"Stiffness Matrix
+#deq K_torsion = G*J/L*[1; -1 | -1; 1]
+
+"Numerical
+G = 80000MPa
+J = 5000cm^4
+L = 4m
+K_t = G*J/L*[1; -1 | -1; 1]
+K_t|[kN*m/rad; kN*m/rad | kN*m/rad; kN*m/rad]

@@ -1,0 +1,26 @@
+"Axial Stiffness Matrix — From Shape Functions to K
+'K = ∫ Bᵀ·E·A·B dx (Logan Ch.3)
+
+"Shape Functions
+#deq N_1 = 1 - ξ
+#deq N_2 = ξ
+
+"B Matrix (derivative of N)
+#sym diff(1-t; t)
+#sym diff(t; t)
+#deq B = [-1/L; 1/L]
+
+"Stiffness Matrix
+#deq K = B^T*E*A*B*L = E*A/L*[1; -1 | -1; 1]
+
+"Numerical Example
+E = 200000MPa
+A = 100cm^2
+L = 3m
+K = E*A/L*[1; -1 | -1; 1]
+K|[kN/m; kN/m | kN/m; kN/m]
+
+"Solve: Fixed at node 1, F=100kN at node 2
+F = 100kN
+u_2 = F/(E*A/L)
+u_2|mm

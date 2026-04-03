@@ -1,0 +1,29 @@
+"Plane Frame — 2 Elements (Herrera Ch.5)
+'Direct stiffness method with #function
+
+"Material
+E = 200000MPa
+A = 100cm^2
+I = 8333cm^4
+
+"Element 1: L=5m horizontal
+L_1 = 5m
+
+"Element 2: L=4m vertical
+L_2 = 4m
+
+"Element Stiffness Function
+#function FrameKe(E; A; I; L)
+c1 = E*A/L
+c2 = 12*E*I/L^3
+c3 = 6*E*I/L^2
+c4 = 4*E*I/L
+c5 = 2*E*I/L
+FrameKe = [c1; 0; 0; -c1; 0; 0 | 0; c2; c3; 0; -c2; c3 | 0; c3; c4; 0; -c3; c5 | -c1; 0; 0; c1; 0; 0 | 0; -c2; -c3; 0; c2; -c3 | 0; c3; c5; 0; -c3; c4]
+#end function
+
+K_1 = FrameKe(E; A; I; L_1)
+K_2 = FrameKe(E; A; I; L_2)
+
+"Display formulas
+#deq K_local = [E*A/L; 0; 0 | 0; 12*E*I/L^3; 6*E*I/L^2 | 0; 6*E*I/L^2; 4*E*I/L]

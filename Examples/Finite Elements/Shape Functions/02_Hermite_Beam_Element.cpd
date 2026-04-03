@@ -1,0 +1,53 @@
+"Hermite Beam Element — Shape Functions
+'Euler-Bernoulli beam, 4 DOF: w₁, θ₁, w₂, θ₂ (Logan Ch.4)
+
+"1. Why Cubic Polynomial?
+'Beam has 2 nodes × 2 DOF each (deflection w + rotation θ) = 4 DOF
+'Need polynomial with 4 coefficients → degree 3 (cubic):
+#deq w(ξ) = a_0 + a_1*ξ + a_2*ξ^2 + a_3*ξ^3
+#deq θ(ξ) = dw/dξ = a_1 + 2*a_2*ξ + 3*a_3*ξ^2
+
+"2. N₁: w(0)=1, θ(0)=0, w(1)=0, θ(1)=0
+'Node 1 displaces 1 unit, no rotation. Node 2 fixed.
+#deq w(0) = a_0 = 1
+#deq θ(0) = a_1 = 0
+#deq 1 + a_2 + a_3 = 0
+#deq 2*a_2 + 3*a_3 = 0
+#sym solve(2*(-1-a_3)+3*a_3; a_3)
+#deq N_1 = 1 - 3*ξ^2 + 2*ξ^3
+
+"3. N₂: w(0)=0, θ(0)=1, w(1)=0, θ(1)=0
+'Node 1 rotates 1 radian, no displacement. Node 2 fixed.
+#deq a_0 = 0
+#deq a_1 = 1
+#sym solve(1+2*(-1-a_3)+3*a_3; a_3)
+#deq N_2 = ξ - 2*ξ^2 + ξ^3 = ξ*(1 - ξ)^2
+
+"4. N₃: w(0)=0, θ(0)=0, w(1)=1, θ(1)=0
+#sym solve(2*a_2+3*(1-a_2); a_2)
+#deq N_3 = 3*ξ^2 - 2*ξ^3
+
+"5. N₄: w(0)=0, θ(0)=0, w(1)=0, θ(1)=1
+#sym solve(-a_3+1; a_3)
+#deq N_4 = -ξ^2 + ξ^3 = ξ^2*(ξ - 1)
+
+"6. First Derivatives (slope)
+#sym diff(1 - 3*t^2 + 2*t^3; t)
+#sym diff(t - 2*t^2 + t^3; t)
+#sym diff(3*t^2 - 2*t^3; t)
+#sym diff(-t^2 + t^3; t)
+
+"7. Second Derivatives (curvature — B matrix)
+'Bending moment M = EI·κ, where κ = d²w/dx²
+#sym diff(1 - 3*t^2 + 2*t^3; t; 2)
+#sym diff(t - 2*t^2 + t^3; t; 2)
+#sym diff(3*t^2 - 2*t^3; t; 2)
+#sym diff(-t^2 + t^3; t; 2)
+
+"8. Verify K coefficients: ∫₀¹ BᵢBⱼ dξ
+#sym integrate((-6+12*t)^2; t; 0; 1)
+#sym integrate((-6+12*t)*(-4+6*t); t; 0; 1)
+#sym integrate((-4+6*t)^2; t; 0; 1)
+
+"9. Stiffness Matrix
+#deq K_flex = E*I/L^3*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2 | -12; -6*L; 12; -6*L | 6*L; 2*L^2; -6*L; 4*L^2]
