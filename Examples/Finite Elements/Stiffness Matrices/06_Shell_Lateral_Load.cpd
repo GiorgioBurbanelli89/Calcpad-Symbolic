@@ -1,0 +1,64 @@
+"Shell Element — Lateral Load on Wall (Q4)
+'Membrane + Plate bending (Bathe Ch.5, Zienkiewicz Ch.14)
+
+"1. Problem Description
+'Concrete wall 4m × 3m, thickness 25cm
+'Fixed at base, lateral pressure q = 5 kN/m²
+'Material: E = 25000 MPa, ν = 0.2
+
+"2. Material Properties
+E = 25000MPa
+ν = 0.2
+t = 25cm
+
+"3. Membrane Constitutive Matrix (in-plane)
+#deq D_m = E*t/(1-ν^2)*[1; ν; 0 | ν; 1; 0 | 0; 0; (1-ν)/2]
+D_m11 = E*t/(1 - ν^2)
+D_m12 = ν*D_m11
+D_m33 = D_m11*(1 - ν)/2
+D_m = [D_m11; D_m12; 0kN/m | D_m12; D_m11; 0kN/m | 0kN/m; 0kN/m; D_m33]
+D_m|[kN/m; kN/m; kN/m | kN/m; kN/m; kN/m | kN/m; kN/m; kN/m]
+
+"4. Bending Constitutive Matrix (out-of-plane)
+#deq D_b = E*t^3/(12*(1-ν^2))*[1; ν; 0 | ν; 1; 0 | 0; 0; (1-ν)/2]
+D_b11 = E*t^3/(12*(1 - ν^2))
+D_b = [D_b11; ν*D_b11; 0kN*m | ν*D_b11; D_b11; 0kN*m | 0kN*m; 0kN*m; D_b11*(1-ν)/2]
+D_b|[kN*m; kN*m; kN*m | kN*m; kN*m; kN*m | kN*m; kN*m; kN*m]
+
+"5. Symbolic: Shape Functions and Derivatives
+#sym
+pdiff((1-a)*(1-b)/4; a)
+pdiff((1-a)*(1-b)/4; b)
+gradient((1-a)*(1-b)/4; a; b)
+hessian((1-a)*(1-b)/4; a; b)
+#end sym
+
+"6. Consistent Nodal Forces from Pressure
+'q = 5 kN/m² distributed → nodal force = q × tributary area
+q = 5kN/m^2
+L_x = 4m
+L_y = 3m
+'Each node gets q × Lx × Ly / 4 (for equal distribution):
+F_node = q*L_x*L_y/4
+F_node|kN
+
+"7. Lateral Load Vector (4 nodes, out-of-plane DOF)
+F = [F_node; F_node; F_node; F_node]
+
+"8. Bending Stiffness (simplified 1 element)
+'For thin plate: K_b = ∫∫ Bᵀ·D_b·B dA
+'Analytical for rectangular plate:
+D_flex = E*t^3/(12*(1-ν^2))
+D_flex|kN*m
+
+"9. Maximum Deflection Estimate
+'Fixed-free plate under uniform load:
+'δ_max ≈ 0.0054 × q × L⁴ / D (for a/b=4/3, 3 edges fixed)
+δ_approx = 0.0054*q*L_y^4/D_flex
+δ_approx|mm
+
+"10. Symbolic Strain Tensor
+#sym strain(u_x*x + u_xy*x*y; v_y*y + v_xy*x*y; x; y)
+
+"11. Symbolic Stress from Strain (Plane Stress)
+#sym stress(e_11; e_22; e_12; E; ν)
