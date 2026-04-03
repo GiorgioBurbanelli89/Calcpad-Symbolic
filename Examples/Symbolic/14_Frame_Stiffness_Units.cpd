@@ -1,34 +1,50 @@
-"Frame Element — Stiffness Matrix with Units and & Operator
+"Frame Element — Stiffness Matrix with Units
 
+"═══════════════════════════════════
 "Material and Section
+"═══════════════════════════════════
 E = 200000MPa
 A = 100cm^2
 I = 8333cm^4
 L = 5m
 
+"═══════════════════════════════════
 "Axial Stiffness
+"═══════════════════════════════════
 #deq K_axial = E*A/L*[1; -1 | -1; 1]
 k_a = E*A/L
 K_a = k_a*[1; -1 | -1; 1]
+'En kN/m:
 K_a|[kN/m; kN/m | kN/m; kN/m]
 
-"Flexural Stiffness
+"═══════════════════════════════════
+"Flexural Stiffness (2 DOF simplificado)
+"═══════════════════════════════════
 k_f = E*I/L^3
-K_f = k_f*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2 | -12; -6*L; 12; -6*L | 6*L; 2*L^2; -6*L; 4*L^2]
+K_f = k_f*[12; 6*L | 6*L; 4*L^2]
+'En kN y kN*m:
+K_f|[kN/m; kN | kN; kN*m]
 
-"Convert with | (per element)
-K_f|[kN/m; kN; kN/m; kN | kN; kN*m; kN; kN*m | kN/m; kN; kN/m; kN | kN; kN*m; kN; kN*m]
+"═══════════════════════════════════
+"Solve: F = K*u → u = K⁻¹*F
+"═══════════════════════════════════
+F = [50kN; 0kN*m]
+u = lsolve(K_f; F)
+'Resultado en SI (m y rad):
+u
+'Convertir desplazamiento a mm, rotacion en rad:
+u|[mm; rad]
 
-"Force Vector
-F = [0kN; 50kN; 0kN*m; 0kN; 0kN; 0kN*m]
-
-"Solve with unit array &
-'Adimensionalize everything to SI, solve, stamp result units:
-u = lsolve(K_f; [0kN; 50kN; 0kN*m; 0kN; 0kN; 0kN*m])
-u|[mm; mm; rad; mm; mm; rad]
-
-"Symbolic derivation of B matrix
+"═══════════════════════════════════
+"Symbolic: Derivation of B matrix
+"═══════════════════════════════════
+'Hermite shape functions — second derivatives:
 #sym diff(1 - 3*t^2 + 2*t^3; t; 2)
 #sym diff(t*(1-t)^2; t; 2)
-#sym diff(3*t^2 - 2*t^3; t; 2)
-#sym diff(t^2*(t-1); t; 2)
+'Verification K₁₁ = ∫B₁²dξ = 12:
+#sym integrate((-6+12*t)^2; t; 0; 1)
+
+"═══════════════════════════════════
+"Display: Final stiffness matrix
+"═══════════════════════════════════
+#deq K_flex = E*I/L^3*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2 | -12; -6*L; 12; -6*L | 6*L; 2*L^2; -6*L; 4*L^2]
