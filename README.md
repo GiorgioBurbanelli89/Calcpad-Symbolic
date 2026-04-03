@@ -1,8 +1,8 @@
 # Calcpad-Symbolic
 
-**Calcpad with Symbolic Math** — A fork of [CalcpadCE](https://github.com/imartincei/CalcpadCE) v7.6.2 with symbolic computation, Python integration, and Maxima CAS.
+**Calcpad with Symbolic Math, Python, Maxima, FEM Visualization** — A fork of [CalcpadCE](https://github.com/imartincei/CalcpadCE) v7.6.2.
 
-Calcpad-Symbolic extends CalcpadCE with three Computer Algebra System (CAS) engines, adding symbolic differentiation, integration, equation solving, Laplace transforms, ODE solving, tensor calculus, and FEM operators — all rendered with the native CalcpadCE template (fractions, superscripts, matrices, mathematical symbols).
+Calcpad-Symbolic extends CalcpadCE with three CAS engines, interactive FEM visualization, enhanced unit operators, user-defined functions, and Python/OpenSeesPy integration. All output rendered with the native CalcpadCE template.
 
 > Gift to the CalcpadCE community. Since Ned closed the original repository, I wanted to contribute something useful.
 
@@ -10,33 +10,121 @@ Calcpad-Symbolic extends CalcpadCE with three Computer Algebra System (CAS) engi
 
 ---
 
-## Fields of Application
+## What CalcpadCE Had (v7.6.2 by Ned Ganchovski)
 
-- **Structural engineering** — symbolic derivation of stiffness matrices, shape functions, FEM formulations
-- **Dynamics** — Laplace transforms, ODE solving, modal analysis
-- **Continuum mechanics** — strain/stress tensors, Voigt notation, invariants, Jacobians
-- **Mathematics** — derivatives, integrals, series, limits, equation solving
-- **Education** — step-by-step symbolic derivations with formatted output
-- **Verification** — Python/OpenSeesPy integration for FEM validation
+- Real and complex numbers, vectors, matrices
+- Units of measurement (SI, Imperial, USCS)
+- Operators, built-in math functions (trig, log, etc.)
+- Program flow (#if, #for, #while, #repeat)
+- $Plot, $Map, $Find, $Root, $Integral, $Derivative, $Sum, $Product
+- HTML report generation, Word/PDF export
+- WPF desktop app with syntax highlighting
+
+## What Calcpad-Symbolic Adds (NEW)
+
+### 1. Symbolic Math Engine — `#sym` (AngouriMath C# native)
+
+No external process needed. Inline or block mode.
+
+**Calculus:** diff, integrate, limit, series, pdiff (partial derivative)
+**Algebra:** simplify, expand, factor, solve, eval, subs
+**Vector Calculus:** gradient (nabla), divergence, curl, laplacian, jacobian, hessian
+**Laplace Transform:** 14+ common pairs, inverse Laplace
+**ODE Solver:** 1st and 2nd order with constant coefficients
+**Tensor Calculus:** strain, stress (Hooke), voigt, invariants, dyadic product
+**Matrix Symbolic:** det, inv, eigen, transpose (2x2/3x3)
+
+### 2. Python Integration — `#python` / `#end python`
+
+Execute Python code blocks. Output rendered with CalcpadCE template.
+Works with SymPy, NumPy, SciPy, OpenSeesPy, matplotlib, and any library.
+Export variables to CalcpadCE: `print(f"CALCPAD:var={value}")`
+
+### 3. Maxima CAS — `#maxima` / `#end maxima`
+
+Execute Maxima computer algebra system. Supports diff, integrate, solve, laplace, ode2, taylor, eigenvalues, matrices. Lines with `;` produce output, `$` are silent.
+
+### 4. Package Manager — `#pip install`
+
+Install Python packages directly: `#pip install numpy sympy openseespy`
+
+### 5. Display Equations — `#deq`
+
+Show symbolic equations without computation. Double/triple equality for reference formulas.
+
+### 6. User-Defined Functions — `#function` / `#end function`
+
+Multi-line functions with parameter isolation. Return scalars, vectors, or matrices.
+
+### 7. Interactive FEM Visualization — $Fem2D, $Fem3D, $Chart, $Mesh
+
+**$Fem2D** — 2D finite element mesh visualization (Three.js interactive)
+**$Fem3D** — 3D finite element visualization with rotation/zoom
+**$Chart** — Interactive charts with customizable styling (light theme)
+**$Mesh** — SVG mesh with supports, loads, color-mapped results
+
+Powered by calcpad-viz TypeScript library (Three.js v0.170.0).
+
+### 8. Unit Operators Enhanced — `&` and `|` with Arrays
+
+**Original CalcpadCE:** `&` and `|` only worked with scalars.
+
+**New — Adimensionalization with arrays:**
+```
+u = lsolve(K; F) & [cm; cm; rad]
+```
+Strips ALL units from the computation (adimensionalizes to SI), then stamps each element with the specified unit.
+
+**New — Conversion with arrays:**
+```
+u | [cm; cm; rad]
+```
+Converts each element to the specified unit (compatible units required).
+
+**Matrix unit arrays:**
+```
+K & [tonf/m; tonf | tonf; tonf*m]
+```
+
+### 9. New Matrix Functions
+
+- **lsolve**(K; F) — solve linear system
+- **clsolve**(K; F) — complex linear solver
+- **slsolve**(K; F), **smsolve**(K; F) — sparse solvers
+- **hprod** — Hadamard product (element-wise)
+- **fprod** — Frobenius product (matrix inner product)
+- **kprod** — Kronecker product
+- **matrix_hp**, **diagonal_hp**, **column_hp** — high-precision variants
+
+### 10. Vector Display — Vertical Column Format
+
+Vectors now display vertically (as columns) like matrices, matching standard math notation.
+
+### 11. FEM Graphics Library — Include/FEM_Graphics.cpd
+
+Macro library with predefined SVG functions for FEM diagrams:
+- Joints, elements, labels, boundary conditions (pin, fixed, roller)
+- Loading (distributed, point force, moment)
+- Color mapping (blue to green to yellow to red gradient)
 
 ---
 
 ## Installation
 
-Requires a 64-bit computer with Windows 10/11 and [Microsoft .NET Desktop Runtime 10.0](https://dotnet.microsoft.com/download/dotnet/10.0).
+### Requirements
+- Windows 10/11 x64
+- [.NET Desktop Runtime 10.0](https://dotnet.microsoft.com/download/dotnet/10.0)
 
-Optional:
-- [Python 3.x](https://www.python.org/) — for `#python` blocks
+### Optional (for extended features)
+- [Python 3.x](https://www.python.org/) — for `#python` blocks and `#pip`
 - [Maxima](https://maxima.sourceforge.io/) — for `#maxima` blocks
+- Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-
-Download the latest portable release (no installer needed):
-
-**[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)**
+- **[Calcpad-Symbolic-Setup-1.0.0.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
-
 ```
 git clone https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic.git
 cd Calcpad-Symbolic
@@ -46,262 +134,116 @@ dotnet run --project Symbolic.Wpf
 
 ---
 
-## Licensing and Terms of Use
+## Quick Reference — New Keywords
 
-Copyright (c) 2025 Ned Ganchovski (original CalcpadCE), Jorge Burbano (symbolic extensions)
-
-MIT License. See LICENSE file for details.
-
-Based on **CalcpadCE** by Ned Ganchovski ([proektsoft.bg](https://proektsoft.bg)).
-Fork maintained by [imartincei](https://github.com/imartincei/CalcpadCE).
-Symbolic extensions by [Jorge Burbano](https://www.linkedin.com/in/jorge-burbano-037444113/).
-
-### Acknowledgments
-
-- [AngouriMath](https://github.com/asc-community/AngouriMath) — symbolic math engine for .NET
-- [Maxima](https://maxima.sourceforge.io/) — computer algebra system
-- Original CalcpadCE acknowledgments apply (icons8, wkhtmltopdf, font families)
-
----
-
-## How it Works
-
-1. Write expressions, symbolic operations, and code blocks in the **left panel**
-2. Press **F5** or click **Run** to calculate
-3. Results appear in the **right panel** with formatted math (fractions, superscripts, matrices, symbols)
+| Keyword | Mode | Description |
+|---------|------|-------------|
+| `#sym expr` | Inline | Symbolic math (AngouriMath) |
+| `#sym`...`#end sym` | Block | Multi-line symbolic |
+| `#python`...`#end python` | Block | Python code execution |
+| `#maxima`...`#end maxima` | Block | Maxima CAS execution |
+| `#pip install pkg` | Inline | Install Python packages |
+| `#deq expr = expr` | Inline | Display-only equation |
+| `#function`...`#end function` | Block | User-defined function |
+| `$Fem2D{...}` | Command | Interactive 2D FEM mesh |
+| `$Fem3D{...}` | Command | Interactive 3D FEM mesh |
+| `$Chart{...}` | Command | Interactive chart |
+| `$Mesh{...}` | Command | SVG FEM mesh |
+| `expr & [u1; u2; u3]` | Operator | Adimensionalize + stamp units |
+| `expr \| [u1; u2; u3]` | Operator | Convert units per element |
 
 ---
 
-## New Features (Symbolic Extensions)
+## Detailed Usage
 
-All original CalcpadCE features are preserved. The following keywords are new:
+### #sym — Symbolic Math
 
-### `#sym` — Symbolic Math (AngouriMath)
-
-Native C# symbolic computation using AngouriMath. No external process needed.
-
-**Inline mode** — one expression per line:
 ```
+"Calculus
 #sym diff(x^2 + 3*x; x)
-```
+#sym integrate(sin(x); x)
+#sym integrate(x^2; x; 0; 1)
+#sym pdiff(x^2*y + y^3; x)
+#sym limit(sin(x)/x; x; 0)
+#sym series(sin(x); x; 5)
 
-**Block mode** — multiple expressions:
-```
+"Vector Calculus
+#sym gradient(x^2 + y^2; x; y)
+#sym divergence(x^2; y^2; z^2; x; y; z)
+#sym curl(y*z; x*z; x*y; x; y; z)
+#sym laplacian(x^2 + y^2; x; y)
+#sym jacobian(x^2; y^2; x; y)
+#sym hessian(x^3 + x*y^2; x; y)
+
+"Laplace Transform
+#sym laplace(sin(t); t; s)
+#sym laplace(exp(-a*t)*sin(w*t); t; s)
+#sym ilaplace(1/s; s; t)
+
+"ODE Solver
+#sym ode2(0; 4)
+#sym ode2(2; 5)
+
+"Tensor Calculus
+#sym strain(x^2*y; x*y^2; x; y)
+#sym stress(0.001; 0.002; 0.0005; 200000; 0.3)
+
+"Block mode
 #sym
-diff(x^2 + 3*x; x)
+diff(x^2; x)
 integrate(sin(x); x)
 solve(x^2 - 4; x)
 #end sym
 ```
 
-#### Calculus
-
-**diff**(expr; var) — derivative of expr with respect to var:
-```
-#sym diff(x^3 + 2*x; x)              → 3x² + 2
-#sym diff(sin(x)*cos(x); x)          → cos(2x)
-#sym diff(x^3 - 3*x^2 + 2*x; x; 2)  → 6x - 6  (second derivative)
-```
-
-**integrate**(expr; var) — indefinite integral:
-```
-#sym integrate(x^2; x)               → x³/3 + C
-#sym integrate(sin(x); x)            → -cos(x) + C
-```
-
-**integrate**(expr; var; a; b) — definite integral:
-```
-#sym integrate(x^2; x; 0; 1)         → 1/3
-#sym integrate(sin(x); x; 0; pi)     → 2
-```
-
-**limit**(expr; var; value) — limit:
-```
-#sym limit(sin(x)/x; x; 0)           → 1
-```
-
-**series**(expr; var; n) — Taylor series around 0 with n terms:
-```
-#sym series(sin(x); x; 5)            → x - x³/6 + x⁵/120
-#sym series(e^x; x; 4)               → 1 + x + x²/2 + x³/6 + x⁴/24
-```
-
-#### Algebra
-
-**simplify**(expr) — simplify expression:
-```
-#sym simplify((x^2 - 1)/(x - 1))    → x + 1
-```
-
-**expand**(expr) — expand expression:
-```
-#sym expand((a + b)^3)                → a³ + 3a²b + 3ab² + b³
-```
-
-**factor**(expr) — factorize:
-```
-#sym factor(x^2 - 5*x + 6)           → (x-2)(x-3)
-```
-
-**solve**(expr; var) — solve equation = 0:
-```
-#sym solve(x^2 - 4; x)               → {2, -2}
-#sym solve(x^2 + 2*x - 3; x)         → {-3, 1}
-```
-
-**eval**(expr) — evaluate to numeric:
-```
-#sym eval(sqrt(2))                    → 1.4142135...
-```
-
-**subs**(expr; var; value) — substitute:
-```
-#sym subs(x^2 + 2*x + 1; x; 3)      → 16
-```
-
-#### Partial Derivatives
-
-**pdiff**(expr; var) — partial derivative (uses symbol):
-```
-#sym pdiff(x^2*y + y^3; x)           → 2xy
-#sym pdiff(x^2*y + y^3; y)           → x² + 3y²
-#sym pdiff(x^2*y^2 + sin(x*y); x; 2) → (2 - sin(xy))y²
-```
-
-#### Vector Calculus
-
-**gradient**(f; x; y; z) — gradient vector:
-```
-#sym gradient(x^2 + y^2 + x*y; x; y)  → [2x+y; x+2y]
-```
-
-**divergence**(F1; F2; F3; x; y; z) — divergence (first half = components, second half = variables):
-```
-#sym divergence(x^2; y^2; z^2; x; y; z)  → 2(x+y+z)
-```
-
-**curl**(F1; F2; F3; x; y; z) — curl (3D only):
-```
-#sym curl(y*z; x*z; x*y; x; y; z)    → [0; 0; 0]
-```
-
-**laplacian**(f; x; y; z) — Laplacian:
-```
-#sym laplacian(x^2 + y^2 + z^2; x; y; z)  → 6
-```
-
-#### FEM Operators
-
-**jacobian**(f1; f2; x; y) — Jacobian matrix (first half = functions, second half = variables):
-```
-#sym jacobian(x^2; y^2; x; y)        → [2x, 0; 0, 2y]
-```
-
-**hessian**(f; x; y) — Hessian matrix of second derivatives:
-```
-#sym hessian(x^3 + x*y^2; x; y)      → [6x, 2y; 2y, 2x]
-```
-
-**strain**(u; v; x; y) — strain tensor from displacement field (2D):
-```
-#sym strain(x^2*y; x*y^2; x; y)      → [2xy, (x²+y²)/2; (x²+y²)/2, 2xy]
-```
-
-**strain**(u; v; w; x; y; z) — strain tensor 3D (6 components)
-
-**stress**(e11; e22; e12; E; nu) — stress tensor via isotropic Hooke's law (plane stress):
-```
-#sym stress(0.001; 0.002; 0.0005; 200000; 0.3)
-```
-
-**voigt**(a; b; c; d) — convert symmetric 2x2 tensor to Voigt vector notation
-
-**invariants**(a; b; c; d) — tensor invariants I1, I2 for 2x2; or I1, I2, I3 for 3x3 (9 args)
-
-**dyadic**(a1; a2; b1; b2) — outer product:
-```
-#sym dyadic(1; 2; 3; 4)              → [3, 4; 6, 8]
-```
-
-#### Matrix Operations
-
-**det**(a; b; c; d) — symbolic determinant 2x2:
-```
-#sym det(a; b; c; d)                  → ad - bc
-```
-
-**det**(a11; ...; a33) — symbolic determinant 3x3 (9 args)
-
-**inv**(a; b; c; d) — symbolic inverse 2x2:
-```
-#sym inv(a; b; c; d)                  → [d/(ad-bc), -b/(ad-bc); -c/(ad-bc), a/(ad-bc)]
-```
-
-**eigen**(a; b; c; d) — symbolic eigenvalues 2x2:
-```
-#sym eigen(4; -2; -2; 4)             → [6; 2]
-```
-
-**transp**(a; b; c; d) — transpose 2x2
-
-#### Laplace Transform
-
-**laplace**(f; t; s) — Laplace transform (14+ common pairs):
-```
-#sym laplace(1; t; s)                 → 1/s
-#sym laplace(t; t; s)                 → 1/s²
-#sym laplace(t^2; t; s)              → 2/s³
-#sym laplace(sin(t); t; s)           → 1/(s²+1)
-#sym laplace(cos(w*t); t; s)         → s/(s²+w²)
-#sym laplace(exp(-a*t); t; s)        → 1/(s+a)
-#sym laplace(sinh(t); t; s)          → 1/(s²-1)
-#sym laplace(cosh(t); t; s)          → s/(s²-1)
-#sym laplace(exp(-a*t)*sin(w*t); t; s) → w/((s+a)²+w²)
-#sym laplace(exp(-a*t)*cos(w*t); t; s) → (s+a)/((s+a)²+w²)
-#sym laplace(t*sin(w*t); t; s)       → 2ws/(s²+w²)²
-#sym laplace(t*exp(-a*t); t; s)      → 1/(s+a)²
-```
-
-**ilaplace**(F; s; t) — inverse Laplace (basic pairs):
-```
-#sym ilaplace(1/s; s; t)             → 1
-#sym ilaplace(1/s^2; s; t)           → t
-```
-
-#### ODE Solver
-
-**ode1**(a) — first order: y' + ay = 0:
-```
-#sym ode1(2)                          → C*e^(-2x)
-#sym ode1(-1)                         → C*e^(x)
-```
-
-**ode2**(a; b) — second order: y'' + ay' + by = 0:
-```
-#sym ode2(5; 6)                       → C1*e^(-2x) + C2*e^(-3x)  (real distinct)
-#sym ode2(4; 4)                       → e^(-2x)*(C1 + C2*x)       (repeated)
-#sym ode2(0; 4)                       → C1*cos(2x) + C2*sin(2x)   (pure oscillation)
-#sym ode2(2; 5)                       → e^(-x)*(C1*cos(2x) + C2*sin(2x))  (underdamped)
-```
-
----
-
-### `#deq` — Symbolic Display Equations
-
-Display-only equations with double/triple equality. No computation performed — purely for showing reference formulas.
+### #python — Python Code
 
 ```
-#deq f(x) = x^2 + 3*x + 1
+#python
+from sympy import symbols, diff, integrate, solve, sin
+x = symbols('x')
+print(f"diff(x^3) = {diff(x**3, x)}")
+print(f"solve(x^2-4) = {solve(x**2 - 4, x)}")
+#end python
+```
+
+OpenSeesPy example:
+```
+#python
+import openseespy.opensees as ops
+ops.wipe()
+ops.model('basic', '-ndm', 2, '-ndf', 3)
+# ... define model ...
+ops.analyze(1)
+uy = ops.nodeDisp(2, 2)
+print(f"uy = {uy}")
+print(f"CALCPAD:uy={uy}")
+ops.wipe()
+#end python
+
+'Result from OpenSeesPy:
+uy
+```
+
+### #maxima — Maxima CAS
+
+```
+#maxima
+diff(x^2 + 3*x + 1, x);
+laplace(sin(t), t, s);
+ode2('diff(y,x,2) + 4*y = 0, y, x);
+eigenvalues(matrix([a, b], [c, d]));
+#end maxima
+```
+
+### #deq — Display Equations
+
+```
+#deq N_1 = (1 - xi)*(1 - eta)/4
 #deq K = E*I/L^3*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2 | -12; -6*L; 12; -6*L | 6*L; 2*L^2; -6*L; 4*L^2]
-#deq N_1 = (1 - ξ)*(1 - η)/4
-#deq ε = du/dx
 ```
 
----
-
-### `#function` / `#end function` — User-Defined Functions
-
-Multi-line functions with variable isolation. Parameters separated by semicolons.
+### #function — User Functions
 
 ```
 #function FrameKe(E; A; L)
@@ -312,137 +254,47 @@ FrameKe = k*[1; -1 | -1; 1]
 K = FrameKe(200000; 0.01; 3)
 ```
 
-- The last line with `FunctionName = expr` defines the return value
-- Variables inside the function are isolated (don't leak outside)
-- Functions can return scalars, vectors, or matrices
-
----
-
-### `#python` / `#end python` — Python Code Blocks
-
-Execute Python code with output rendered using the CalcpadCE template.
+### Unit Arrays — & and |
 
 ```
-#python
-from sympy import symbols, diff, integrate, solve, sin
-x = symbols('x')
-print(f"diff(x^3) = {diff(x**3, x)}")
-print(f"integrate(sin(x)) = {integrate(sin(x), x)}")
-print(f"solve(x^2-4) = {solve(x**2 - 4, x)}")
-#end python
-```
+'Adimensionalize and stamp:
+u = lsolve(K; F) & [cm; cm; rad]
 
-Output rendering:
-- `diff(...)` on the left side renders as d/dx fraction
-- `integrate(...)` renders as integral symbol
-- `solve(...)` renders as equation = 0
-- `**` converts to superscripts, `*` to multiplication dot
-- `[[a,b],[c,d]]` converts to CalcpadCE matrix notation
-- Scientific notation `1.23e+04` converts to decimal
+'Convert per element:
+u | [mm; mm; rad]
 
-#### Variable Export
-
-Export values from Python to CalcpadCE variables using `CALCPAD:` prefix:
-
-```
-#python
-import numpy as np
-K = np.array([[4, -2], [-2, 4]])
-det_K = np.linalg.det(K)
-print(f"CALCPAD:det_K={det_K}")
-#end python
-
-'The determinant from Python is:
-det_K
-```
-
-#### OpenSeesPy Example
-
-```
-#python
-import openseespy.opensees as ops
-ops.wipe()
-ops.model('basic', '-ndm', 2, '-ndf', 3)
-ops.node(1, 0.0, 0.0)
-ops.node(2, 5.0, 0.0)
-ops.fix(1, 1, 1, 1)
-ops.element('elasticBeamColumn', 1, 1, 2, 0.01, 200000.0, 8.333e-6, 1)
-ops.timeSeries('Linear', 1)
-ops.pattern('Plain', 1, 1)
-ops.load(2, 0.0, -10.0, 0.0)
-ops.system('BandSPD')
-ops.numberer('RCM')
-ops.constraints('Plain')
-ops.integrator('LoadControl', 1.0)
-ops.algorithm('Linear')
-ops.analysis('Static')
-ops.analyze(1)
-uy = ops.nodeDisp(2, 2)
-print(f"uy = {uy:.6e}")
-print(f"CALCPAD:uy={uy}")
-ops.wipe()
-#end python
+'Matrix units:
+K & [kN/m; kN | kN; kN*m]
 ```
 
 ---
 
-### `#maxima` / `#end maxima` — Maxima CAS Blocks
+## Licensing
 
-Execute Maxima computer algebra system code. Requires [Maxima](https://maxima.sourceforge.io/) installed.
+MIT License.
 
-```
-#maxima
-diff(x^2 + 3*x + 1, x);
-integrate(sin(x), x);
-solve(x^2 - 4, x);
-laplace(sin(t), t, s);
-ode2('diff(y,x,2) + 4*y = 0, y, x);
-taylor(sin(x), x, 0, 7);
-eigenvalues(matrix([a, b], [c, d]));
-#end maxima
-```
+Based on **CalcpadCE** by Ned Ganchovski ([proektsoft.bg](https://proektsoft.bg)).
+Fork by [imartincei](https://github.com/imartincei/CalcpadCE).
+Symbolic extensions by [Jorge Burbano](https://www.linkedin.com/in/jorge-burbano-037444113/).
 
-Lines ending with `;` produce output. Lines ending with `$` are silent.
-
----
-
-### `#pip` — Install Python Packages
-
-Install Python packages directly from CalcpadCE:
-
-```
-#pip install numpy sympy openseespy matplotlib
-```
-
-Only shows output for new installations (skips "already satisfied" messages).
-
----
-
-## Syntax Highlighting and Autocomplete
-
-All new keywords are registered in:
-- **WPF Syntax Highlighter** — keywords colored in magenta
-- **WPF Autocomplete** — suggestions appear when typing `#sym`, `#python`, etc.
-- **Sublime Text** — completions file updated
-- **Notepad++** — auto-complete XML updated
-
----
+### Dependencies
+- [AngouriMath](https://github.com/asc-community/AngouriMath) 1.4.0 — Symbolic math for .NET
+- [Three.js](https://threejs.org/) 0.170.0 — 3D visualization
+- [Maxima](https://maxima.sourceforge.io/) — Computer algebra system
+- Original CalcpadCE dependencies (Markdig, SkiaSharp, WebView2)
 
 ## Project Structure
 
 ```
 Calcpad-Symbolic/
-  Symbolic.Core/       Math engine + AngouriMath + SymbolicProcessor
-  Symbolic.Wpf/        WPF desktop application
+  Symbolic.Core/       Math engine, AngouriMath, SymbolicProcessor
+  Symbolic.Wpf/        WPF desktop app with syntax highlighting
   Symbolic.Cli/        Command-line interface
   Symbolic.OpenXml/    Word/Excel export
   Symbolic.Tests/      Unit tests
-  Symbolic.Server/     Web server
+  Symbolic.Server/     Web server (Docker)
   Symbolic.Api/        Python API bindings
-  Examples/            Example files
+  Examples/            Example files (.cpd)
+  Include/             FEM_Graphics.cpd macro library
+  calcpad-viz/         TypeScript visualization library
 ```
-
-Key files:
-- `Symbolic.Core/Parsers/SymbolicProcessor.cs` — all #sym operations
-- `Symbolic.Core/Parsers/ExpressionParser/ExpressionParser.Keywords.cs` — keyword handlers (#sym, #python, #maxima, #pip, #deq, #function)
-- `Symbolic.Core/Calcpad.Core.csproj` — AngouriMath NuGet reference
