@@ -42,6 +42,7 @@ Source: "Symbolic.Wpf\bin\Release\net10.0-windows\*"; DestDir: "{app}"; Flags: i
 
 ; Examples — in Documents folder (like CalcpadCE original)
 Source: "Examples\Symbolic\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Symbolic"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist
+Source: "Examples\Finite Elements\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Finite Elements"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist
 Source: "Examples\Mathematics\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Mathematics"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist; Excludes: "*.py,__pycache__,*.html,*.txt"
 Source: "Examples\Mechanics\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Mechanics"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist; Excludes: "*.py,__pycache__,*.html"
 Source: "Examples\Physics\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Physics"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist; Excludes: "*.py,__pycache__,*.html"
