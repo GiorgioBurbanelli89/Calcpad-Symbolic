@@ -39,5 +39,5 @@ u_R.(2)*1000
 
 "6. Symbolic
 #deq K_axial = E*A/L*[1; -1 | -1; 1]
-#sym det(k1_22 + k2_11; k2_12; k2_12; k2_22)
-#sym eigen(k1_22 + k2_11; k2_12; k2_12; k2_22)
+#sym det(a; b; b; c)
+#sym eigen(a; b; b; c)
