@@ -359,6 +359,7 @@ qc = PuN/(Lcw^2)
 Z = clsolve(K; F)
 
 "9. Deflexion (mm)
+'(Azul = mayor hundimiento, rojo = menor. Valores negativos = hacia abajo)
 #hide
 Wz = matrix(nj1; nj1)
 #for j = 0 : ne1
@@ -447,18 +448,38 @@ Mxn = vector(nj)','Myn = vector(nj)','Mxyn = vector(nj)','cnt = vector(nj)
 		Mxyn.k = Mxyn.k/cnt.k
 	#end if
 #loop
-'Mapa Mx (tonf*m/m)
+'Presion del suelo (tonf/m²): q = kw * w (negativo = compresion)
+QM = matrix(nj1; nj1)
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		QM.(i + 1; j + 1) = kwN*Z.(nd*(k - 1) + 1)/9806.65*10^6
+	#loop
+#loop
+qmz(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Lw; QM)
+#show
+'Presion del suelo (tonf/m²):
+'(Negativo = compresion sobre el suelo, como SAFE)
+$Map{qmz(x; y) @ x = 0 : Lw & y = 0 : Lw}
+'Momento M_x (tonf*m/m):
+'(Positivo = traccion en fibra inferior = refuerzo abajo)
+'(Negativo = traccion en fibra superior = refuerzo arriba)
+#hide
 MxM = matrix(nj1; nj1)
+MyM = matrix(nj1; nj1)
 #for j = 0 : ne1
 	#for i = 0 : ne1
 		k = j*nj1 + i + 1
 		MxM.(i + 1; j + 1) = Mxn.k/9806.65
+		MyM.(i + 1; j + 1) = Myn.k/9806.65
 	#loop
 #loop
 mxmz(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Lw; MxM)
+mymz(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Lw; MyM)
 #show
-'Momento M_x (tonf*m/m):
 $Map{mxmz(x; y) @ x = 0 : Lw & y = 0 : Lw}
+'Momento M_y (tonf*m/m):
+$Map{mymz(x; y) @ x = 0 : Lw & y = 0 : Lw}
 'Von Mises (kgf/cm²):
 #hide
 VM = matrix(nj1; nj1)
@@ -480,3 +501,66 @@ vmmz(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Lw; VM)
 #show
 $Map{vmmz(x; y) @ x = 0 : Lw & y = 0 : Lw}
 'σ_VM,max = 'round(vmmax*10)/10' MPa = 'round(vmmax*cf*10)/10' kgf/cm²
+
+"12. Presion de contacto (tonf/m²) - para comparar con q_adm
+'q = kw * w (presion del suelo sobre la zapata)
+'<b>Negativo = compresion sobre el suelo (presion de contacto)</b>
+'q_adm tipico suelo = 10 a 40 tonf/m²
+#hide
+QsM = matrix(nj1; nj1)
+qmax = 0
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		wk = Z.(nd*(k - 1) + 1)
+		qk = kwN*wk/9806.65*10^6
+		QsM.(i + 1; j + 1) = qk
+		#if abs(qk) > abs(qmax)
+			qmax = qk
+		#end if
+	#loop
+#loop
+qsmz(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Lw; QsM)
+PlotWidth = 300
+PlotHeight = 300
+PlotStep = 20
+#show
+'Presion de contacto q (tonf/m²):
+$Map{qsmz(x; y) @ x = 0 : Lw & y = 0 : Lw}
+'q_max = 'round(qmax*100)/100' tonf/m²
+
+"12b. Esfuerzos fibra inferior (tonf/m²)
+'σ = -6M/t² (fibra inferior, z=+t/2)
+'<b>Positivo = traccion (refuerzo inferior)</b>
+'<b>Negativo = compresion</b>
+#hide
+SxM = matrix(nj1; nj1)
+SyM = matrix(nj1; nj1)
+'Factor N/mm² a tonf/m²: 1 N/mm² = 1 MPa = 101.97 tonf/m²
+ftm = 10^6/9806.65
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		SxM.(i + 1; j + 1) = -6*Mxn.k/tw^2*ftm
+		SyM.(i + 1; j + 1) = -6*Myn.k/tw^2*ftm
+	#loop
+#loop
+sxmz(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Lw; SxM)
+symz(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Lw; SyM)
+#show
+'σ_x fibra inferior (tonf/m²):
+$Map{sxmz(x; y) @ x = 0 : Lw & y = 0 : Lw}
+'σ_y fibra inferior (tonf/m²):
+$Map{symz(x; y) @ x = 0 : Lw & y = 0 : Lw}
+
+"13. Cortes laterales
+#hide
+wcut(x) = wmz(x; Lw/2)
+wcutY(y) = wmz(Lw/2; y)
+PlotWidth = 280
+PlotHeight = 150
+#show
+'Deflexion w(x) en Y=L/2 (corte central, negativo=hundimiento):
+$Plot{wcut(x) @ x = 0 : Lw}
+'Deflexion w(y) en X=L/2 (corte central):
+$Plot{wcutY(y) @ y = 0 : Lw}

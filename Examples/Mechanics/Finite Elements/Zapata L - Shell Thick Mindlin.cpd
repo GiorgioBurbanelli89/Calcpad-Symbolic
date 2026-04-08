@@ -1,0 +1,366 @@
+"Zapata Esquinera en L - Shell Thick (Mindlin MITC4)
+'<hr/>
+'Columna esquinera en lindero. Recorte en esquina superior-izquierda.
+'Columna ubicada en la esquina interior del recorte. Winkler + MITC4.
+
+"1. Datos
+'Zapata total -'Lz = 4 m','Bz = 4 m','tz = 600 mm
+'Recorte esquina -'Lr = 1.5 m','Br = 1.5 m
+'Columna cuadrada -'Lc = 600 mm
+'Posicion columna (esquina interior del recorte):
+xCol = 1.5 m','yCol = 2.5 m
+'Concreto -'Ec = 25000 MPa','νc = 0.2
+'Modulo de corte -
+Gc = Ec/(2*(1 + νc))
+'Factor corte -'κc = 5/6
+'Subgrade modulus -'ks = 0.000002 tf/mm/mm
+'Carga -'Pu = 100 tf
+
+"2. Unidades N-mm
+#hide
+Ew = Ec & MPa','tw = tz & mm
+Lw = Lz & m','Lw = Lw*1000
+Bw = Bz & m','Bw = Bw*1000
+Lrw = Lr & m','Lrw = Lrw*1000
+Brw = Br & m','Brw = Brw*1000
+Lcw = Lc & mm
+Gw = Ew/(2*(1 + νc))
+PuN = Pu & tf','PuN = PuN*9806.65
+kwN = ks & tf/mm/mm','kwN = kwN*9806.65
+xCw = xCol & m','xCw = xCw*1000
+yCw = yCol & m','yCw = yCw*1000
+nd = 3
+
+"3. Malla regular (excluir recorte)
+'ne1 = elementos por lado
+ne1 = 20','de = Lw/ne1
+nj1 = ne1 + 1','nj = nj1^2','nt = nd*nj
+#hide
+xj = vector(nj)','yj = vector(nj)
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		xj.k = i*de','yj.k = j*de
+	#loop
+#loop
+'Conectividad (solo elementos FUERA del recorte)
+'Recorte: esquina superior-izquierda (x < Lrw, y > Bw - Brw)
+nea = 0
+eja = matrix(ne1^2; 4)
+actelem = vector(ne1^2)
+#for j = 0 : ne1 - 1
+	#for i = 0 : ne1 - 1
+		'Centro del elemento
+		xce = (i + 0.5)*de','yce = (j + 0.5)*de
+		'Verificar si esta en el recorte
+		#if xce < Lrw ∧ yce > Bw - Brw
+			'Skip (en el recorte)
+		#else
+			nea = nea + 1
+			bl = j*nj1 + i + 1
+			eja.(nea; 1) = bl','eja.(nea; 2) = bl + 1
+			eja.(nea; 3) = bl + nj1 + 1','eja.(nea; 4) = bl + nj1
+		#end if
+	#loop
+#loop
+#show
+'Elementos activos: 'nea' de 'ne1^2' (recorte eliminado)
+
+"4. SVG
+#hide
+ws = 250','ksc = ws/Lw','ds = 30','hs = Bw*ksc
+#show
+#svg ws+2*ds hs+2*ds+20
+.text ds+ws/2 ds-8 "Zapata_en_L_-_MITC4" 9 navy middle bold
+'Placa completa (fondo)
+.rect ds ds ws hs lightyellow 0.3 gray 1
+'Recorte (oscuro)
+.rect ds ds Lrw*ksc Brw*ksc dimgray 0.5 red 2
+.text ds+Lrw*ksc/2 ds+Brw*ksc/2 "Recorte" 7 red middle
+'Malla activa
+#hide
+#for e = 1 : nea
+	i1 = eja.(e; 1)','i3 = eja.(e; 3)
+	ex = xj.i1*ksc+ds','ey = hs-yj.i3*ksc+ds
+	ew = (xj.i3 - xj.i1)*ksc','eh = (yj.i3 - yj.i1)*ksc
+	#show
+	.rect ex ey ew eh lightcyan 0.1 steelBlue 0.3
+	#hide
+#loop
+'Columna
+ccx = xCw*ksc+ds','ccy = hs-yCw*ksc+ds
+clc = Lcw*ksc
+#show
+.rect ccx-clc/2 ccy-clc/2 clc clc salmon 0.5 red 2
+.text ccx ccy "Col" 7 darkred middle bold
+#end svg
+#equ
+
+"5. Ensamblaje MITC4
+#hide
+Dbm = Ew*tw^3/(12*(1 - νc^2))*[1; νc; 0|νc; 1; 0|0; 0; (1 - νc)/2]
+Dsm = κc*Gw*tw*[1; 0|0; 1]
+gp = 1/sqr(3)','nk = 12
+J11 = de/2','J22 = de/2','detJ = J11*J22
+dN1x(η) = -(1 - η)/4','dN2x(η) = (1 - η)/4
+dN3x(η) = (1 + η)/4','dN4x(η) = -(1 + η)/4
+dN1y(ξ) = -(1 - ξ)/4','dN2y(ξ) = -(1 + ξ)/4
+dN3y(ξ) = (1 + ξ)/4','dN4y(ξ) = (1 - ξ)/4
+
+K = symmetric(nt)
+#for e = 1 : nea
+	Ke = symmetric(nk)
+	'FLEXION 2x2
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		dx1 = dN1x(ηg)/J11','dy1 = dN1y(ξg)/J22
+		dx2 = dN2x(ηg)/J11','dy2 = dN2y(ξg)/J22
+		dx3 = dN3x(ηg)/J11','dy3 = dN3y(ξg)/J22
+		dx4 = dN4x(ηg)/J11','dy4 = dN4y(ξg)/J22
+		Bb = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+		      0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+		      0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+		BtDB = transp(Bb)*Dbm*Bb*detJ
+		#for i = 1 : nk
+			#for j = i : nk
+				Ke.(i; j) = Ke.(i; j) + BtDB.(i; j)
+			#loop
+		#loop
+	#loop
+	'CORTE MITC4 2x2
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		Bs = matrix(2; nk)
+		#for it = 1 : 2
+			#if it ≡ 1
+				ηt = -1
+			#else
+				ηt = 1
+			#end if
+			wt = (1 + ηt*ηg)/2
+			dt1 = dN1x(ηt)/J11','dt2 = dN2x(ηt)/J11
+			dt3 = dN3x(ηt)/J11','dt4 = dN4x(ηt)/J11
+			Nt1 = (1 - ξg)*(1 - ηt)/4','Nt2 = (1 + ξg)*(1 - ηt)/4
+			Nt3 = (1 + ξg)*(1 + ηt)/4','Nt4 = (1 - ξg)*(1 + ηt)/4
+			Bs.(1; 1) = Bs.(1; 1) + wt*dt1','Bs.(1; 3) = Bs.(1; 3) - wt*Nt1
+			Bs.(1; 4) = Bs.(1; 4) + wt*dt2','Bs.(1; 6) = Bs.(1; 6) - wt*Nt2
+			Bs.(1; 7) = Bs.(1; 7) + wt*dt3','Bs.(1; 9) = Bs.(1; 9) - wt*Nt3
+			Bs.(1; 10) = Bs.(1; 10) + wt*dt4','Bs.(1; 12) = Bs.(1; 12) - wt*Nt4
+		#loop
+		#for it = 1 : 2
+			#if it ≡ 1
+				ξt = -1
+			#else
+				ξt = 1
+			#end if
+			wt = (1 + ξt*ξg)/2
+			dt1 = dN1y(ξt)/J22','dt2 = dN2y(ξt)/J22
+			dt3 = dN3y(ξt)/J22','dt4 = dN4y(ξt)/J22
+			Nt1 = (1 - ξt)*(1 - ηg)/4','Nt2 = (1 + ξt)*(1 - ηg)/4
+			Nt3 = (1 + ξt)*(1 + ηg)/4','Nt4 = (1 - ξt)*(1 + ηg)/4
+			Bs.(2; 1) = Bs.(2; 1) + wt*dt1','Bs.(2; 2) = Bs.(2; 2) + wt*Nt1
+			Bs.(2; 4) = Bs.(2; 4) + wt*dt2','Bs.(2; 5) = Bs.(2; 5) + wt*Nt2
+			Bs.(2; 7) = Bs.(2; 7) + wt*dt3','Bs.(2; 8) = Bs.(2; 8) + wt*Nt3
+			Bs.(2; 10) = Bs.(2; 10) + wt*dt4','Bs.(2; 11) = Bs.(2; 11) + wt*Nt4
+		#loop
+		BtDBs = transp(Bs)*Dsm*Bs*detJ
+		#for i = 1 : nk
+			#for j = i : nk
+				Ke.(i; j) = Ke.(i; j) + BtDBs.(i; j)
+			#loop
+		#loop
+	#loop
+	'Ensamblar
+	#for i = 1 : 4
+		#for j = i : 4
+			j1 = eja.(e; i)','j2 = eja.(e; j)
+			i1 = nd*(j1 - 1) + 1','i2 = nd*(j2 - 1) + 1
+			kij = submatrix(Ke; nd*(i - 1) + 1; nd*i; nd*(j - 1) + 1; nd*j)
+			#if j1 > j2
+				add(transp(kij); K; i2; i1)
+			#else
+				add(kij; K; i1; i2)
+			#end if
+		#loop
+	#loop
+#loop
+
+"6. Winkler + Carga
+'Winkler solo en nodos que pertenecen a elementos activos
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		xk = xj.k','yk = yj.k
+		'Verificar si esta en el recorte
+		#if xk ≤ Lrw ∧ yk ≥ Bw - Brw
+			'Skip nodo en recorte (no winkler)
+		#else
+			#if i ≡ 0 ∨ i ≡ ne1
+				txk = de/2
+			#else
+				txk = de
+			#end if
+			#if j ≡ 0 ∨ j ≡ ne1
+				tyk = de/2
+			#else
+				tyk = de
+			#end if
+			K.(nd*(k - 1) + 1; nd*(k - 1) + 1) = K.(nd*(k - 1) + 1; nd*(k - 1) + 1) + kwN*txk*tyk
+		#end if
+	#loop
+#loop
+'Carga en columna (centro de zapata completa)
+F = vector(nt)
+xcc = xCw','ycc = yCw
+qc = PuN/(Lcw^2)
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		#if abs(xj.k - xcc) ≤ Lcw/2 + 1 ∧ abs(yj.k - ycc) ≤ Lcw/2 + 1
+			#if i ≡ 0 ∨ i ≡ ne1
+				txk = de/2
+			#else
+				txk = de
+			#end if
+			#if j ≡ 0 ∨ j ≡ ne1
+				tyk = de/2
+			#else
+				tyk = de
+			#end if
+			#if abs(xj.k - xcc) ≡ Lcw/2
+				txk = de/2
+			#end if
+			#if abs(yj.k - ycc) ≡ Lcw/2
+				tyk = de/2
+			#end if
+			F.(nd*(k - 1) + 1) = F.(nd*(k - 1) + 1) - qc*txk*tyk
+		#end if
+	#loop
+#loop
+'Fijar DOFs de nodos en el recorte (no participan)
+pen = 10^12
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		#if xj.k < Lrw - de/2 ∧ yj.k > Bw - Brw + de/2
+			K.(nd*(k - 1) + 1; nd*(k - 1) + 1) = K.(nd*(k - 1) + 1; nd*(k - 1) + 1) + pen
+			K.(nd*(k - 1) + 2; nd*(k - 1) + 2) = K.(nd*(k - 1) + 2; nd*(k - 1) + 2) + pen
+			K.(nd*(k - 1) + 3; nd*(k - 1) + 3) = K.(nd*(k - 1) + 3; nd*(k - 1) + 3) + pen
+		#end if
+	#loop
+#loop
+
+"7. Solucion
+#show
+Z = clsolve(K; F)
+
+"8. Deflexion (mm)
+#hide
+Wz = matrix(nj1; nj1)
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		Wz.(i + 1; j + 1) = Z.(nd*(k - 1) + 1)
+		'Poner 0 en recorte para que no distorsione el mapa
+		#if xj.k < Lrw - de/2 ∧ yj.k > Bw - Brw + de/2
+			Wz.(i + 1; j + 1) = 0
+		#end if
+	#loop
+#loop
+wmz(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Bw; Wz)
+PlotWidth = 250
+PlotHeight = 250
+PlotStep = 20
+#show
+$Map{wmz(x; y) @ x = 0 : Lw & y = 0 : Bw}
+#hide
+kc = (ne1/2)*nj1 + ne1/2 + 1
+wmin = 0','wmax = 0
+#for k = 1 : nj
+	wk = Z.(nd*(k - 1) + 1)
+	#if abs(wk) < 100
+		#if wk < wmin
+			wmin = wk
+		#end if
+	#end if
+#loop
+#show
+'w_centro = 'round(Z.(nd*(kc - 1) + 1)*10000)/10000' mm
+'w_min = 'round(wmin*10000)/10000' mm
+
+"9. Von Mises (kgf/cm²)
+#hide
+cf = 10.19716
+Mxn = vector(nj)','Myn = vector(nj)','Mxyn = vector(nj)','cnt = vector(nj)
+#for e = 1 : nea
+	i1 = eja.(e; 1)','i3 = eja.(e; 3)
+	Ze = vector(nk)
+	#for i = 1 : 4
+		nn = eja.(e; i)
+		Ze.(3*(i - 1) + 1) = Z.(nd*(nn - 1) + 1)
+		Ze.(3*(i - 1) + 2) = Z.(nd*(nn - 1) + 2)
+		Ze.(3*(i - 1) + 3) = Z.(nd*(nn - 1) + 3)
+	#loop
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		dx1 = dN1x(ηg)/J11','dy1 = dN1y(ξg)/J22
+		dx2 = dN2x(ηg)/J11','dy2 = dN2y(ξg)/J22
+		dx3 = dN3x(ηg)/J11','dy3 = dN3y(ξg)/J22
+		dx4 = dN4x(ηg)/J11','dy4 = dN4y(ξg)/J22
+		Bb = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+		      0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+		      0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+		Mv = Dbm*(Bb*Ze)
+		#for i = 1 : 4
+			nn = eja.(e; i)
+			Mxn.nn = Mxn.nn + Mv.1','Myn.nn = Myn.nn + Mv.2','Mxyn.nn = Mxyn.nn + Mv.3
+			cnt.nn = cnt.nn + 1
+		#loop
+	#loop
+#loop
+#for k = 1 : nj
+	#if cnt.k > 0
+		Mxn.k = Mxn.k/cnt.k','Myn.k = Myn.k/cnt.k','Mxyn.k = Mxyn.k/cnt.k
+	#end if
+#loop
+VM = matrix(nj1; nj1)','vmmax = 0
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		sx = 6*Mxn.k/tw^2','sy = 6*Myn.k/tw^2','txy = 6*Mxyn.k/tw^2
+		vk = sqr(sx^2 - sx*sy + sy^2 + 3*txy^2)
+		VM.(i + 1; j + 1) = vk*cf
+		#if vk > vmmax
+			vmmax = vk
+		#end if
+	#loop
+#loop
+vmmz(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Bw; VM)
+#show
+'Von Mises (kgf/cm²):
+$Map{vmmz(x; y) @ x = 0 : Lw & y = 0 : Bw}
+'σ_VM,max = 'round(vmmax*10)/10' MPa = 'round(vmmax*cf*10)/10' kgf/cm²
