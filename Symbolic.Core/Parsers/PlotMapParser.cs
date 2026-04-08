@@ -140,7 +140,8 @@ namespace Calcpad.Core
             // Image size
             int imgWidth = (int)Parser.PlotWidth;
             if (imgWidth <= 0) imgWidth = 500;
-            int margin = 50, legendWidth = 70;
+            int margin = 50;
+            int legendWidth = hasGroups ? 100 : 70;  // wider for dual legend
             int plotWidth = imgWidth - 2 * margin - legendWidth;
             int plotHeight = (int)(plotWidth * dy / dx);
             if (plotHeight < 80) plotHeight = 80;
@@ -479,7 +480,7 @@ namespace Calcpad.Core
             double xmin, double xmax, double ymin, double ymax,
             double vmin1, double vmax1, double vmin2, double vmax2)
         {
-            // Axes (same as single legend)
+            // Axes
             using var axisPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1, Style = SKPaintStyle.Stroke, IsAntialias = true };
             using var textPaint = new SKPaint { Color = SKColors.Black, TextSize = 10, IsAntialias = true };
             double dx = xmax - xmin, dy = ymax - ymin;
@@ -499,44 +500,40 @@ namespace Calcpad.Core
                 canvas.DrawText(Fmt(v), 2, py + 4, textPaint);
             }
 
-            // Dual legend: top half = group 1, bottom half = group 2
-            int lx = imgWidth - legendWidth + 5, ly = margin, lw = 16;
-            int halfH = plotHeight / 2 - 5;
-            float stripH;
-
-            // Legend 1 (top)
+            // Dual legend SIDE BY SIDE: Legend1 | Legend2
+            int lx1 = imgWidth - legendWidth + 2;
+            int lx2 = lx1 + 35;
+            int ly = margin, lh = plotHeight, lw = 16;
+            float stripH = (float)lh / NBands;
             using var labelPaint = new SKPaint { Color = SKColors.DarkBlue, TextSize = 8, IsAntialias = true, FakeBoldText = true };
-            canvas.DrawText("Zap 1", lx, ly - 3, labelPaint);
-            stripH = (float)halfH / NBands;
+            using var legBorder = new SKPaint { Color = SKColors.Black, StrokeWidth = 1, Style = SKPaintStyle.Stroke };
+            using var legText = new SKPaint { Color = SKColors.Black, TextSize = 8, IsAntialias = true };
+
+            // Legend 1 (left)
+            canvas.DrawText("Zap1", lx1, ly - 3, labelPaint);
             for (int c = 0; c < NBands; c++)
             {
                 double t = 1.0 - (double)c / (NBands - 1);
                 double val = vmin1 + t * (vmax1 - vmin1);
-                var color = GetMapColor(val, vmin1, vmax1);
-                using var p = new SKPaint { Color = color, Style = SKPaintStyle.Fill };
-                canvas.DrawRect(lx, ly + c * stripH, lw, stripH + 1, p);
+                using var p = new SKPaint { Color = GetMapColor(val, vmin1, vmax1), Style = SKPaintStyle.Fill };
+                canvas.DrawRect(lx1, ly + c * stripH, lw, stripH + 1, p);
             }
-            using var legBorder1 = new SKPaint { Color = SKColors.Black, StrokeWidth = 1, Style = SKPaintStyle.Stroke };
-            canvas.DrawRect(lx, ly, lw, halfH, legBorder1);
-            using var legText = new SKPaint { Color = SKColors.Black, TextSize = 8, IsAntialias = true };
-            canvas.DrawText(Fmt(vmax1), lx + lw + 2, ly + 7, legText);
-            canvas.DrawText(Fmt(vmin1), lx + lw + 2, ly + halfH, legText);
+            canvas.DrawRect(lx1, ly, lw, lh, legBorder);
+            canvas.DrawText(Fmt(vmax1), lx1 - 2, ly - 12, legText);
+            canvas.DrawText(Fmt(vmin1), lx1 - 2, ly + lh + 10, legText);
 
-            // Legend 2 (bottom)
-            int ly2 = ly + halfH + 10;
-            canvas.DrawText("Zap 2", lx, ly2 - 3, labelPaint);
-            stripH = (float)halfH / NBands;
+            // Legend 2 (right)
+            canvas.DrawText("Zap2", lx2, ly - 3, labelPaint);
             for (int c = 0; c < NBands; c++)
             {
                 double t = 1.0 - (double)c / (NBands - 1);
                 double val = vmin2 + t * (vmax2 - vmin2);
-                var color = GetMapColor(val, vmin2, vmax2);
-                using var p = new SKPaint { Color = color, Style = SKPaintStyle.Fill };
-                canvas.DrawRect(lx, ly2 + c * stripH, lw, stripH + 1, p);
+                using var p = new SKPaint { Color = GetMapColor(val, vmin2, vmax2), Style = SKPaintStyle.Fill };
+                canvas.DrawRect(lx2, ly + c * stripH, lw, stripH + 1, p);
             }
-            canvas.DrawRect(lx, ly2, lw, halfH, legBorder1);
-            canvas.DrawText(Fmt(vmax2), lx + lw + 2, ly2 + 7, legText);
-            canvas.DrawText(Fmt(vmin2), lx + lw + 2, ly2 + halfH, legText);
+            canvas.DrawRect(lx2, ly, lw, lh, legBorder);
+            canvas.DrawText(Fmt(vmax2), lx2 + lw + 2, ly + 7, legText);
+            canvas.DrawText(Fmt(vmin2), lx2 + lw + 2, ly + lh, legText);
         }
 
         private static string BitmapToHtml(SKBitmap bitmap, int w, int h)
