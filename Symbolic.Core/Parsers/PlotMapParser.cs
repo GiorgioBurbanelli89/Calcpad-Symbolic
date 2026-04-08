@@ -532,7 +532,12 @@ namespace Calcpad.Core
                             if (val > reg.Max) reg.Max = val;
                         }
                     }
-                    catch { reg.Grid[i, j] = double.NaN; }
+                    catch (Exception ex)
+                    {
+                        reg.Grid[i, j] = double.NaN;
+                        if (i == 0 && j == 0)
+                            System.Diagnostics.Debug.WriteLine($"PlotMap eval error at ({x},{y}): {ex.Message}");
+                    }
                 }
             }
         }

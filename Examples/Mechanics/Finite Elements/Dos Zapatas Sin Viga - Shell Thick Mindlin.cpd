@@ -397,3 +397,38 @@ q2off(x; y) = q2(x - 5000; y)
 $Map{q1(x; y) @ x = 0 : Lz1w & y = 0 : Bz1w}
 '<b>Presion Zapata 2 (tonf/m²):</b>
 $Map{q2(x; y) @ x = 0 : Lz2w & y = 0 : Bz2w}
+
+"8. Vista combinada ($PlotMap modo malla)
+#hide
+'Combinar nodos y elementos de ambas zapatas con offset
+ntot = nj1 + nj2
+xall = vector(ntot)','yall = vector(ntot)','wall = vector(ntot)','qall = vector(ntot)
+'Zapata 1 (sin offset)
+#for k = 1 : nj1
+	xall.k = xj1.k','yall.k = yj1.k
+	wall.k = Z1.(nd*(k - 1) + 1)
+	qall.k = kwN*Z1.(nd*(k - 1) + 1)/9806.65*10^6
+#loop
+'Zapata 2 (offset X = 5000)
+#for k = 1 : nj2
+	xall.(nj1 + k) = xj2.k + 5000','yall.(nj1 + k) = yj2.k
+	wall.(nj1 + k) = Z2.(nd*(k - 1) + 1)
+	qall.(nj1 + k) = kwN*Z2.(nd*(k - 1) + 1)/9806.65*10^6
+#loop
+'Combinar elementos
+netot = ne1 + ne2
+eall = matrix(netot; 4)
+#for e = 1 : ne1
+	eall.(e; 1) = ej1.(e; 1)','eall.(e; 2) = ej1.(e; 2)
+	eall.(e; 3) = ej1.(e; 3)','eall.(e; 4) = ej1.(e; 4)
+#loop
+#for e = 1 : ne2
+	eall.(ne1 + e; 1) = ej2.(e; 1) + nj1','eall.(ne1 + e; 2) = ej2.(e; 2) + nj1
+	eall.(ne1 + e; 3) = ej2.(e; 3) + nj1','eall.(ne1 + e; 4) = ej2.(e; 4) + nj1
+#loop
+PlotWidth = 600
+#show
+'<b>Deflexion combinada (mm):</b>
+$PlotMap{xall; yall; wall; eall}
+'<b>Presion combinada (tonf/m²):</b>
+$PlotMap{xall; yall; qall; eall}
