@@ -297,13 +297,7 @@ namespace Calcpad.Core
                         double val = reg.Grid[ii, jj];
                         if (double.IsNaN(val) || double.IsInfinity(val)) continue;
 
-                        double gx = 0, gy = 0;
-                        if (ii > 0 && ii < reg.Nx - 1)
-                            gx = (reg.Grid[ii + 1, jj] - reg.Grid[ii - 1, jj]) * gradScale;
-                        if (jj > 0 && jj < reg.Ny - 1)
-                            gy = (reg.Grid[ii, jj + 1] - reg.Grid[ii, jj - 1]) * gradScale;
-
-                        var color = GetMapColorShadow(val, globalMin, globalMax, gx, gy);
+                        var color = GetMapColor(val, globalMin, globalMax);
                         float px = margin + rx0 + (float)ii / reg.Nx * rw;
                         float py = margin + ry0 + (float)(reg.Ny - 1 - jj) / reg.Ny * rh;
                         float cw = (float)rw / reg.Nx + 1;
@@ -338,7 +332,7 @@ namespace Calcpad.Core
             if (vmax <= vmin) return SKColors.Gray;
             double normalized = Math.Clamp((value - vmin) / (vmax - vmin), 0, 1);
 
-            // Discretize to NBands (same as $Map SmoothScale=false)
+            // Discretize to NBands: low value=blue(t=0), high value=red(t=1) — same as $Map
             int band = (int)(normalized * NBands);
             if (band >= NBands) band = NBands - 1;
             double t = (double)band / (NBands - 1);

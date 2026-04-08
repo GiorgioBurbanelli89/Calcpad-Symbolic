@@ -361,13 +361,18 @@ Wz2 = matrix(nj2x; nj2y)
 	#loop
 #loop
 wm2(x; y) = spline(1 + x*ne2x/Lz2w; 1 + y*ne2y/Bz2w; Wz2)
-PlotWidth = 200','PlotHeight = 200','PlotStep = 15
+PlotWidth = 600','PlotStep = 3
 kc1 = round(yC1w/de1)*nj1x + round(xC1w/de1) + 1
 kc2 = round(yC2w/de2)*nj2x + round(xC2w/de2) + 1
 #show
-'<b>Zapata 1 (medianera):</b> w Col1 = 'round(Z1.(nd*(kc1 - 1) + 1)*1000)/1000' mm
+'<b>Zapata 1:</b> w Col1 = 'round(Z1.(nd*(kc1 - 1) + 1)*1000)/1000' mm
+'<b>Zapata 2:</b> w Col2 = 'round(Z2.(nd*(kc2 - 1) + 1)*1000)/1000' mm
+#hide
+PlotWidth = 250','PlotHeight = 250','PlotStep = 10
+#show
+'<b>Deflexion Zapata 1 (medianera):</b>
 $Map{wm1(x; y) @ x = 0 : Lz1w & y = 0 : Bz1w}
-'<b>Zapata 2 (centrada):</b> w Col2 = 'round(Z2.(nd*(kc2 - 1) + 1)*1000)/1000' mm
+'<b>Deflexion Zapata 2 (centrada):</b>
 $Map{wm2(x; y) @ x = 0 : Lz2w & y = 0 : Bz2w}
 
 "7. Presion de contacto (tonf/m²)
@@ -386,8 +391,9 @@ Q2m = matrix(nj2x; nj2y)
 	#loop
 #loop
 q2(x; y) = spline(1 + x*ne2x/Lz2w; 1 + y*ne2y/Bz2w; Q2m)
+q2off(x; y) = q2(x - 5000; y)
 #show
-'<b>Presion zapata 1 (tonf/m²):</b>
+'<b>Presion Zapata 1 (tonf/m²):</b>
 $Map{q1(x; y) @ x = 0 : Lz1w & y = 0 : Bz1w}
-'<b>Presion zapata 2 (tonf/m²):</b>
+'<b>Presion Zapata 2 (tonf/m²):</b>
 $Map{q2(x; y) @ x = 0 : Lz2w & y = 0 : Bz2w}
