@@ -95,6 +95,45 @@ namespace Calcpad.Core
                 }
             }
 
+            // Detect separate groups by X-gap (for per-group color scaling)
+            // Sort unique X coords, find gap > 2x avg spacing
+            var sortedX = new SortedSet<double>();
+            for (int i = 0; i < nj; i++) sortedX.Add(Math.Round(xj[i], 1));
+            var xList = new List<double>(sortedX);
+            double avgSpacing = (xmax - xmin) / Math.Max(1, xList.Count - 1);
+            double splitX = double.MaxValue;
+            for (int i = 1; i < xList.Count; i++)
+            {
+                double gap = xList[i] - xList[i - 1];
+                if (gap > avgSpacing * 3)
+                {
+                    splitX = (xList[i] + xList[i - 1]) / 2;
+                    break;
+                }
+            }
+
+            // Per-group min/max for color scaling
+            double vmin1 = double.MaxValue, vmax1 = double.MinValue;
+            double vmin2 = double.MaxValue, vmax2 = double.MinValue;
+            bool hasGroups = splitX < double.MaxValue;
+            if (hasGroups)
+            {
+                for (int i = 0; i < nj; i++)
+                {
+                    if (double.IsNaN(values[i]) || Math.Abs(values[i]) > 1e10) continue;
+                    if (xj[i] < splitX)
+                    {
+                        if (values[i] < vmin1) vmin1 = values[i];
+                        if (values[i] > vmax1) vmax1 = values[i];
+                    }
+                    else
+                    {
+                        if (values[i] < vmin2) vmin2 = values[i];
+                        if (values[i] > vmax2) vmax2 = values[i];
+                    }
+                }
+            }
+
             double dx = xmax - xmin, dy = ymax - ymin;
             if (dx <= 0 || dy <= 0) throw new MathParserException("$PlotMap: invalid range");
 
@@ -183,7 +222,14 @@ namespace Calcpad.Core
                             if (s >= -0.01 && s <= 1.01 && tt >= -0.01 && tt <= 1.01)
                             {
                                 double val = (1-s)*(1-tt)*eb.ev[0] + s*(1-tt)*eb.ev[1] + s*tt*eb.ev[2] + (1-s)*tt*eb.ev[3];
-                                pixBmp.SetPixel(px, py, GetMapColor(val, vmin, vmax));
+                                // Use per-group min/max if groups detected
+                                double lmin = vmin, lmax = vmax;
+                                if (hasGroups)
+                                {
+                                    if (physX < splitX) { lmin = vmin1; lmax = vmax1; }
+                                    else { lmin = vmin2; lmax = vmax2; }
+                                }
+                                pixBmp.SetPixel(px, py, GetMapColor(val, lmin, lmax));
                                 break;
                             }
                         }
@@ -229,8 +275,12 @@ namespace Calcpad.Core
             }
 
             // Border and axes
-            DrawAxesAndLegend(canvas, margin, plotWidth, plotHeight, imgWidth, imgHeight, legendWidth,
-                              xmin, xmax, ymin, ymax, vmin, vmax);
+            if (hasGroups)
+                DrawAxesAndDualLegend(canvas, margin, plotWidth, plotHeight, imgWidth, imgHeight, legendWidth,
+                                      xmin, xmax, ymin, ymax, vmin1, vmax1, vmin2, vmax2);
+            else
+                DrawAxesAndLegend(canvas, margin, plotWidth, plotHeight, imgWidth, imgHeight, legendWidth,
+                                  xmin, xmax, ymin, ymax, vmin, vmax);
 
             return BitmapToHtml(bitmap, imgWidth, imgHeight);
         }
@@ -422,6 +472,71 @@ namespace Calcpad.Core
                 double val = vmin + t * (vmax - vmin);
                 canvas.DrawText(Fmt(val), lx + lw + 3, ly + c * stripH + 4, legText);
             }
+        }
+
+        private void DrawAxesAndDualLegend(SKCanvas canvas, int margin, int plotWidth, int plotHeight,
+            int imgWidth, int imgHeight, int legendWidth,
+            double xmin, double xmax, double ymin, double ymax,
+            double vmin1, double vmax1, double vmin2, double vmax2)
+        {
+            // Axes (same as single legend)
+            using var axisPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1, Style = SKPaintStyle.Stroke, IsAntialias = true };
+            using var textPaint = new SKPaint { Color = SKColors.Black, TextSize = 10, IsAntialias = true };
+            double dx = xmax - xmin, dy = ymax - ymin;
+            int nTicks = 6;
+            for (int t = 0; t <= nTicks; t++)
+            {
+                double v = xmin + t * dx / nTicks;
+                float px = margin + (float)(t * plotWidth / (double)nTicks);
+                canvas.DrawLine(px, margin + plotHeight, px, margin + plotHeight + 4, axisPaint);
+                canvas.DrawText(Fmt(v), px - 15, margin + plotHeight + 16, textPaint);
+            }
+            for (int t = 0; t <= nTicks; t++)
+            {
+                double v = ymin + t * dy / nTicks;
+                float py = margin + plotHeight - (float)(t * plotHeight / (double)nTicks);
+                canvas.DrawLine(margin - 4, py, margin, py, axisPaint);
+                canvas.DrawText(Fmt(v), 2, py + 4, textPaint);
+            }
+
+            // Dual legend: top half = group 1, bottom half = group 2
+            int lx = imgWidth - legendWidth + 5, ly = margin, lw = 16;
+            int halfH = plotHeight / 2 - 5;
+            float stripH;
+
+            // Legend 1 (top)
+            using var labelPaint = new SKPaint { Color = SKColors.DarkBlue, TextSize = 8, IsAntialias = true, FakeBoldText = true };
+            canvas.DrawText("Zap 1", lx, ly - 3, labelPaint);
+            stripH = (float)halfH / NBands;
+            for (int c = 0; c < NBands; c++)
+            {
+                double t = 1.0 - (double)c / (NBands - 1);
+                double val = vmin1 + t * (vmax1 - vmin1);
+                var color = GetMapColor(val, vmin1, vmax1);
+                using var p = new SKPaint { Color = color, Style = SKPaintStyle.Fill };
+                canvas.DrawRect(lx, ly + c * stripH, lw, stripH + 1, p);
+            }
+            using var legBorder1 = new SKPaint { Color = SKColors.Black, StrokeWidth = 1, Style = SKPaintStyle.Stroke };
+            canvas.DrawRect(lx, ly, lw, halfH, legBorder1);
+            using var legText = new SKPaint { Color = SKColors.Black, TextSize = 8, IsAntialias = true };
+            canvas.DrawText(Fmt(vmax1), lx + lw + 2, ly + 7, legText);
+            canvas.DrawText(Fmt(vmin1), lx + lw + 2, ly + halfH, legText);
+
+            // Legend 2 (bottom)
+            int ly2 = ly + halfH + 10;
+            canvas.DrawText("Zap 2", lx, ly2 - 3, labelPaint);
+            stripH = (float)halfH / NBands;
+            for (int c = 0; c < NBands; c++)
+            {
+                double t = 1.0 - (double)c / (NBands - 1);
+                double val = vmin2 + t * (vmax2 - vmin2);
+                var color = GetMapColor(val, vmin2, vmax2);
+                using var p = new SKPaint { Color = color, Style = SKPaintStyle.Fill };
+                canvas.DrawRect(lx, ly2 + c * stripH, lw, stripH + 1, p);
+            }
+            canvas.DrawRect(lx, ly2, lw, halfH, legBorder1);
+            canvas.DrawText(Fmt(vmax2), lx + lw + 2, ly2 + 7, legText);
+            canvas.DrawText(Fmt(vmin2), lx + lw + 2, ly2 + halfH, legText);
         }
 
         private static string BitmapToHtml(SKBitmap bitmap, int w, int h)
