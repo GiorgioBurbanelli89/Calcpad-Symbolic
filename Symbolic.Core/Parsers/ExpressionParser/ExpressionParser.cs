@@ -328,7 +328,8 @@ namespace Calcpad.Core
                     s.StartsWith("$frame", StringComparison.OrdinalIgnoreCase) ||
                     s.StartsWith("$struct", StringComparison.OrdinalIgnoreCase) ||
                     s.StartsWith("$draw", StringComparison.OrdinalIgnoreCase) ||
-                    s.StartsWith("$table", StringComparison.OrdinalIgnoreCase))
+                    s.StartsWith("$table", StringComparison.OrdinalIgnoreCase) ||
+                    s.StartsWith("$plotmap", StringComparison.OrdinalIgnoreCase))
                 {
                     // Check for multiline block: has '{' but no '}'
                     if (s.IndexOf('{') >= 0 && s.IndexOf('}') < 0)
@@ -360,6 +361,8 @@ namespace Calcpad.Core
                             plotParser = new VizParser(_parser, Settings.Plot);
                         else if (s.StartsWith("$mesh", StringComparison.OrdinalIgnoreCase))
                             plotParser = new MeshParser(_parser, Settings.Plot);
+                        else if (s.StartsWith("$plotmap", StringComparison.OrdinalIgnoreCase))
+                            plotParser = new PlotMapParser(_parser, Settings.Plot);
                         else if (s.StartsWith("$table", StringComparison.OrdinalIgnoreCase))
                             plotParser = new TableParser(_parser, Settings.Plot);
                         else if (s.StartsWith("$p", StringComparison.OrdinalIgnoreCase))

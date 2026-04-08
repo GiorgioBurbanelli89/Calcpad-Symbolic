@@ -1,0 +1,68 @@
+"Test $PlotMap - Modo Malla (geometria arbitraria)
+'Como Awatif plate example: nodos, elementos, valores
+
+"1. Modo funcion (multi-region, 2 zapatas)
+#hide
+Wz1 = matrix(9; 9)
+#for j = 1 : 9
+	#for i = 1 : 9
+		x = (i - 1)*250','y = (j - 1)*250
+		r = sqr((x - 250)^2 + (y - 1000)^2)
+		Wz1.(i; j) = -20 - 30*exp(-r^2/500000)
+	#loop
+#loop
+wm1(x; y) = spline(1 + x*8/2000; 1 + y*8/2000; Wz1)
+Wz2 = matrix(11; 9)
+#for j = 1 : 9
+	#for i = 1 : 11
+		x = (i - 1)*250','y = (j - 1)*250
+		r = sqr((x - 1250)^2 + (y - 1000)^2)
+		Wz2.(i; j) = -15 - 20*exp(-r^2/800000)
+	#loop
+#loop
+wm2(x; y) = spline(1 + x*10/2500; 1 + y*8/2000; Wz2)
+PlotWidth = 600','PlotStep = 3
+#show
+'<b>Modo funcion (2 regiones):</b>
+$PlotMap{wm1(x; y) @ x = 0 : 2000 & y = 0 : 2000 | wm2(x - 5000; y) @ x = 5000 : 7500 & y = 0 : 2000}
+
+"2. Modo malla (geometria arbitraria con elementos)
+#hide
+'Malla en L: 5x5 nodos, quitar esquina sup-der
+'Nodos
+nn = 25','de = 500
+xn = vector(nn)','yn = vector(nn)','wn = vector(nn)
+k = 0
+#for j = 0 : 4
+	#for i = 0 : 4
+		k = k + 1
+		xn.k = i*de','yn.k = j*de
+		'Valor simulado (presion de contacto)
+		r = sqr((xn.k - 500)^2 + (yn.k - 500)^2)
+		wn.k = -10 - 15*exp(-r^2/300000)
+	#loop
+#loop
+'Elementos (4x4 = 16 quads, quitar 2 de esquina sup-der)
+en = matrix(16; 4)
+ne = 0
+#for j = 0 : 3
+	#for i = 0 : 3
+		'Esquina sup-der: skip si i>=3 AND j>=3
+		#if i < 3 ∨ j < 3
+			ne = ne + 1
+			bl = j*5 + i + 1
+			en.(ne; 1) = bl','en.(ne; 2) = bl + 1
+			en.(ne; 3) = bl + 6','en.(ne; 4) = bl + 5
+		#end if
+	#loop
+#loop
+PlotWidth = 400
+#show
+'<b>Modo malla (zapata en L con elementos quad):</b>
+'Nodos: 'nn', Elementos: 'ne
+$PlotMap{xn; yn; wn; en}
+
+"3. Modo malla sin conectividad (solo nodos)
+#show
+'<b>Modo malla sin conectividad (scatter):</b>
+$PlotMap{xn; yn; wn}

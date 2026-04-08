@@ -1,0 +1,393 @@
+"Dos Zapatas Independientes - Shell Thick (Mindlin MITC4)
+'<hr/>
+'Zapata medianera + zapata centrada SIN viga de amarre. Independientes.
+
+"1. Datos
+'<b>Zapata 1 (medianera):</b>
+'Dimensiones -'Lz1 = 2 m','Bz1 = 2 m
+'Columna -'Lc1 = 400 mm
+xCol1 = 250 mm','yCol1 = 1000 mm
+'<b>Zapata 2 (centrada):</b>
+'Dimensiones -'Lz2 = 2.5 m','Bz2 = 2 m
+'Columna -'Lc2 = 400 mm
+'(centro automatico)
+'<b>Propiedades:</b>
+'Espesor -'tz = 500 mm
+'Concreto -'Ec = 25000 MPa','νc = 0.2
+Gc = Ec/(2*(1 + νc))
+'Factor corte -'κc = 5/6
+'Subgrade -'ks = 0.000002 tf/mm/mm
+'<b>Cargas:</b>
+'Col1 -'P1 = 80 tf
+'Col2 -'P2 = 120 tf
+
+"2. Unidades N-mm
+#hide
+Ew = Ec & MPa','tw = tz & mm
+Lz1w = Lz1 & m','Lz1w = Lz1w*1000
+Bz1w = Bz1 & m','Bz1w = Bz1w*1000
+Lz2w = Lz2 & m','Lz2w = Lz2w*1000
+Bz2w = Bz2 & m','Bz2w = Bz2w*1000
+Lc1w = Lc1 & mm','Lc2w = Lc2 & mm
+xC1w = xCol1 & mm','yC1w = yCol1 & mm
+xC2w = Lz2w/2','yC2w = Bz2w/2
+Gw = Ew/(2*(1 + νc))
+P1N = P1 & tf','P1N = P1N*9806.65
+P2N = P2 & tf','P2N = P2N*9806.65
+kwN = ks & tf/mm/mm','kwN = kwN*9806.65
+nd = 3','cf = 10.19716','ftm = 10^6/9806.65
+
+"3. Zapata 1 - Malla + MITC4 + Winkler + Carga
+#hide
+de1 = 250','ne1x = round(Lz1w/de1)','ne1y = round(Bz1w/de1)
+nj1x = ne1x + 1','nj1y = ne1y + 1','nj1 = nj1x*nj1y','nt1 = nd*nj1
+ne1 = ne1x*ne1y
+xj1 = vector(nj1)','yj1 = vector(nj1)
+#for j = 0 : ne1y
+	#for i = 0 : ne1x
+		k = j*nj1x + i + 1','xj1.k = i*de1','yj1.k = j*de1
+	#loop
+#loop
+ej1 = matrix(ne1; 4)
+#for j = 0 : ne1y - 1
+	#for i = 0 : ne1x - 1
+		e = j*ne1x + i + 1','bl = j*nj1x + i + 1
+		ej1.(e; 1) = bl','ej1.(e; 2) = bl + 1
+		ej1.(e; 3) = bl + nj1x + 1','ej1.(e; 4) = bl + nj1x
+	#loop
+#loop
+Dbm = Ew*tw^3/(12*(1 - νc^2))*[1; νc; 0|νc; 1; 0|0; 0; (1 - νc)/2]
+Dsm = κc*Gw*tw*[1; 0|0; 1]
+gp = 1/sqr(3)','nk = 12
+dN1x(η) = -(1 - η)/4','dN2x(η) = (1 - η)/4
+dN3x(η) = (1 + η)/4','dN4x(η) = -(1 + η)/4
+dN1y(ξ) = -(1 - ξ)/4','dN2y(ξ) = -(1 + ξ)/4
+dN3y(ξ) = (1 + ξ)/4','dN4y(ξ) = (1 - ξ)/4
+
+'Ensamblaje zapata 1
+K1 = symmetric(nt1)
+#for e = 1 : ne1
+	i1 = ej1.(e; 1)','i3 = ej1.(e; 3)
+	dx = xj1.i3 - xj1.i1','dy = yj1.i3 - yj1.i1
+	J11 = dx/2','J22 = dy/2','detJ = J11*J22
+	Ke = symmetric(nk)
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		dx1 = dN1x(ηg)/J11','dy1 = dN1y(ξg)/J22
+		dx2 = dN2x(ηg)/J11','dy2 = dN2y(ξg)/J22
+		dx3 = dN3x(ηg)/J11','dy3 = dN3y(ξg)/J22
+		dx4 = dN4x(ηg)/J11','dy4 = dN4y(ξg)/J22
+		Bb = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+		      0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+		      0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+		BtDB = transp(Bb)*Dbm*Bb*detJ
+		#for i = 1 : nk
+			#for j = i : nk
+				Ke.(i; j) = Ke.(i; j) + BtDB.(i; j)
+			#loop
+		#loop
+	#loop
+	'MITC4
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		Bs = matrix(2; nk)
+		#for it = 1 : 2
+			#if it ≡ 1
+				ηt = -1
+			#else
+				ηt = 1
+			#end if
+			wt = (1 + ηt*ηg)/2
+			dt1 = dN1x(ηt)/J11','dt2 = dN2x(ηt)/J11','dt3 = dN3x(ηt)/J11','dt4 = dN4x(ηt)/J11
+			Nt1 = (1 - ξg)*(1 - ηt)/4','Nt2 = (1 + ξg)*(1 - ηt)/4
+			Nt3 = (1 + ξg)*(1 + ηt)/4','Nt4 = (1 - ξg)*(1 + ηt)/4
+			Bs.(1; 1) = Bs.(1; 1) + wt*dt1','Bs.(1; 3) = Bs.(1; 3) - wt*Nt1
+			Bs.(1; 4) = Bs.(1; 4) + wt*dt2','Bs.(1; 6) = Bs.(1; 6) - wt*Nt2
+			Bs.(1; 7) = Bs.(1; 7) + wt*dt3','Bs.(1; 9) = Bs.(1; 9) - wt*Nt3
+			Bs.(1; 10) = Bs.(1; 10) + wt*dt4','Bs.(1; 12) = Bs.(1; 12) - wt*Nt4
+		#loop
+		#for it = 1 : 2
+			#if it ≡ 1
+				ξt = -1
+			#else
+				ξt = 1
+			#end if
+			wt = (1 + ξt*ξg)/2
+			dt1 = dN1y(ξt)/J22','dt2 = dN2y(ξt)/J22','dt3 = dN3y(ξt)/J22','dt4 = dN4y(ξt)/J22
+			Nt1 = (1 - ξt)*(1 - ηg)/4','Nt2 = (1 + ξt)*(1 - ηg)/4
+			Nt3 = (1 + ξt)*(1 + ηg)/4','Nt4 = (1 - ξt)*(1 + ηg)/4
+			Bs.(2; 1) = Bs.(2; 1) + wt*dt1','Bs.(2; 2) = Bs.(2; 2) + wt*Nt1
+			Bs.(2; 4) = Bs.(2; 4) + wt*dt2','Bs.(2; 5) = Bs.(2; 5) + wt*Nt2
+			Bs.(2; 7) = Bs.(2; 7) + wt*dt3','Bs.(2; 8) = Bs.(2; 8) + wt*Nt3
+			Bs.(2; 10) = Bs.(2; 10) + wt*dt4','Bs.(2; 11) = Bs.(2; 11) + wt*Nt4
+		#loop
+		BtDBs = transp(Bs)*Dsm*Bs*detJ
+		#for i = 1 : nk
+			#for j = i : nk
+				Ke.(i; j) = Ke.(i; j) + BtDBs.(i; j)
+			#loop
+		#loop
+	#loop
+	#for i = 1 : 4
+		#for j = i : 4
+			j1 = ej1.(e; i)','j2 = ej1.(e; j)
+			i1 = nd*(j1 - 1) + 1','i2 = nd*(j2 - 1) + 1
+			kij = submatrix(Ke; nd*(i - 1) + 1; nd*i; nd*(j - 1) + 1; nd*j)
+			#if j1 > j2
+				add(transp(kij); K1; i2; i1)
+			#else
+				add(kij; K1; i1; i2)
+			#end if
+		#loop
+	#loop
+#loop
+'Winkler zapata 1
+#for j = 0 : ne1y
+	#for i = 0 : ne1x
+		k = j*nj1x + i + 1
+		#if i ≡ 0 ∨ i ≡ ne1x
+			txk = de1/2
+		#else
+			txk = de1
+		#end if
+		#if j ≡ 0 ∨ j ≡ ne1y
+			tyk = de1/2
+		#else
+			tyk = de1
+		#end if
+		K1.(nd*(k - 1) + 1; nd*(k - 1) + 1) = K1.(nd*(k - 1) + 1; nd*(k - 1) + 1) + kwN*txk*tyk
+	#loop
+#loop
+'Carga Col1
+F1 = vector(nt1)
+#for j = 0 : ne1y
+	#for i = 0 : ne1x
+		k = j*nj1x + i + 1
+		#if abs(xj1.k - xC1w) ≤ Lc1w/2 + de1/2 ∧ abs(yj1.k - yC1w) ≤ Lc1w/2 + de1/2
+			txk = de1','tyk = de1
+			#if i ≡ 0 ∨ i ≡ ne1x
+				txk = de1/2
+			#end if
+			#if j ≡ 0 ∨ j ≡ ne1y
+				tyk = de1/2
+			#end if
+			F1.(nd*(k - 1) + 1) = F1.(nd*(k - 1) + 1) - P1N/(Lc1w^2)*txk*tyk
+		#end if
+	#loop
+#loop
+#show
+'Zapata 1: 'nj1' nodos, 'ne1' elementos
+
+"4. Zapata 2 - Malla + MITC4 + Winkler + Carga
+#hide
+de2 = 250','ne2x = round(Lz2w/de2)','ne2y = round(Bz2w/de2)
+nj2x = ne2x + 1','nj2y = ne2y + 1','nj2 = nj2x*nj2y','nt2 = nd*nj2
+ne2 = ne2x*ne2y
+xj2 = vector(nj2)','yj2 = vector(nj2)
+#for j = 0 : ne2y
+	#for i = 0 : ne2x
+		k = j*nj2x + i + 1','xj2.k = i*de2','yj2.k = j*de2
+	#loop
+#loop
+ej2 = matrix(ne2; 4)
+#for j = 0 : ne2y - 1
+	#for i = 0 : ne2x - 1
+		e = j*ne2x + i + 1','bl = j*nj2x + i + 1
+		ej2.(e; 1) = bl','ej2.(e; 2) = bl + 1
+		ej2.(e; 3) = bl + nj2x + 1','ej2.(e; 4) = bl + nj2x
+	#loop
+#loop
+K2 = symmetric(nt2)
+#for e = 1 : ne2
+	i1 = ej2.(e; 1)','i3 = ej2.(e; 3)
+	dx = xj2.i3 - xj2.i1','dy = yj2.i3 - yj2.i1
+	J11 = dx/2','J22 = dy/2','detJ = J11*J22
+	Ke = symmetric(nk)
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		dx1 = dN1x(ηg)/J11','dy1 = dN1y(ξg)/J22
+		dx2 = dN2x(ηg)/J11','dy2 = dN2y(ξg)/J22
+		dx3 = dN3x(ηg)/J11','dy3 = dN3y(ξg)/J22
+		dx4 = dN4x(ηg)/J11','dy4 = dN4y(ξg)/J22
+		Bb = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+		      0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+		      0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+		BtDB = transp(Bb)*Dbm*Bb*detJ
+		#for i = 1 : nk
+			#for j = i : nk
+				Ke.(i; j) = Ke.(i; j) + BtDB.(i; j)
+			#loop
+		#loop
+	#loop
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		Bs = matrix(2; nk)
+		#for it = 1 : 2
+			#if it ≡ 1
+				ηt = -1
+			#else
+				ηt = 1
+			#end if
+			wt = (1 + ηt*ηg)/2
+			dt1 = dN1x(ηt)/J11','dt2 = dN2x(ηt)/J11','dt3 = dN3x(ηt)/J11','dt4 = dN4x(ηt)/J11
+			Nt1 = (1 - ξg)*(1 - ηt)/4','Nt2 = (1 + ξg)*(1 - ηt)/4
+			Nt3 = (1 + ξg)*(1 + ηt)/4','Nt4 = (1 - ξg)*(1 + ηt)/4
+			Bs.(1; 1) = Bs.(1; 1) + wt*dt1','Bs.(1; 3) = Bs.(1; 3) - wt*Nt1
+			Bs.(1; 4) = Bs.(1; 4) + wt*dt2','Bs.(1; 6) = Bs.(1; 6) - wt*Nt2
+			Bs.(1; 7) = Bs.(1; 7) + wt*dt3','Bs.(1; 9) = Bs.(1; 9) - wt*Nt3
+			Bs.(1; 10) = Bs.(1; 10) + wt*dt4','Bs.(1; 12) = Bs.(1; 12) - wt*Nt4
+		#loop
+		#for it = 1 : 2
+			#if it ≡ 1
+				ξt = -1
+			#else
+				ξt = 1
+			#end if
+			wt = (1 + ξt*ξg)/2
+			dt1 = dN1y(ξt)/J22','dt2 = dN2y(ξt)/J22','dt3 = dN3y(ξt)/J22','dt4 = dN4y(ξt)/J22
+			Nt1 = (1 - ξt)*(1 - ηg)/4','Nt2 = (1 + ξt)*(1 - ηg)/4
+			Nt3 = (1 + ξt)*(1 + ηg)/4','Nt4 = (1 - ξt)*(1 + ηg)/4
+			Bs.(2; 1) = Bs.(2; 1) + wt*dt1','Bs.(2; 2) = Bs.(2; 2) + wt*Nt1
+			Bs.(2; 4) = Bs.(2; 4) + wt*dt2','Bs.(2; 5) = Bs.(2; 5) + wt*Nt2
+			Bs.(2; 7) = Bs.(2; 7) + wt*dt3','Bs.(2; 8) = Bs.(2; 8) + wt*Nt3
+			Bs.(2; 10) = Bs.(2; 10) + wt*dt4','Bs.(2; 11) = Bs.(2; 11) + wt*Nt4
+		#loop
+		BtDBs = transp(Bs)*Dsm*Bs*detJ
+		#for i = 1 : nk
+			#for j = i : nk
+				Ke.(i; j) = Ke.(i; j) + BtDBs.(i; j)
+			#loop
+		#loop
+	#loop
+	#for i = 1 : 4
+		#for j = i : 4
+			j1 = ej2.(e; i)','j2 = ej2.(e; j)
+			i1 = nd*(j1 - 1) + 1','i2 = nd*(j2 - 1) + 1
+			kij = submatrix(Ke; nd*(i - 1) + 1; nd*i; nd*(j - 1) + 1; nd*j)
+			#if j1 > j2
+				add(transp(kij); K2; i2; i1)
+			#else
+				add(kij; K2; i1; i2)
+			#end if
+		#loop
+	#loop
+#loop
+'Winkler zapata 2
+#for j = 0 : ne2y
+	#for i = 0 : ne2x
+		k = j*nj2x + i + 1
+		#if i ≡ 0 ∨ i ≡ ne2x
+			txk = de2/2
+		#else
+			txk = de2
+		#end if
+		#if j ≡ 0 ∨ j ≡ ne2y
+			tyk = de2/2
+		#else
+			tyk = de2
+		#end if
+		K2.(nd*(k - 1) + 1; nd*(k - 1) + 1) = K2.(nd*(k - 1) + 1; nd*(k - 1) + 1) + kwN*txk*tyk
+	#loop
+#loop
+'Carga Col2
+F2 = vector(nt2)
+#for j = 0 : ne2y
+	#for i = 0 : ne2x
+		k = j*nj2x + i + 1
+		#if abs(xj2.k - xC2w) ≤ Lc2w/2 + de2/2 ∧ abs(yj2.k - yC2w) ≤ Lc2w/2 + de2/2
+			txk = de2','tyk = de2
+			#if i ≡ 0 ∨ i ≡ ne2x
+				txk = de2/2
+			#end if
+			#if j ≡ 0 ∨ j ≡ ne2y
+				tyk = de2/2
+			#end if
+			F2.(nd*(k - 1) + 1) = F2.(nd*(k - 1) + 1) - P2N/(Lc2w^2)*txk*tyk
+		#end if
+	#loop
+#loop
+#show
+'Zapata 2: 'nj2' nodos, 'ne2' elementos
+
+"5. Resolver cada zapata independiente
+Z1 = clsolve(K1; F1)
+Z2 = clsolve(K2; F2)
+
+"6. Deflexion (mm)
+#hide
+Wz1 = matrix(nj1x; nj1y)
+#for j = 0 : ne1y
+	#for i = 0 : ne1x
+		k = j*nj1x + i + 1','Wz1.(i + 1; j + 1) = Z1.(nd*(k - 1) + 1)
+	#loop
+#loop
+wm1(x; y) = spline(1 + x*ne1x/Lz1w; 1 + y*ne1y/Bz1w; Wz1)
+Wz2 = matrix(nj2x; nj2y)
+#for j = 0 : ne2y
+	#for i = 0 : ne2x
+		k = j*nj2x + i + 1','Wz2.(i + 1; j + 1) = Z2.(nd*(k - 1) + 1)
+	#loop
+#loop
+wm2(x; y) = spline(1 + x*ne2x/Lz2w; 1 + y*ne2y/Bz2w; Wz2)
+PlotWidth = 200','PlotHeight = 200','PlotStep = 15
+kc1 = round(yC1w/de1)*nj1x + round(xC1w/de1) + 1
+kc2 = round(yC2w/de2)*nj2x + round(xC2w/de2) + 1
+#show
+'<b>Zapata 1 (medianera):</b> w Col1 = 'round(Z1.(nd*(kc1 - 1) + 1)*1000)/1000' mm
+$Map{wm1(x; y) @ x = 0 : Lz1w & y = 0 : Bz1w}
+'<b>Zapata 2 (centrada):</b> w Col2 = 'round(Z2.(nd*(kc2 - 1) + 1)*1000)/1000' mm
+$Map{wm2(x; y) @ x = 0 : Lz2w & y = 0 : Bz2w}
+
+"7. Presion de contacto (tonf/m²)
+#hide
+Q1m = matrix(nj1x; nj1y)
+#for j = 0 : ne1y
+	#for i = 0 : ne1x
+		k = j*nj1x + i + 1','Q1m.(i + 1; j + 1) = kwN*Z1.(nd*(k - 1) + 1)/9806.65*10^6
+	#loop
+#loop
+q1(x; y) = spline(1 + x*ne1x/Lz1w; 1 + y*ne1y/Bz1w; Q1m)
+Q2m = matrix(nj2x; nj2y)
+#for j = 0 : ne2y
+	#for i = 0 : ne2x
+		k = j*nj2x + i + 1','Q2m.(i + 1; j + 1) = kwN*Z2.(nd*(k - 1) + 1)/9806.65*10^6
+	#loop
+#loop
+q2(x; y) = spline(1 + x*ne2x/Lz2w; 1 + y*ne2y/Bz2w; Q2m)
+#show
+'<b>Presion zapata 1 (tonf/m²):</b>
+$Map{q1(x; y) @ x = 0 : Lz1w & y = 0 : Bz1w}
+'<b>Presion zapata 2 (tonf/m²):</b>
+$Map{q2(x; y) @ x = 0 : Lz2w & y = 0 : Bz2w}
