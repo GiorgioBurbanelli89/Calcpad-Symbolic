@@ -114,77 +114,82 @@ namespace Calcpad.Core
 
             if (elements is not null && ne > 0)
             {
-                // Draw each element as filled polygon, subdivided NxN for smooth color
-                int subdiv = 4; // subdivide each element into 4x4 sub-quads
+                // Pixel-by-pixel rendering: for each pixel, find element, interpolate, color
+                // Pre-compute element bounding boxes in pixel coords
+                var ebb = new (int pxMin, int pyMin, int pxMax, int pyMax, double[] ex, double[] ey, double[] ev)[ne];
+                int validElems = 0;
                 for (int e = 0; e < ne; e++)
                 {
-                    double[] ex = new double[nodesPerElem];
-                    double[] ey = new double[nodesPerElem];
-                    double[] ev = new double[nodesPerElem];
+                    double[] ex2 = new double[nodesPerElem];
+                    double[] ey2 = new double[nodesPerElem];
+                    double[] ev2 = new double[nodesPerElem];
                     bool valid = true;
-
+                    double pxMn = double.MaxValue, pyMn = double.MaxValue;
+                    double pxMx = double.MinValue, pyMx = double.MinValue;
                     for (int nn = 0; nn < nodesPerElem; nn++)
                     {
                         int idx = elements[e, nn];
                         if (idx < 0 || idx >= nj) { valid = false; break; }
-                        ex[nn] = xj[idx]; ey[nn] = yj[idx]; ev[nn] = values[idx];
+                        ex2[nn] = xj[idx]; ey2[nn] = yj[idx]; ev2[nn] = values[idx];
+                        double px = (xj[idx] - xmin) * sx;
+                        double py = (yj[idx] - ymin) * sy;
+                        if (px < pxMn) pxMn = px; if (px > pxMx) pxMx = px;
+                        if (py < pyMn) pyMn = py; if (py > pyMx) pyMx = py;
                     }
                     if (!valid) continue;
+                    ebb[validElems] = ((int)pxMn, (int)pyMn, (int)pxMx + 1, (int)pyMx + 1, ex2, ey2, ev2);
+                    validElems++;
+                }
 
-                    // Subdivide element into sub-quads with interpolated values
-                    for (int si = 0; si < subdiv; si++)
+                // Rasterize at plot resolution
+                int rasterW = plotWidth, rasterH = plotHeight;
+                using var pixBmp = new SKBitmap(rasterW, rasterH);
+                for (int py = 0; py < rasterH; py++)
+                {
+                    double physY = ymin + (rasterH - 1 - py) * dy / rasterH;
+                    for (int px = 0; px < rasterW; px++)
                     {
-                        for (int sj = 0; sj < subdiv; sj++)
+                        double physX = xmin + px * dx / rasterW;
+
+                        // Find element containing this point
+                        for (int ei = 0; ei < validElems; ei++)
                         {
-                            double s0 = (double)si / subdiv, s1 = (double)(si + 1) / subdiv;
-                            double t0 = (double)sj / subdiv, t1 = (double)(sj + 1) / subdiv;
-                            double sc = (s0 + s1) / 2, tc = (t0 + t1) / 2;
+                            ref var eb = ref ebb[ei];
+                            if (px < eb.pxMin - 1 || px > eb.pxMax + 1 || py < (plotHeight - 1 - eb.pyMax - 1) || py > (plotHeight - 1 - eb.pyMin + 1))
+                                continue;
 
-                            // Bilinear interpolation for quad: (1-s)(1-t)*v0 + s(1-t)*v1 + st*v2 + (1-s)t*v3
-                            double val;
-                            double cx, cy;
-                            if (nodesPerElem == 4)
+                            // Inverse bilinear: find (s,t) such that bilinear(s,t) = (physX, physY)
+                            // Use Newton iteration (2 iterations enough for quads)
+                            double s = 0.5, tt = 0.5;
+                            for (int iter = 0; iter < 3; iter++)
                             {
-                                val = (1 - sc) * (1 - tc) * ev[0] + sc * (1 - tc) * ev[1] + sc * tc * ev[2] + (1 - sc) * tc * ev[3];
-                                cx = (1 - sc) * (1 - tc) * ex[0] + sc * (1 - tc) * ex[1] + sc * tc * ex[2] + (1 - sc) * tc * ex[3];
-                                cy = (1 - sc) * (1 - tc) * ey[0] + sc * (1 - tc) * ey[1] + sc * tc * ey[2] + (1 - sc) * tc * ey[3];
-                            }
-                            else
-                            {
-                                // Triangle: use barycentric
-                                val = (1 - sc - tc) * ev[0] + sc * ev[1] + tc * ev[2];
-                                cx = (1 - sc - tc) * ex[0] + sc * ex[1] + tc * ex[2];
-                                cy = (1 - sc - tc) * ey[0] + sc * ey[1] + tc * ey[2];
-                            }
-
-                            // Pixel coordinates for sub-cell corners
-                            float px1, py1, px2, py2;
-                            if (nodesPerElem == 4)
-                            {
-                                double x1c = (1 - s0) * (1 - t0) * ex[0] + s0 * (1 - t0) * ex[1] + s0 * t0 * ex[2] + (1 - s0) * t0 * ex[3];
-                                double y1c = (1 - s0) * (1 - t0) * ey[0] + s0 * (1 - t0) * ey[1] + s0 * t0 * ey[2] + (1 - s0) * t0 * ey[3];
-                                double x2c = (1 - s1) * (1 - t1) * ex[0] + s1 * (1 - t1) * ex[1] + s1 * t1 * ex[2] + (1 - s1) * t1 * ex[3];
-                                double y2c = (1 - s1) * (1 - t1) * ey[0] + s1 * (1 - t1) * ey[1] + s1 * t1 * ey[2] + (1 - s1) * t1 * ey[3];
-                                px1 = margin + (float)((x1c - xmin) * sx);
-                                py1 = margin + plotHeight - (float)((y1c - ymin) * sy);
-                                px2 = margin + (float)((x2c - xmin) * sx);
-                                py2 = margin + plotHeight - (float)((y2c - ymin) * sy);
-                            }
-                            else
-                            {
-                                px1 = margin + (float)((cx - xmin) * sx) - 2;
-                                py1 = margin + plotHeight - (float)((cy - ymin) * sy) - 2;
-                                px2 = px1 + 4; py2 = py1 + 4;
+                                double fx, fy;
+                                if (nodesPerElem == 4)
+                                {
+                                    fx = (1-s)*(1-tt)*eb.ex[0] + s*(1-tt)*eb.ex[1] + s*tt*eb.ex[2] + (1-s)*tt*eb.ex[3] - physX;
+                                    fy = (1-s)*(1-tt)*eb.ey[0] + s*(1-tt)*eb.ey[1] + s*tt*eb.ey[2] + (1-s)*tt*eb.ey[3] - physY;
+                                    double dxds = -(1-tt)*eb.ex[0] + (1-tt)*eb.ex[1] + tt*eb.ex[2] - tt*eb.ex[3];
+                                    double dxdt = -(1-s)*eb.ex[0] - s*eb.ex[1] + s*eb.ex[2] + (1-s)*eb.ex[3];
+                                    double dyds = -(1-tt)*eb.ey[0] + (1-tt)*eb.ey[1] + tt*eb.ey[2] - tt*eb.ey[3];
+                                    double dydt = -(1-s)*eb.ey[0] - s*eb.ey[1] + s*eb.ey[2] + (1-s)*eb.ey[3];
+                                    double det = dxds*dydt - dxdt*dyds;
+                                    if (Math.Abs(det) < 1e-12) break;
+                                    s -= (fx*dydt - fy*dxdt) / det;
+                                    tt -= (fy*dxds - fx*dyds) / det;
+                                }
+                                else break;
                             }
 
-                            var color = GetMapColor(val, vmin, vmax);
-                            float rw2 = Math.Abs(px2 - px1) + 1;
-                            float rh2 = Math.Abs(py2 - py1) + 1;
-                            using var paint = new SKPaint { Color = color, Style = SKPaintStyle.Fill, IsAntialias = false };
-                            canvas.DrawRect(Math.Min(px1, px2), Math.Min(py1, py2), rw2, rh2, paint);
+                            if (s >= -0.01 && s <= 1.01 && tt >= -0.01 && tt <= 1.01)
+                            {
+                                double val = (1-s)*(1-tt)*eb.ev[0] + s*(1-tt)*eb.ev[1] + s*tt*eb.ev[2] + (1-s)*tt*eb.ev[3];
+                                pixBmp.SetPixel(px, py, GetMapColor(val, vmin, vmax));
+                                break;
+                            }
                         }
                     }
                 }
+                canvas.DrawBitmap(pixBmp, new SKRect(margin, margin, margin + plotWidth, margin + plotHeight));
 
                 // Draw element edges
                 using var edgePaint = new SKPaint { Color = new SKColor(0, 0, 0, 70), StrokeWidth = 0.7f, Style = SKPaintStyle.Stroke, IsAntialias = true };
