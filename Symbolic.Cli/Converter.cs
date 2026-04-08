@@ -15,12 +15,31 @@ namespace Calcpad.Cli
 
         internal Converter(bool isSilent)
         {
-            var appUrl = $"file:///{Program.AppPath.Replace("\\", "/")}doc/";
-            var templatePath =  $"{Program.AppPath}doc{Path.DirectorySeparatorChar}template{Program.AddCultureExt("html")}";
-            _htmlWorksheet = File.ReadAllText(templatePath)
-                .Replace("jquery", appUrl + "jquery")
-                .Replace("calcpad-viz", appUrl + "calcpad-viz.umd.cjs");
-            _isSilent = isSilent;   
+            var docPath = $"{Program.AppPath}doc{Path.DirectorySeparatorChar}";
+            var templatePath = $"{docPath}template{Program.AddCultureExt("html")}";
+            var template = File.ReadAllText(templatePath);
+
+            // Embed JS files inline instead of referencing via file:// (browsers block cross-origin file:// scripts)
+            template = EmbedScript(template, "jquery-3.6.3.min.js", docPath);
+            template = EmbedScript(template, "calcpad-viz.umd.js", docPath);
+
+            _htmlWorksheet = template;
+            _isSilent = isSilent;
+        }
+
+        /// <summary>Replace script src reference with inline script content</summary>
+        private static string EmbedScript(string html, string fileName, string docPath)
+        {
+            var scriptTag = $"<script src=\"https://calcpad.local/{fileName}\"></script>";
+            var filePath = $"{docPath}{fileName}";
+            if (File.Exists(filePath))
+            {
+                var content = File.ReadAllText(filePath);
+                return html.Replace(scriptTag, $"<script>{content}</script>");
+            }
+            // Fallback to file:// URL if file not found
+            var appUrl = $"file:///{docPath.Replace("\\", "/")}";
+            return html.Replace("https://calcpad.local/", appUrl);
         }
 
         internal void ToHtml(string html, string path)

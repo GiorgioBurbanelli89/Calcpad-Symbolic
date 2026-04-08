@@ -1,0 +1,260 @@
+"Teoria de Placa - Reissner (1945) vs Mindlin (1951)
+
+"1. Diferencias entre Reissner y Mindlin
+'Ambas incluyen corte transversal pero parten de principios diferentes:
+
+"1.1 Mindlin (cinematica)
+'Parte de la cinematica: las secciones permanecen rectas pero se inclinan.
+'La deformacion por corte es CONSTANTE a traves del espesor.
+'Se corrige con el factor κ = 5/6 (ad-hoc).
+'Ecuacion constitutiva de corte:
+#noc
+D_s,Mindlin = κ*G*t*[1; 0|0; 1]
+#equ
+
+"1.2 Reissner (equilibrio)
+'Parte del equilibrio de esfuerzos (principio de Hellinger-Reissner).
+'La distribucion del corte es PARABOLICA a traves del espesor.
+'No necesita factor de correccion ad-hoc.
+'Ecuacion constitutiva de corte:
+#noc
+D_s,Reissner = 5*G*t/6*[1; 0|0; 1]
+#equ
+'Numericamente: κ·G·t = (5/6)·G·t = 5·G·t/6
+'El resultado es IDENTICO. La diferencia es conceptual, no numerica.
+
+"1.3 Comparacion conceptual
+'Mindlin: campo de desplazamientos → deformacion constante → correccion κ
+'Reissner: campo de esfuerzos → distribucion parabolica → sin correccion
+'En FEA ambos dan la MISMA matriz de rigidez.
+'La diferencia importa en formulaciones mixtas y en teoria analitica.
+
+"2. Ejemplo comparativo - Losa simplemente apoyada
+'Misma losa que el ejemplo de Kirchhoff para comparar resultados.
+
+"2.1 Datos de entrada
+'Dimensiones -'a_z = 6 m', 'b_z = 4 m
+'Espesor -'t_z = 0.1 m
+'Carga -'q = 10 kN/m^2
+'Modulo de elasticidad -'E = 35000 MPa
+'Relacion de Poisson -'ν = 0.15
+'Modulo de corte -'G = E/(2*(1 + ν))
+G
+'Factor de correccion -'κ = 5/6
+
+"2.2 Adimensionalizar (& → numero puro, sistema kN-m)
+E_a = E & kN/m^2
+G_a = G & kN/m^2
+a_a = a_z & m
+b_a = b_z & m
+t_a = t_z & m
+q_a = q & kN/m^2
+
+"2.3 Rigideces
+'Rigidez a flexion -
+D_bf = E*t_z^3/(12*(1 - ν^2))
+D_bf
+'Rigidez al corte -
+D_sv = κ*G*t_z
+D_sv
+
+"2.4 Malla
+'DOFs por nodo (w, θx, θy) -'n_dof = 3
+n_x = 6', 'n_y = 4
+n_e = n_x*n_y
+n_j = (n_x + 1)*(n_y + 1)
+d_x = a_a/n_x', 'd_y = b_a/n_y
+n_total = n_dof*n_j
+#hide
+n_1 = n_x + 1
+x_j = vector(n_j)
+y_j = vector(n_j)
+#for j = 0 : n_y
+	#for i = 0 : n_x
+		k = j*n_1 + i + 1
+		x_j.k = i*d_x
+		y_j.k = j*d_y
+	#loop
+#loop
+e_j = matrix(n_e; 4)
+#for j = 0 : n_y - 1
+	#for i = 0 : n_x - 1
+		e = j*n_x + i + 1
+		bl = j*n_1 + i + 1
+		e_j.(e; 1) = bl
+		e_j.(e; 2) = bl + 1
+		e_j.(e; 3) = bl + n_1 + 1
+		e_j.(e; 4) = bl + n_1
+	#loop
+#loop
+'Apoyos: todos los nodos del borde (w=0)
+n_s = 2*(n_x + n_y)
+s_j = vector(n_s)
+i_s = 0
+#for i = 0 : n_x
+	i_s = i_s + 1
+	s_j.i_s = i + 1
+#loop
+#for i = 0 : n_x
+	i_s = i_s + 1
+	s_j.i_s = n_y*n_1 + i + 1
+#loop
+#for j = 1 : n_y - 1
+	i_s = i_s + 1
+	s_j.i_s = j*n_1 + 1
+#loop
+#for j = 1 : n_y - 1
+	i_s = i_s + 1
+	s_j.i_s = j*n_1 + n_1
+#loop
+j_e(e) = row(e_j; e)
+x_c(e) = sum(extract(x_j; j_e(e)))/4
+y_c(e) = sum(extract(y_j; j_e(e)))/4
+#show
+#equ
+
+"2.4 Funciones de forma Q4
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+dN_1ξ(η) = -(1 - η)/4
+dN_2ξ(η) = (1 - η)/4
+dN_3ξ(η) = (1 + η)/4
+dN_4ξ(η) = -(1 + η)/4
+dN_1η(ξ) = -(1 - ξ)/4
+dN_2η(ξ) = -(1 + ξ)/4
+dN_3η(ξ) = (1 + ξ)/4
+dN_4η(ξ) = (1 - ξ)/4
+
+"2.5 Matrices constitutivas
+#hide
+D_b_mat = E_a*t_a^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+D_s_mat = κ*G_a*t_a*[1; 0|0; 1]
+#show
+'Matrices constitutivas calculadas (ocultas por tamano de output).
+
+"2.6 Rigidez del elemento (integracion selectiva)
+J_11 = d_x/2
+J_22 = d_y/2
+det_J = J_11*J_22
+g_p = 1/sqr(3)
+#hide
+n_k = n_dof*4
+K_e = symmetric(n_k)
+'FLEXION: 2x2 Gauss (completa)
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g_p','η_g = -g_p
+	#else if ig ≡ 2
+		ξ_g = g_p','η_g = -g_p
+	#else if ig ≡ 3
+		ξ_g = g_p','η_g = g_p
+	#else
+		ξ_g = -g_p','η_g = g_p
+	#end if
+	dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+	dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+	dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+	dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+	B_b = [0; 0; -dNdx_1; 0; 0; -dNdx_2; 0; 0; -dNdx_3; 0; 0; -dNdx_4 | _
+	       0; dNdy_1; 0; 0; dNdy_2; 0; 0; dNdy_3; 0; 0; dNdy_4; 0 | _
+	       0; dNdx_1; -dNdy_1; 0; dNdx_2; -dNdy_2; 0; dNdx_3; -dNdy_3; 0; dNdx_4; -dNdy_4]
+	BtDB = transp(B_b)*D_b_mat*B_b*det_J
+	#for i = 1 : n_k
+		#for j = i : n_k
+			K_e.(i; j) = K_e.(i; j) + BtDB.(i; j)
+		#loop
+	#loop
+#loop
+'CORTE: 1x1 Gauss (reducida — evita shear locking)
+ξ_g = 0','η_g = 0
+NN_1 = N_1(ξ_g; η_g)','NN_2 = N_2(ξ_g; η_g)
+NN_3 = N_3(ξ_g; η_g)','NN_4 = N_4(ξ_g; η_g)
+dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+B_s = [dNdx_1; 0; -NN_1; dNdx_2; 0; -NN_2; dNdx_3; 0; -NN_3; dNdx_4; 0; -NN_4 | _
+       dNdy_1; NN_1; 0; dNdy_2; NN_2; 0; dNdy_3; NN_3; 0; dNdy_4; NN_4; 0]
+BtDB_s = transp(B_s)*D_s_mat*B_s*det_J*4
+#for i = 1 : n_k
+	#for j = i : n_k
+		K_e.(i; j) = K_e.(i; j) + BtDB_s.(i; j)
+	#loop
+#loop
+#show
+'K_e (12x12): calculada con integracion selectiva (2x2 flexion + 1x1 corte)
+
+"2.7 Ensamblaje y solucion
+#hide
+K = symmetric(n_total)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		#for j = i : 4
+			j_1 = e_j.(e; i)
+			j_2 = e_j.(e; j)
+			i_1 = n_dof*(j_1 - 1) + 1
+			i_2 = n_dof*(j_2 - 1) + 1
+			k_ij = submatrix(K_e; n_dof*(i - 1) + 1; n_dof*i; n_dof*(j - 1) + 1; n_dof*j)
+			#if j_1 > j_2
+				add(transp(k_ij); K; i_2; i_1)
+			#else
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+'Apoyos: w=0 en nodos del borde (penalidad)
+k_p = 10^20
+#for i = 1 : n_s
+	j = n_dof*(s_j.i - 1) + 1
+	K.(j; j) = K.(j; j) + k_p
+#loop
+'Carga distribuida uniforme
+F = vector(n_total)
+f_node = q_a*d_x*d_y/4
+#for e = 1 : n_e
+	#for i = 1 : 4
+		j = e_j.(e; i)
+		F.(n_dof*(j - 1) + 1) = F.(n_dof*(j - 1) + 1) - f_node
+	#loop
+#loop
+#show
+Z = clsolve(K; F)
+
+"3. Resultados
+#hide
+W_z = matrix(n_x + 1; n_y + 1)
+#for i_x = 0 : n_x
+	#for i_y = 0 : n_y
+		k = i_y*n_1 + i_x + 1
+		W_z.(i_x + 1; i_y + 1) = Z.(n_dof*(k - 1) + 1)
+	#loop
+#loop
+w_f(x; y) = spline(1 + x/d_x; 1 + y/d_y; W_z)
+PlotWidth = 50*a_a
+PlotHeight = 50*b_a
+PlotStep = 10
+#show
+'Deflexiones (mm):
+$Map{w_f(x; y) @ x = 0 : a_a & y = 0 : b_a}
+'Deflexion en el centro:
+w_num = w_f(a_a/2; b_a/2)
+w_center = w_num*(1 m)
+w_center
+w_center | mm
+
+"3.1 Comparacion con Kirchhoff (solucion analitica Navier)
+'Referencia: Timoshenko Table 35, α=0.00772, a=lado corto
+w_Navier = 0.00772*q*b_z^4/D_bf
+w_Navier
+w_Navier | mm
+'Relacion Mindlin-Reissner / Kirchhoff:
+w_center/w_Navier
+
+"3.2 Efecto del espesor
+'Para esta losa (t/a = 't_z/a_z'):
+'- Kirchhoff y Mindlin-Reissner dan resultados casi identicos.
+'- Si t/a > 0.05, la diferencia crece significativamente.
+'- Para zapatas (t/a ~ 0.25), Kirchhoff subestima la deflexion.

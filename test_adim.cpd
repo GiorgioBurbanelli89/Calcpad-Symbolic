@@ -1,0 +1,48 @@
+"Test adimensionalizar sin clrunits
+
+E = 200000 MPa
+t = 200 mm
+P = 600 kN
+
+'& 1:
+#hide
+a_1 = E & 1
+#show
+#if a_1 ≡ 0
+	'& 1 no funciono
+#else
+	a_1
+#end if
+
+'& MPa/MPa:
+#hide
+a_2 = E & MPa/MPa
+#show
+#if a_2 ≡ 0
+	'& MPa/MPa no funciono
+#else
+	a_2
+#end if
+
+'setunits(E; 1):
+#hide
+a_3 = setunits(E; 1)
+#show
+#if a_3 ≡ 0
+	'setunits(E;1) no funciono
+#else
+	a_3
+#end if
+
+'E/1 MPa:
+a_4 = E/(1 MPa)
+a_4
+
+'E/(1 MPa) deberia dar 200000 adimensional
+'P/(1 kN) deberia dar 600 adimensional
+a_5 = P/(1 kN)
+a_5
+
+'t/(1 mm) deberia dar 200 adimensional
+a_6 = t/(1 mm)
+a_6

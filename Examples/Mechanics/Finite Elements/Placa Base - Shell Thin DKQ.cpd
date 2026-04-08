@@ -1,0 +1,596 @@
+"Placa Base 600×500 - DKQ Shell-Thin
+'<hr/>
+'Placa base con columna W. Pernos adentro y afuera de alas. Winkler + DKQ.
+
+"1. Datos
+'Placa -'Lp = 600 mm', 'Bp = 500 mm', 't = 50 mm
+'A36 -'E = 200000 MPa', 'ν = 0.3
+'Cargas -'Pu = 148 tf', 'Mx = 50 tf*m
+'Pernos 1" -'db = 25.4 mm', 'Le = 500 mm
+'Posiciones pernos (Calcpad X = SAP Y):
+'- X (4 filas a lo largo de SAP Y):
+bx1 = 50 mm','bx2 = 174 mm','bx3 = 426 mm','bx4 = 550 mm
+'- Y (4 columnas a lo largo de SAP X):
+by1 = 50 mm','by2 = 175 mm','by3 = 325 mm','by4 = 450 mm
+
+"2. Unidades de trabajo (N-mm interno)
+#hide
+Ea = E & MPa
+ta = t & mm
+La = Lp & mm
+Ba = Bp & mm
+PuN = Pu & tf
+PuN = PuN*9806.65
+MuN = Mx & tf*m
+MuN = MuN*9806650
+dba = db & mm
+Lea = Le & mm
+kb = Ea*3.14159*dba^2/4/Lea
+cf = 10.19716
+kw = 50000/10^6
+nd = 3
+
+"3. Malla 9×9
+xa = [0; 50; 112; 174; 300; 426; 488; 550; 600]
+ya = [0; 50; 100; 175; 250; 325; 400; 450; 500]
+nj = 81','ne = 64','nt = nd*nj
+xj = vector(nj)','yj = vector(nj)
+k = 0
+#for j = 1 : 9
+	#for i = 1 : 9
+		k = k + 1','xj.k = xa.i','yj.k = ya.j
+	#loop
+#loop
+ej = matrix(ne; 4)
+#for j = 0 : 7
+	#for i = 0 : 7
+		e = j*8 + i + 1','bl = j*9 + i + 1
+		ej.(e; 1) = bl','ej.(e; 2) = bl + 1
+		ej.(e; 3) = bl + 10','ej.(e; 4) = bl + 9
+	#loop
+#loop
+
+"4. SVG (orientacion SAP2000: SAP_X=500 horiz, SAP_Y=600 vert)
+#show
+#hide
+hs = 320','ks = hs/La','ds = 35','ws = Ba*ks
+#show
+#svg ws+2*ds+30 hs+2*ds+30
+.text ds+ws/2 ds-10 "Placa_Base_500x600_DKQ_(SAP2000)" 9 navy middle bold
+.rect ds ds ws hs honeydew 0.3 seaGreen 1.5
+#for e = 1 : ne
+	i1 = ej.(e; 1)','i3 = ej.(e; 3)
+	ex = yj.i1*ks+ds','ey = hs-xj.i3*ks+ds
+	ew = (yj.i3 - yj.i1)*ks','eh = (xj.i3 - xj.i1)*ks
+	.rect ex ey ew eh lightyellow 0.15 gray 0.3
+#loop
+'Alma SAP_X=250 (horiz), SAP_Y=112..488 (vert)
+.line 250*ks+ds hs-112*ks+ds 250*ks+ds hs-488*ks+ds red 2.5
+'Ala inf SAP_Y=112, SAP_X=100..400
+.line 100*ks+ds hs-112*ks+ds 400*ks+ds hs-112*ks+ds red 3
+'Ala sup SAP_Y=488, SAP_X=100..400
+.line 100*ks+ds hs-488*ks+ds 400*ks+ds hs-488*ks+ds red 3
+'Pernos (adentro y afuera de alas)
+#hide
+bx1a = bx1 & mm','bx2a = bx2 & mm','bx3a = bx3 & mm','bx4a = bx4 & mm
+by1a = by1 & mm','by2a = by2 & mm','by3a = by3 & mm','by4a = by4 & mm
+bxv = [bx1a; bx2a; bx3a; bx4a]
+byv = [by1a; by2a; by3a; by4a]
+#show
+#for p = 1 : 4
+	#for q = 1 : 4
+		px = byv.q*ks+ds','py = hs - bxv.p*ks+ds
+		.rect px-3 py-3 6 6 gold 1 goldenrod 1.5
+	#loop
+#loop
+.arrow ds hs+ds+12 ds+ws hs+ds+12 dimgray 1
+.text ds+ws/2 hs+ds+22 "SAP_X_(500mm)" 8 dimgray middle
+.arrow ds+ws+12 hs+ds ds+ws+12 ds dimgray 1
+.text ds+ws+22 ds+hs/2 "SAP_Y_(600mm)" 8 dimgray middle
+#end svg
+#equ
+
+"5. Formulacion DKQ (Discrete Kirchhoff Quadrilateral)
+'<hr/>
+'Referencia: Batoz, Bathe & Ho (1980), Batoz & Tahar (1982)
+'Elemento shell-thin: 3 DOF/nodo (w, θ_x, θ_y), 12 DOF/elemento
+'Libre de shear locking (hipotesis de Kirchhoff discreta)
+
+"5.1 Relacion momento-curvatura
+'Teoria clasica de placas (Kirchhoff):
+#deq M = D_b*κ
+'Vector de momentos:
+#deq M = [M_x|M_y|M_xy]
+'Vector de curvaturas:
+#deq κ_x = -d^2*w/dx^2
+#deq κ_y = -d^2*w/dy^2
+#deq κ_xy = -2*d^2*w/(dx*dy)
+'Matriz constitutiva a flexion:
+#deq D_b = E*t^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+Db = Ea*ta^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+
+"5.2 Funciones de forma DKQ (derivacion simbolica)
+'En el DKQ, las rotaciones β se interpolan con funciones cuadraticas.
+'Funciones de forma del elemento isoparametrico bilineal Q4:
+#deq N_1 = (1 - ξ)*(1 - η)/4
+#deq N_2 = (1 + ξ)*(1 - η)/4
+#deq N_3 = (1 + ξ)*(1 + η)/4
+#deq N_4 = (1 - ξ)*(1 + η)/4
+
+'Derivadas simbolicas respecto a ξ:
+#sym diff((1 - x)*(1 - y)/4; x)
+#sym diff((1 + x)*(1 - y)/4; x)
+#sym diff((1 + x)*(1 + y)/4; x)
+#sym diff((1 - x)*(1 + y)/4; x)
+
+'Derivadas simbolicas respecto a η:
+#sym diff((1 - x)*(1 - y)/4; y)
+#sym diff((1 + x)*(1 - y)/4; y)
+#sym diff((1 + x)*(1 + y)/4; y)
+#sym diff((1 - x)*(1 + y)/4; y)
+
+'Funciones cuadraticas en los lados (para rotaciones extras):
+#deq P_k(s) = 4*s*(1 - s)
+'Derivada:
+#sym diff(4*x*(1 - x); x)
+
+'La condicion de Kirchhoff discreta en los puntos medios:
+'dw/ds|_mid = β_s|_mid elimina las rotaciones extras.
+'Resultado: 3 DOF por nodo × 4 nodos = 12 DOF por elemento.
+
+"5.3 Componentes de la Matriz B
+'Curvatura-desplazamiento para un elemento rectangular dx × dy:
+'Derivada segunda simbolica (κ_x):
+#sym diff(3*x*(1 - y); x)
+'→ B(1,1) = 3·(1-η) / dx²
+
+'Derivada parcial cruzada (κ_xy):
+'Primero respecto a x:
+#sym diff(2 - x^2 - y^2; x)
+'Luego respecto a y:
+#sym diff(-2*x; y)
+'→ Derivada cruzada de (2-ξ²-η²) = 0, el termino T viene de las funciones cuadraticas
+
+'<b>Componentes B para nodo 1 (3 DOF: w, θ_x, θ_y):</b>
+#deq B_1_1 = 3*ξ*(1 - η)/dx^2
+#deq B_1_2 = 0
+#deq B_1_3 = (1 - η)*(3*ξ - 1)/(2*dx)
+'<b>Componentes B para nodo 2:</b>
+#deq B_1_4 = -3*ξ*(1 - η)/dx^2
+#deq B_1_5 = 0
+#deq B_1_6 = (1 - η)*(1 + 3*ξ)/(2*dx)
+
+'<b>Fila 2: κ_y</b>
+#deq B_2_1 = 3*(1 - ξ)*η/dy^2
+#deq B_2_2 = -(1 - ξ)*(3*η - 1)/(2*dy)
+#deq B_2_3 = 0
+
+'<b>Fila 3: 2·κ_xy (torsion)</b>
+#deq T = 3*(2 - ξ^2 - η^2)/(2*dx*dy)
+#deq B_3_1 = T
+#deq B_3_2 = -(1 - η)*(1 + 3*η)/(4*dx)
+#deq B_3_3 = (1 - ξ)*(1 + 3*ξ)/(4*dy)
+
+"5.4 Esfuerzos de Von Mises (simbolico)
+'Esfuerzos de flexion en la superficie:
+#deq σ_x = 6*M_x/t^2
+#deq σ_y = 6*M_y/t^2
+#deq τ_xy = 6*M_xy/t^2
+'Criterio de Von Mises:
+#deq σ_VM = sqr(σ_x^2 - σ_x*σ_y + σ_y^2 + 3*τ_xy^2)
+'Simplificacion simbolica del criterio:
+#sym simplify(sqrt(a^2 - a*b + b^2 + 3*c^2))
+
+"5.5 Cuadratura de Gauss 2×2
+'Rigidez del elemento (integral doble sobre el dominio):
+#deq K_e = B^T*D_b*B*J
+'Se evalua numericamente con cuadratura de Gauss 2×2 (4 puntos):
+g = 1/sqr(3)
+'Punto de Gauss ξ_g = ±1/√3 = ±'g
+'Pesos w_g = 1.0 (todos iguales)
+'<table><tr><th>Punto</th><th>ξ</th><th>η</th></tr>
+'<tr><td>1</td><td>'-g'</td><td>'-g'</td></tr>
+'<tr><td>2</td><td>'g'</td><td>'-g'</td></tr>
+'<tr><td>3</td><td>'g'</td><td>'g'</td></tr>
+'<tr><td>4</td><td>'-g'</td><td>'g'</td></tr>
+'</table>
+'Jacobiano (elemento rectangular):
+#deq J = dx*dy/4
+
+"5.5 Resortes de apoyo
+'<b>Winkler (contacto concreto):</b> Compresion-only, iterativo.
+'Solo actua donde la placa se hunde (w < 0). Donde levanta → gap.
+#deq K_w = k_w*A_trib
+'<b>Pernos (resorte axial):</b>
+#deq k_b = E*π*(d_b/2)^2/L_e
+'k_b ='kb'N/mm
+
+"5.6 Ensamblaje y solucion (numerico)
+#hide
+nk = 12
+K = symmetric(nt)
+#for e = 1 : ne
+	i1 = ej.(e; 1)','i3 = ej.(e; 3)
+	dx = xj.i3 - xj.i1','dy = yj.i3 - yj.i1
+	dJ = dx*dy/4
+	Ke = symmetric(nk)
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξ = -g','η = -g
+		#else if ig ≡ 2
+			ξ = g','η = -g
+		#else if ig ≡ 3
+			ξ = g','η = g
+		#else
+			ξ = -g','η = g
+		#end if
+		R1w1 = 3*ξ*(1 - η)/dx^2','R1t1 = (1 - η)*(3*ξ - 1)/(2*dx)
+		R1w2 = -3*ξ*(1 - η)/dx^2','R1t2 = (1 - η)*(1 + 3*ξ)/(2*dx)
+		R1w3 = -3*ξ*(1 + η)/dx^2','R1t3 = (1 + η)*(1 + 3*ξ)/(2*dx)
+		R1w4 = 3*ξ*(1 + η)/dx^2','R1t4 = (1 + η)*(3*ξ - 1)/(2*dx)
+		R2w1 = 3*(1 - ξ)*η/dy^2','R2t1 = (1 - ξ)*(3*η - 1)/(2*dy)
+		R2w2 = 3*(1 + ξ)*η/dy^2','R2t2 = (1 + ξ)*(3*η - 1)/(2*dy)
+		R2w3 = -3*(1 + ξ)*η/dy^2','R2t3 = (1 + ξ)*(1 + 3*η)/(2*dy)
+		R2w4 = -3*(1 - ξ)*η/dy^2','R2t4 = (1 - ξ)*(1 + 3*η)/(2*dy)
+		TT = 3*(2 - ξ^2 - η^2)/(2*dx*dy)
+		Sx1 = (1 - ξ)*(1 + 3*ξ)/(4*dy)','Sy1 = (1 - η)*(1 + 3*η)/(4*dx)
+		Sx2 = (1 + ξ)*(1 - 3*ξ)/(4*dy)','Sy2 = -(1 - η)*(1 + 3*η)/(4*dx)
+		Sx3 = (1 + ξ)*(3*ξ - 1)/(4*dy)','Sy3 = (1 + η)*(3*η - 1)/(4*dx)
+		Sx4 = -(1 - ξ)*(1 + 3*ξ)/(4*dy)','Sy4 = (1 + η)*(1 - 3*η)/(4*dx)
+		Bb = [ _
+		R1w1; 0; R1t1; R1w2; 0; R1t2; R1w3; 0; R1t3; R1w4; 0; R1t4 | _
+		R2w1; -R2t1; 0; R2w2; -R2t2; 0; R2w3; -R2t3; 0; R2w4; -R2t4; 0 | _
+		TT; -Sy1; Sx1; -TT; -Sy2; Sx2; TT; -Sy3; Sx3; -TT; -Sy4; Sx4]
+		BtDB = transp(Bb)*Db*Bb*dJ
+		#for i = 1 : nk
+			#for j = i : nk
+				Ke.(i; j) = Ke.(i; j) + BtDB.(i; j)
+			#loop
+		#loop
+	#loop
+	#for i = 1 : 4
+		#for j = i : 4
+			j1 = ej.(e; i)','j2 = ej.(e; j)
+			i1 = nd*(j1 - 1) + 1','i2 = nd*(j2 - 1) + 1
+			kij = submatrix(Ke; nd*(i - 1) + 1; nd*i; nd*(j - 1) + 1; nd*j)
+			#if j1 > j2
+				add(transp(kij); K; i2; i1)
+			#else
+				add(kij; K; i1; i2)
+			#end if
+		#loop
+	#loop
+#loop
+
+"6. Areas tributarias Winkler
+#for j = 1 : 9
+	#for i = 1 : 9
+		k = (j - 1)*9 + i
+		x0 = xa.(max(i - 1; 1))','x1 = xa.i','x2 = xa.(min(i + 1; 9))
+		y0 = ya.(max(j - 1; 1))','y1 = ya.j','y2 = ya.(min(j + 1; 9))
+		tx = (x1 - x0)/2 + (x2 - x1)/2','ty = (y1 - y0)/2 + (y2 - y1)/2
+	#loop
+#loop
+
+"7. Cargas
+'Perfil SAP2000: alma Y=250 X=112..488, alas X=112,488 Y=100..400
+alma = [39; 40; 41; 42; 43]
+ala1 = [21; 30; 39; 48; 57]
+ala2 = [25; 34; 43; 52; 61]
+prof = [21; 25; 30; 34; 39; 40; 41; 42; 43; 48; 52; 57; 61]
+np = 13
+fp = PuN/np
+brazo = 488 - 112
+Fm = MuN/brazo','fm = Fm/5
+F = vector(nt)
+#for i = 1 : np
+	k = prof.i
+	F.(nd*(k - 1) + 1) = F.(nd*(k - 1) + 1) - fp
+#loop
+#for i = 1 : 5
+	k1 = ala1.i
+	F.(nd*(k1 - 1) + 1) = F.(nd*(k1 - 1) + 1) - fm
+	k2 = ala2.i
+	F.(nd*(k2 - 1) + 1) = F.(nd*(k2 - 1) + 1) + fm
+#loop
+
+"8. Pernos (posiciones)
+bolt = vector(16)
+nb = 0
+#for p = 1 : 4
+	#for q = 1 : 4
+		best = 0','bd = 10^9
+		#for k = 1 : nj
+			dd = (xj.k - bxv.p)^2 + (yj.k - byv.q)^2
+			#if dd < bd
+				best = k','bd = dd
+			#end if
+		#loop
+		nb = nb + 1','bolt.nb = best
+	#loop
+#loop
+
+"9. Contacto compresion-only (iterativo)
+'Concreto solo empuja (w < 0). Donde la placa levanta (w > 0), gap se abre.
+#show
+'<table><tr><th>Iter</th><th>Winkler activos</th><th>Nodos levantados</th></tr>
+#hide
+activo = vector(nj)
+#for k = 1 : nj
+	activo.k = 1
+#loop
+maxiter = 10
+#for it = 1 : maxiter
+	'Ensamblar K = K_base + Winkler(activos) + Pernos
+	K = symmetric(nt)
+	'Copiar DKQ
+	#for e = 1 : ne
+		i1 = ej.(e; 1)','i3 = ej.(e; 3)
+		dx = xj.i3 - xj.i1','dy = yj.i3 - yj.i1
+		dJ = dx*dy/4
+		Ke = symmetric(nk)
+		#for ig = 1 : 4
+			#if ig ≡ 1
+				ξ = -g','η = -g
+			#else if ig ≡ 2
+				ξ = g','η = -g
+			#else if ig ≡ 3
+				ξ = g','η = g
+			#else
+				ξ = -g','η = g
+			#end if
+			R1w1 = 3*ξ*(1 - η)/dx^2','R1t1 = (1 - η)*(3*ξ - 1)/(2*dx)
+			R1w2 = -3*ξ*(1 - η)/dx^2','R1t2 = (1 - η)*(1 + 3*ξ)/(2*dx)
+			R1w3 = -3*ξ*(1 + η)/dx^2','R1t3 = (1 + η)*(1 + 3*ξ)/(2*dx)
+			R1w4 = 3*ξ*(1 + η)/dx^2','R1t4 = (1 + η)*(3*ξ - 1)/(2*dx)
+			R2w1 = 3*(1 - ξ)*η/dy^2','R2t1 = (1 - ξ)*(3*η - 1)/(2*dy)
+			R2w2 = 3*(1 + ξ)*η/dy^2','R2t2 = (1 + ξ)*(3*η - 1)/(2*dy)
+			R2w3 = -3*(1 + ξ)*η/dy^2','R2t3 = (1 + ξ)*(1 + 3*η)/(2*dy)
+			R2w4 = -3*(1 - ξ)*η/dy^2','R2t4 = (1 - ξ)*(1 + 3*η)/(2*dy)
+			TT = 3*(2 - ξ^2 - η^2)/(2*dx*dy)
+			Sx1 = (1 - ξ)*(1 + 3*ξ)/(4*dy)','Sy1 = (1 - η)*(1 + 3*η)/(4*dx)
+			Sx2 = (1 + ξ)*(1 - 3*ξ)/(4*dy)','Sy2 = -(1 - η)*(1 + 3*η)/(4*dx)
+			Sx3 = (1 + ξ)*(3*ξ - 1)/(4*dy)','Sy3 = (1 + η)*(3*η - 1)/(4*dx)
+			Sx4 = -(1 - ξ)*(1 + 3*ξ)/(4*dy)','Sy4 = (1 + η)*(1 - 3*η)/(4*dx)
+			Bb = [ _
+			R1w1; 0; R1t1; R1w2; 0; R1t2; R1w3; 0; R1t3; R1w4; 0; R1t4 | _
+			R2w1; -R2t1; 0; R2w2; -R2t2; 0; R2w3; -R2t3; 0; R2w4; -R2t4; 0 | _
+			TT; -Sy1; Sx1; -TT; -Sy2; Sx2; TT; -Sy3; Sx3; -TT; -Sy4; Sx4]
+			BtDB = transp(Bb)*Db*Bb*dJ
+			#for i = 1 : nk
+				#for j = i : nk
+					Ke.(i; j) = Ke.(i; j) + BtDB.(i; j)
+				#loop
+			#loop
+		#loop
+		#for i = 1 : 4
+			#for j = i : 4
+				j1 = ej.(e; i)','j2 = ej.(e; j)
+				i1 = nd*(j1 - 1) + 1','i2 = nd*(j2 - 1) + 1
+				kij = submatrix(Ke; nd*(i - 1) + 1; nd*i; nd*(j - 1) + 1; nd*j)
+				#if j1 > j2
+					add(transp(kij); K; i2; i1)
+				#else
+					add(kij; K; i1; i2)
+				#end if
+			#loop
+		#loop
+	#loop
+	'Winkler (solo nodos activos)
+	#for j = 1 : 9
+		#for i = 1 : 9
+			k = (j - 1)*9 + i
+			#if activo.k ≡ 1
+				x0 = xa.(max(i - 1; 1))','x1 = xa.i','x2 = xa.(min(i + 1; 9))
+				y0 = ya.(max(j - 1; 1))','y1 = ya.j','y2 = ya.(min(j + 1; 9))
+				tx = (x1 - x0)/2 + (x2 - x1)/2','ty = (y1 - y0)/2 + (y2 - y1)/2
+				kn = kw*tx*ty
+				K.(nd*(k - 1) + 1; nd*(k - 1) + 1) = K.(nd*(k - 1) + 1; nd*(k - 1) + 1) + kn
+			#end if
+		#loop
+	#loop
+	'Pernos
+	#for b = 1 : 16
+		k = bolt.b
+		K.(nd*(k - 1) + 1; nd*(k - 1) + 1) = K.(nd*(k - 1) + 1; nd*(k - 1) + 1) + kb
+	#loop
+	'Resolver
+	Z = clsolve(K; F)
+	'Verificar levantamiento
+	nlev = 0','nact = 0
+	#for k = 1 : nj
+		wk = Z.(nd*(k - 1) + 1)
+		#if activo.k ≡ 1
+			nact = nact + 1
+			#if wk > 0
+				nlev = nlev + 1','activo.k = 0
+			#end if
+		#end if
+	#loop
+	#show
+	'<tr><td>'it'</td><td>'nact'</td><td>'nlev'</td></tr>
+	#hide
+	#if nlev ≡ 0
+		#break
+	#end if
+#loop
+#show
+'</table>
+
+"10. Deflexion (mm)
+#hide
+Wz = matrix(9; 9)
+#for j = 1 : 9
+	#for i = 1 : 9
+		k = (j - 1)*9 + i
+		Wz.(i; j) = Z.(nd*(k - 1) + 1)
+	#loop
+#loop
+wm(x; y) = spline(1 + x*8/La; 1 + y*8/Ba; Wz)
+PlotWidth = 250
+PlotHeight = 300
+PlotStep = 10
+#show
+$Map{wm(y; x) @ x = 0 : Ba & y = 0 : La}
+#hide
+wmin = 0','wmax = 0','kmin = 0','kmax = 0
+#for k = 1 : nj
+	wk = Z.(nd*(k - 1) + 1)
+	#if wk < wmin
+		wmin = wk','kmin = k
+	#end if
+	#if wk > wmax
+		wmax = wk','kmax = k
+	#end if
+#loop
+#show
+'w_min = 'round(wmin*10000)/10000' mm en nodo 'kmin' ('xj.kmin', 'yj.kmin')
+'w_max = 'round(wmax*10000)/10000' mm en nodo 'kmax' ('xj.kmax', 'yj.kmax')
+'w_centro(300,250) = 'round(Z.(nd*40 + 1)*10000)/10000' mm
+#hide
+'Ala izq (X=112): nodo 39 (112,250)
+wala1 = Z.(nd*38 + 1)
+'Ala der (X=488): nodo 43 (488,250)
+wala2 = Z.(nd*42 + 1)
+#show
+'w_ala_inf(112,250) = 'round(wala1*10000)/10000' mm (SAP Y=112, se hunde)
+'w_ala_sup(488,250) = 'round(wala2*10000)/10000' mm (SAP Y=488, levanta)
+
+"11. Reacciones pernos (tonf)
+'w > 0 = levantamiento (perno en traccion)
+'w < 0 = hundimiento (perno en compresion)
+#hide
+bpx = vector(16)','bpy = vector(16)','bpw = vector(16)','bpR = vector(16)
+Rtotal = 0','nlev = 0','ncomp = 0','Rbmax = 0
+Ab = 3.14159*(dba/2)^2
+#for b = 1 : 16
+	k = bolt.b
+	bpx.b = xj.k','bpy.b = yj.k
+	bpw.b = Z.(nd*(k - 1) + 1)
+	bpR.b = kb*bpw.b/9806.65
+	Rtotal = Rtotal + kb*bpw.b
+	#if bpw.b > 0
+		nlev = nlev + 1
+	#else
+		ncomp = ncomp + 1
+	#end if
+	Rbk = abs(kb*bpw.b)
+	#if Rbk > Rbmax
+		Rbmax = Rbk
+	#end if
+#loop
+fbmax = Rbmax/Ab
+#show
+$Table{bpx; bpy; bpw; bpR @ "X (mm)"; "Y (mm)"; "w (mm)"; "R (tonf)" & fmt=3 & row=1}
+'Pernos en compresion: 'ncomp' | Pernos levantados (traccion): 'nlev
+'R total pernos ='Rtotal/9806.65'tonf
+'R Winkler + Pernos debe = Pu = 'Pu
+'A_perno = 'round(Ab*100)/100' mm²
+'R_max = 'round(Rbmax/9806.65*1000)/1000' tonf
+'σ_perno = R_max/A = 'round(fbmax*10)/10' MPa = 'round(fbmax*cf*10)/10' kgf/cm²
+
+"12. Momentos Mx, My, Mxy (N*mm/mm)
+#hide
+Mxn = vector(nj)','Myn = vector(nj)','Mxyn = vector(nj)','cnt = vector(nj)
+#for e = 1 : ne
+	i1 = ej.(e; 1)','i3 = ej.(e; 3)
+	dx = xj.i3 - xj.i1','dy = yj.i3 - yj.i1
+	Ze = vector(nk)
+	#for i = 1 : 4
+		nn = ej.(e; i)
+		Ze.(3*(i - 1) + 1) = Z.(nd*(nn - 1) + 1)
+		Ze.(3*(i - 1) + 2) = Z.(nd*(nn - 1) + 2)
+		Ze.(3*(i - 1) + 3) = Z.(nd*(nn - 1) + 3)
+	#loop
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξ = -g','η = -g
+		#else if ig ≡ 2
+			ξ = g','η = -g
+		#else if ig ≡ 3
+			ξ = g','η = g
+		#else
+			ξ = -g','η = g
+		#end if
+		R1w1 = 3*ξ*(1 - η)/dx^2','R1t1 = (1 - η)*(3*ξ - 1)/(2*dx)
+		R1w2 = -3*ξ*(1 - η)/dx^2','R1t2 = (1 - η)*(1 + 3*ξ)/(2*dx)
+		R1w3 = -3*ξ*(1 + η)/dx^2','R1t3 = (1 + η)*(1 + 3*ξ)/(2*dx)
+		R1w4 = 3*ξ*(1 + η)/dx^2','R1t4 = (1 + η)*(3*ξ - 1)/(2*dx)
+		R2w1 = 3*(1 - ξ)*η/dy^2','R2t1 = (1 - ξ)*(3*η - 1)/(2*dy)
+		R2w2 = 3*(1 + ξ)*η/dy^2','R2t2 = (1 + ξ)*(3*η - 1)/(2*dy)
+		R2w3 = -3*(1 + ξ)*η/dy^2','R2t3 = (1 + ξ)*(1 + 3*η)/(2*dy)
+		R2w4 = -3*(1 - ξ)*η/dy^2','R2t4 = (1 - ξ)*(1 + 3*η)/(2*dy)
+		TT = 3*(2 - ξ^2 - η^2)/(2*dx*dy)
+		Sx1 = (1 - ξ)*(1 + 3*ξ)/(4*dy)','Sy1 = (1 - η)*(1 + 3*η)/(4*dx)
+		Sx2 = (1 + ξ)*(1 - 3*ξ)/(4*dy)','Sy2 = -(1 - η)*(1 + 3*η)/(4*dx)
+		Sx3 = (1 + ξ)*(3*ξ - 1)/(4*dy)','Sy3 = (1 + η)*(3*η - 1)/(4*dx)
+		Sx4 = -(1 - ξ)*(1 + 3*ξ)/(4*dy)','Sy4 = (1 + η)*(1 - 3*η)/(4*dx)
+		Bb = [ _
+		R1w1; 0; R1t1; R1w2; 0; R1t2; R1w3; 0; R1t3; R1w4; 0; R1t4 | _
+		R2w1; -R2t1; 0; R2w2; -R2t2; 0; R2w3; -R2t3; 0; R2w4; -R2t4; 0 | _
+		TT; -Sy1; Sx1; -TT; -Sy2; Sx2; TT; -Sy3; Sx3; -TT; -Sy4; Sx4]
+		Mv = Db*(Bb*Ze)
+		#for i = 1 : 4
+			nn = ej.(e; i)
+			Mxn.nn = Mxn.nn + Mv.1
+			Myn.nn = Myn.nn + Mv.2
+			Mxyn.nn = Mxyn.nn + Mv.3
+			cnt.nn = cnt.nn + 1
+		#loop
+	#loop
+#loop
+'Promediar
+#for k = 1 : nj
+	#if cnt.k > 0
+		Mxn.k = Mxn.k/cnt.k
+		Myn.k = Myn.k/cnt.k
+		Mxyn.k = Mxyn.k/cnt.k
+	#end if
+#loop
+'Mapa Mx (tonf*m/m)
+MxM = matrix(9; 9)
+#for j = 1 : 9
+	#for i = 1 : 9
+		k = (j - 1)*9 + i
+		MxM.(i; j) = Mxn.k/9806.65
+	#loop
+#loop
+mxm(x; y) = spline(1 + x*8/La; 1 + y*8/Ba; MxM)
+#show
+'Momento M_x (tonf·m/m):
+$Map{mxm(y; x) @ x = 0 : Ba & y = 0 : La}
+
+"13. Von Mises (kgf/cm²)
+#hide
+'σ = 6*M/t² (superficie superior/inferior)
+'1 N/mm² = 10.197 kgf/cm²
+VM = matrix(9; 9)
+#for j = 1 : 9
+	#for i = 1 : 9
+		k = (j - 1)*9 + i
+		sx = 6*Mxn.k/ta^2
+		sy = 6*Myn.k/ta^2
+		txy = 6*Mxyn.k/ta^2
+		VM.(i; j) = sqr(sx^2 - sx*sy + sy^2 + 3*txy^2)*cf
+	#loop
+#loop
+vmm(x; y) = spline(1 + x*8/La; 1 + y*8/Ba; VM)
+#show
+'Von Mises (kgf/cm²):
+$Map{vmm(y; x) @ x = 0 : Ba & y = 0 : La}
+#hide
+'Maximo
+vmmax = 0
+#for k = 1 : nj
+	sx = 6*Mxn.k/ta^2
+	sy = 6*Myn.k/ta^2
+	txy = 6*Mxyn.k/ta^2
+	vk = sqr(sx^2 - sx*sy + sy^2 + 3*txy^2)
+	#if vk > vmmax
+		vmmax = vk
+	#end if
+#loop
+#show
+'σ_VM,max = 'round(vmmax*10)/10' MPa = 'round(vmmax*cf*10)/10' kgf/cm²
+'F_y(A36) = 250 MPa = 2549 kgf/cm²
+'Ratio = 'round(vmmax/250*1000)/1000

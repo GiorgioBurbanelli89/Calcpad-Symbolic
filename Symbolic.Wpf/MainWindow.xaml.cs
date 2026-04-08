@@ -46,7 +46,7 @@ namespace Calcpad.Wpf
                 Name = AppDomain.CurrentDomain.FriendlyName + ".exe";
                 FullName = System.IO.Path.Combine(Path, Name);
                 Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-                Title = " Calcpad VM " + Version[0..(Version.LastIndexOf('.'))];
+                Title = " Calcpad Symbolic " + Version[0..(Version.LastIndexOf('.'))];
                 DocPath = Path + "doc";
                 if (!Directory.Exists(DocPath))
                     DocPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\Calcpad";
@@ -193,6 +193,7 @@ namespace Calcpad.Wpf
         {
             _parser = new();
             _highlighter = new();
+            ExpressionParser.PipProgressChanged += OnPipProgressChanged;
             Thread.CurrentThread.CurrentUICulture = new CultureInfo(_currentCultureName);
             InitializeComponent();
             _borderBrush = OutputFrame.BorderBrush;
@@ -641,6 +642,7 @@ namespace Calcpad.Wpf
             SaveButton.Tag = null;
             _undoMan.Reset();
             Record();
+            SyncToMathCanvas();
         }
 
         private void Command_Open(object sender, ExecutedRoutedEventArgs e)
@@ -1190,6 +1192,7 @@ namespace Calcpad.Wpf
                 IsSaved = true;
                 AddRecentFile(CurrentFileName);
             }
+            SyncToMathCanvas();
         }
 
         private MessageBoxResult PromptSave()
@@ -1353,7 +1356,18 @@ namespace Calcpad.Wpf
             try
             {
                 if (!string.IsNullOrEmpty(htmlResult))
+                {
+                    // Debug: save output HTML to desktop
+                    try
+                    {
+                        var debugPath = System.IO.Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                            "wpf_output_debug.html");
+                        System.IO.File.WriteAllText(debugPath, htmlResult);
+                    }
+                    catch { }
                     await _wv2Warper.NavigateToStringAsync(htmlResult);
+                }
             }
             catch (Exception e)
             {
@@ -1363,6 +1377,25 @@ namespace Calcpad.Wpf
                 OutputFrame.Header = toWebForm ? MainWindowResources.Input : MainWindowResources.Output;
             if (_highlighter.Defined.HasMacros && string.IsNullOrEmpty(_htmlUnwarpedCode))
                 _htmlUnwarpedCode = CodeToHtml(outputText);
+        }
+
+        private void OnPipProgressChanged(string message)
+        {
+            Dispatcher.InvokeAsync(async () =>
+            {
+                if (message is not null)
+                {
+                    Title = $" Installing: {message}";
+                    try
+                    {
+                        var js = $"document.querySelector('p').innerText = 'Installing: {message.Replace("'", "\\'")}';";
+                        await WebViewer.ExecuteScriptAsync(js);
+                    }
+                    catch { }
+                }
+                else
+                    Title = AppInfo.Title;
+            });
         }
 
         private void FreezeOutputButtons(bool freeze)
@@ -1615,6 +1648,7 @@ namespace Calcpad.Wpf
             SetCodeCheckBoxVisibility();
             _highlighter.Defined.Get(lines, IsComplex);
             var hasForm = false;
+            var insideCodeBlock = false;
             foreach (var line in lines)
             {
                 ReadOnlySpan<char> s;
@@ -1635,7 +1669,26 @@ namespace Calcpad.Wpf
                 }
                 else
                 {
-                    s = ReplaceCStyleOperators(line.TrimStart('\t'));
+                    var trimmed = line.TrimStart('\t').TrimStart();
+                    // Track #python/#maxima blocks — don't replace operators inside them
+                    if (trimmed.StartsWith("#python", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#maxima", StringComparison.OrdinalIgnoreCase))
+                        insideCodeBlock = true;
+                    else if (trimmed.StartsWith("#end python", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end maxima", StringComparison.OrdinalIgnoreCase))
+                        insideCodeBlock = false;
+
+                    if (insideCodeBlock ||
+                        trimmed.StartsWith("$Chart", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("$Fem2D", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("$Fem3D", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("$Frame", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("$Struct", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("$Draw", StringComparison.OrdinalIgnoreCase))
+                        s = line.TrimStart('\t');
+                    else
+                        s = ReplaceCStyleOperators(line.TrimStart('\t'));
+
                     if (!hasForm)
                         hasForm = MacroParser.HasInputFields(s);
                 }
@@ -2412,6 +2465,17 @@ namespace Calcpad.Wpf
                 }
                 await Task.Run(DispatchLineNumbers);
                 _lastModifiedParagraph = _currentParagraph;
+
+                // Sync Code → MathCanvas (if MC is visible and change didn't come FROM MC)
+                if (_isMathCanvasMode && !_syncingFromMathCanvas)
+                {
+                    try
+                    {
+                        var code = GetInputText();
+                        MathCanvasView.LoadFromText(code);
+                    }
+                    catch { }
+                }
             }
         }
 
@@ -3396,6 +3460,142 @@ namespace Calcpad.Wpf
             Process.Start(info);
         }
 
+        private bool _isMathCanvasMode = false;
+        private bool _syncingFromMathCanvas = false;
+
+        private bool _mcToggling = false;
+
+        private void MathCanvasToggle_Click(object sender, RoutedEventArgs e)
+        {
+            // Click always fires for manual user clicks
+            ApplyMathCanvasToggle();
+        }
+
+        private void MathCanvasToggle_StateChanged(object sender, RoutedEventArgs e)
+        {
+            // Checked/Unchecked fires for UI Automation TogglePattern
+            // Avoid double-fire when Click also triggers state change
+            if (!_mcToggling)
+                ApplyMathCanvasToggle();
+        }
+
+        private void ApplyMathCanvasToggle()
+        {
+            if (_mcToggling) return;
+            _mcToggling = true;
+            try
+            {
+                if (MathCanvasToggle.IsChecked == true)
+                    ActivateMathCanvas();
+                else
+                    DeactivateMathCanvas();
+            }
+            finally
+            {
+                // Delay reset to avoid re-entry from state change events
+                Dispatcher.BeginInvoke(new Action(() => _mcToggling = false),
+                    System.Windows.Threading.DispatcherPriority.Background);
+            }
+        }
+
+        private void ActivateMathCanvas()
+        {
+            try
+            {
+                _isMathCanvasMode = true;
+                WebViewer.Visibility = Visibility.Collapsed;
+                MathCanvasView.Visibility = Visibility.Visible;
+                OutputFrame.Header = "MathCanvas";
+
+                // Pass parser to MathCanvas
+                MathCanvasView.SetParser(_parser);
+
+                // Sync Code → MathCanvas
+                var code = GetInputText();
+                MathCanvasView.LoadFromText(code);
+
+                // Subscribe to MathCanvas → Code sync
+                MathCanvasView.TextChanged -= OnMathCanvasTextChanged;
+                MathCanvasView.TextChanged += OnMathCanvasTextChanged;
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"MathCanvas error: {ex.Message}", "Error");
+            }
+        }
+
+        private void DeactivateMathCanvas()
+        {
+            try
+            {
+                _isMathCanvasMode = false;
+
+                // Sync MathCanvas → Code before switching back
+                var mcText = MathCanvasView.GetText();
+                if (!string.IsNullOrEmpty(mcText))
+                {
+                    _syncingFromMathCanvas = true;
+                    SetInputText(mcText);
+                    _syncingFromMathCanvas = false;
+                }
+
+                MathCanvasView.TextChanged -= OnMathCanvasTextChanged;
+                MathCanvasView.Visibility = Visibility.Collapsed;
+                WebViewer.Visibility = Visibility.Visible;
+                OutputFrame.Header = MainWindowResources.Output;
+            }
+            catch (Exception ex)
+            {
+                _syncingFromMathCanvas = false;
+                System.Windows.MessageBox.Show($"MathCanvas error: {ex.Message}", "Error");
+            }
+        }
+
+        private void OnMathCanvasTextChanged(string text)
+        {
+            if (_syncingFromMathCanvas) return;
+            _syncingFromMathCanvas = true;
+            try
+            {
+                // Disable RichTextBox_TextChanged to prevent loop and avoid
+                // highlighter/auto-indent running on every keystroke from MC
+                _isTextChangedEnabled = false;
+                SetInputText(text);
+                _isTextChangedEnabled = true;
+            }
+            finally
+            {
+                _syncingFromMathCanvas = false;
+            }
+        }
+
+        /// <summary>
+        /// Sync Code panel content TO MathCanvas.
+        /// Call this whenever the Code panel content changes and MC is visible.
+        /// </summary>
+        private void SyncToMathCanvas()
+        {
+            if (!_isMathCanvasMode || _syncingFromMathCanvas) return;
+            try
+            {
+                MathCanvasView.SetParser(_parser);
+                var code = GetInputText();
+                MathCanvasView.LoadFromText(code);
+            }
+            catch { }
+        }
+
+        private void SetInputText(string text)
+        {
+            var document = RichTextBox.Document;
+            document.Blocks.Clear();
+            foreach (var line in text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
+            {
+                document.Blocks.Add(new System.Windows.Documents.Paragraph(
+                    new System.Windows.Documents.Run(line)));
+            }
+        }
+
         private void PdfButton_Click(object sender, RoutedEventArgs e)
         {
             if (_isParsing)
@@ -3461,6 +3661,30 @@ namespace Calcpad.Wpf
         {
            if (!await _wv2Warper.CheckIsReportAsync())
                 return;
+
+            // Debug: check if CalcpadViz loaded and log any issues
+            try
+            {
+                var jsResult = await WebViewer.CoreWebView2.ExecuteScriptAsync(
+                    @"(function() {
+                        var info = 'CalcpadViz type: ' + typeof CalcpadViz;
+                        if (typeof CalcpadViz !== 'undefined') {
+                            info += ', draw: ' + typeof CalcpadViz.draw;
+                            info += ', keys: ' + Object.keys(CalcpadViz).join(',');
+                        }
+                        var vizDivs = document.querySelectorAll('[id^=""cviz_""]');
+                        info += ', vizDivs: ' + vizDivs.length;
+                        for (var i = 0; i < vizDivs.length; i++) {
+                            info += ', div' + i + '=' + vizDivs[i].id + '(children:' + vizDivs[i].children.length + ',h:' + vizDivs[i].offsetHeight + ')';
+                        }
+                        return info;
+                    })()");
+                var logPath = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                    "wpf_js_debug.log");
+                System.IO.File.WriteAllText(logPath, $"[{DateTime.Now}] {jsResult}\n");
+            }
+            catch { }
 
             _isParsing = false;
             if (_isSaving)
@@ -3725,9 +3949,10 @@ namespace Calcpad.Wpf
                  AppInfo.DocPath,
                 CoreWebView2HostResourceAccessKind.Allow);
 
-            WebViewer.CoreWebView2.Settings.AreDevToolsEnabled = false;
+            WebViewer.CoreWebView2.Settings.AreDevToolsEnabled = true;
             WebViewer.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
             WebViewer.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = true;
+
         }
 
         private void MenuCli_Click(object sender, RoutedEventArgs e)

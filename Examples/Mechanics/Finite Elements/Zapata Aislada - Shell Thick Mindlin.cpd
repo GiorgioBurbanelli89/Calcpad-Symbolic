@@ -1,0 +1,482 @@
+"Zapata Aislada - Shell Thick (Mindlin-Reissner)
+'<hr/>
+'Zapata cuadrada sobre suelo elastico (Winkler). Columna centrada.
+'Elemento Mindlin Q4: 3 DOF/nodo (w, θ_x, θ_y), integracion selectiva.
+'Comparacion con SAFE (CSI).
+
+"1. Datos de entrada
+'Zapata -'Lz = 4 m','tz = 600 mm
+'Columna cuadrada -'Lc = 600 mm
+'Concreto fc28 -'Ec = 25000 MPa','νc = 0.2
+'Modulo de corte -
+Gc = Ec/(2*(1 + νc))
+'Factor corte -'κc = 5/6
+'Subgrade modulus -'ks = 0.000002 tf/mm/mm
+'<b>Cargas (Dead solamente para comparar con SAFE):</b>
+'Dead -'Pd = 101.9716 tf
+'Live -'Pl = 50.9858 tf
+'Caso analisis -'Pu = Pd
+
+"1.1 Relacion espesor/lado
+'Relacion t/L:
+tL = tz/Lz
+'tL ='tL
+'> 0.05 → <b>Placa gruesa</b>, Mindlin es apropiado.
+
+"2. Unidades de trabajo (N-mm)
+#hide
+Ew = Ec & MPa
+tw = tz & mm
+Lw = Lz & m
+Lw = Lw*1000
+Lcw = Lc & mm
+Gw = Ew/(2*(1 + νc))
+PuN = Pu & tf
+PuN = PuN*9806.65
+kwN = ks & tf/mm/mm
+kwN = kwN*9806.65
+cf = 10.19716
+nd = 3
+
+"3. Malla regular
+'Elementos por lado -'ne1 = 20
+nj1 = ne1 + 1
+nj = nj1^2','ne = ne1^2','nt = nd*nj
+'Tamano de elemento -
+de = Lw/ne1
+'de ='de'mm
+#hide
+xj = vector(nj)','yj = vector(nj)
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		xj.k = i*de
+		yj.k = j*de
+	#loop
+#loop
+ej = matrix(ne; 4)
+#for j = 0 : ne1 - 1
+	#for i = 0 : ne1 - 1
+		e = j*ne1 + i + 1
+		bl = j*nj1 + i + 1
+		ej.(e; 1) = bl
+		ej.(e; 2) = bl + 1
+		ej.(e; 3) = bl + nj1 + 1
+		ej.(e; 4) = bl + nj1
+	#loop
+#loop
+
+"4. SVG
+#show
+#hide
+ws = 300','ksc = ws/Lw','ds = 35','hs = ws
+#show
+#svg ws+2*ds hs+2*ds+20
+.text ds+ws/2 ds-10 "Zapata_Aislada_Mindlin_Q4" 9 navy middle bold
+.rect ds ds ws hs lightyellow 0.3 gray 1.5
+#for j = 0 : ne1 - 1
+	#for i = 0 : ne1 - 1
+		ex = i*de*ksc+ds','ey = hs-j*de*ksc-de*ksc+ds
+		ew = de*ksc','eh = de*ksc
+		.rect ex ey ew eh lightcyan 0.15 steelBlue 0.3
+	#loop
+#loop
+'Columna (centro)
+#hide
+ccx = Lw/2*ksc+ds','ccy = hs-Lw/2*ksc+ds
+clc = Lcw*ksc
+#show
+.rect ccx-clc/2 ccy-clc/2 clc clc salmon 0.5 red 2
+.text ccx ccy "Col" 8 darkred middle bold
+'Resortes
+#for i = 0 : ne1
+	x = i*de*ksc+ds
+	.line x ds+hs+3 x ds+hs+10 brown 0.8
+	.line x-2 ds+hs+10 x+2 ds+hs+10 brown 1.2
+#loop
+.text ds+ws/2 ds+hs+18 "Winkler_(suelo)" 7 brown middle
+#end svg
+#equ
+
+"5. Formulacion Mindlin-Reissner + MITC4
+'<hr/>
+'Referencia: Bathe & Dvorkin (1985), MITC4 element
+'DOFs por nodo: w, θ_x, θ_y (rotaciones <b>independientes</b> de w)
+'A diferencia de Kirchhoff, las secciones NO permanecen normales:
+#deq γ_xz = dw/dx - θ_y
+#deq γ_yz = dw/dy + θ_x
+
+"5.1 Funciones de forma Q4 (C0)
+'Solo requiere continuidad C0 (derivadas primeras de θ):
+#deq N_1 = (1 - ξ)*(1 - η)/4
+#deq N_2 = (1 + ξ)*(1 - η)/4
+#deq N_3 = (1 + ξ)*(1 + η)/4
+#deq N_4 = (1 - ξ)*(1 + η)/4
+'Derivadas simbolicas dN/dξ:
+#sym diff((1 - x)*(1 - y)/4; x)
+#sym diff((1 + x)*(1 - y)/4; x)
+#sym diff((1 + x)*(1 + y)/4; x)
+#sym diff((1 - x)*(1 + y)/4; x)
+'Derivadas simbolicas dN/dη:
+#sym diff((1 - x)*(1 - y)/4; y)
+#sym diff((1 + x)*(1 - y)/4; y)
+
+"5.2 Matrices constitutivas
+'Flexion:
+#deq D_b = E*t^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+'Corte transversal (factor κ = 5/6):
+#deq D_s = κ*G*t*[1; 0|0; 1]
+
+"5.3 Rigidez del elemento (integral doble)
+'La rigidez del elemento Mindlin tiene dos contribuciones:
+'<b>Parte de flexion:</b>
+'Curvaturas en funcion de rotaciones (independientes de w):
+#deq κ_x = -dθ_y/dx
+#deq κ_y = dθ_x/dy
+#deq κ_xy = dθ_x/dx - dθ_y/dy
+'B-matrix de flexion (3×12) para DOFs {w, θ_x, θ_y} por nodo:
+#deq B_b = [0; 0; -dN_i/dx|0; dN_i/dy; 0|0; dN_i/dx; -dN_i/dy]
+'Derivada simbolica de dN_1/dx = dN_1/dξ / J_11:
+#sym diff((1 - x)/4; x)
+'→ dN_1/dx = -(1-η)/(4·a) donde a = dx/2
+'Rigidez a flexion (integral doble):
+#noc
+K_b = $Integral{$Integral{transp(B_b)*D_b*B_b*det(J) @ ξ = -1 : 1} @ η = -1 : 1}
+#equ
+'<b>Parte de corte transversal:</b>
+'Deformaciones por corte (NO cero en Mindlin):
+#deq γ_xz = dw/dx - θ_y
+#deq γ_yz = dw/dy + θ_x
+'B-matrix de corte (2×12):
+#deq B_s = [dN_i/dx; 0; -N_i|dN_i/dy; N_i; 0]
+'Rigidez al corte:
+#noc
+K_s = $Integral{$Integral{transp(B_s)*D_s*B_s*det(J) @ ξ = -1 : 1} @ η = -1 : 1}
+#equ
+'<b>Rigidez total:</b>
+#deq K_e = K_b + K_s
+
+"5.4 Jacobiano y cuadratura de Gauss
+'Para elemento rectangular de lado d_e:
+#deq J = [dx/2; 0|0; dy/2]
+#deq det(J) = dx*dy/4
+'<b>Flexion:</b> Gauss 2×2 (4 puntos, integracion completa):
+gp = 1/sqr(3)
+'ξ_g = ±1/√3 = ±'gp', pesos w = 1.0
+'<table><tr><th>Pto</th><th>ξ</th><th>η</th><th>w</th></tr>
+'<tr><td>1</td><td>'-gp'</td><td>'-gp'</td><td>1.0</td></tr>
+'<tr><td>2</td><td>'gp'</td><td>'-gp'</td><td>1.0</td></tr>
+'<tr><td>3</td><td>'gp'</td><td>'gp'</td><td>1.0</td></tr>
+'<tr><td>4</td><td>'-gp'</td><td>'gp'</td><td>1.0</td></tr>
+'</table>
+
+"5.5 MITC4 - Campo de corte interpolado
+'<b>Problema:</b> integracion directa del corte causa:
+'- <b>Hourglass</b> con 1×1 (modos espurios de energia cero)
+'- <b>Shear locking</b> con 2×2 (rigidez excesiva en placas delgadas)
+'<b>Solucion MITC4</b> (Bathe & Dvorkin 1985):
+'El campo de corte se <b>interpola</b> desde tying points en los lados del elemento:
+'γ_xz se muestrea en los lados horizontales (η=±1) e interpola en η:
+#deq γ_xz(ξ; η) = (1 - η)/2*γ_xz(ξ; -1) + (1 + η)/2*γ_xz(ξ; +1)
+'γ_yz se muestrea en los lados verticales (ξ=±1) e interpola en ξ:
+#deq γ_yz(ξ; η) = (1 - ξ)/2*γ_yz(-1; η) + (1 + ξ)/2*γ_yz(+1; η)
+'Luego B_s se evalua con Gauss 2×2 usando este campo asumido.
+'Esto elimina hourglass Y shear locking simultaneamente.
+'Resultado: contornos concentricos suaves (identicos a SAFE de CSI).
+
+"5.6 Esfuerzos y Von Mises
+'Esfuerzos de flexion en la superficie (z = ±t/2):
+#deq σ_x = 6*M_x/t^2
+#deq σ_y = 6*M_y/t^2
+#deq τ_xy = 6*M_xy/t^2
+'Criterio de Von Mises:
+#deq σ_VM = sqr(σ_x^2 - σ_x*σ_y + σ_y^2 + 3*τ_xy^2)
+'Simplificacion simbolica:
+#sym simplify(sqrt(a^2 - a*b + b^2 + 3*c^2))
+
+"6. Ensamblaje (numerico)
+#hide
+'Derivadas N
+dN1x(η) = -(1 - η)/4','dN2x(η) = (1 - η)/4
+dN3x(η) = (1 + η)/4','dN4x(η) = -(1 + η)/4
+dN1y(ξ) = -(1 - ξ)/4','dN2y(ξ) = -(1 + ξ)/4
+dN3y(ξ) = (1 + ξ)/4','dN4y(ξ) = (1 - ξ)/4
+'Constitutivas
+Dbm = Ew*tw^3/(12*(1 - νc^2))*[1; νc; 0|νc; 1; 0|0; 0; (1 - νc)/2]
+Dsm = κc*Gw*tw*[1; 0|0; 1]
+'Jacobiano
+J11 = de/2','J22 = de/2','detJ = J11*J22
+gp = 1/sqr(3)','nk = nd*4
+K = symmetric(nt)
+
+#for e = 1 : ne
+	Ke = symmetric(nk)
+	'FLEXION 2x2
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		dx1 = dN1x(ηg)/J11','dy1 = dN1y(ξg)/J22
+		dx2 = dN2x(ηg)/J11','dy2 = dN2y(ξg)/J22
+		dx3 = dN3x(ηg)/J11','dy3 = dN3y(ξg)/J22
+		dx4 = dN4x(ηg)/J11','dy4 = dN4y(ξg)/J22
+		Bb = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+		      0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+		      0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+		BtDB = transp(Bb)*Dbm*Bb*detJ
+		#for i = 1 : nk
+			#for j = i : nk
+				Ke.(i; j) = Ke.(i; j) + BtDB.(i; j)
+			#loop
+		#loop
+	#loop
+	'CORTE MITC4: 2x2 con campo de corte interpolado (tying points)
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		Bs = matrix(2; nk)
+		'gamma_xz: tying en eta=-1 y eta=+1
+		#for it = 1 : 2
+			#if it ≡ 1
+				ηt = -1
+			#else
+				ηt = 1
+			#end if
+			wt = (1 + ηt*ηg)/2
+			dt1 = dN1x(ηt)/J11','dt2 = dN2x(ηt)/J11
+			dt3 = dN3x(ηt)/J11','dt4 = dN4x(ηt)/J11
+			Nt1 = (1 - ξg)*(1 - ηt)/4','Nt2 = (1 + ξg)*(1 - ηt)/4
+			Nt3 = (1 + ξg)*(1 + ηt)/4','Nt4 = (1 - ξg)*(1 + ηt)/4
+			Bs.(1; 1) = Bs.(1; 1) + wt*dt1','Bs.(1; 3) = Bs.(1; 3) - wt*Nt1
+			Bs.(1; 4) = Bs.(1; 4) + wt*dt2','Bs.(1; 6) = Bs.(1; 6) - wt*Nt2
+			Bs.(1; 7) = Bs.(1; 7) + wt*dt3','Bs.(1; 9) = Bs.(1; 9) - wt*Nt3
+			Bs.(1; 10) = Bs.(1; 10) + wt*dt4','Bs.(1; 12) = Bs.(1; 12) - wt*Nt4
+		#loop
+		'gamma_yz: tying en xi=-1 y xi=+1
+		#for it = 1 : 2
+			#if it ≡ 1
+				ξt = -1
+			#else
+				ξt = 1
+			#end if
+			wt = (1 + ξt*ξg)/2
+			dt1 = dN1y(ξt)/J22','dt2 = dN2y(ξt)/J22
+			dt3 = dN3y(ξt)/J22','dt4 = dN4y(ξt)/J22
+			Nt1 = (1 - ξt)*(1 - ηg)/4','Nt2 = (1 + ξt)*(1 - ηg)/4
+			Nt3 = (1 + ξt)*(1 + ηg)/4','Nt4 = (1 - ξt)*(1 + ηg)/4
+			Bs.(2; 1) = Bs.(2; 1) + wt*dt1','Bs.(2; 2) = Bs.(2; 2) + wt*Nt1
+			Bs.(2; 4) = Bs.(2; 4) + wt*dt2','Bs.(2; 5) = Bs.(2; 5) + wt*Nt2
+			Bs.(2; 7) = Bs.(2; 7) + wt*dt3','Bs.(2; 8) = Bs.(2; 8) + wt*Nt3
+			Bs.(2; 10) = Bs.(2; 10) + wt*dt4','Bs.(2; 11) = Bs.(2; 11) + wt*Nt4
+		#loop
+		BtDBs = transp(Bs)*Dsm*Bs*detJ
+		#for i = 1 : nk
+			#for j = i : nk
+				Ke.(i; j) = Ke.(i; j) + BtDBs.(i; j)
+			#loop
+		#loop
+	#loop
+	'Ensamblar
+	#for i = 1 : 4
+		#for j = i : 4
+			j1 = ej.(e; i)','j2 = ej.(e; j)
+			i1 = nd*(j1 - 1) + 1','i2 = nd*(j2 - 1) + 1
+			kij = submatrix(Ke; nd*(i - 1) + 1; nd*i; nd*(j - 1) + 1; nd*j)
+			#if j1 > j2
+				add(transp(kij); K; i2; i1)
+			#else
+				add(kij; K; i1; i2)
+			#end if
+		#loop
+	#loop
+#loop
+
+"7. Winkler + Cargas
+'Winkler en todos los nodos:
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		#if i ≡ 0 ∨ i ≡ ne1
+			txk = de/2
+		#else
+			txk = de
+		#end if
+		#if j ≡ 0 ∨ j ≡ ne1
+			tyk = de/2
+		#else
+			tyk = de
+		#end if
+		K.(nd*(k - 1) + 1; nd*(k - 1) + 1) = K.(nd*(k - 1) + 1; nd*(k - 1) + 1) + kwN*txk*tyk
+	#loop
+#loop
+'Carga distribuida en area de columna:
+F = vector(nt)
+#hide
+'Carga distribuida como presion uniforme en area de columna
+xc = Lw/2','yc = Lw/2
+qc = PuN/(Lcw^2)
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		xk = xj.k','yk = yj.k
+		#if abs(xk - xc) ≤ Lcw/2 + 1 ∧ abs(yk - yc) ≤ Lcw/2 + 1
+			#if i ≡ 0 ∨ i ≡ ne1
+				txk = de/2
+			#else
+				txk = de
+			#end if
+			#if j ≡ 0 ∨ j ≡ ne1
+				tyk = de/2
+			#else
+				tyk = de
+			#end if
+			#if abs(xk - xc) ≡ Lcw/2
+				txk = de/2
+			#end if
+			#if abs(yk - yc) ≡ Lcw/2
+				tyk = de/2
+			#end if
+			F.(nd*(k - 1) + 1) = F.(nd*(k - 1) + 1) - qc*txk*tyk
+		#end if
+	#loop
+#loop
+
+"8. Solucion
+#show
+Z = clsolve(K; F)
+
+"9. Deflexion (mm)
+#hide
+Wz = matrix(nj1; nj1)
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		Wz.(i + 1; j + 1) = Z.(nd*(k - 1) + 1)
+	#loop
+#loop
+wmz(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Lw; Wz)
+PlotWidth = 300
+PlotHeight = 300
+PlotStep = 20
+#show
+$Map{wmz(x; y) @ x = 0 : Lw & y = 0 : Lw}
+#hide
+'Centro
+kc = (ne1/2)*nj1 + ne1/2 + 1
+wcentro = Z.(nd*(kc - 1) + 1)
+'Esquina
+wesq = Z.(1)
+'Min/max
+wmin = 0','wmax = 0
+#for k = 1 : nj
+	wk = Z.(nd*(k - 1) + 1)
+	#if wk < wmin
+		wmin = wk
+	#end if
+	#if wk > wmax
+		wmax = wk
+	#end if
+#loop
+#show
+'w_centro = 'round(wcentro*10000)/10000' mm
+'w_esquina = 'round(wesq*10000)/10000' mm
+'w_min = 'round(wmin*10000)/10000' mm
+'w_max = 'round(wmax*10000)/10000' mm
+
+"10. Comparacion con SAFE
+'<b>SAFE (CSI):</b> Uz centro = -3.951 mm (Joint 9)
+'<b>Mindlin FEA:</b> w centro = 'round(wcentro*10000)/10000' mm
+ratio = wcentro/(-3.951)
+'Ratio Mindlin/SAFE = 'round(ratio*1000)/1000
+
+"11. Momentos y Von Mises
+#hide
+Mxn = vector(nj)','Myn = vector(nj)','Mxyn = vector(nj)','cnt = vector(nj)
+#for e = 1 : ne
+	Ze = vector(nk)
+	#for i = 1 : 4
+		nn = ej.(e; i)
+		Ze.(3*(i - 1) + 1) = Z.(nd*(nn - 1) + 1)
+		Ze.(3*(i - 1) + 2) = Z.(nd*(nn - 1) + 2)
+		Ze.(3*(i - 1) + 3) = Z.(nd*(nn - 1) + 3)
+	#loop
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		dx1 = dN1x(ηg)/J11','dy1 = dN1y(ξg)/J22
+		dx2 = dN2x(ηg)/J11','dy2 = dN2y(ξg)/J22
+		dx3 = dN3x(ηg)/J11','dy3 = dN3y(ξg)/J22
+		dx4 = dN4x(ηg)/J11','dy4 = dN4y(ξg)/J22
+		Bb = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+		      0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+		      0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+		Mv = Dbm*(Bb*Ze)
+		#for i = 1 : 4
+			nn = ej.(e; i)
+			Mxn.nn = Mxn.nn + Mv.1
+			Myn.nn = Myn.nn + Mv.2
+			Mxyn.nn = Mxyn.nn + Mv.3
+			cnt.nn = cnt.nn + 1
+		#loop
+	#loop
+#loop
+#for k = 1 : nj
+	#if cnt.k > 0
+		Mxn.k = Mxn.k/cnt.k
+		Myn.k = Myn.k/cnt.k
+		Mxyn.k = Mxyn.k/cnt.k
+	#end if
+#loop
+'Mapa Mx (tonf*m/m)
+MxM = matrix(nj1; nj1)
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		MxM.(i + 1; j + 1) = Mxn.k/9806.65
+	#loop
+#loop
+mxmz(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Lw; MxM)
+#show
+'Momento M_x (tonf*m/m):
+$Map{mxmz(x; y) @ x = 0 : Lw & y = 0 : Lw}
+'Von Mises (kgf/cm²):
+#hide
+VM = matrix(nj1; nj1)
+vmmax = 0
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		sx = 6*Mxn.k/tw^2
+		sy = 6*Myn.k/tw^2
+		txy = 6*Mxyn.k/tw^2
+		vk = sqr(sx^2 - sx*sy + sy^2 + 3*txy^2)
+		VM.(i + 1; j + 1) = vk*cf
+		#if vk > vmmax
+			vmmax = vk
+		#end if
+	#loop
+#loop
+vmmz(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Lw; VM)
+#show
+$Map{vmmz(x; y) @ x = 0 : Lw & y = 0 : Lw}
+'σ_VM,max = 'round(vmmax*10)/10' MPa = 'round(vmmax*cf*10)/10' kgf/cm²

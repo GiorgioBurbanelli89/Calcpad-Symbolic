@@ -1,0 +1,68 @@
+"Test de #svg — Dibujos sin usar <>
+
+"1. Formas basicas
+#svg 500 200
+.rect 10 10 480 180 lightyellow 0.5 gray 1
+.line 50 100 450 100 black 1
+.circle 100 80 20 blue 0.3 blue 2
+.circle 200 80 30 red 0.3 red 2
+.circle 300 80 15 green 0.5 green 2
+.rect 380 50 80 60 orange 0.3 black 1
+.text 250 170 Formas_basicas 14 black middle
+#end svg
+
+"2. Flechas
+#svg 500 150
+.arrow 50 75 200 75 red 2
+.arrow 250 75 400 75 blue 2
+.arrow 200 120 200 30 green 2
+.text 125 60 F1 12 red middle
+.text 325 60 F2 12 blue middle
+.text 220 75 V 12 green start
+#end svg
+
+"3. Usando variables de Calcpad
+L = 400
+h_beam = 80
+q = 10
+n_p = 6
+
+#svg 500 200
+.rect 50 60 L h_beam lightyellow 0.5 black 1.5
+.line 50 60+h_beam/2 50+L 60+h_beam/2 gray 0.5
+.text 50+L/2 60+h_beam+30 L=400mm 12 black middle
+#for i = 0 : n_p
+    .circle 50+i*L/n_p 60+h_beam/2 4 red 1
+    .text 50+i*L/n_p 60+h_beam+15 i 10 gray middle
+#loop
+.arrow 50+L/2 20 50+L/2 55 blue 2
+.text 50+L/2 15 q=10_kN/m 11 blue middle
+#end svg
+
+"4. Diagrama secante/tangente para derivada
+x0 = 2
+#svg 400 400
+.rect 0 0 400 400 white 1 gray 0.5
+.text 200 25 Secante_→_Tangente 14 black middle bold
+.line 40 370 380 370 black 1.5
+.line 40 370 40 30 black 1.5
+.text 390 375 x 12 black start
+.text 35 25 y 12 black end
+.text 30 375 0 10 gray end
+#for i = 1 : 30
+    px = 40 + (i-1)*340/29
+    py = 370 - ((i-1)*4/29)^2*340/16
+    .circle px py 2 blue 0.8
+#loop
+.line 40 370 380 370-(4^2*340/16-0)/4*340/(4*340/29) red 1.5
+.text 300 200 Secante 11 red start
+.line 40 370-(-x0*2*x0)*340/29*29/4 380 370-(-x0*2*x0+2*x0*380/340*4*29/29)*340/29*29/4 green 2
+.text 300 310 Tangente 11 green start
+#end svg
+
+"5. Arco
+#svg 300 200
+.arc 150 100 80 200 340 blue 2
+.circle 150 100 3 red 1
+.text 150 120 centro 10 red middle
+#end svg

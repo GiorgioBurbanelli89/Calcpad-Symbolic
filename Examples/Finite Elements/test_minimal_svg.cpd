@@ -1,0 +1,9 @@
+"Test SVG minimo
+
+#svg 300 150
+.rect 0 0 300 150 yellow 0.5 black 1
+.circle 150 75 40 red 1
+.text 150 80 HOLA 16 white middle bold
+#end svg
+
+'<p>Si ves un circulo rojo con HOLA, funciona.</p>

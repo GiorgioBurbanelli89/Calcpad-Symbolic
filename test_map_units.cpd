@@ -1,0 +1,21 @@
+"Test $Map con y sin unidades
+
+"1. Sin unidades (funciona)
+f_1(x; y) = sin(x)*cos(y)
+PlotWidth = 200
+PlotHeight = 200
+PlotStep = 10
+$Map{f_1(x; y) @ x = 0 : 3 & y = 0 : 3}
+
+"2. Con unidades en limites
+a = 3 m
+b = 2 m
+f_2(x; y) = sin(x/a*3.14)*cos(y/b*3.14)
+$Map{f_2(x; y) @ x = 0 m : a & y = 0 m : b}
+
+"3. Con unidades solo en variable
+f_3(x; y) = x*y
+$Map{f_3(x; y) @ x = 0 m : a & y = 0 m : b}
+
+"4. Sin unidad en 0
+$Map{f_2(x; y) @ x = 0 : a & y = 0 : b}

@@ -1,0 +1,103 @@
+"Ejemplo: Viga simplemente apoyada — Matriz de Rigidez
+'<hr/>
+
+"Datos del problema
+
+E = 200000
+I = 833.33
+L = 6
+q = 10
+
+"Rigidez a flexion
+EI = E*I
+
+"Diagrama de la viga
+$Draw{fillrect,0,-0.15,L,0.15,#d4e6f1,#2c3e50,1.5 : line,0,0,L,0,#27ae60,1 : circle,0,-0.15,0.12,#2c3e50,#ddd : circle,L,-0.15,0.12,#2c3e50,#ddd : arrow,1,0.8,1,0.18,#e74c3c,2 : arrow,2,0.8,2,0.18,#e74c3c,2 : arrow,3,0.8,3,0.18,#e74c3c,2 : arrow,4,0.8,4,0.18,#e74c3c,2 : arrow,5,0.8,5,0.18,#e74c3c,2 : text,3,1.1,q=10_kN/m,11,#e74c3c,middle,bold : hdim,0,-0.7,L,-0.7,-0.3,L=6m : text,-0.3,-0.15,A,11,#2c3e50,end,bold : text,L+0.3,-0.15,B,11,#2c3e50,start,bold @ w=650 : h=250 : title=Viga simplemente apoyada con carga uniforme}
+
+'<hr/>
+"Matriz de rigidez de viga (2 GDL por nodo: v y θ)
+
+'<p>Para una viga de Euler-Bernoulli con 2 nodos:</p>
+
+k_11 = 12*EI/L^3
+k_12 = 6*EI/L^2
+k_22 = 4*EI/L
+k_23 = 2*EI/L
+
+'<p>Matriz de rigidez 4×4:</p>
+
+K = [[k_11; k_12; -k_11; k_12 | k_12; k_22; -k_12; k_23 | -k_11; -k_12; k_11; -k_12 | k_12; k_23; -k_12; k_22]]
+
+"Vector de cargas equivalentes (carga uniforme)
+
+F_1 = q*L/2
+M_1 = q*L^2/12
+F_2 = q*L/2
+M_2 = -q*L^2/12
+
+F = [F_1; M_1; F_2; M_2]
+
+'<hr/>
+"Condiciones de frontera
+
+'<p>Apoyos simples: v₁ = 0, v₃ = 0 (desplazamientos verticales nulos)</p>
+'<p>GDL libres: θ₁ (rotacion en A) y θ₂ (rotacion en B)</p>
+'<p>Submatriz reducida (filas/columnas 2 y 4):</p>
+
+K_r = [[k_22; k_23 | k_23; k_22]]
+F_r = [M_1; M_2]
+
+"Resolver sistema K_r · u = F_r
+
+u = lsolve(K_r; F_r)
+
+θ_A = u.(1)
+θ_B = u.(2)
+
+'<hr/>
+"Reacciones
+
+'<p>Reaccion en A:</p>
+R_A = k_12*θ_A + k_12*θ_B - F_1
+
+'<p>Reaccion en B:</p>
+R_B = -k_12*θ_A - k_12*θ_B - F_2
+
+'<p>Verificacion: R_A + R_B debe ser igual a q*L:</p>
+R_total = R_A + R_B
+qL = q*L
+
+'<hr/>
+"Deflexion maxima (analitica)
+
+v_max = 5*q*L^4/(384*EI)
+
+"Diagrama de resultados
+
+#hide
+n = 30
+x_v = vector(n)
+v_v = vector(n)
+M_v = vector(n)
+V_v = vector(n)
+#for i = 1 : n
+    x_v.(i) = (i - 1)*L/(n - 1)
+    v_v.(i) = q*x_v.(i)/(24*EI)*(L^3 - 2*L*x_v.(i)^2 + x_v.(i)^3)
+    M_v.(i) = q*x_v.(i)/2*(L - x_v.(i))
+    V_v.(i) = q*(L/2 - x_v.(i))
+#loop
+#show
+
+$Chart{x_v; v_v @ type=line : title=Deflexion v(x) : xlabel=x (m) : ylabel=v (m) : labels=Deflexion}
+
+$Chart{x_v; M_v @ type=line : title=Momento flector M(x) : xlabel=x (m) : ylabel=M (kN·m) : labels=Momento}
+
+$Chart{x_v; V_v @ type=line : title=Cortante V(x) : xlabel=x (m) : ylabel=V (kN) : labels=Cortante}
+
+'<hr/>
+"Seccion transversal (ejemplo: rectangulo 25×50 cm)
+
+b = 0.25
+h_s = 0.50
+
+$Draw{fillrect,0,0,b,h_s,#ecf0f1,#2c3e50,1.5 : hatch,0,0,b,h_s,#bdc3c7 : line,0,h_s/2,b,h_s/2,#27ae60,2 : text,b/2,h_s+0.03,b=25cm,10,#2c3e50,middle : text,b+0.03,h_s/2,h=50cm,10,#2c3e50,start : circle,0.03,0.03,0.006,#2c3e50,#2c3e50 : circle,b-0.03,0.03,0.006,#2c3e50,#2c3e50 : circle,b/2,0.03,0.006,#2c3e50,#2c3e50 : circle,0.03,h_s-0.03,0.006,#2c3e50,#2c3e50 : circle,b-0.03,h_s-0.03,0.006,#2c3e50,#2c3e50 @ w=350 : h=400 : title=Seccion transversal}

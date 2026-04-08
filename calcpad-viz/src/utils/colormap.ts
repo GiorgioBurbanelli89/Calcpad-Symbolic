@@ -24,14 +24,17 @@ function lerpTable(t: number, table: [number, number, number, number][]): [numbe
 // Jet: azul oscuro → cian → verde → amarillo → rojo oscuro (MATLAB)
 // t=0: azul, t=0.25: cian, t=0.5: verde, t=0.75: amarillo, t=1: rojo
 export function jet(t: number): [number, number, number] {
+  // MATLAB jet colormap — full saturation, sharp transitions
   return lerpTable(t, [
-    [0.00,   0,   0, 128],  // azul oscuro
-    [0.10,   0,   0, 255],  // azul
-    [0.35,   0, 255, 255],  // cian
-    [0.50,   0, 255,   0],  // verde
-    [0.65, 255, 255,   0],  // amarillo
-    [0.90, 255,   0,   0],  // rojo
-    [1.00, 128,   0,   0],  // rojo oscuro
+    [0.000,   0,   0, 144],
+    [0.125,   0,   0, 255],
+    [0.250,   0, 130, 255],
+    [0.375,   0, 255, 255],
+    [0.500,   0, 255,   0],
+    [0.625, 255, 255,   0],
+    [0.750, 255, 130,   0],
+    [0.875, 255,   0,   0],
+    [1.000, 144,   0,   0],
   ]);
 }
 

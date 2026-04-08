@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Created with Calcpad</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <script src="file:///C:/Users/j-b-j/Documents/Hekatan Calc 1.0.0/Calcpad-Symbolic/Symbolic.Cli/bin/Debug/net10.0/doc/jquery-3.6.3.min.js"></script>
+    <script src="file:///C:/Users/j-b-j/Documents/Hekatan Calc 1.0.0/Calcpad-Symbolic/Symbolic.Cli/bin/Debug/net10.0/doc/calcpad-viz.umd.cjs"></script>
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-size: 11pt;
+            font-family: 'Segoe UI', 'Arial Nova', Helvetica, sans-serif;
+            margin-left: 5mm;
+            max-width: 190mm;
+        }
+
+        h1, h2, h3, h4, h5, h6, .errorHeader, .roundBox {
+            font-family: 'Arial Nova', Helvetica, sans-serif;
+            margin: 0.5em 0 0.5em 0;
+            padding: 0;
+            line-height: 150%;
+        }
+
+        h1 {font-size: 2.1em;}
+        h2 {font-size: 1.7em;}
+        h3 {font-size: 1.4em;}
+        h4 {font-size: 1.2em;}
+        h5 {font-size: 1.1em;}
+        h6 {font-size: 1em;}
+
+        p, li {
+            margin: 0.3em 0 0.3em 0;
+            padding: 0;
+            line-height: 150%;
+        }
+
+        select, kbd {
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        a:hover {
+            background-color: #e9f6ff;
+        }
+
+        .eq, input[type="text"], table.matrix {
+            font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+        }
+
+            .eq var {
+                color: #06d;
+                font-size: 105%;
+            }
+
+            .eq i {
+                color: #086;
+                font-style: normal;
+                font-size: 90%;
+            }
+
+            i.unit {
+                color: #043!important;
+                font-size: 90%!important;
+                vertical-align: -1pt;
+            }
+
+            sup.unit {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 70%!important;
+            }
+
+            .eq b {
+                font-weight: 600;
+            }
+
+            .eq sub {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 80%;
+                vertical-align: -18%;
+                margin-left: 1pt;
+            }
+
+            .eq sup {
+                display: inline-block;
+                margin-left: 1pt;
+                margin-top: -3pt;
+                font-size: 75%;
+            }
+
+            .eq small {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 70%;
+            }
+
+                .eq small var {
+                    font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+                    font-size: 8.5pt;
+                }
+
+                .eq small i {
+                    font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+                    font-size: 6pt;
+                }
+
+            .eq u, input, select {
+                background-color: LightYellow;
+            }
+
+                input[type="text"], select {
+                    font-size: 10pt;
+                    padding: 0.2em 0.4em;
+                    border: 0.5pt solid #CCC;
+                    border-radius: 0.35em;
+                    box-shadow: 0.06em 0.06em 0.5em #ddd;
+                    min-width: 3em;
+                }
+
+                input[type="text"] {
+                    text-align: right;
+                }
+
+                input[type="checkbox"],
+                input[type="radio"] {
+                    vertical-align: baseline;
+                    position: relative;
+                    bottom: -1pt;
+                    margin-right: 1pt;
+                }
+
+                    input[type="checkbox"].post:disabled:not(:checked),
+                    input[type="checkbox"].post:disabled:not(:checked) + label,
+                    input[type="radio"].post:disabled:not(:checked),
+                    input[type="radio"].post:disabled:not(:checked) + label {
+                        display: none;
+                    }
+
+                select:disabled {
+                    background: none;
+                    color: #444;
+                }
+
+                select.post:disabled {
+                    font-size: 12pt;
+                    border: none;
+                    box-shadow: none;
+                    color: red;
+                    background: none;
+                    appearance: none;
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                }
+
+                select.post:disabled::-ms-expand {
+                    display: none;
+                }
+
+                input[type="text"]:focus {
+                    box-shadow: 0.1em 0.1em 1em #ccc;
+                    color: black;
+                }
+
+        td, th {
+            padding: 2pt 4pt 2pt 4pt;
+            vertical-align: top;
+        }
+
+        small {
+            font-weight: normal;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+            table.bordered {
+                margin-top: 1em;
+            }
+
+                table.bordered th {
+                    background-color: #F0F0F0;
+                    border: solid 1pt #AAAAAA;
+                }
+
+                table.bordered td {
+                    border: solid 1pt #CCCCCC;
+                }
+
+            table.centered td, .matrix .td {
+                text-align: center;
+            }
+
+            table.data td {
+                text-align: right;
+            }
+
+                table.data td:first-child {
+                    text-align: left;
+                    padding-left: 0;
+                }
+
+        .matrix {
+            display: inline-table;
+        }
+
+            .matrix .tr {
+                display: table-row;
+            }
+
+            .matrix .td {
+                white-space: nowrap;
+                padding: 0 2pt 0 2pt;
+                min-width: 10pt;
+                display: table-cell;
+                font-size: 10pt;
+            }
+
+                .matrix .td:first-child,
+                .matrix .td:last-child {
+                    width: 0.75pt;
+                    min-width: 0.75pt;
+                    max-width: 0.75pt;
+                    padding: 0 1pt 0 1pt;
+                }
+
+                .matrix .td:first-child {
+                    border-left: solid 1pt black;
+                }
+
+                .matrix .td:last-child {
+                    border-right: solid 1pt black;
+                }
+
+            .matrix .tr:first-child .td:first-child,
+            .matrix .tr:first-child .td:last-child {
+                border-top: solid 1pt black;
+            }
+
+            .matrix .tr:last-child .td:first-child,
+            .matrix .tr:last-child .td:last-child {
+                border-bottom: solid 1pt black;
+            }
+
+        .block {
+            display: inline-block;
+            vertical-align: middle;
+            padding-left: 4pt;
+            margin-left: -1pt;
+            border-left: solid 1pt #80b0e8;
+            background: linear-gradient(to right, rgba(0, 192, 255, 0.06), rgba(0, 192, 255, 0.03));
+        }
+
+            .block .block {
+                background: linear-gradient(to right, rgba(0, 192, 255, 0.04), rgba(0, 192, 255, 0.02));
+            }
+
+        .dvcs:has(.block):not(.block *) {
+            display: inline-block;
+            border-left: solid 1pt #80b0e8;
+            padding-left: 0;
+            margin-left: 3pt;
+        }
+
+            .dvcs:has(.block):not(.block *)::before {
+                content: " 🞀";
+                font-size: 9pt;
+                color: #90c4f0;
+                margin-left: -4.5pt;
+            }
+
+        .arr {
+            color: #90c4f0;
+        }
+
+        .r0, .r1, .r2, .r3,
+        .o0, .o1, .o2, .o3,
+        .b1, .b2, .b3,
+        .c1, .c2, .c3, .c4,
+        .c5, .c6, .c7, .c8 {
+            display: inline-block;
+        }
+
+        .r0, .r1, .r2, .r3 {
+            margin-top: -1.5pt;
+            margin-right: 1.5pt;
+            vertical-align: top;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: right top;
+        }
+
+        .o0, .o1, .o2, .o3 {
+            border-top: solid 0.75pt;
+            line-height: 130%;
+            vertical-align: middle;
+            margin-top: 0.75pt;
+            padding-top: 1.25pt;
+            padding-left: 1pt;
+            padding-right: 1pt;
+        }
+
+        .r {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 150%;
+            display: inline-block;
+            vertical-align: top;
+            margin-left: -9.5pt;
+            position: relative;
+            top: 1pt;
+        }
+
+        .r0 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDEwIDIwIiBoZWlnaHQ9IjE1cHQiIHdpZHRoPSIxMHB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMCwxMyAyLDEyIDUsMTkgOSwwIiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MC42cHQ7IHN0cm9rZS1saW5lam9pbjpyb3VuZDsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IGZpbGw6bm9uZSIgLz4NCiAgPGxpbmUgeDE9IjIuMiIgeTE9IjEyLjMiIHgyPSI0LjYiIHkyPSIxOC43IiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MC44cHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 8pt;
+            height: 16pt;
+            margin-left: -8pt;
+        }
+
+        .r1 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDE1IDQwIiBoZWlnaHQ9IjMwcHQiIHdpZHRoPSIxNXB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMSwyNiAzLDI0IDgsMzggMTQsMCIgc3R5bGU9InN0cm9rZTpibGFjazsgc3Ryb2tlLXdpZHRoOjAuNnB0OyBzdHJva2UtbGluZWpvaW46cm91bmQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyBmaWxsOm5vbmUiIC8+DQogIDxsaW5lIHgxPSIzLjIiIHkxPSIyNC40IiB4Mj0iNy42IiB5Mj0iMzcuNiIgc3R5bGU9InN0cm9rZTpibGFjazsgc3Ryb2tlLXdpZHRoOjFwdDsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IiAvPg0KPC9zdmc+");
+            width: 12pt;
+            height: 32pt;
+            margin-left: -12pt;
+        }
+
+        .r2 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDIwIDYwIiBoZWlnaHQ9IjQ1cHQiIHdpZHRoPSIyMHB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMiwzNyA1LDM0IDExLDU1IDE5LDAiIHN0eWxlPSJzdHJva2U6YmxhY2s7IHN0cm9rZS13aWR0aDowLjZwdDsgc3Ryb2tlLWxpbmVqb2luOnJvdW5kOyBzdHJva2UtbGluZWNhcDpyb3VuZDsgZmlsbDpub25lIiAvPg0KICA8bGluZSB4MT0iNS4xIiB5MT0iMzQuNiIgeDI9IjEwLjYiIHkyPSI1NC40IiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MS4ycHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 16pt;
+            height: 48pt;
+            margin-left: -16pt;
+        }
+
+        .r3 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDI1IDgwIiBoZWlnaHQ9IjYwcHQiIHdpZHRoPSIyNXB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMyw1MCA3LDQ2IDE1LDc0IDI0LDAiIHN0eWxlPSJzdHJva2U6YmxhY2s7IHN0cm9rZS13aWR0aDowLjZwdDsgc3Ryb2tlLWxpbmVqb2luOnJvdW5kOyBzdHJva2UtbGluZWNhcDpyb3VuZDsgZmlsbDpub25lIiAvPg0KICA8bGluZSB4MT0iNy4xIiB5MT0iNDYuOCIgeDI9IjE0LjUiIHkyPSI3My4yIiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MS4ycHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 19pt;
+            height: 62pt;
+            margin-left: -19pt;
+        }
+
+        .nth {
+            position: relative;
+            bottom: 1pt;
+        }
+
+        .eq small.nth {font-size: 70%;}
+        .dvr small {font-size: 70%;}
+        .dvr small var {font-size: 105%;}
+        sup.raised {vertical-align: top;}
+        sup .r0, sup .r1, sup .r2, sup .r3 {
+            zoom: 0.7;
+            -moz-transform: scale(0.7);
+            -webkit-transform: scale(0.7);
+            transform: scale(0.7);
+            transform-origin: top right;
+            max-height: none;
+        }
+
+        sup .r0 { margin-left: -5pt; }
+        sup .r1 { margin-left: -11pt; }
+        sup .r2 { margin-left: -13pt; }
+        sup .r3 { margin-left: -16pt; }
+
+        .b1, .b2, .b3, .c1, .c2, .c3, .c4, .c5, .c6, .c7, .c8 {
+            vertical-align: middle;
+            font-weight: 100;
+            font-stretch: ultra-condensed;
+        }
+
+        .b2, .b3, .c2, .c3, .c4, .c5, .c6, .c7, .c8 {
+            font-family: 'Jost* Hairline', sans-serif;
+        }
+
+        .b0, .b1, .c1 {
+            font-family: 'Jost* Thin', sans-serif;
+        }
+
+        .b0 {
+            font-size: 120%;
+            font-weight: 600;
+            padding: 0 1pt 0 1pt;
+        }
+
+        .b1 {
+            font-size: 240%;
+            margin-top: -3pt;
+            margin-left: -1pt;
+            margin-right: -1pt;
+        }
+
+        .b2 {
+            font-size: 370%;
+            margin-top: -5pt;
+            margin-left: -3pt;
+            margin-right: -3pt;
+        }
+
+        .b3 {
+            font-size: 520%;
+            margin-top: -8pt;
+            margin-left: -5pt;
+            margin-right: -5pt;
+        }
+
+        .c1 {
+            font-size: 240%;
+            margin-top: -4pt;
+        }
+
+        .c2 {
+            font-size: 360%;
+            margin-top: -6pt;
+            margin-left: -2.5pt;
+            margin-right: -0.5pt;
+        }
+
+        .c3 {
+            font-size: 480%;
+            margin-top: -8pt;
+            margin-left: -3pt;
+            margin-right: -1pt;
+        }
+
+        .c4 {
+            font-size: 600%;
+            margin-top: -10pt;
+            margin-left: -4pt;
+            margin-right: -2pt;
+            transform: scaleX(0.9);
+        }
+
+        .c5 {
+            font-size: 710%;
+            margin-top: -11.5pt;
+            margin-left: -6pt;
+            margin-right: -4pt;
+            transform: scaleX(0.8);
+        }
+
+        .c6 {
+            font-size: 820%;
+            margin-top: -13pt;
+            margin-left: -7pt;
+            margin-right: -5pt;
+            transform: scaleX(0.7);
+        }
+
+        .c7 {
+            font-size: 930%;
+            margin-top: -14.5pt;
+            margin-left: -8pt;
+            margin-right: -6pt;
+            transform: scaleX(0.6);
+        }
+
+        .c8 {
+            font-size: 1040%;
+            margin-top: -16pt;
+            margin-left: -9pt;
+            margin-right: -7pt;
+            transform: scaleX(0.5);
+        }
+
+        .dvc, .dvr, .dvs {
+            display: inline-block;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .dvc {
+            padding-left: 2pt;
+            padding-right: 2pt;
+            text-align: center;
+            line-height: 110%;
+        }
+
+        .dvr {
+            text-align: center;
+            line-height: 110%;
+            position: relative;
+            top: -3pt;
+        }
+
+        .dvs {
+            text-align: left;
+            line-height: 110%;
+        }
+
+        .dvl {
+            display: block;
+            border-bottom: solid 1pt black;
+            margin-top: 1pt;
+            margin-bottom: 1pt;
+        }
+
+        .nary {
+            color: #C080F0;
+            font-size: 240%;
+            font-family: Georgia Pro Light, serif;
+            font-weight: 200;
+            line-height: 70%;
+            display: block;
+            margin: 0 1pt 2.5pt 1pt;
+        }
+
+            .nary em {
+                display: block;
+                transform: scaleX(0.7) rotate(7deg);
+            }
+
+        .dvc.down {
+            position: relative;
+            top: 0.5em;
+        }
+
+        .dvc.up {
+            position: relative;
+            bottom: 0.6em;
+        }
+
+        .low {
+            font-size: 70%;
+            display: inline-block;
+            position: relative;
+            top: 1.2em;
+        }
+
+        .cond {
+            color: #E000D0;
+        }
+
+        .err {
+            color: Crimson;
+            background-color: #FEE;
+        }
+
+        .ok {
+            color: Green;
+            background-color: #F0FFF0;
+        }
+
+        .ref {
+            float: right;
+            margin-left: 18pt;
+            color: Green;
+            background-color: #F8FFF0;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        .side {
+            float: right;
+            max-width: 50%;
+        }
+
+        .plot {
+            max-width: 100%
+        }
+
+        .indent {
+            border-left: 0.75pt solid #dddddd;
+            padding-left: 2em;
+        }
+
+        span.indent {
+            display: inline-block;
+        }
+
+        .fold {
+            height: 2.4em;
+            overflow: hidden;
+        }
+
+        .unfold {
+            height: auto;
+            overflow: auto;
+        }
+
+            .fold > :first-child, .unfold > :first-child {
+                cursor: pointer;
+            }
+
+                .fold > :first-child:hover, .unfold > :first-child:hover {
+                    color: #0066bb;
+                    text-decoration: underline;
+                }
+
+                .fold > :first-child::after {
+                    content: " ... ▼";
+                    font-size: 80%;
+                }
+
+                .unfold > :first-child::after {
+                    content: " ▲";
+                    font-size: 80%;
+                }
+
+        .vec {
+            font-family: 'Cambria Math', serif;
+            color: #8af;
+            font-style: normal;
+            display: inline-block;
+            vertical-align: 2pt;
+            margin-left: 3pt;
+            margin-right: -7pt;
+        }
+
+        small .vec, sup .vec {
+            margin-left: 2pt;
+            margin-right: -6pt;
+        }
+
+        #Units {
+            float: right;
+        }
+
+        @media screen {
+            .no-screen {
+                display: none;
+            }
+        }
+
+        @media print {
+            .side {
+                zoom: 0.8;
+                -moz-transform: scale(0.8);
+            }
+
+            body {
+                margin: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+
+        @page {
+            size: A4 portrait;
+            margin-left: 20mm;
+            margin-right: 10mm;
+            margin-top: 10mm;
+            margin-bottom: 10mm;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .value {
+            position: relative;
+            background-color: #f4fbff;
+            border-radius: 3pt;
+        }
+
+            .value:after {
+                content: "";
+                position: absolute;
+                left: 100%;
+                top: -100%;
+                transform: translateY(-50%);
+                margin-left: 2pt;
+                height: 16pt;
+                line-height: 16pt;
+                vertical-align: middle;
+                width: fit-content;
+                white-space: nowrap;
+                min-width: 10pt;
+                z-index: 1;
+                padding: 0 6pt 0 6pt;
+                border-radius: 6pt 6pt 6pt 0;
+                background: #000;
+                color: #fff;
+                font-family: 'Segoe UI', sans-serif;
+                font-style: normal;
+                font-size: 10pt;
+                text-align: center;
+                display: none;
+                opacity: 0;
+                transition: opacity 2s;
+                user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                -moz-user-select: none;
+            }
+
+            .value:hover:after {
+                content: attr(data-value);
+                display: block;
+                opacity: 1;
+            }
+
+        .errorHeader {
+            color: white;
+            background-color: crimson;
+            font-size: 10pt;
+            position: fixed;
+            top: 0;
+            left: 0;
+            margin-top: 0;
+            width: 100vw;
+            max-width: 100%;
+            height: 1.8em;
+            line-height: 1.2em;
+            padding-left: 6pt;
+            overflow-x: hidden;
+        }
+
+        .roundBox {
+            background-color: #fee;
+            color: crimson;
+            font-size: 9pt;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            display: inline-block;
+            border-radius: 4pt;
+            min-width: 1.1em;
+            padding-left: 2pt;
+            padding-right: 2pt;
+            margin-top: 2pt;
+        }
+
+            .roundBox:hover {
+                background-color: white;
+            }
+
+        .lineLink {
+            background: none;
+            color: #b0e0ff;
+            font-family: Calibri, sans-serif;
+            font-size: 10pt;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: left;
+            display: inline-block;
+            position: absolute;
+            left: 0;
+            width: 2em;
+            height: 4em;
+            z-index: 1;
+        }
+
+            .lineLink:hover {
+                background: none;
+                color: #09e;
+            }
+    </style>
+</head>
+<body>
+    <script>
+        var contextMenu = false;
+        function getVerticalPosition(line) { return document.querySelector("[data-text='" + line + "']").getBoundingClientRect().top; }
+        function isNumeric(s) { return s.match(/^-?\d+(?:\.\d+)?$/); }
+        if (window.jQuery) {
+            function getHtmlWithInput() {
+                $("input[type=text]").each(function () {
+                    $(this).attr("value", $(this).val());
+                });
+                $("input[type=hidden]").each(function () {
+                    $(this).attr("value", $(this).val());
+                });
+                $("textarea").each(function () {
+                    $(this).html($(this).val());
+                });
+                $("input[type=radio]").each(function () {
+                    if (this.checked)
+                        $(this).attr("checked", "checked");
+                    else
+                        $(this).removeAttr("checked");
+                });
+                $("input[type=checkbox]").each(function () {
+                    if (this.checked)
+                        $(this).attr("checked", "checked");
+                    else
+                        $(this).removeAttr("checked");
+                });
+                $("select option").each(function () {
+                    if (this.selected) {
+                        $(this).attr("selected", "true");
+                    }
+                    else
+                        $(this).removeAttr("selected");
+                });
+                return document.body.outerHTML;
+            }
+
+            function getTargetId(element) {
+                var id = $(element).attr("name");
+                if (id != null && id.length > 0)
+                    return id;
+
+                return $(element).data("target");
+            }
+
+            function getValue(id, source) {
+                var value = "";
+                var target = $("#" + id + " input");
+                var domObj = target.get(0);
+                if (domObj == null || domObj.Length == 0) {
+                    target = $("#" + id + " .eq u");
+                    target.each(function () {
+                        value += $(this).text() + ";";
+                    });
+                    $(source).prop('disabled', true);
+                }
+                else {
+                    target.each(function () {
+                        value += $(this).val() + ";";
+                    });
+                }
+                if (value.length > 1) {
+                    value = value.slice(0, -1);
+                }
+                return value;
+            }
+
+            $(document).ready(function () {
+
+                $(".dvcs:has(.block) > :first-child").html("&hairsp;");
+
+                $("#Units").change(function () { $(".Units").text($(this).val()); });
+
+                $(".fold > :first-child").click(function () {
+                    if ($(this).parent().hasClass("fold")) {
+                        $(this).parent().removeClass("fold").addClass("unfold");
+                    }
+                    else {
+                        $(this).parent().removeClass("unfold").addClass("fold");
+                    }
+                });
+
+                $("select").each(function (index) {
+                    if ($(this).prop("id") != "Units") {
+                        var id = getTargetId(this);
+                        if (id != null && id.length > 0) {
+                            var value = getValue(id, this);
+                            $(this).val(value);
+                        }
+                    }
+
+                });
+
+                $("select").change(function () {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var target = $("#" + id + " input");
+                        if (target != null) {
+                            var values = $(this).val().split(";");
+                            target.each(function (index) {
+                                $(this).val(values[index]);
+                            });
+                        }
+                    }
+                });
+
+                $("input:radio, input:checkbox").each(function (index) {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var value = getValue(id, this);
+                        $(this).prop("checked", $(this).val() == value);
+                    }
+                });
+
+                $("input:radio, input:checkbox").change(function () {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var target = $("#" + id + " input");
+                        if (target != null) {
+                            if ($(this).prop("checked")) {
+                                var values = $(this).val().split(";");
+                                target.each(function (index) {
+                                    $(this).val(values[index]);
+                                });
+                            }
+                            else if ($(this).prop("type") == "checkbox") {
+                                target.each(function () {
+                                    $(this).val("0");
+                                });
+                            }
+                        }
+                    }
+                });
+
+                $(".line:not(style, script)").each(function () {
+                    var line = $(this).prop("id").split("-")[1];
+                    var $lineLink = $('<a class="lineLink" href="#0" data-text="' + line + '" title="Code line ' + line + '">&larr;</a>');
+                    $(this).append($lineLink);
+                    $lineLink.hide();
+                    $(this).hover(function () {
+                        $(".lineLink").hide();
+                        $lineLink.show();
+                    });
+                    $(window).scroll(function () {
+                        $lineLink.hide();
+                    });
+                });
+
+                $("body").mouseleave(function () {
+                    $(".lineLink").hide();
+                });
+
+                $(".roundBox").click(function () {
+                    var line = $(this).data("line");
+                    var e = document.getElementById("line-" + line);
+                    if (e) {
+                        window.scrollTo(0, e.offsetTop - $(this).outerHeight() - 20);
+                    }
+                });
+                $(".money").each(function () { $(this).text(Number(($(this).text())).toFixed(2)); });
+
+                $("input").change(function() {
+                    var e = $(this);
+                    var s = e.val();
+                    if (isNumeric(s)) {
+                        e.css("color", "black");
+                        e.removeAttr("title");
+                    } else {
+                        e.css("color", "red");
+                        e.attr("title", "Invalid number");
+                    }
+                });
+
+                $("a").click(function () {
+                    chrome.webview.postMessage('clicked');
+                });
+
+                window.addEventListener('click', () => {
+                    chrome.webview.postMessage('focused');
+                });
+            });
+        }
+        document.oncontextmenu = function () { contextMenu = true; };
+        document.onmousedown = function () { contextMenu = false; };
+    </script><h3>Tutorial FEM — Paso a Paso desde Cero </h3>
+<hr/> 
+<p>&nbsp;</p>
+<h3>Paso 1: Todo empieza con un resorte </h3>
+<p>Un resorte tiene rigidez k. Si aplicas fuerza F, se estira x = F/k</p> 
+<p>&nbsp;</p>
+<div id="cviz_0" style="display:inline-block"></div><script>CalcpadViz.structDraw("cviz_0",{elements:[{type:"support",x:0,y:0,supportType:"fixed"},{type:"spring",x1:0,y1:0,x2:4,y2:0,text:"k=500"},{type:"node",x:0,y:0,text:"1 (fijo)"},{type:"node",x:4,y:0,text:"2"},{type:"force",x:4,y:0,dir:"right",text:"F=25"},{type:"dim",x1:0,y1:0,x2:4,y2:0,text:"x = F/k"}],options:{width:550,height:180,title:"Paso 1",}});</script><p>&nbsp;</p>
+<p><span class="eq"><var>k</var> = 500</span></p>
+<p><span class="eq"><var>F</var> = 25</span></p>
+<p><span class="eq"><var>x</var> = <span class="dvc"><var>F</var><span class="dvl"></span><var>k</var></span> = <span class="dvc">25<span class="dvl"></span>500</span> = 0.05</span></p>
+<p>&nbsp;</p>
+<hr/> 
+<h3>Paso 2: La barra — Un resorte con area y longitud </h3>
+<p>Una barra de acero es un resorte con k = EA/L</p> 
+<p>&nbsp;</p>
+<div id="cviz_1" style="display:inline-block"></div><script>CalcpadViz.structDraw("cviz_1",{elements:[{type:"support",x:0,y:0,supportType:"fixed"},{type:"bar",x1:0,y1:0,x2:5,y2:0,text:"E=200000 A=0.001"},{type:"node",x:0,y:0,text:"1 (fijo)"},{type:"node",x:5,y:0,text:"2"},{type:"force",x:5,y:0,dir:"right",text:"P=50 kN"},{type:"dim",x1:0,y1:0,x2:5,y2:0,text:"L=2m"}],options:{width:550,height:180,title:"Paso 2",}});</script><p>&nbsp;</p>
+<p><span class="eq"><var>E</var><sub>b</sub> = 200000</span></p>
+<p><span class="eq"><var>A</var><sub>b</sub> = 0.001</span></p>
+<p><span class="eq"><var>L</var><sub>b</sub> = 2</span></p>
+<p><span class="eq"><var>k</var><sub>b</sub> = <span class="dvc"><var>E</var><sub>b</sub> · <var>A</var><sub>b</sub><span class="dvl"></span><var>L</var><sub>b</sub></span> = <span class="dvc">200000 · 0.001<span class="dvl"></span>2</span> = 100</span></p>
+<p><span class="eq"><var>P</var><sub>b</sub> = 50</span></p>
+<p><span class="eq"><var>u</var><sub>b</sub> = <span class="dvc"><var>P</var><sub>b</sub><span class="dvl"></span><var>k</var><sub>b</sub></span> = <span class="dvc">50<span class="dvl"></span>100</span> = 0.5</span></p>
+<p>&nbsp;</p>
+<p>Funciones de forma (lineales): </p>
+<!-- FORMEQ CALLED: len=21 --><p><span class="eq"><var>N</var><sub>1</sub>  ( <var>x</var> )  = 1 − <span class="dvc"><var>x</var><span class="dvl"></span><i>L</i></span></span></p>
+<!-- FORMEQ CALLED: len=17 --><p><span class="eq"><var>N</var><sub>2</sub>  ( <var>x</var> )  = <span class="dvc"><var>x</var><span class="dvl"></span><i>L</i></span></span></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div id="cviz_2" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_2",{series:[{x:[0,0.08333333333,0.1666666667,0.25,0.3333333333,0.4166666667,0.5,0.5833333333,0.6666666667,0.75,0.8333333333,0.9166666667,1,1.083333333,1.166666667,1.25,1.333333333,1.416666667,1.5,1.583333333,1.666666667,1.75,1.833333333,1.916666667,2],y:[1,0.9583333333,0.9166666667,0.875,0.8333333333,0.7916666667,0.75,0.7083333333,0.6666666667,0.625,0.5833333333,0.5416666667,0.5,0.4583333333,0.4166666667,0.375,0.3333333333,0.2916666667,0.25,0.2083333333,0.1666666667,0.125,0.08333333333,0.04166666667,0],type:"line",label:"N1 = 1-x/L"},{x:[0,0.08333333333,0.1666666667,0.25,0.3333333333,0.4166666667,0.5,0.5833333333,0.6666666667,0.75,0.8333333333,0.9166666667,1,1.083333333,1.166666667,1.25,1.333333333,1.416666667,1.5,1.583333333,1.666666667,1.75,1.833333333,1.916666667,2],y:[0,0.04166666667,0.08333333333,0.125,0.1666666667,0.2083333333,0.25,0.2916666667,0.3333333333,0.375,0.4166666667,0.4583333333,0.5,0.5416666667,0.5833333333,0.625,0.6666666667,0.7083333333,0.75,0.7916666667,0.8333333333,0.875,0.9166666667,0.9583333333,1],type:"line",label:"N2 = x/L"}],options:{width:600,height:350,title:"Shape Functions N1 and N2",xLabel:"x (m)",yLabel:"N(x)",}});</script><p>&nbsp;</p>
+<div id="cviz_3" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_3",{series:[{x:[0,0.08333333333,0.1666666667,0.25,0.3333333333,0.4166666667,0.5,0.5833333333,0.6666666667,0.75,0.8333333333,0.9166666667,1,1.083333333,1.166666667,1.25,1.333333333,1.416666667,1.5,1.583333333,1.666666667,1.75,1.833333333,1.916666667,2],y:[0,0.02083333333,0.04166666667,0.0625,0.08333333333,0.1041666667,0.125,0.1458333333,0.1666666667,0.1875,0.2083333333,0.2291666667,0.25,0.2708333333,0.2916666667,0.3125,0.3333333333,0.3541666667,0.375,0.3958333333,0.4166666667,0.4375,0.4583333333,0.4791666667,0.5],type:"line"}],options:{width:600,height:350,title:"Displacement u(x) = N2*u2",xLabel:"x (m)",yLabel:"u",}});</script><p>&nbsp;</p>
+<hr/> 
+<h3>Paso 3: Dos barras ensambladas </h3>
+<p>3 nodos, 2 barras. Nodo 1 fijo, F=100 en nodo 3</p> 
+<p>&nbsp;</p>
+<div id="cviz_4" style="display:inline-block"></div><script>CalcpadViz.structDraw("cviz_4",{elements:[{type:"support",x:0,y:0,supportType:"fixed"},{type:"bar",x1:0,y1:0,x2:3,y2:0,text:"Bar 1"},{type:"bar",x1:3,y1:0,x2:5,y2:0,text:"Bar 2"},{type:"node",x:0,y:0,text:"1 (fijo)"},{type:"node",x:3,y:0,text:"2"},{type:"node",x:5,y:0,text:"3"},{type:"force",x:5,y:0,dir:"right",text:"F=100"},{type:"dim",x1:0,y1:0,x2:3,y2:0,text:"L1=3"},{type:"dim",x1:3,y1:0,x2:5,y2:0,text:"L2=2"}],options:{width:600,height:200,title:"Paso 3",}});</script><p>&nbsp;</p>
+<p><span class="eq"><var>E</var><sub>3</sub> = 200000</span></p>
+<p><span class="eq"><var>A</var><sub>3a</sub> = 0.002</span></p>
+<p><span class="eq"><var>A</var><sub>3b</sub> = 0.001</span></p>
+<p><span class="eq"><var>L</var><sub>3a</sub> = 3</span></p>
+<p><span class="eq"><var>L</var><sub>3b</sub> = 2</span></p>
+<p><span class="eq"><var>k</var><sub>3a</sub> = <span class="dvc"><var>E</var><sub>3</sub> · <var>A</var><sub>3a</sub><span class="dvl"></span><var>L</var><sub>3a</sub></span> = <span class="dvc">200000 · 0.002<span class="dvl"></span>3</span> = 133.333333</span></p>
+<p><span class="eq"><var>k</var><sub>3b</sub> = <span class="dvc"><var>E</var><sub>3</sub> · <var>A</var><sub>3b</sub><span class="dvl"></span><var>L</var><sub>3b</sub></span> = <span class="dvc">200000 · 0.001<span class="dvl"></span>2</span> = 100</span></p>
+<p>&nbsp;</p>
+<p><span class="eq"><b><var>K</var></b><sub>3</sub> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td"><var>k</var><sub>3a</sub> + <var>k</var><sub>3b</sub></span><span class="td">-<var>k</var><sub>3b</sub></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">-<var>k</var><sub>3b</sub></span><span class="td"><var>k</var><sub>3b</sub></span><span class="td"></span></span></span> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">133.333333 + 100</span><span class="td">-100</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">-100</span><span class="td">100</span><span class="td"></span></span></span> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">233.333333</span><span class="td">-100</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-100</span><span class="td">100</span><span class="td"></span></span>
+</span>
+</span></p>
+<p><span class="eq"><var><span class="vec">⃗</span>F</var><sub>3</sub> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">100</span><span class="td"></span></span></span></span></p>
+<p><span class="eq"><var><span class="vec">⃗</span>u</var><sub>3s</sub> = <b><var>K</var></b><sub>3</sub><sup>−1</sup> · <var><span class="vec">⃗</span>F</var><sub>3</sub> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">0.75</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">1.75</span><span class="td"></span></span>
+</span>
+</span></p>
+<p><span class="eq"><var>u</var><sub>n2</sub> = <var><span class="vec">⃗</span>u</var><sub>3s.1</sub> = 0.75</span></p>
+<p><span class="eq"><var>u</var><sub>n3</sub> = <var><span class="vec">⃗</span>u</var><sub>3s.2</sub> = 1.75</span></p>
+<p>&nbsp;</p>
+<p><span class="eq"><var>N</var><sub>b1</sub> = <var>k</var><sub>3a</sub> · <var>u</var><sub>n2</sub> = 133.333333 · 0.75 = 100</span></p>
+<p><span class="eq"><var>N</var><sub>b2</sub> = <var>k</var><sub>3b</sub> ·  ( <var>u</var><sub>n3</sub> − <var>u</var><sub>n2</sub> )  = 100 ·  ( 1.75 − 0.75 )  = 100</span></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div id="cviz_5" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_5",{series:[{x:[0,0.1724137931,0.3448275862,0.5172413793,0.6896551724,0.8620689655,1.034482759,1.206896552,1.379310345,1.551724138,1.724137931,1.896551724,2.068965517,2.24137931,2.413793103,2.586206897,2.75862069,2.931034483,3.103448276,3.275862069,3.448275862,3.620689655,3.793103448,3.965517241,4.137931034,4.310344828,4.482758621,4.655172414,4.827586207,5],y:[0,0.04310344828,0.08620689655,0.1293103448,0.1724137931,0.2155172414,0.2586206897,0.3017241379,0.3448275862,0.3879310345,0.4310344828,0.474137931,0.5172413793,0.5603448276,0.6034482759,0.6465517241,0.6896551724,0.7327586207,0.8017241379,0.8879310345,0.974137931,1.060344828,1.146551724,1.232758621,1.318965517,1.405172414,1.49137931,1.577586207,1.663793103,1.75],type:"line"}],options:{width:600,height:350,title:"Displacement along 2 bars",xLabel:"x (m)",yLabel:"u",}});</script><p>&nbsp;</p>
+<hr/> 
+<h3>Paso 4: La viga en voladizo </h3>
+<p>La viga se dobla. Cada nodo tiene v (desplazamiento) y theta (rotacion).</p> 
+<p>&nbsp;</p>
+<div id="cviz_6" style="display:inline-block"></div><script>CalcpadViz.structDraw("cviz_6",{elements:[{type:"support",x:0,y:0,supportType:"fixed"},{type:"beam",x1:0,y1:0,x2:6,y2:0,text:"EI"},{type:"node",x:0,y:0,text:"1 (empotre)"},{type:"node",x:6,y:0,text:"2"},{type:"force",x:6,y:0,dir:"down",text:"P=10 kN"},{type:"dim",x1:0,y1:0,x2:6,y2:0,text:"L=3m"}],options:{width:550,height:220,title:"Paso 4",}});</script><p>&nbsp;</p>
+<p>Funciones de forma cubicas (Hermite): </p>
+<!-- FORMEQ CALLED: len=28 --><p><span class="eq"><var>N</var><sub>1</sub> = 1 − 3 · <var>ξ</var><sup>2</sup> + 2 · <var>ξ</var><sup>3</sup></span></p>
+<!-- FORMEQ CALLED: len=24 --><p><span class="eq"><var>N</var><sub>3</sub> = 3 · <var>ξ</var><sup>2</sup> − 2 · <var>ξ</var><sup>3</sup></span></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div id="cviz_7" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_7",{series:[{x:[0,0.02564102564,0.05128205128,0.07692307692,0.1025641026,0.1282051282,0.1538461538,0.1794871795,0.2051282051,0.2307692308,0.2564102564,0.2820512821,0.3076923077,0.3333333333,0.358974359,0.3846153846,0.4102564103,0.4358974359,0.4615384615,0.4871794872,0.5128205128,0.5384615385,0.5641025641,0.5897435897,0.6153846154,0.641025641,0.6666666667,0.6923076923,0.7179487179,0.7435897436,0.7692307692,0.7948717949,0.8205128205,0.8461538462,0.8717948718,0.8974358974,0.9230769231,0.9487179487,0.9743589744,1],y:[1,0.9980613294,0.9923801817,0.983158853,0.9705996392,0.9549048366,0.936276741,0.9149176486,0.8910298555,0.8648156577,0.8364773513,0.8062172323,0.7742375967,0.7407407407,0.7059289604,0.6700045517,0.6331698107,0.5956270335,0.5575785162,0.5192265547,0.4807734453,0.4424214838,0.4043729665,0.3668301893,0.3299954483,0.2940710396,0.2592592593,0.2257624033,0.1937827677,0.1635226487,0.1351843423,0.1089701445,0.08508235135,0.06372325899,0.04509516344,0.02940036076,0.01684114702,0.007619818271,0.001938670578,0],type:"line",label:"N1 (v at i)"},{x:[0,0.02564102564,0.05128205128,0.07692307692,0.1025641026,0.1282051282,0.1538461538,0.1794871795,0.2051282051,0.2307692308,0.2564102564,0.2820512821,0.3076923077,0.3333333333,0.358974359,0.3846153846,0.4102564103,0.4358974359,0.4615384615,0.4871794872,0.5128205128,0.5384615385,0.5641025641,0.5897435897,0.6153846154,0.641025641,0.6666666667,0.6923076923,0.7179487179,0.7435897436,0.7692307692,0.7948717949,0.8205128205,0.8461538462,0.8717948718,0.8974358974,0.9230769231,0.9487179487,0.9743589744,1],y:[0,0.02434295925,0.04615721775,0.06554392353,0.08260422462,0.09743926904,0.1101502048,0.12083818,0.1296043426,0.1365498407,0.1417758222,0.1453834353,0.1474738279,0.1481481481,0.147507544,0.1456531634,0.1426861545,0.1387076653,0.1338188439,0.1281208382,0.1217147963,0.1147018662,0.1071831959,0.09925993358,0.09103322713,0.08260422462,0.07407407407,0.06554392353,0.05711492102,0.04888821457,0.04096495221,0.03344628197,0.02643335188,0.02002730997,0.01432930427,0.009440482813,0.005461993628,0.002494984744,0.0006406041909,0],type:"line",label:"N2 (theta at i)"},{x:[0,0.02564102564,0.05128205128,0.07692307692,0.1025641026,0.1282051282,0.1538461538,0.1794871795,0.2051282051,0.2307692308,0.2564102564,0.2820512821,0.3076923077,0.3333333333,0.358974359,0.3846153846,0.4102564103,0.4358974359,0.4615384615,0.4871794872,0.5128205128,0.5384615385,0.5641025641,0.5897435897,0.6153846154,0.641025641,0.6666666667,0.6923076923,0.7179487179,0.7435897436,0.7692307692,0.7948717949,0.8205128205,0.8461538462,0.8717948718,0.8974358974,0.9230769231,0.9487179487,0.9743589744,1],y:[0,0.001938670578,0.007619818271,0.01684114702,0.02940036076,0.04509516344,0.06372325899,0.08508235135,0.1089701445,0.1351843423,0.1635226487,0.1937827677,0.2257624033,0.2592592593,0.2940710396,0.3299954483,0.3668301893,0.4043729665,0.4424214838,0.4807734453,0.5192265547,0.5575785162,0.5956270335,0.6331698107,0.6700045517,0.7059289604,0.7407407407,0.7742375967,0.8062172323,0.8364773513,0.8648156577,0.8910298555,0.9149176486,0.936276741,0.9549048366,0.9705996392,0.983158853,0.9923801817,0.9980613294,1],type:"line",label:"N3 (v at j)"},{x:[0,0.02564102564,0.05128205128,0.07692307692,0.1025641026,0.1282051282,0.1538461538,0.1794871795,0.2051282051,0.2307692308,0.2564102564,0.2820512821,0.3076923077,0.3333333333,0.358974359,0.3846153846,0.4102564103,0.4358974359,0.4615384615,0.4871794872,0.5128205128,0.5384615385,0.5641025641,0.5897435897,0.6153846154,0.641025641,0.6666666667,0.6923076923,0.7179487179,0.7435897436,0.7692307692,0.7948717949,0.8205128205,0.8461538462,0.8717948718,0.8974358974,0.9230769231,0.9487179487,0.9743589744,1],y:[-0,-0.0006406041909,-0.002494984744,-0.005461993628,-0.009440482813,-0.01432930427,-0.02002730997,-0.02643335188,-0.03344628197,-0.04096495221,-0.04888821457,-0.05711492102,-0.06554392353,-0.07407407407,-0.08260422462,-0.09103322713,-0.09925993358,-0.1071831959,-0.1147018662,-0.1217147963,-0.1281208382,-0.1338188439,-0.1387076653,-0.1426861545,-0.1456531634,-0.147507544,-0.1481481481,-0.1474738279,-0.1453834353,-0.1417758222,-0.1365498407,-0.1296043426,-0.12083818,-0.1101502048,-0.09743926904,-0.08260422462,-0.06554392353,-0.04615721775,-0.02434295925,0],type:"line",label:"N4 (theta at j)"}],options:{width:600,height:350,title:"Hermite Shape Functions",xLabel:"xi=x/L",yLabel:"N(xi)",}});</script><p>&nbsp;</p>
+<p>Ejemplo numerico: </p>
+<p><span class="eq"><var>E</var><sub>v</sub> = 200000</span></p>
+<p><span class="eq"><var>I</var><sub>v</sub> = 8.333 · 10<sup>-6</sup> = 8.333×10<sup>-6</sup></span></p>
+<p><span class="eq"><var>L</var><sub>v</sub> = 3</span></p>
+<p><span class="eq"><var>P</var><sub>v</sub> = 10</span></p>
+<p><span class="eq"><var>cv</var> = <span class="dvc"><var>E</var><sub>v</sub> · <var>I</var><sub>v</sub><span class="dvl"></span><var>L</var><sub>v</sub><sup>3</sup></span> = <span class="dvc">200000 · 8.333×10<sup>-6</sup><span class="dvl"></span>3<sup>3</sup></span> = 0.06172593</span></p>
+<p><span class="eq"><b><var>Kr</var></b> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td"><var>cv</var> · 12</span><span class="td">-<var>cv</var> · 6 · <var>L</var><sub>v</sub></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">-<var>cv</var> · 6 · <var>L</var><sub>v</sub></span><span class="td"><var>cv</var> · 4 · <var>L</var><sub>v</sub><sup>2</sup></span><span class="td"></span></span></span> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">0.06172593 · 12</span><span class="td">-0.06172593 · 6 · 3</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">-0.06172593 · 6 · 3</span><span class="td">0.06172593 · 4 · 3<sup>2</sup></span><span class="td"></span></span></span> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">0.7407111</span><span class="td">-1.111067</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-1.111067</span><span class="td">2.222133</span><span class="td"></span></span>
+</span>
+</span></p>
+<p><span class="eq"><var><span class="vec">⃗</span>Fv</var> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">-<var>P</var><sub>v</sub></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"></span></span></span> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">-10</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"></span></span></span> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">-10</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">0</span><span class="td"></span></span>
+</span>
+</span></p>
+<p><span class="eq"><var><span class="vec">⃗</span>uv</var> = <b><var>Kr</var></b><sup>−1</sup> · <var><span class="vec">⃗</span>Fv</var> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">-54.00216</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-27.00108</span><span class="td"></span></span>
+</span>
+</span></p>
+<p><span class="eq"><var>v</var><sub>tip</sub> = <var><span class="vec">⃗</span>uv</var><sub>1</sub> = -54.00216</span></p>
+<p><span class="eq"><var>θ</var><sub>tip</sub> = <var><span class="vec">⃗</span>uv</var><sub>2</sub> = -27.00108</span></p>
+<p>&nbsp;</p>
+<p><span class="eq"><var>v</var><sub>exact</sub> = <span class="dvc">-<var>P</var><sub>v</sub> · <var>L</var><sub>v</sub><sup>3</sup><span class="dvl"></span>3 · <var>E</var><sub>v</sub> · <var>I</var><sub>v</sub></span> = <span class="dvc">-10 · 3<sup>3</sup><span class="dvl"></span>3 · 200000 · 8.333×10<sup>-6</sup></span> = -54.00216</span></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div id="cviz_8" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_8",{series:[{x:[0,0.07692307692,0.1538461538,0.2307692308,0.3076923077,0.3846153846,0.4615384615,0.5384615385,0.6153846154,0.6923076923,0.7692307692,0.8461538462,0.9230769231,1,1.076923077,1.153846154,1.230769231,1.307692308,1.384615385,1.461538462,1.538461538,1.615384615,1.692307692,1.769230769,1.846153846,1.923076923,2,2.076923077,2.153846154,2.230769231,2.307692308,2.384615385,2.461538462,2.538461538,2.615384615,2.692307692,2.769230769,2.846153846,2.923076923,3],y:[0,-0.05280138379,-0.2093847978,-0.4670191359,-0.8229732922,-1.27451616,-1.818916635,-2.453443609,-3.175365977,-3.981952633,-4.87047247,-5.838194383,-6.882387266,-8.000320013,-9.189261517,-10.44648067,-11.76924637,-13.15482751,-14.60049299,-16.10351169,-17.66115251,-19.27068435,-20.92937609,-22.63449664,-24.38331489,-26.17309972,-28.00112004,-29.86464475,-31.76094272,-33.68728286,-35.64093406,-37.61916521,-39.61924522,-41.63844296,-43.67402734,-45.72326726,-47.78343159,-49.85178925,-51.92560911,-54.00216009],type:"line"}],options:{width:600,height:350,title:"Cantilever Deflection",xLabel:"x (m)",yLabel:"v (m)",}});</script><p>&nbsp;</p>
+<div id="cviz_9" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_9",{series:[{x:[0,0.07692307692,0.1538461538,0.2307692308,0.3076923077,0.3846153846,0.4615384615,0.5384615385,0.6153846154,0.6923076923,0.7692307692,0.8461538462,0.9230769231,1,1.076923077,1.153846154,1.230769231,1.307692308,1.384615385,1.461538462,1.538461538,1.615384615,1.692307692,1.769230769,1.846153846,1.923076923,2,2.076923077,2.153846154,2.230769231,2.307692308,2.384615385,2.461538462,2.538461538,2.615384615,2.692307692,2.769230769,2.846153846,2.923076923,3],y:[-30,-29.23076923,-28.46153846,-27.69230769,-26.92307692,-26.15384615,-25.38461538,-24.61538462,-23.84615385,-23.07692308,-22.30769231,-21.53846154,-20.76923077,-20,-19.23076923,-18.46153846,-17.69230769,-16.92307692,-16.15384615,-15.38461538,-14.61538462,-13.84615385,-13.07692308,-12.30769231,-11.53846154,-10.76923077,-10,-9.230769231,-8.461538462,-7.692307692,-6.923076923,-6.153846154,-5.384615385,-4.615384615,-3.846153846,-3.076923077,-2.307692308,-1.538461538,-0.7692307692,-0],type:"line"}],options:{width:600,height:350,title:"Bending Moment M(x)",xLabel:"x (m)",yLabel:"M (kN*m)",}});</script><p>&nbsp;</p>
+<hr/> 
+<h3>Paso 5: Viga simplemente apoyada </h3>
+<p>&nbsp;</p>
+<div id="cviz_10" style="display:inline-block"></div><script>CalcpadViz.structDraw("cviz_10",{elements:[{type:"support",x:0,y:0,supportType:"pin"},{type:"support",x:8,y:0,supportType:"roller"},{type:"beam",x1:0,y1:0,x2:8,y2:0,text:"EI"},{type:"node",x:0,y:0,text:"1"},{type:"node",x:4,y:0,text:"2"},{type:"node",x:8,y:0,text:"3"},{type:"force",x:4,y:0,dir:"down",text:"P=20 kN"},{type:"dim",x1:0,y1:0,x2:8,y2:0,text:"L=6m"}],options:{width:600,height:220,title:"Paso 5",}});</script><p>&nbsp;</p>
+<p><span class="eq"><var>L</var><sub>sa</sub> = 6</span></p>
+<p><span class="eq"><var>P</var><sub>sa</sub> = 20</span></p>
+<p><span class="eq"><var>E</var><sub>sa</sub> = 200000</span></p>
+<p><span class="eq"><var>I</var><sub>sa</sub> = 5 · 10<sup>-5</sup> = 5×10<sup>-5</sup></span></p>
+<p><span class="eq"><var>v</var><sub>mid</sub> = <span class="dvc"><var>P</var><sub>sa</sub> · <var>L</var><sub>sa</sub><sup>3</sup><span class="dvl"></span>48 · <var>E</var><sub>sa</sub> · <var>I</var><sub>sa</sub></span> = <span class="dvc">20 · 6<sup>3</sup><span class="dvl"></span>48 · 200000 · 5×10<sup>-5</sup></span> = 9</span></p>
+<p><span class="eq"><var>M</var><sub>max</sub> = <span class="dvc"><var>P</var><sub>sa</sub> · <var>L</var><sub>sa</sub><span class="dvl"></span>4</span> = <span class="dvc">20 · 6<span class="dvl"></span>4</span> = 30</span></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div id="cviz_11" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_11",{series:[{x:[0,0.1538461538,0.3076923077,0.4615384615,0.6153846154,0.7692307692,0.9230769231,1.076923077,1.230769231,1.384615385,1.538461538,1.692307692,1.846153846,2,2.153846154,2.307692308,2.461538462,2.615384615,2.769230769,2.923076923,3.076923077,3.230769231,3.384615385,3.538461538,3.692307692,3.846153846,4,4.153846154,4.307692308,4.461538462,4.615384615,4.769230769,4.923076923,5.076923077,5.230769231,5.384615385,5.538461538,5.692307692,5.846153846,6],y:[-0,-0.6917008041,-1.379760279,-2.060537096,-2.730389926,-3.385677439,-4.022758307,-4.6379912,-5.22773479,-5.788347747,-6.316188742,-6.807616447,-7.258989531,-7.666666667,-8.027006524,-8.336367774,-8.591109088,-8.787589137,-8.922166591,-8.991200121,-8.991200121,-8.922166591,-8.787589137,-8.591109088,-8.336367774,-8.027006524,-7.666666667,-7.258989531,-6.807616447,-6.316188742,-5.788347747,-5.22773479,-4.6379912,-4.022758307,-3.385677439,-2.730389926,-2.060537096,-1.379760279,-0.6917008041,-0],type:"line"}],options:{width:600,height:350,title:"Deflection v(x)",xLabel:"x (m)",yLabel:"v (m)",}});</script><p>&nbsp;</p>
+<div id="cviz_12" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_12",{series:[{x:[0,0.1538461538,0.3076923077,0.4615384615,0.6153846154,0.7692307692,0.9230769231,1.076923077,1.230769231,1.384615385,1.538461538,1.692307692,1.846153846,2,2.153846154,2.307692308,2.461538462,2.615384615,2.769230769,2.923076923,3.076923077,3.230769231,3.384615385,3.538461538,3.692307692,3.846153846,4,4.153846154,4.307692308,4.461538462,4.615384615,4.769230769,4.923076923,5.076923077,5.230769231,5.384615385,5.538461538,5.692307692,5.846153846,6],y:[0,1.538461538,3.076923077,4.615384615,6.153846154,7.692307692,9.230769231,10.76923077,12.30769231,13.84615385,15.38461538,16.92307692,18.46153846,20,21.53846154,23.07692308,24.61538462,26.15384615,27.69230769,29.23076923,29.23076923,27.69230769,26.15384615,24.61538462,23.07692308,21.53846154,20,18.46153846,16.92307692,15.38461538,13.84615385,12.30769231,10.76923077,9.230769231,7.692307692,6.153846154,4.615384615,3.076923077,1.538461538,0],type:"line",label:"Moment M"},{x:[0,0.1538461538,0.3076923077,0.4615384615,0.6153846154,0.7692307692,0.9230769231,1.076923077,1.230769231,1.384615385,1.538461538,1.692307692,1.846153846,2,2.153846154,2.307692308,2.461538462,2.615384615,2.769230769,2.923076923,3.076923077,3.230769231,3.384615385,3.538461538,3.692307692,3.846153846,4,4.153846154,4.307692308,4.461538462,4.615384615,4.769230769,4.923076923,5.076923077,5.230769231,5.384615385,5.538461538,5.692307692,5.846153846,6],y:[10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10],type:"line",label:"Shear V"}],options:{width:600,height:350,title:"Moment and Shear Diagrams",xLabel:"x (m)",yLabel:"Value",}});</script><p>&nbsp;</p>
+<hr/> 
+<h3>Paso 6: El portico — Todo junto </h3>
+<p>&nbsp;</p>
+<div id="cviz_13" style="display:inline-block"></div><script>CalcpadViz.structDraw("cviz_13",{elements:[{type:"support",x:0,y:0,supportType:"fixed"},{type:"support",x:6,y:0,supportType:"fixed"},{type:"beam",x1:0,y1:0,x2:0,y2:4,text:"Col 1"},{type:"beam",x1:6,y1:0,x2:6,y2:4,text:"Col 2"},{type:"beam",x1:0,y1:4,x2:6,y2:4,text:"Viga"},{type:"node",x:0,y:0,text:"1"},{type:"node",x:6,y:0,text:"2"},{type:"node",x:0,y:4,text:"3"},{type:"node",x:6,y:4,text:"4"},{type:"force",x:0,y:4,dir:"right",text:"F=10 kN"}],options:{width:550,height:350,title:"Paso 6",}});</script><p>&nbsp;</p>
+<p><span class="eq"><var>E</var><sub>f</sub> = 200000</span></p>
+<p><span class="eq"><var>A</var><sub>col</sub> = 0.09</span></p>
+<p><span class="eq"><var>I</var><sub>col</sub> = 6.75 · 10<sup>-4</sup> = 0.000675</span></p>
+<p><span class="eq"><var>L</var><sub>col</sub> = 4</span></p>
+<p><span class="eq"><var>A</var><sub>bm</sub> = 0.15</span></p>
+<p><span class="eq"><var>I</var><sub>bm</sub> = 3.125 · 10<sup>-3</sup> = 0.003125</span></p>
+<p><span class="eq"><var>L</var><sub>bm</sub> = 6</span></p>
+<p>&nbsp;</p>
+<p><span class="eq"><var>kk2</var> = <span class="dvc">12 · <var>E</var><sub>f</sub> · <var>I</var><sub>col</sub><span class="dvl"></span><var>L</var><sub>col</sub><sup>3</sup></span> = <span class="dvc">12 · 200000 · 0.000675<span class="dvl"></span>4<sup>3</sup></span> = 25.3125</span></p>
+<p><span class="eq"><var>kk3</var> = <span class="dvc">6 · <var>E</var><sub>f</sub> · <var>I</var><sub>col</sub><span class="dvl"></span><var>L</var><sub>col</sub><sup>2</sup></span> = <span class="dvc">6 · 200000 · 0.000675<span class="dvl"></span>4<sup>2</sup></span> = 50.625</span></p>
+<p><span class="eq"><var>kk4</var> = <span class="dvc">4 · <var>E</var><sub>f</sub> · <var>I</var><sub>col</sub><span class="dvl"></span><var>L</var><sub>col</sub></span> = <span class="dvc">4 · 200000 · 0.000675<span class="dvl"></span>4</span> = 135</span></p>
+<p><span class="eq"><var>kk5</var> = <span class="dvc">2 · <var>E</var><sub>f</sub> · <var>I</var><sub>col</sub><span class="dvl"></span><var>L</var><sub>col</sub></span> = <span class="dvc">2 · 200000 · 0.000675<span class="dvl"></span>4</span> = 67.5</span></p>
+<p><span class="eq"><var>eac</var> = <span class="dvc"><var>E</var><sub>f</sub> · <var>A</var><sub>col</sub><span class="dvl"></span><var>L</var><sub>col</sub></span> = <span class="dvc">200000 · 0.09<span class="dvl"></span>4</span> = 4500</span></p>
+<p><span class="eq"><var>bv1</var> = <span class="dvc"><var>E</var><sub>f</sub> · <var>A</var><sub>bm</sub><span class="dvl"></span><var>L</var><sub>bm</sub></span> = <span class="dvc">200000 · 0.15<span class="dvl"></span>6</span> = 5000</span></p>
+<p><span class="eq"><var>bv2</var> = <span class="dvc">12 · <var>E</var><sub>f</sub> · <var>I</var><sub>bm</sub><span class="dvl"></span><var>L</var><sub>bm</sub><sup>3</sup></span> = <span class="dvc">12 · 200000 · 0.003125<span class="dvl"></span>6<sup>3</sup></span> = 34.722222</span></p>
+<p><span class="eq"><var>bv3</var> = <span class="dvc">6 · <var>E</var><sub>f</sub> · <var>I</var><sub>bm</sub><span class="dvl"></span><var>L</var><sub>bm</sub><sup>2</sup></span> = <span class="dvc">6 · 200000 · 0.003125<span class="dvl"></span>6<sup>2</sup></span> = 104.166667</span></p>
+<p><span class="eq"><var>bv4</var> = <span class="dvc">4 · <var>E</var><sub>f</sub> · <var>I</var><sub>bm</sub><span class="dvl"></span><var>L</var><sub>bm</sub></span> = <span class="dvc">4 · 200000 · 0.003125<span class="dvl"></span>6</span> = 416.666667</span></p>
+<p><span class="eq"><var>bv5</var> = <span class="dvc">2 · <var>E</var><sub>f</sub> · <var>I</var><sub>bm</sub><span class="dvl"></span><var>L</var><sub>bm</sub></span> = <span class="dvc">2 · 200000 · 0.003125<span class="dvl"></span>6</span> = 208.333333</span></p>
+<p>&nbsp;</p>
+<p><span class="eq"><b><var>Kff</var></b> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td"><var>kk2</var> + <var>bv1</var></span><span class="td">0</span><span class="td">-<var>kk3</var></span><span class="td">-<var>bv1</var></span><span class="td">0</span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"><var>eac</var> + <var>bv2</var></span><span class="td"><var>bv3</var></span><span class="td">0</span><span class="td">-<var>bv2</var></span><span class="td"><var>bv3</var></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">-<var>kk3</var></span><span class="td"><var>bv3</var></span><span class="td"><var>kk4</var> + <var>bv4</var></span><span class="td">0</span><span class="td">-<var>bv3</var></span><span class="td"><var>bv5</var></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">-<var>bv1</var></span><span class="td">0</span><span class="td">0</span><span class="td"><var>kk2</var> + <var>bv1</var></span><span class="td">0</span><span class="td"><var>kk3</var></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td">-<var>bv2</var></span><span class="td">-<var>bv3</var></span><span class="td">0</span><span class="td"><var>eac</var> + <var>bv2</var></span><span class="td">-<var>bv3</var></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"><var>bv3</var></span><span class="td"><var>bv5</var></span><span class="td"><var>kk3</var></span><span class="td">-<var>bv3</var></span><span class="td"><var>kk4</var> + <var>bv4</var></span><span class="td"></span></span></span> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">25.3125 + 5000</span><span class="td">0</span><span class="td">-50.625</span><span class="td">-5000</span><span class="td">0</span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td">4500 + 34.722222</span><span class="td">104.166667</span><span class="td">0</span><span class="td">-34.722222</span><span class="td">104.166667</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">-50.625</span><span class="td">104.166667</span><span class="td">135 + 416.666667</span><span class="td">0</span><span class="td">-104.166667</span><span class="td">208.333333</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">-5000</span><span class="td">0</span><span class="td">0</span><span class="td">25.3125 + 5000</span><span class="td">0</span><span class="td">50.625</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td">-34.722222</span><span class="td">-104.166667</span><span class="td">0</span><span class="td">4500 + 34.722222</span><span class="td">-104.166667</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td">104.166667</span><span class="td">208.333333</span><span class="td">50.625</span><span class="td">-104.166667</span><span class="td">135 + 416.666667</span><span class="td"></span></span></span> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">5025.3125</span><span class="td">0</span><span class="td">-50.625</span><span class="td">-5000</span><span class="td">0</span><span class="td">0</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">0</span><span class="td">4534.722222</span><span class="td">104.166667</span><span class="td">0</span><span class="td">-34.722222</span><span class="td">104.166667</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-50.625</span><span class="td">104.166667</span><span class="td">551.666667</span><span class="td">0</span><span class="td">-104.166667</span><span class="td">208.333333</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-5000</span><span class="td">0</span><span class="td">0</span><span class="td">5025.3125</span><span class="td">0</span><span class="td">50.625</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">0</span><span class="td">-34.722222</span><span class="td">-104.166667</span><span class="td">0</span><span class="td">4534.722222</span><span class="td">-104.166667</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">0</span><span class="td">104.166667</span><span class="td">208.333333</span><span class="td">50.625</span><span class="td">-104.166667</span><span class="td">551.666667</span><span class="td"></span></span>
+</span>
+</span></p>
+<p>&nbsp;</p>
+<p><span class="eq"><var><span class="vec">⃗</span>Ff</var> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">10</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"></span></span></span></span></p>
+<p><span class="eq"><var><span class="vec">⃗</span>uf</var> = <b><var>Kff</var></b><sup>−1</sup> · <var><span class="vec">⃗</span>Ff</var> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">0.280646</span><span class="td">-1.534366×10<sup>-6</sup></span><span class="td">0.04134174</span><span class="td">0.2796481</span><span class="td">1.534366×10<sup>-6</sup></span><span class="td">-0.04127444</span><span class="td"></span></span>
+</span>
+</span></p>
+<p><span class="eq"><var>Δ</var><sub>lat</sub> = <var><span class="vec">⃗</span>uf</var><sub>1</sub> = 0.280646</span></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div id="cviz_14" style="display:inline-block"></div><script>CalcpadViz.frameViewer("cviz_14",{nodes:[[0,0,0],[6,0,0],[0,4,0],[6,4,0]],elements:[[0,2],[1,3],[2,3]],supports:[0,1],deformed:[[0,0,0],[0,0,0],[0.2806459507,-1.534365641E-06,0],[0.2796481357,1.534365641E-06,0]],moments:[[16.99826892,19.78883659],[-16.94321128,-19.7292357],[8.626565916,-8.585138043]],options:{width:800,height:500,defScale:10,diagScale:0.05,title:"Moment Diagram",}});</script> </body></html>

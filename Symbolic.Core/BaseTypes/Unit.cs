@@ -1082,7 +1082,17 @@ namespace Calcpad.Core
             if (ReferenceEquals(_powers, other._powers))
                 return true;
 
-            return _powers.AsSpan().SequenceEqual(other._powers);
+            // Compare powers with length normalization (trailing zeros don't matter)
+            var pa = _powers;
+            var pb = other._powers;
+            var n = Math.Max(pa.Length, pb.Length);
+            for (int i = 0; i < n; i++)
+            {
+                var a = i < pa.Length ? pa[i] : 0f;
+                var b = i < pb.Length ? pb[i] : 0f;
+                if (a != b) return false;
+            }
+            return true;
         }
 
         internal bool IsMultiple(Unit other)
@@ -1122,10 +1132,17 @@ namespace Calcpad.Core
 
             var factor = 1d;
             var uf = u._factors;
-            for (int i = 0, n = Length; i < n; ++i)
+            var n = Math.Min(Length, u.Length);
+            for (int i = 0; i < n; ++i)
             {
                 if (_powers[i] != 0f)
                     factor *= MyPow(_factors[i] / uf[i], _powers[i]);
+            }
+            // Handle extra dimensions in source that are not in target
+            for (int i = n; i < Length; ++i)
+            {
+                if (_powers[i] != 0f)
+                    factor *= MyPow(_factors[i], _powers[i]);
             }
             return factor;
         }

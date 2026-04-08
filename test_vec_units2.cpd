@@ -1,0 +1,39 @@
+"Test vectores y matrices con unidades - corregido
+
+"1. Vector - unidad en ultimo elemento (aplica a todos)
+v_1 = [1000; -500 kN/m]
+v_1
+
+"2. Matriz - unidad en ultimo elemento
+K_1 = [1000; -500|-500; 1500 kN/m]
+K_1
+
+"3. Vector de fuerza
+F_1 = [10; -5 kN]
+F_1
+
+"4. Solucion con unidades
+u_1 = lsolve(K_1; F_1)
+u_1
+'Convertir a mm:
+u_1 | [mm; mm]
+'Adimensionalizar a mm:
+u_1 & [mm; mm]
+
+"5. DOFs mixtos con &
+Z = [0.005; 0.001; -0.003 m]
+'Original:
+Z
+'Con & para unidades mixtas:
+Z & [mm; rad; mm]
+
+"6. Matriz rigidez con & por fila/columna
+K_2 = [500; 100|100; 800]
+K_2 & [kN/m; kN/rad|kN/rad; kN*m/rad]
+
+"7. F = K * u todo con unidades
+K_3 = [200; -100|-100; 300 kN/m]
+u_3 = [0.01; 0.02 m]
+F_3 = K_3*u_3
+F_3
+F_3 & [kN; kN]

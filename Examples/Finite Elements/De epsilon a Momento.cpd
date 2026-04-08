@@ -1,0 +1,280 @@
+"De ε a M: Como la deformacion genera el Momento
+"El camino completo: ε → σ → M = EI·κ
+'<hr/>
+
+"PASO 1: Ya sabemos que ε = -y/ρ
+
+'<p>En el archivo anterior vimos que al doblar la viga, cada fibra</p>
+'<p>se deforma proporcionalmente a su distancia del eje neutro:</p>
+
+#deq ε = -y/ρ
+
+'<p>Arriba (y positivo): la fibra se ACORTA (ε negativo = compresion)</p>
+'<p>Abajo (y negativo): la fibra se ALARGA (ε positivo = tension)</p>
+'<p>En el neutro (y = 0): NO cambia (ε = 0)</p>
+
+#svg 400 160
+.fillrect 0 0 400 160 #fafafa 1
+.text 200 15 Distribucion_de_ε_(lineal) 10 black middle bold
+.line 200 30 200 140 gray 0.5
+.text 200 25 0 7 gray middle
+.line 200 45 140 45 #cc0000 2
+.line 200 65 160 65 #cc6600 1
+.line 200 85 200 85 green 2
+.line 200 105 240 105 #6666cc 1
+.line 200 125 260 125 #0000cc 2
+.text 270 48 y=+10:_ε=-0.02 8 #cc0000 start
+.text 270 88 y=0:_ε=0 8 green start bold
+.text 270 128 y=-10:_ε=+0.02 8 #0000cc start
+.text 100 88 Compresion 8 #cc0000 middle
+.text 300 88 Tension 8 #0000cc middle
+.text 200 152 La_deformacion_varia_LINEALMENTE_con_y 9 black middle bold
+#end svg
+
+'<hr/>
+"PASO 2: La Ley de Hooke — σ = E·ε
+
+'<p>Robert Hooke (1678) descubrio que los materiales se comportan como resortes:</p>
+'<p>la fuerza es PROPORCIONAL a la deformacion.</p>
+
+#svg 420 170
+.fillrect 0 0 420 170 #fafafa 1
+.text 210 15 Ley_de_Hooke:_esfuerzo_=_E_×_deformacion 10 black middle bold
+.line 40 140 380 140 black 1
+.line 40 140 40 30 black 1
+.text 25 85 σ 12 black middle bold
+.text 210 155 ε 12 black middle bold
+.line 40 140 340 40 #0066cc 2.5
+.text 200 75 pendiente_=_E 10 #0066cc middle bold
+.text 200 95 (modulo_de_elasticidad) 8 #0066cc middle
+.text 350 40 lineal 8 #0066cc start
+#end svg
+
+'<p>E es el modulo de elasticidad (Young, 1807).</p>
+'<p>Para acero: E ≈ 200,000 MPa. Para hormigon: E ≈ 25,000 MPa.</p>
+'<p>La formula es simplemente:</p>
+
+#deq σ = E*ε
+
+'<p>Si ε = -0.02 y E = 200,000 MPa:</p>
+'<p>σ = 200,000 × (-0.02) = -4,000 MPa (compresion)</p>
+
+'<hr/>
+"PASO 3: La distribucion de σ tambien es LINEAL
+
+'<p>Si ε varia linealmente con y, y σ = E·ε, entonces σ tambien es lineal:</p>
+
+#deq σ = E*ε = E*(-y/ρ) = -E*y/ρ
+
+#svg 420 200
+.fillrect 0 0 420 200 #fafafa 1
+.text 105 15 Deformacion_ε 10 black middle bold
+.text 315 15 Esfuerzo_σ_=_E·ε 10 black middle bold
+.line 105 30 105 180 gray 0.5
+.line 315 30 315 180 gray 0.5
+.rect 30 35 150 140 none 0 gray 0.3
+.rect 240 35 150 140 none 0 gray 0.3
+.line 105 40 60 40 #cc0000 2
+.line 105 105 105 105 green 2
+.line 105 170 150 170 #0000cc 2
+.line 60 40 150 170 gray 0.5
+.line 315 40 260 40 #cc0000 2
+.line 315 105 315 105 green 2
+.line 315 170 370 170 #0000cc 2
+.line 260 40 370 170 gray 0.5
+.circle 105 105 3 green 1
+.circle 315 105 3 green 1
+.text 50 38 -ε 9 #cc0000 end
+.text 155 173 +ε 9 #0000cc start
+.text 250 38 -σ 9 #cc0000 end
+.text 375 173 +σ 9 #0000cc start
+.text 105 192 ε_lineal 8 gray middle
+.text 315 192 σ_=_MISMA_forma 8 gray middle
+.darrow 175 105 235 105 black 1.5
+.text 205 98 ×E 10 black middle bold
+#end svg
+
+'<p>Multiplicar por E solo ESCALA los valores, no cambia la forma.</p>
+'<p>Arriba: compresion (σ negativo). Abajo: tension (σ positivo).</p>
+
+'<hr/>
+"PASO 4: Que produce el esfuerzo? — UNA FUERZA en cada fibra
+
+'<p>Cada fibra tiene un area dA. El esfuerzo σ sobre esa area</p>
+'<p>produce una fuerza:</p>
+
+#deq dF = σ*dA
+
+'<p>Arriba: fuerzas de COMPRESION (empujan la fibra).</p>
+'<p>Abajo: fuerzas de TENSION (jalan la fibra).</p>
+
+#svg 420 220
+.fillrect 0 0 420 220 #fafafa 1
+.text 210 15 Fuerzas_internas_en_la_seccion 10 black middle bold
+.rect 140 40 140 150 #e8e8e8 0.5 black 1
+.line 140 115 280 115 green 2
+.text 285 118 Neutro 8 green start
+.arrow 280 55 320 55 #cc0000 1.5
+.arrow 280 75 310 75 #cc0000 1.2
+.arrow 280 95 300 95 #cc0000 1
+.arrow 140 135 100 135 #0000cc 1
+.arrow 140 155 90 155 #0000cc 1.2
+.arrow 140 175 80 175 #0000cc 1.5
+.text 325 58 σ·dA_(compresion) 8 #cc0000 start
+.text 60 178 σ·dA_(tension) 8 #0000cc end
+.text 210 205 Las_fuerzas_de_arriba_y_abajo_son_IGUALES_y_opuestas 9 black middle
+.text 210 218 (no_hay_fuerza_neta,_solo_GIRO) 9 black middle bold
+#end svg
+
+'<p>Las fuerzas de compresion arriba y tension abajo son IGUALES en magnitud</p>
+'<p>(por eso el eje neutro esta en el centro: la suma de fuerzas = 0).</p>
+'<p>Pero estan SEPARADAS → producen un PAR (momento).</p>
+
+'<hr/>
+"PASO 5: De fuerzas a MOMENTO — el par de fuerzas
+
+'<p>Cada fuerza dF a distancia y del neutro produce un momentito:</p>
+
+#deq dM = y*dF = y*σ*dA
+
+'<p>El momento total es la suma de TODOS los momentitos:</p>
+
+#deq M = ∫*y*σ*dA
+
+#svg 420 220
+.fillrect 0 0 420 220 #fafafa 1
+.text 210 15 Cada_fibra_aporta_al_momento 10 black middle bold
+.rect 160 35 100 160 #e8e8e8 0.5 black 1
+.line 160 115 260 115 green 2
+.darrow 290 55 290 115 #cc0000 1
+.text 295 85 y 10 #cc0000 start bold
+.arrow 260 55 320 55 #cc0000 1.5
+.text 325 58 dF 9 #cc0000 start
+.darrow 290 115 290 170 #0000cc 1
+.text 295 143 y 10 #0000cc start bold
+.arrow 160 170 100 170 #0000cc 1.5
+.text 80 173 dF 9 #0000cc end
+.text 210 210 dM_=_y_×_σ_×_dA 11 black middle bold
+.text 210 225 Brazo_×_Fuerza_=_Momento 9 gray middle
+#end svg
+
+'<hr/>
+"PASO 6: Sustituir σ = -Ey/ρ en la integral
+
+'<p>Sabemos que σ = -Ey/ρ. Sustituyendo:</p>
+
+#deq M = ∫*y*(-E*y/ρ)*dA
+
+'<p>Sacamos E y ρ (son constantes en la seccion):</p>
+
+#deq M = -E/ρ*∫*y^2*dA
+
+'<p>Esa integral tiene un NOMBRE famoso:</p>
+
+#svg 420 120
+.fillrect 10 10 400 100 #fffff0 1
+.rect 10 10 400 100 none 1 #cccccc 0.5
+.text 210 35 ∫y²dA_=_I 14 black middle bold
+.text 210 58 Momento_de_Inercia 11 #0066cc middle bold
+.text 210 78 Mide_que_tan_lejos_esta_el_material_del_neutro 9 black middle
+.text 210 95 Material_mas_lejos_→_I_mas_grande_→_viga_mas_rigida 9 black middle
+#end svg
+
+'<p>Entonces:</p>
+
+#deq M = -E*I/ρ
+
+'<p>Y como la curvatura κ = 1/ρ:</p>
+
+#deq M = -E*I*κ
+
+'<p>O con el signo ajustado por convencion (κ = -1/ρ para flexion hacia abajo):</p>
+
+#deq M = E*I*κ
+
+'<hr/>
+"PASO 7: El camino completo en UNA GRAFICA
+
+#svg 420 300
+.fillrect 0 0 420 300 #fafafa 1
+.text 210 15 La_cadena_completa 12 black middle bold
+
+.text 70 50 ε_=_-y/ρ 11 black middle bold
+.rect 10 35 120 25 #d4e6f1 0.3 black 1
+.text 70 73 Geometria 8 gray middle
+.text 70 85 (arcos) 8 gray middle
+
+.arrow 135 48 175 48 black 1.5
+.text 155 40 ×E 9 black middle bold
+
+.text 245 50 σ_=_Eε 11 black middle bold
+.rect 185 35 120 25 #d5f5e3 0.3 black 1
+.text 245 73 Hooke 8 gray middle
+.text 245 85 (material) 8 gray middle
+
+.arrow 310 48 350 48 black 1.5
+.text 330 40 ∫y·dA 8 black middle bold
+
+.text 390 50 M 14 black middle bold
+.rect 365 35 50 25 #fadbd8 0.3 black 1
+.text 390 73 Integral 8 gray middle
+
+.text 210 115 Todo_junto: 10 black middle
+.text 210 140 M_=_EI·κ 18 black middle bold
+.rect 120 120 180 35 #fffff0 0.5 #cccccc 1
+
+.text 210 175 E_=_material_(Hooke) 9 black middle
+.text 210 190 I_=_seccion_(geometria) 9 black middle
+.text 210 205 κ_=_curvatura_(deformacion) 9 black middle
+
+.text 210 235 Esta_es_la_ecuacion_que_Euler_uso_en_1744 10 #0066cc middle bold
+.text 210 255 M_=_EI·d²v/dx² 14 #0066cc middle bold
+.rect 100 240 220 25 none 0 #0066cc 1
+
+.text 210 285 porque_κ_≈_d²v/dx²_(para_deformaciones_pequenas) 9 gray middle
+#end svg
+
+'<hr/>
+"PASO 8: Verifiquemos con numeros
+
+'<p>Viga rectangular de 200mm de alto × 100mm de ancho:</p>
+
+b = 100
+h = 200
+I_v = b*h^3/12
+
+'<p>Hormigon: E = 25,000 MPa</p>
+E_h = 25000
+
+'<p>EI (rigidez a flexion):</p>
+EI_v = E_h*I_v
+
+'<p>Si la curvatura es κ = 0.00001 (1/mm):</p>
+κ = 0.00001
+
+'<p>El momento es:</p>
+M_v = EI_v*κ
+
+'<p>Verifiquemos fibra por fibra:</p>
+
+'<h4>Fibra extrema (y = 100mm):</h4>
+y_ext = 100
+ε_ext = -y_ext*κ
+σ_ext = E_h*ε_ext
+
+'<p>La fuerza en esa fibra por unidad de ancho:</p>
+'<p>dF = σ × dA = σ × (b × dy)</p>
+'<p>El momento total = ∫ y·σ·b dy de -h/2 a h/2 = E·κ·b·h³/12 = EI·κ ✓</p>
+
+#svg 420 140
+.fillrect 10 10 400 120 #fffff0 1
+.rect 10 10 400 120 none 1 #cccccc 0.5
+.text 210 40 RESUMEN 12 black middle bold
+.text 210 65 ε_=_-y/ρ_→_σ_=_Eε_→_M_=_EI·κ 14 black middle bold
+.text 210 90 1._Geometria:_fibra_cerca_de_O_se_acorta_(ε) 9 black middle
+.text 210 105 2._Material:_deformacion_produce_esfuerzo_(σ_=_Eε) 9 black middle
+.text 210 120 3._Equilibrio:_esfuerzos_producen_momento_(M_=_EI·κ) 9 black middle
+#end svg
+
+'<p>Siguiente: Rayleigh (1877) usa M = EI·κ para calcular la ENERGIA</p>
+'<p>de la viga y resolver problemas sin ecuaciones diferenciales.</p>

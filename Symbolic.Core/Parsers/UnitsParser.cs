@@ -312,6 +312,11 @@ namespace Calcpad.Core
 
                 return u;
             }
+            // Support "& 1" for dimensionless: treat constant 1 as dimensionless unit
+            if (t.Type == TokenTypes.Constant && t.Content == "1")
+            {
+                return new Unit(9); // dimensionless unit (all powers = 0)
+            }
             throw Exceptions.ResultIsNotUnits();
         }
 

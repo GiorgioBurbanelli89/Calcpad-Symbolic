@@ -1,0 +1,24 @@
+"Test clsolve con unidades completas
+
+"1. K con unidades homogeneas
+K = [1000 kN/m; -500 kN/m|-500 kN/m; 1500 kN/m]
+F = [10 kN; -5 kN]
+
+"1.1 Solve directo
+u = lsolve(K; F)
+u
+
+"1.2 Solve con & mm
+u_mm = lsolve(K; F) & [mm; mm]
+u_mm
+
+"2. K construida con B^T*D*B (con unidades)
+E = 200000 MPa
+t = 0.2 m
+D = E*t/(1 - 0.04)*[1; 0.2|0.2; 1]
+B = [1; 0; -1|0; 1; 0]/(1 m)
+K_2 = transp(B)*D*B*(0.5 m)^2
+K_2
+F_2 = [10 kN; -5 kN; 3 kN]
+u_2 = lsolve(K_2; F_2) & [mm; mm; mm]
+u_2

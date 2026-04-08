@@ -1,0 +1,328 @@
+"Teoria de Placa Gruesa - Reissner-Mindlin (Zapata con Carga Puntual)
+
+"1. Teoria
+'Hipotesis de Reissner-Mindlin: las secciones normales permanecen rectas
+'pero NO necesariamente normales a la superficie deformada.
+'Esto incluye deformacion por corte transversal (γxz, γyz ≠ 0).
+'A diferencia de Kirchhoff, las rotaciones son INDEPENDIENTES de w.
+
+"1.1 Grados de libertad
+'Cada nodo tiene 3 DOFs:
+'w = deflexion vertical
+'θx = rotacion alrededor del eje x (independiente de w)
+'θy = rotacion alrededor del eje y (independiente de w)
+'4 nodos x 3 DOFs = 12 DOFs por elemento (vs 16 en Kirchhoff)
+
+"1.2 Relaciones deformacion-desplazamiento
+'Curvaturas (flexion):
+#noc
+κ_x(x; y) = -dθ_y/dx
+κ_y(x; y) = dθ_x/dy
+κ_xy(x; y) = dθ_x/dx - dθ_y/dy
+#equ
+'Deformaciones por corte transversal:
+#noc
+γ_xz(x; y) = dw/dx - θ_y
+γ_yz(x; y) = dw/dy + θ_x
+#equ
+'En Kirchhoff: γxz = γyz = 0, entonces θy = dw/dx (dependiente).
+'En Mindlin: γxz y γyz son libres (θ es independiente de w).
+
+"1.3 Funciones de forma
+'Mindlin usa funciones bilineales Q4 (C0), igual que membrana:
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+'Solo necesita C0 porque las deformaciones son derivadas PRIMERAS de θ.
+'Grafica de las funciones de forma (corte en η=0):
+f_N1(ξ) = (1 - ξ)/2
+f_N2(ξ) = (1 + ξ)/2
+$Plot{f_N1(ξ) | f_N2(ξ) @ ξ = -1 : 1}
+
+"1.4 Matrices constitutivas
+'Rigidez a flexion -
+#noc
+D_b = E*t^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+#equ
+'Rigidez al corte transversal (con factor de correccion κ = 5/6) -
+#noc
+D_s = κ*G*t*[1; 0|0; 1]
+#equ
+'Donde G = E/(2·(1+ν)) es el modulo de corte.
+
+"1.5 Shear locking
+'Problema: en placas delgadas (t/L << 1) los elementos Q4 de Mindlin
+'se vuelven demasiado rigidos (shear locking).
+'Solucion: integracion reducida selectiva:
+'- Flexion (Kb): integracion completa 2x2
+'- Corte (Ks): integracion reducida 1x1 (solo centro)
+'Esto elimina el locking y permite usar Mindlin para cualquier espesor.
+
+"2. Ejemplo - Zapata como Placa sobre Resortes
+
+"2.1 Datos de entrada
+'Dimensiones de la zapata -'a_z = 2'm, 'b_z = 2'm
+'Espesor de la zapata -'t_z = 0.5'm
+'Carga puntual en el centro -'P = 500'kN
+'Modulo del suelo (resortes) -'k_w = 50000'kN/m³
+'Modulo de elasticidad (concreto) -'E = 30000'MPa
+'Relacion de Poisson -'ν = 0.2
+'Modulo de corte -'G = E/(2*(1 + ν))
+'Factor de correccion de corte -'κ = 5/6
+'Relacion espesor/lado:'t_z/a_z
+'(> 0.05 → placa gruesa, Mindlin es mas apropiado que Kirchhoff)
+
+"2.2 Malla de elementos finitos
+'DOFs por nodo (w, θx, θy) -'n_dof = 3
+'Elementos en cada direccion -'n_x = 8', 'n_y = 8
+'Total de elementos -'n_e = n_x*n_y
+'Total de nodos -'n_j = (n_x + 1)*(n_y + 1)
+'Tamano de elemento -'d_x = a_z/n_x', 'd_y = b_z/n_y
+'Total de DOFs -'n_total = n_dof*n_j
+#hide
+n_1 = n_x + 1
+x_j = vector(n_j)
+y_j = vector(n_j)
+#for j = 0 : n_y
+	#for i = 0 : n_x
+		k = j*n_1 + i + 1
+		x_j.k = i*d_x
+		y_j.k = j*d_y
+	#loop
+#loop
+e_j = matrix(n_e; 4)
+#for j = 0 : n_y - 1
+	#for i = 0 : n_x - 1
+		e = j*n_x + i + 1
+		bl = j*n_1 + i + 1
+		e_j.(e; 1) = bl
+		e_j.(e; 2) = bl + 1
+		e_j.(e; 3) = bl + n_1 + 1
+		e_j.(e; 4) = bl + n_1
+	#loop
+#loop
+j_e(e) = row(e_j; e)
+x_c(e) = sum(extract(x_j; j_e(e)))/4
+y_c(e) = sum(extract(y_j; j_e(e)))/4
+#show
+#equ
+"2.3 Visualizacion de la zapata
+#hide
+w_s = 300
+k_s = w_s/a_z
+d_s = 30
+h_s = b_z*k_s
+r_s = 0.03*k_s
+cx_s = d_s + w_s/2
+cy_s = d_s + h_s/2
+#show
+#svg w_s+2*d_s h_s+2*d_s+20
+.text cx_s d_s-8 "Zapata_Mindlin-Reissner_-_3_DOF/nodo_-_Q4_C0" 10 navy middle bold
+.rect d_s d_s w_s h_s lightyellow 0.4 gray 1
+#for e = 1 : n_e
+	x = x_c(e)*k_s+d_s
+	y = h_s-y_c(e)*k_s+d_s
+	.rect x-d_x/2*k_s y-d_y/2*k_s d_x*k_s d_y*k_s lightcyan 0.2 steelBlue 0.5
+#loop
+.circle cx_s cy_s 6 red 1 darkred 2
+.arrow cx_s cy_s-30 cx_s cy_s-7 red 2
+.text cx_s+10 cy_s-20 "P" 12 red start bold
+#for i = 0 : n_x
+	x = i*d_x*k_s+d_s
+	.line x d_s+h_s+3 x d_s+h_s+10 brown 1
+	.line x-3 d_s+h_s+10 x+3 d_s+h_s+10 brown 1.5
+#loop
+.text cx_s d_s+h_s+18 "Resortes_del_suelo_(Winkler)" 8 brown middle
+#end svg
+
+"2.4 Derivadas de las funciones de forma
+dN_1ξ(η) = -(1 - η)/4
+dN_2ξ(η) = (1 - η)/4
+dN_3ξ(η) = (1 + η)/4
+dN_4ξ(η) = -(1 + η)/4
+dN_1η(ξ) = -(1 - ξ)/4
+dN_2η(ξ) = -(1 + ξ)/4
+dN_3η(ξ) = (1 + ξ)/4
+dN_4η(ξ) = (1 - ξ)/4
+
+"2.5 Matrices constitutivas
+'Rigidez a flexion Db:
+D_b = E*t_z^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+D_b
+'Rigidez al corte Ds:
+D_s = κ*G*t_z*[1; 0|0; 1]
+D_s
+
+"2.6 Rigidez del elemento
+'Jacobiano:
+J_11 = d_x/2
+J_22 = d_y/2
+det_J = J_11*J_22
+'Punto de Gauss -'g_p = 1/sqr(3)
+#hide
+n_k = n_dof*4
+K_e = symmetric(n_k)
+'Parte de FLEXION: integracion 2x2 (completa)
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g_p','η_g = -g_p
+	#else if ig ≡ 2
+		ξ_g = g_p','η_g = -g_p
+	#else if ig ≡ 3
+		ξ_g = g_p','η_g = g_p
+	#else
+		ξ_g = -g_p','η_g = g_p
+	#end if
+	'Derivadas fisicas
+	dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+	dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+	dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+	dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+	'B_b (3x12): curvaturas [κx; κy; κxy] = Bb * [w1,θx1,θy1,...,w4,θx4,θy4]
+	'κx = -dθy/dx, κy = dθx/dy, κxy = dθx/dx - dθy/dy
+	B_b = [0; 0; -dNdx_1; 0; 0; -dNdx_2; 0; 0; -dNdx_3; 0; 0; -dNdx_4 | _
+	       0; dNdy_1; 0; 0; dNdy_2; 0; 0; dNdy_3; 0; 0; dNdy_4; 0 | _
+	       0; dNdx_1; -dNdy_1; 0; dNdx_2; -dNdy_2; 0; dNdx_3; -dNdy_3; 0; dNdx_4; -dNdy_4]
+	BtDB = transp(B_b)*D_b*B_b*det_J
+	#for i = 1 : n_k
+		#for j = i : n_k
+			K_e.(i; j) = K_e.(i; j) + BtDB.(i; j)
+		#loop
+	#loop
+#loop
+'Parte de CORTE: integracion 1x1 (reducida, centro del elemento)
+ξ_g = 0','η_g = 0
+NN_1 = N_1(ξ_g; η_g)','NN_2 = N_2(ξ_g; η_g)
+NN_3 = N_3(ξ_g; η_g)','NN_4 = N_4(ξ_g; η_g)
+dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+'B_s (2x12): corte [γxz; γyz] = Bs * {w,θx,θy}
+'γxz = dw/dx - θy, γyz = dw/dy + θx
+B_s = [dNdx_1; 0; -NN_1; dNdx_2; 0; -NN_2; dNdx_3; 0; -NN_3; dNdx_4; 0; -NN_4 | _
+       dNdy_1; NN_1; 0; dNdy_2; NN_2; 0; dNdy_3; NN_3; 0; dNdy_4; NN_4; 0]
+BtDB_s = transp(B_s)*D_s*B_s*det_J*4
+#for i = 1 : n_k
+	#for j = i : n_k
+		K_e.(i; j) = K_e.(i; j) + BtDB_s.(i; j)
+	#loop
+#loop
+#show
+'Matriz de rigidez del elemento K_e (12x12):
+Precision = 10^-1
+K_e
+
+"2.7 Ensamblaje y solucion
+#hide
+K = symmetric(n_total)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		#for j = i : 4
+			j_1 = e_j.(e; i)
+			j_2 = e_j.(e; j)
+			i_1 = n_dof*(j_1 - 1) + 1
+			i_2 = n_dof*(j_2 - 1) + 1
+			k_ij = submatrix(K_e; n_dof*(i - 1) + 1; n_dof*i; n_dof*(j - 1) + 1; n_dof*j)
+			#if j_1 > j_2
+				add(transp(k_ij); K; i_2; i_1)
+			#else
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+'Resortes de Winkler (suelo) - rigidez en DOF w de cada nodo
+k_node = k_w*d_x*d_y
+#for i = 1 : n_j
+	j = n_dof*(i - 1) + 1
+	K.(j; j) = K.(j; j) + k_node
+#loop
+'Carga puntual en el nodo central
+F = vector(n_total)
+j_center = (n_y/2)*n_1 + n_x/2 + 1
+F.(n_dof*(j_center - 1) + 1) = -P
+#show
+'Nodo central de carga: 'j_center
+'Resolviendo K·u = F ...
+Z = clsolve(K; F) & [mm; rad; rad]
+
+"3. Resultados
+#hide
+W_z = matrix(n_x + 1; n_y + 1)
+#for i_x = 0 : n_x
+	#for i_y = 0 : n_y
+		k = i_y*n_1 + i_x + 1
+		W_z.(i_x + 1; i_y + 1) = Z.(n_dof*(k - 1) + 1)*1000
+	#loop
+#loop
+w_f(x; y) = spline(1 + x/d_x; 1 + y/d_y; W_z)
+PlotWidth = 50*a_z
+PlotHeight = 50*b_z
+PlotStep = 10
+#show
+
+"3.1 Deflexiones
+'Deflexiones W (mm):
+transp(W_z)'mm
+$Map{w_f(x; y) @ x = 0 : a_z & y = 0 : b_z}
+'Deflexion maxima en el centro:
+w_f(a_z/2; b_z/2)'mm
+
+"3.2 Presion del suelo sobre la zapata (reaccion de Winkler)
+'En el modelo de Winkler, el suelo es un conjunto de resortes independientes.
+'La presion en cada punto es proporcional a la deflexion:
+#noc
+q(x; y) = k_w*w(x; y)
+#equ
+'Presion admisible del suelo -'q_adm = 100'kN/m² (10 t/m²)
+'Presion promedio simple (P/A) -'q_prom = P/(a_z*b_z)
+#hide
+Q_z = matrix(n_x + 1; n_y + 1)
+q_max_val = 0
+#for i_x = 0 : n_x
+	#for i_y = 0 : n_y
+		k = i_y*n_1 + i_x + 1
+		Q_z.(i_x + 1; i_y + 1) = -k_w*Z.(n_dof*(k - 1) + 1)
+		#if Q_z.(i_x + 1; i_y + 1) > q_max_val
+			q_max_val = Q_z.(i_x + 1; i_y + 1)
+		#end if
+	#loop
+#loop
+q_f(x; y) = spline(1 + x/d_x; 1 + y/d_y; Q_z)
+#show
+'Mapa de presion del suelo (kN/m²):
+$Map{q_f(x; y) @ x = 0 : a_z & y = 0 : b_z}
+'Presion maxima (centro, bajo la carga):
+q_f(a_z/2; b_z/2)'kN/m²
+'Presion en la esquina:
+q_f(0; 0)'kN/m²
+'Presion en el borde medio:
+q_f(a_z/2; 0)'kN/m²
+
+"3.3 Verificacion de capacidad portante
+'Presion maxima -'q_max_val'kN/m²
+'Presion admisible -'q_adm'kN/m²
+'Relacion q_max/q_adm ='q_max_val/q_adm
+#if q_max_val > q_adm
+	'RESULTADO: La presion maxima EXCEDE la capacidad admisible del suelo.
+	'Se necesita una zapata mas grande o redistribuir la carga.
+#else
+	'RESULTADO: La presion maxima es MENOR que la admisible. OK.
+#end if
+
+"3.4 Distribucion de presion
+'Con carga puntual centrada, la presion NO es uniforme:
+'- Maxima bajo la carga (centro): concentracion de esfuerzos
+'- Minima en las esquinas
+'- El modelo de Winkler NO redistribuye (resortes independientes)
+'- Un modelo de suelo elastico (Boussinesq) daria una distribucion diferente
+'Perfil de presion a lo largo del eje central (y = b/2):
+q_perfil(x) = q_f(x; b_z/2)
+$Plot{q_perfil(x) @ x = 0 : a_z}
+
+"3.5 Comparacion Kirchhoff vs Mindlin
+'Para esta zapata: t/L = 't_z/a_z' = 0.25 (placa MUY gruesa)
+'Kirchhoff subestimaria la deflexion porque ignora el corte transversal.
+'Mindlin es la teoria correcta para elementos gruesos como zapatas.

@@ -932,13 +932,14 @@ namespace Calcpad.Core
 
                 if (ival is RealValue real)
                 {
-                    ival = new RealValue(real.D * factor, targetUnit);
-                    return targetUnit;
+                    // & adimensionalizes: convert value, do NOT stamp unit
+                    ival = new RealValue(real.D * factor, null);
+                    return null;
                 }
                 if (ival is ComplexValue complex)
                 {
-                    ival = new ComplexValue(complex.A * factor, complex.B * factor, targetUnit);
-                    return targetUnit;
+                    ival = new ComplexValue(complex.A * factor, complex.B * factor, null);
+                    return null;
                 }
                 if (ival is HpVector hpv)
                 {

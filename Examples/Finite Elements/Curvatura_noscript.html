@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Created with Calcpad</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    
+    
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-size: 11pt;
+            font-family: 'Segoe UI', 'Arial Nova', Helvetica, sans-serif;
+            margin-left: 5mm;
+            max-width: 190mm;
+        }
+
+        h1, h2, h3, h4, h5, h6, .errorHeader, .roundBox {
+            font-family: 'Arial Nova', Helvetica, sans-serif;
+            margin: 0.5em 0 0.5em 0;
+            padding: 0;
+            line-height: 150%;
+        }
+
+        h1 {font-size: 2.1em;}
+        h2 {font-size: 1.7em;}
+        h3 {font-size: 1.4em;}
+        h4 {font-size: 1.2em;}
+        h5 {font-size: 1.1em;}
+        h6 {font-size: 1em;}
+
+        p, li {
+            margin: 0.3em 0 0.3em 0;
+            padding: 0;
+            line-height: 150%;
+        }
+
+        select, kbd {
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        a:hover {
+            background-color: #e9f6ff;
+        }
+
+        .eq, input[type="text"], table.matrix {
+            font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+        }
+
+            .eq var {
+                color: #06d;
+                font-size: 105%;
+            }
+
+            .eq i {
+                color: #086;
+                font-style: normal;
+                font-size: 90%;
+            }
+
+            i.unit {
+                color: #043!important;
+                font-size: 90%!important;
+                vertical-align: -1pt;
+            }
+
+            sup.unit {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 70%!important;
+            }
+
+            .eq b {
+                font-weight: 600;
+            }
+
+            .eq sub {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 80%;
+                vertical-align: -18%;
+                margin-left: 1pt;
+            }
+
+            .eq sup {
+                display: inline-block;
+                margin-left: 1pt;
+                margin-top: -3pt;
+                font-size: 75%;
+            }
+
+            .eq small {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 70%;
+            }
+
+                .eq small var {
+                    font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+                    font-size: 8.5pt;
+                }
+
+                .eq small i {
+                    font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+                    font-size: 6pt;
+                }
+
+            .eq u, input, select {
+                background-color: LightYellow;
+            }
+
+                input[type="text"], select {
+                    font-size: 10pt;
+                    padding: 0.2em 0.4em;
+                    border: 0.5pt solid #CCC;
+                    border-radius: 0.35em;
+                    box-shadow: 0.06em 0.06em 0.5em #ddd;
+                    min-width: 3em;
+                }
+
+                input[type="text"] {
+                    text-align: right;
+                }
+
+                input[type="checkbox"],
+                input[type="radio"] {
+                    vertical-align: baseline;
+                    position: relative;
+                    bottom: -1pt;
+                    margin-right: 1pt;
+                }
+
+                    input[type="checkbox"].post:disabled:not(:checked),
+                    input[type="checkbox"].post:disabled:not(:checked) + label,
+                    input[type="radio"].post:disabled:not(:checked),
+                    input[type="radio"].post:disabled:not(:checked) + label {
+                        display: none;
+                    }
+
+                select:disabled {
+                    background: none;
+                    color: #444;
+                }
+
+                select.post:disabled {
+                    font-size: 12pt;
+                    border: none;
+                    box-shadow: none;
+                    color: red;
+                    background: none;
+                    appearance: none;
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                }
+
+                select.post:disabled::-ms-expand {
+                    display: none;
+                }
+
+                input[type="text"]:focus {
+                    box-shadow: 0.1em 0.1em 1em #ccc;
+                    color: black;
+                }
+
+        td, th {
+            padding: 2pt 4pt 2pt 4pt;
+            vertical-align: top;
+        }
+
+        small {
+            font-weight: normal;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+            table.bordered {
+                margin-top: 1em;
+            }
+
+                table.bordered th {
+                    background-color: #F0F0F0;
+                    border: solid 1pt #AAAAAA;
+                }
+
+                table.bordered td {
+                    border: solid 1pt #CCCCCC;
+                }
+
+            table.centered td, .matrix .td {
+                text-align: center;
+            }
+
+            table.data td {
+                text-align: right;
+            }
+
+                table.data td:first-child {
+                    text-align: left;
+                    padding-left: 0;
+                }
+
+        .matrix {
+            display: inline-table;
+        }
+
+            .matrix .tr {
+                display: table-row;
+            }
+
+            .matrix .td {
+                white-space: nowrap;
+                padding: 0 2pt 0 2pt;
+                min-width: 10pt;
+                display: table-cell;
+                font-size: 10pt;
+            }
+
+                .matrix .td:first-child,
+                .matrix .td:last-child {
+                    width: 0.75pt;
+                    min-width: 0.75pt;
+                    max-width: 0.75pt;
+                    padding: 0 1pt 0 1pt;
+                }
+
+                .matrix .td:first-child {
+                    border-left: solid 1pt black;
+                }
+
+                .matrix .td:last-child {
+                    border-right: solid 1pt black;
+                }
+
+            .matrix .tr:first-child .td:first-child,
+            .matrix .tr:first-child .td:last-child {
+                border-top: solid 1pt black;
+            }
+
+            .matrix .tr:last-child .td:first-child,
+            .matrix .tr:last-child .td:last-child {
+                border-bottom: solid 1pt black;
+            }
+
+        .block {
+            display: inline-block;
+            vertical-align: middle;
+            padding-left: 4pt;
+            margin-left: -1pt;
+            border-left: solid 1pt #80b0e8;
+            background: linear-gradient(to right, rgba(0, 192, 255, 0.06), rgba(0, 192, 255, 0.03));
+        }
+
+            .block .block {
+                background: linear-gradient(to right, rgba(0, 192, 255, 0.04), rgba(0, 192, 255, 0.02));
+            }
+
+        .dvcs:has(.block):not(.block *) {
+            display: inline-block;
+            border-left: solid 1pt #80b0e8;
+            padding-left: 0;
+            margin-left: 3pt;
+        }
+
+            .dvcs:has(.block):not(.block *)::before {
+                content: " 🞀";
+                font-size: 9pt;
+                color: #90c4f0;
+                margin-left: -4.5pt;
+            }
+
+        .arr {
+            color: #90c4f0;
+        }
+
+        .r0, .r1, .r2, .r3,
+        .o0, .o1, .o2, .o3,
+        .b1, .b2, .b3,
+        .c1, .c2, .c3, .c4,
+        .c5, .c6, .c7, .c8 {
+            display: inline-block;
+        }
+
+        .r0, .r1, .r2, .r3 {
+            margin-top: -1.5pt;
+            margin-right: 1.5pt;
+            vertical-align: top;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: right top;
+        }
+
+        .o0, .o1, .o2, .o3 {
+            border-top: solid 0.75pt;
+            line-height: 130%;
+            vertical-align: middle;
+            margin-top: 0.75pt;
+            padding-top: 1.25pt;
+            padding-left: 1pt;
+            padding-right: 1pt;
+        }
+
+        .r {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 150%;
+            display: inline-block;
+            vertical-align: top;
+            margin-left: -9.5pt;
+            position: relative;
+            top: 1pt;
+        }
+
+        .r0 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDEwIDIwIiBoZWlnaHQ9IjE1cHQiIHdpZHRoPSIxMHB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMCwxMyAyLDEyIDUsMTkgOSwwIiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MC42cHQ7IHN0cm9rZS1saW5lam9pbjpyb3VuZDsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IGZpbGw6bm9uZSIgLz4NCiAgPGxpbmUgeDE9IjIuMiIgeTE9IjEyLjMiIHgyPSI0LjYiIHkyPSIxOC43IiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MC44cHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 8pt;
+            height: 16pt;
+            margin-left: -8pt;
+        }
+
+        .r1 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDE1IDQwIiBoZWlnaHQ9IjMwcHQiIHdpZHRoPSIxNXB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMSwyNiAzLDI0IDgsMzggMTQsMCIgc3R5bGU9InN0cm9rZTpibGFjazsgc3Ryb2tlLXdpZHRoOjAuNnB0OyBzdHJva2UtbGluZWpvaW46cm91bmQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyBmaWxsOm5vbmUiIC8+DQogIDxsaW5lIHgxPSIzLjIiIHkxPSIyNC40IiB4Mj0iNy42IiB5Mj0iMzcuNiIgc3R5bGU9InN0cm9rZTpibGFjazsgc3Ryb2tlLXdpZHRoOjFwdDsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IiAvPg0KPC9zdmc+");
+            width: 12pt;
+            height: 32pt;
+            margin-left: -12pt;
+        }
+
+        .r2 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDIwIDYwIiBoZWlnaHQ9IjQ1cHQiIHdpZHRoPSIyMHB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMiwzNyA1LDM0IDExLDU1IDE5LDAiIHN0eWxlPSJzdHJva2U6YmxhY2s7IHN0cm9rZS13aWR0aDowLjZwdDsgc3Ryb2tlLWxpbmVqb2luOnJvdW5kOyBzdHJva2UtbGluZWNhcDpyb3VuZDsgZmlsbDpub25lIiAvPg0KICA8bGluZSB4MT0iNS4xIiB5MT0iMzQuNiIgeDI9IjEwLjYiIHkyPSI1NC40IiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MS4ycHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 16pt;
+            height: 48pt;
+            margin-left: -16pt;
+        }
+
+        .r3 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDI1IDgwIiBoZWlnaHQ9IjYwcHQiIHdpZHRoPSIyNXB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMyw1MCA3LDQ2IDE1LDc0IDI0LDAiIHN0eWxlPSJzdHJva2U6YmxhY2s7IHN0cm9rZS13aWR0aDowLjZwdDsgc3Ryb2tlLWxpbmVqb2luOnJvdW5kOyBzdHJva2UtbGluZWNhcDpyb3VuZDsgZmlsbDpub25lIiAvPg0KICA8bGluZSB4MT0iNy4xIiB5MT0iNDYuOCIgeDI9IjE0LjUiIHkyPSI3My4yIiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MS4ycHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 19pt;
+            height: 62pt;
+            margin-left: -19pt;
+        }
+
+        .nth {
+            position: relative;
+            bottom: 1pt;
+        }
+
+        .eq small.nth {font-size: 70%;}
+        .dvr small {font-size: 70%;}
+        .dvr small var {font-size: 105%;}
+        sup.raised {vertical-align: top;}
+        sup .r0, sup .r1, sup .r2, sup .r3 {
+            zoom: 0.7;
+            -moz-transform: scale(0.7);
+            -webkit-transform: scale(0.7);
+            transform: scale(0.7);
+            transform-origin: top right;
+            max-height: none;
+        }
+
+        sup .r0 { margin-left: -5pt; }
+        sup .r1 { margin-left: -11pt; }
+        sup .r2 { margin-left: -13pt; }
+        sup .r3 { margin-left: -16pt; }
+
+        .b1, .b2, .b3, .c1, .c2, .c3, .c4, .c5, .c6, .c7, .c8 {
+            vertical-align: middle;
+            font-weight: 100;
+            font-stretch: ultra-condensed;
+        }
+
+        .b2, .b3, .c2, .c3, .c4, .c5, .c6, .c7, .c8 {
+            font-family: 'Jost* Hairline', sans-serif;
+        }
+
+        .b0, .b1, .c1 {
+            font-family: 'Jost* Thin', sans-serif;
+        }
+
+        .b0 {
+            font-size: 120%;
+            font-weight: 600;
+            padding: 0 1pt 0 1pt;
+        }
+
+        .b1 {
+            font-size: 240%;
+            margin-top: -3pt;
+            margin-left: -1pt;
+            margin-right: -1pt;
+        }
+
+        .b2 {
+            font-size: 370%;
+            margin-top: -5pt;
+            margin-left: -3pt;
+            margin-right: -3pt;
+        }
+
+        .b3 {
+            font-size: 520%;
+            margin-top: -8pt;
+            margin-left: -5pt;
+            margin-right: -5pt;
+        }
+
+        .c1 {
+            font-size: 240%;
+            margin-top: -4pt;
+        }
+
+        .c2 {
+            font-size: 360%;
+            margin-top: -6pt;
+            margin-left: -2.5pt;
+            margin-right: -0.5pt;
+        }
+
+        .c3 {
+            font-size: 480%;
+            margin-top: -8pt;
+            margin-left: -3pt;
+            margin-right: -1pt;
+        }
+
+        .c4 {
+            font-size: 600%;
+            margin-top: -10pt;
+            margin-left: -4pt;
+            margin-right: -2pt;
+            transform: scaleX(0.9);
+        }
+
+        .c5 {
+            font-size: 710%;
+            margin-top: -11.5pt;
+            margin-left: -6pt;
+            margin-right: -4pt;
+            transform: scaleX(0.8);
+        }
+
+        .c6 {
+            font-size: 820%;
+            margin-top: -13pt;
+            margin-left: -7pt;
+            margin-right: -5pt;
+            transform: scaleX(0.7);
+        }
+
+        .c7 {
+            font-size: 930%;
+            margin-top: -14.5pt;
+            margin-left: -8pt;
+            margin-right: -6pt;
+            transform: scaleX(0.6);
+        }
+
+        .c8 {
+            font-size: 1040%;
+            margin-top: -16pt;
+            margin-left: -9pt;
+            margin-right: -7pt;
+            transform: scaleX(0.5);
+        }
+
+        .dvc, .dvr, .dvs {
+            display: inline-block;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .dvc {
+            padding-left: 2pt;
+            padding-right: 2pt;
+            text-align: center;
+            line-height: 110%;
+        }
+
+        .dvr {
+            text-align: center;
+            line-height: 110%;
+            position: relative;
+            top: -3pt;
+        }
+
+        .dvs {
+            text-align: left;
+            line-height: 110%;
+        }
+
+        .dvl {
+            display: block;
+            border-bottom: solid 1pt black;
+            margin-top: 1pt;
+            margin-bottom: 1pt;
+        }
+
+        .nary {
+            color: #C080F0;
+            font-size: 240%;
+            font-family: Georgia Pro Light, serif;
+            font-weight: 200;
+            line-height: 70%;
+            display: block;
+            margin: 0 1pt 2.5pt 1pt;
+        }
+
+            .nary em {
+                display: block;
+                transform: scaleX(0.7) rotate(7deg);
+            }
+
+        .dvc.down {
+            position: relative;
+            top: 0.5em;
+        }
+
+        .dvc.up {
+            position: relative;
+            bottom: 0.6em;
+        }
+
+        .low {
+            font-size: 70%;
+            display: inline-block;
+            position: relative;
+            top: 1.2em;
+        }
+
+        .cond {
+            color: #E000D0;
+        }
+
+        .err {
+            color: Crimson;
+            background-color: #FEE;
+        }
+
+        .ok {
+            color: Green;
+            background-color: #F0FFF0;
+        }
+
+        .ref {
+            float: right;
+            margin-left: 18pt;
+            color: Green;
+            background-color: #F8FFF0;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        .side {
+            float: right;
+            max-width: 50%;
+        }
+
+        .plot {
+            max-width: 100%
+        }
+
+        .indent {
+            border-left: 0.75pt solid #dddddd;
+            padding-left: 2em;
+        }
+
+        span.indent {
+            display: inline-block;
+        }
+
+        .fold {
+            height: 2.4em;
+            overflow: hidden;
+        }
+
+        .unfold {
+            height: auto;
+            overflow: auto;
+        }
+
+            .fold > :first-child, .unfold > :first-child {
+                cursor: pointer;
+            }
+
+                .fold > :first-child:hover, .unfold > :first-child:hover {
+                    color: #0066bb;
+                    text-decoration: underline;
+                }
+
+                .fold > :first-child::after {
+                    content: " ... ▼";
+                    font-size: 80%;
+                }
+
+                .unfold > :first-child::after {
+                    content: " ▲";
+                    font-size: 80%;
+                }
+
+        .vec {
+            font-family: 'Cambria Math', serif;
+            color: #8af;
+            font-style: normal;
+            display: inline-block;
+            vertical-align: 2pt;
+            margin-left: 3pt;
+            margin-right: -7pt;
+        }
+
+        small .vec, sup .vec {
+            margin-left: 2pt;
+            margin-right: -6pt;
+        }
+
+        #Units {
+            float: right;
+        }
+
+        @media screen {
+            .no-screen {
+                display: none;
+            }
+        }
+
+        @media print {
+            .side {
+                zoom: 0.8;
+                -moz-transform: scale(0.8);
+            }
+
+            body {
+                margin: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+
+        @page {
+            size: A4 portrait;
+            margin-left: 20mm;
+            margin-right: 10mm;
+            margin-top: 10mm;
+            margin-bottom: 10mm;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .value {
+            position: relative;
+            background-color: #f4fbff;
+            border-radius: 3pt;
+        }
+
+            .value:after {
+                content: "";
+                position: absolute;
+                left: 100%;
+                top: -100%;
+                transform: translateY(-50%);
+                margin-left: 2pt;
+                height: 16pt;
+                line-height: 16pt;
+                vertical-align: middle;
+                width: fit-content;
+                white-space: nowrap;
+                min-width: 10pt;
+                z-index: 1;
+                padding: 0 6pt 0 6pt;
+                border-radius: 6pt 6pt 6pt 0;
+                background: #000;
+                color: #fff;
+                font-family: 'Segoe UI', sans-serif;
+                font-style: normal;
+                font-size: 10pt;
+                text-align: center;
+                display: none;
+                opacity: 0;
+                transition: opacity 2s;
+                user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                -moz-user-select: none;
+            }
+
+            .value:hover:after {
+                content: attr(data-value);
+                display: block;
+                opacity: 1;
+            }
+
+        .errorHeader {
+            color: white;
+            background-color: crimson;
+            font-size: 10pt;
+            position: fixed;
+            top: 0;
+            left: 0;
+            margin-top: 0;
+            width: 100vw;
+            max-width: 100%;
+            height: 1.8em;
+            line-height: 1.2em;
+            padding-left: 6pt;
+            overflow-x: hidden;
+        }
+
+        .roundBox {
+            background-color: #fee;
+            color: crimson;
+            font-size: 9pt;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            display: inline-block;
+            border-radius: 4pt;
+            min-width: 1.1em;
+            padding-left: 2pt;
+            padding-right: 2pt;
+            margin-top: 2pt;
+        }
+
+            .roundBox:hover {
+                background-color: white;
+            }
+
+        .lineLink {
+            background: none;
+            color: #b0e0ff;
+            font-family: Calibri, sans-serif;
+            font-size: 10pt;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: left;
+            display: inline-block;
+            position: absolute;
+            left: 0;
+            width: 2em;
+            height: 4em;
+            z-index: 1;
+        }
+
+            .lineLink:hover {
+                background: none;
+                color: #09e;
+            }
+    </style>
+</head>
+<body>
+    <h3>Que es la CURVATURA? κ = 1/R </h3>
+<h3>Quien lo invento, bajo que hipotesis, como lo formulo </h3>
+<hr/> 
+<p>&nbsp;</p>
+<h3>HISTORIA: Quien invento la curvatura? </h3>
+<p>&nbsp;</p>
+<p>La formula κ = 1/R no la invento UNA sola persona.</p> 
+<p>Fue un proceso de 80 anos con 3 protagonistas:</p> 
+<p>&nbsp;</p>
+<h4>1673 — Christiaan Huygens (holandes, 44 anos)</h4> 
+<p>Huygens queria hacer un RELOJ DE PENDULO perfecto.</p> 
+<p>El problema: un pendulo circular NO marca el tiempo exacto</p> 
+<p>(las oscilaciones grandes son mas lentas que las pequenas).</p> 
+<p>Necesitaba encontrar la curva "perfecta" para el pendulo.</p> 
+<p>&nbsp;</p>
+<p>Para esto invento el concepto de CIRCULO OSCULADOR:</p> 
+<p>"En cada punto de una curva, hay un circulo unico que la BESA</p> 
+<p>(toca sin cruzar). El radio de ese circulo mide cuanto se dobla."</p> 
+<p>Publico esto en "Horologium Oscillatorium" (1673).</p> 
+<p>Descubrio que la curva perfecta es la CICLOIDE (no el circulo).</p> 
+<p>&nbsp;</p>
+<h4>1666 — Isaac Newton (ingles, 23 anos)</h4> 
+<p>Newton ya habia calculado la formula del radio de curvatura</p> 
+<p>para cualquier curva y=f(x) en su "Method of Fluxions":</p> 
+<p>&nbsp;</p>
+<p style="text-align:center"><span class="eq"><var>R</var> = <span class="dvc">( 1 + ( <span class="dvc"><i>d</i><var>y</var><span class="dvl"></span><i>d</i><var>x</var></span> )<sup>2</sup> )<sup> 3/2</sup><span class="dvl"></span><span class="dvc"><i>d</i><sup>2</sup><var>y</var><span class="dvl"></span><i>d</i><var>x</var><sup>2</sup></span></span></span></p> 
+<p>&nbsp;</p>
+<p>Pero Newton no la publico hasta 1736 (70 anos despues!).</p> 
+<p>Era famoso por guardar sus descubrimientos en secreto.</p> 
+<p>&nbsp;</p>
+<h4>1684 — Gottfried Leibniz (aleman, 38 anos)</h4> 
+<p>Leibniz publico la misma formula independientemente,</p> 
+<p>usando su notacion dy/dx (que todavia usamos hoy).</p> 
+<p>Definio formalmente: κ = 1/R.</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>LA HIPOTESIS: Por que κ = 1/R y no otra formula? </h3>
+<p>&nbsp;</p>
+<p>No es un descubrimiento experimental. Es una DEFINICION.</p> 
+<p>Huygens y Newton eligieron DEFINIR la curvatura asi porque:</p> 
+<p>&nbsp;</p>
+<p>HIPOTESIS 1: En cada punto de una curva suave, existe un</p> 
+<p>UNICO circulo que mejor se ajusta a la curva en ese punto.</p> 
+<p>&nbsp;</p>
+<p><svg viewBox="0 0 450 220" width="450" height="220" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="450" height="220" fill="#fafafa" fill-opacity="1" stroke="none"/><text x="225" y="15" text-anchor="middle" fill="black" font-size="12" font-weight="bold">El circulo osculador (&quot;que besa&quot;)</text><circle cx="30" cy="190" r="1.5" fill="blue" fill-opacity="0.8" stroke="none" stroke-width="1"/><circle cx="65" cy="180" r="1.5" fill="blue" fill-opacity="0.8" stroke="none" stroke-width="1"/><circle cx="100" cy="150" r="1.5" fill="blue" fill-opacity="0.8" stroke="none" stroke-width="1"/><circle cx="135" cy="100" r="1.5" fill="blue" fill-opacity="0.8" stroke="none" stroke-width="1"/><circle cx="170" cy="30" r="1.5" fill="blue" fill-opacity="0.8" stroke="none" stroke-width="1"/><circle cx="205" cy="-60" r="1.5" fill="blue" fill-opacity="0.8" stroke="none" stroke-width="1"/><circle cx="170" cy="120" r="75" fill="none" fill-opacity="0" stroke="red" stroke-width="1.5"/><circle cx="170" cy="120" r="3" fill="red" fill-opacity="1" stroke="none" stroke-width="1"/><line x1="170" y1="120" x2="245" y2="120" stroke="red" stroke-width="0.8"/><text x="210" y="115" text-anchor="middle" fill="red" font-size="12" font-weight="bold">R</text><text x="170" y="205" text-anchor="middle" fill="red" font-size="9" font-weight="normal">Centro</text><circle cx="135" cy="100" r="5" fill="#cc0000" fill-opacity="1" stroke="none" stroke-width="1"/><text x="143" y="92" text-anchor="start" fill="#cc0000" font-size="9" font-weight="normal">Punto de contacto</text><text x="300" y="80" text-anchor="start" fill="black" font-size="10" font-weight="normal">La curva y el circulo</text><text x="300" y="95" text-anchor="start" fill="black" font-size="10" font-weight="normal">se TOCAN en este punto</text><text x="300" y="110" text-anchor="start" fill="black" font-size="10" font-weight="normal">sin cruzarse.</text><text x="300" y="130" text-anchor="start" fill="black" font-size="10" font-weight="normal">El radio de este circulo</text><text x="300" y="145" text-anchor="start" fill="black" font-size="10" font-weight="normal">es R = radio de curvatura.</text></svg></p>
+<p>&nbsp;</p>
+<p>HIPOTESIS 2: La curvatura debe cumplir estas propiedades:</p> 
+<p>a) Si la curva se dobla MAS → curvatura debe ser MAYOR</p> 
+<p>b) Si la curva es RECTA → curvatura debe ser CERO</p> 
+<p>c) Si la curva es un circulo → curvatura debe ser CONSTANTE</p> 
+<p>&nbsp;</p>
+<p>La formula MAS SIMPLE que cumple las 3 propiedades es κ = 1/R:</p> 
+<p>a) Mas doblez → R mas chico → 1/R mas grande ✓</p> 
+<p>b) Recta → R = ∞ → 1/∞ = 0 ✓</p> 
+<p>c) Circulo → R constante → 1/R constante ✓</p> 
+<p>&nbsp;</p>
+<p>Podrian haber elegido κ = 1/R², o κ = 2/R, o κ = 1/√R.</p> 
+<p>Pero κ = 1/R es la que tiene significado GEOMETRICO directo:</p> 
+<p>κ = cuanto giras (en radianes) por cada metro que recorres.</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>COMO LO FORMULARON — La derivacion geometrica </h3>
+<p>&nbsp;</p>
+<p>Newton y Leibniz llegaron a κ = 1/R con geometria pura.</p> 
+<p>Vamos paso a paso como ellos lo hicieron:</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>PARTE 1: Maneja un carro por una carretera </h3>
+<p>&nbsp;</p>
+<p>Imagina que manejas un carro. El VOLANTE controla la curvatura.</p> 
+<p>&nbsp;</p>
+<h4>Caso 1: Volante recto → vas derecho</h4> 
+<p>&nbsp;</p>
+<p><svg viewBox="0 0 450 100" width="450" height="100" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="450" height="100" fill="#fafafa" fill-opacity="1" stroke="none"/><line x1="30" y1="50" x2="420" y2="50" stroke="black" stroke-width="2"/><text x="430" y="54" text-anchor="start" fill="black" font-size="16" font-weight="normal">0</text><rect x="200" y="35" width="40" height="30" fill="yellow" fill-opacity="0.8" stroke="black" stroke-width="1"/><text x="220" y="55" text-anchor="middle" fill="black" font-size="8" font-weight="normal">carro</text><text x="225" y="85" text-anchor="middle" fill="gray" font-size="11" font-weight="normal">Curvatura = CERO (no giras)</text></svg></p>
+<p>&nbsp;</p>
+<h4>Caso 2: Volante girado un poco → curva suave</h4> 
+<p>&nbsp;</p>
+<p><svg viewBox="0 0 450 180" width="450" height="180" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="450" height="180" fill="#fafafa" fill-opacity="1" stroke="none"/><path d="M 13.690869129650025 146.84610648167512 A 500 500 0 0 1 436.3091308703498 146.84610648167506" fill="none" stroke="green" stroke-width="2"/><rect x="225" y="105" width="40" height="30" fill="yellow" fill-opacity="0.8" stroke="black" stroke-width="1"/><text x="245" y="125" text-anchor="middle" fill="black" font-size="8" font-weight="normal">carro</text><text x="225" y="165" text-anchor="middle" fill="green" font-size="11" font-weight="normal">Curvatura PEQUENA (giras poco)</text></svg></p>
+<p>&nbsp;</p>
+<h4>Caso 3: Volante girado mucho → curva cerrada</h4> 
+<p>&nbsp;</p>
+<p><svg viewBox="0 0 450 200" width="450" height="200" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="450" height="200" fill="#fafafa" fill-opacity="1" stroke="none"/><path d="M 121.07695154586737 190 A 120 120 0 0 1 328.92304845413264 189.99999999999994" fill="none" stroke="red" stroke-width="2"/><rect x="225" y="125" width="40" height="30" fill="yellow" fill-opacity="0.8" stroke="black" stroke-width="1"/><text x="245" y="145" text-anchor="middle" fill="black" font-size="8" font-weight="normal">carro</text><text x="225" y="190" text-anchor="middle" fill="red" font-size="11" font-weight="normal">Curvatura GRANDE (giras mucho)</text></svg></p>
+<p>&nbsp;</p>
+<p>CURVATURA = cuanto GIRAS el volante.</p> 
+<p>Mas giro = mas curvatura = curva mas cerrada.</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>PARTE 2: El circulo — la curva mas simple </h3>
+<p>&nbsp;</p>
+<p>Un circulo tiene la MISMA curvatura en todos lados</p> 
+<p>(siempre giras el volante la misma cantidad).</p> 
+<p>&nbsp;</p>
+<p>Un circulo GRANDE necesita poco giro de volante → curvatura pequena.</p> 
+<p>Un circulo PEQUENO necesita mucho giro → curvatura grande.</p> 
+<p>&nbsp;</p>
+<p><svg viewBox="0 0 450 250" width="450" height="250" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="450" height="250" fill="#fafafa" fill-opacity="1" stroke="none"/><circle cx="120" cy="125" r="90" fill="none" fill-opacity="0" stroke="green" stroke-width="2"/><circle cx="120" cy="125" r="3" fill="green" fill-opacity="1" stroke="none" stroke-width="1"/><line x1="120" y1="125" x2="210" y2="125" stroke="green" stroke-width="1"/><text x="165" y="120" text-anchor="middle" fill="green" font-size="11" font-weight="normal">R=90</text><text x="120" y="235" text-anchor="middle" fill="green" font-size="11" font-weight="normal">Poco giro</text><circle cx="350" cy="125" r="35" fill="none" fill-opacity="0" stroke="red" stroke-width="2"/><circle cx="350" cy="125" r="3" fill="red" fill-opacity="1" stroke="none" stroke-width="1"/><line x1="350" y1="125" x2="385" y2="125" stroke="red" stroke-width="1"/><text x="368" y="120" text-anchor="middle" fill="red" font-size="9" font-weight="normal">R=35</text><text x="350" y="235" text-anchor="middle" fill="red" font-size="11" font-weight="normal">Mucho giro</text></svg></p>
+<p>&nbsp;</p>
+<p>R = RADIO = que tan grande es el circulo.</p> 
+<p>Circulo grande → R grande → poco giro → curvatura pequena.</p> 
+<p>Circulo pequeno → R pequeno → mucho giro → curvatura grande.</p> 
+<p>&nbsp;</p>
+<p>Entonces la curvatura y el radio son OPUESTOS:</p> 
+<p>Cuando uno sube, el otro baja.</p> 
+<p>La formula mas simple que hace eso es:</p> 
+<p>&nbsp;</p>
+<!-- FORMEQ CALLED: len=12 --><p><span class="eq"><var>κ</var> = <span class="dvc">1<span class="dvl"></span><var>R</var></span></span></p>
+<p>&nbsp;</p>
+<p>Verifiquemos con numeros:</p> 
+<p>&nbsp;</p>
+<p><span class="eq"><var>R</var><sub>grande</sub> = 90</span></p>
+<p><span class="eq"><var>κ</var><sub>grande</sub> = <span class="dvc">1<span class="dvl"></span><var>R</var><sub>grande</sub></span> = <span class="dvc">1<span class="dvl"></span>90</span> = 0.01111111</span></p>
+<p>&nbsp;</p>
+<p><span class="eq"><var>R</var><sub>pequeno</sub> = 35</span></p>
+<p><span class="eq"><var>κ</var><sub>pequeno</sub> = <span class="dvc">1<span class="dvl"></span><var>R</var><sub>pequeno</sub></span> = <span class="dvc">1<span class="dvl"></span>35</span> = 0.02857143</span></p>
+<p>&nbsp;</p>
+<p>R=90 → κ=0.011 (poquita curvatura)</p> 
+<p>R=35 → κ=0.029 (mas curvatura)</p> 
+<p>R=35 tiene el DOBLE de curvatura que R=90 — logico, giras mas.</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>PARTE 3: Pero POR QUE es exactamente 1/R y no 2/R o 5/R? </h3>
+<p>&nbsp;</p>
+<p>Porque asi se DEFINIO la curvatura. Viene de medir el giro en RADIANES.</p> 
+<p>&nbsp;</p>
+<h4>Que es un radian?</h4> 
+<p>Es una forma de medir angulos, como grados pero diferente.</p> 
+<p>Toma una cuerda del mismo largo que el radio y curvala sobre el circulo:</p> 
+<p>&nbsp;</p>
+<p><svg viewBox="0 0 400 300" width="400" height="300" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="400" height="300" fill="#fafafa" fill-opacity="1" stroke="none"/><text x="200" y="18" text-anchor="middle" fill="black" font-size="13" font-weight="bold">Que es 1 radian?</text><circle cx="160" cy="170" r="100" fill="none" stroke="#aaaaaa" stroke-width="1"/><circle cx="160" cy="170" r="3" fill="black" stroke="none"/><line x1="160" y1="170" x2="260" y2="170" stroke="black" stroke-width="1.5"/><text x="210" y="185" text-anchor="middle" fill="black" font-size="12" font-weight="bold">R</text><line x1="160" y1="170" x2="214.03023060602723" y2="85.85290153154705" stroke="black" stroke-width="1.5"/><text x="177.0151153030136" y="127.92645076577352" text-anchor="middle" fill="black" font-size="12" font-weight="bold">R</text><path d="M 260 170 A 100 100 0 0 0 214.03023060602723 85.85290153154705" fill="none" stroke="red" stroke-width="3.5"/><text x="265.3099074334127" y="112.46893537951831" text-anchor="start" fill="red" font-size="12" font-weight="bold">arco = R</text><path d="M 185 170 A 25 25 0 0 0 173.5075576515068 148.96322538288678" fill="none" stroke="blue" stroke-width="2"/><text x="188.96022454418852" y="158.17895722936754" text-anchor="start" fill="blue" font-size="11" font-weight="bold">1 rad = 57.3°</text><text x="200" y="265" text-anchor="middle" fill="black" font-size="10" font-weight="normal">Si el ARCO rojo mide lo mismo que el RADIO</text><text x="200" y="280" text-anchor="middle" fill="black" font-size="11" font-weight="bold">el angulo azul es 1 RADIAN (57.3&#176;)</text></svg></p>
+<p>&nbsp;</p>
+<p>1 radian = cuando la longitud del arco es IGUAL al radio.</p> 
+<p>Si R = 100m y caminas 100m por el circulo → giraste 1 radian.</p> 
+<p>Si R = 100m y caminas 200m por el circulo → giraste 2 radianes.</p> 
+<p>&nbsp;</p>
+<p>La formula general es:</p> 
+<!-- FORMEQ CALLED: len=15 --><p><span class="eq"><var>arco</var> = <var>R</var> · <var>θ</var></span></p>
+<p>&nbsp;</p>
+<p>arco = distancia que recorres por el circulo</p> 
+<p>θ = angulo girado (en radianes)</p> 
+<p>R = radio del circulo</p> 
+<p>&nbsp;</p>
+<h4>Ejemplo numerico:</h4> 
+<p><span class="eq"><var>R</var><sub>ej</sub> = 100</span></p>
+<p><span class="eq"><var>arco</var><sub>1</sub> = 100</span></p>
+<p><span class="eq"><var>θ</var><sub>1</sub> = <span class="dvc"><var>arco</var><sub>1</sub><span class="dvl"></span><var>R</var><sub>ej</sub></span> = <span class="dvc">100<span class="dvl"></span>100</span> = 1</span></p>
+<p><span class="eq"><var>arco</var><sub>2</sub> = 200</span></p>
+<p><span class="eq"><var>θ</var><sub>2</sub> = <span class="dvc"><var>arco</var><sub>2</sub><span class="dvl"></span><var>R</var><sub>ej</sub></span> = <span class="dvc">200<span class="dvl"></span>100</span> = 2</span></p>
+<p><span class="eq"><var>arco</var><sub>3</sub> = 50</span></p>
+<p><span class="eq"><var>θ</var><sub>3</sub> = <span class="dvc"><var>arco</var><sub>3</sub><span class="dvl"></span><var>R</var><sub>ej</sub></span> = <span class="dvc">50<span class="dvl"></span>100</span> = 0.5</span></p>
+<p>&nbsp;</p>
+<p>Con R=100: caminar 100m = girar 1 rad, 200m = 2 rad, 50m = 0.5 rad.</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>PARTE 4: Ahora si — de donde sale κ = 1/R </h3>
+<p>&nbsp;</p>
+<p>La curvatura se DEFINE como:</p> 
+<p>"cuanto GIRAS por cada metro que caminas"</p> 
+<p>&nbsp;</p>
+<!-- FORMEQ CALLED: len=14 --><p><span class="eq"><var>κ</var> = <span class="dvc"><var>Δθ</var><span class="dvl"></span><var>Δs</var></span></span></p>
+<p>&nbsp;</p>
+<p>Δθ = cuanto giraste (radianes)</p> 
+<p>Δs = cuanto caminaste (metros)</p> 
+<p>&nbsp;</p>
+<p>Ahora usamos la formula del arco: Δs = R * Δθ</p> 
+<p>Despejamos Δθ:</p> 
+<p>&nbsp;</p>
+<!-- FORMEQ CALLED: len=14 --><p><span class="eq"><var>Δθ</var> = <span class="dvc"><var>Δs</var><span class="dvl"></span><var>R</var></span></span></p>
+<p>&nbsp;</p>
+<p>Sustituimos en la curvatura:</p> 
+<p>&nbsp;</p>
+<!-- FORMEQ CALLED: len=26 --><p><span class="eq"><var>κ</var> = <span class="dvc"><var>Δθ</var><span class="dvl"></span><var>Δs</var></span> = <span class="dvc up"><span class="dvc"><var>Δs</var><span class="dvl"></span><var>R</var></span><span class="dvl"></span><var>Δs</var></span></span></p>
+<p>&nbsp;</p>
+<p>Los Δs se cancelan:</p> 
+<p>&nbsp;</p>
+<!-- FORMEQ CALLED: len=12 --><p><span class="eq"><var>κ</var> = <span class="dvc">1<span class="dvl"></span><var>R</var></span></span></p>
+<p>&nbsp;</p>
+<p>ESO ES TODO. Sale de:</p> 
+<p>1. Definir curvatura = giro por metro (Δθ/Δs)</p> 
+<p>2. Usar la formula del arco (Δs = R*Δθ)</p> 
+<p>3. Sustituir y simplificar</p> 
+<p>&nbsp;</p>
+<p><svg viewBox="0 0 450 130" width="450" height="130" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="450" height="130" fill="#fffff0" fill-opacity="1" stroke="none"/><rect x="10" y="10" width="430" height="110" fill="none" fill-opacity="1" stroke="gray" stroke-width="0.5"/><text x="225" y="35" text-anchor="middle" fill="black" font-size="13" font-weight="bold">RESUMEN</text><text x="225" y="60" text-anchor="middle" fill="blue" font-size="12" font-weight="normal">curvatura = giro/distancia</text><text x="225" y="80" text-anchor="middle" fill="green" font-size="12" font-weight="normal">arco = radio &#215; angulo</text><text x="225" y="100" text-anchor="middle" fill="red" font-size="12" font-weight="bold">combinar → curvatura = 1/radio</text></svg></p>
+<p>&nbsp;</p>
+<hr/> 
+<h3>PARTE 5: Ejemplo — rotonda vs autopista </h3>
+<p>&nbsp;</p>
+<p>Rotonda de un barrio: radio R = 15 metros</p> 
+<p><span class="eq"><var>R</var><sub>rot</sub> = 15</span></p>
+<p><span class="eq"><var>κ</var><sub>rot</sub> = <span class="dvc">1<span class="dvl"></span><var>R</var><sub>rot</sub></span> = <span class="dvc">1<span class="dvl"></span>15</span> = 0.06666667</span></p>
+<p>&nbsp;</p>
+<p>Autopista curva: radio R = 500 metros</p> 
+<p><span class="eq"><var>R</var><sub>auto</sub> = 500</span></p>
+<p><span class="eq"><var>κ</var><sub>auto</sub> = <span class="dvc">1<span class="dvl"></span><var>R</var><sub>auto</sub></span> = <span class="dvc">1<span class="dvl"></span>500</span> = 0.002</span></p>
+<p>&nbsp;</p>
+<p>Recta infinita: radio R = infinito</p> 
+<p>κ = 1/∞ = 0</p> 
+<p>&nbsp;</p>
+<p>La rotonda tiene curvatura = 0.067 (giras mucho el volante).</p> 
+<p>La autopista tiene curvatura = 0.002 (apenas giras).</p> 
+<p>La recta tiene curvatura = 0 (no giras).</p> 
+<p>&nbsp;</p>
+<p><span class="eq"><var>ratio</var><sub>curv</sub> = <span class="dvc"><var>κ</var><sub>rot</sub><span class="dvl"></span><var>κ</var><sub>auto</sub></span> = <span class="dvc">0.06666667<span class="dvl"></span>0.002</span> = 33.333333</span></p>
+<p>&nbsp;</p>
+<p>La rotonda tiene 33 veces mas curvatura que la autopista.</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>PARTE 6: Y la VIGA? </h3>
+<p>&nbsp;</p>
+<p>Cuando una viga se dobla por el peso, su forma es una CURVA.</p> 
+<p>Esa curva tiene curvatura κ = 1/R en cada punto.</p> 
+<p>Donde se dobla mas → R pequeno → κ grande.</p> 
+<p>Donde esta casi recta → R grande → κ pequena.</p> 
+<p>&nbsp;</p>
+<p><svg viewBox="0 0 450 180" width="450" height="180" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="450" height="180" fill="#fafafa" fill-opacity="1" stroke="none"/><path d="M 37.69670329204385 136.40807271660634 A 500 500 0 0 1 412.30329670795595 136.40807271660628" fill="none" stroke="blue" stroke-width="2"/><text x="225" y="120" text-anchor="middle" fill="blue" font-size="11" font-weight="normal">R = radio de curvatura de la viga</text><line x1="225" y1="125" x2="225" y2="160" stroke="gray" stroke-width="0.8" stroke-dasharray="5"/><text x="225" y="170" text-anchor="middle" fill="red" font-size="12" font-weight="bold">κ = 1/R</text><polygon points="60,108 48,122.4 72,122.4" fill="white" stroke="black" stroke-width="1.5"/><line x1="44.4" y1="122.4" x2="75.6" y2="122.4" stroke="black" stroke-width="1.5"/><line x1="44.4" y1="122.4" x2="40.4" y2="127.2" stroke="black" stroke-width="0.8"/><line x1="50.64" y1="122.4" x2="46.64" y2="127.2" stroke="black" stroke-width="0.8"/><line x1="56.879999999999995" y1="122.4" x2="52.879999999999995" y2="127.2" stroke="black" stroke-width="0.8"/><line x1="63.120000000000005" y1="122.4" x2="59.120000000000005" y2="127.2" stroke="black" stroke-width="0.8"/><line x1="69.36" y1="122.4" x2="65.36" y2="127.2" stroke="black" stroke-width="0.8"/><polygon points="390,108 378,120 402,120" fill="white" stroke="black" stroke-width="1.5"/><circle cx="384" cy="125" r="5" fill="white" stroke="black" stroke-width="1"/><circle cx="396" cy="125" r="5" fill="white" stroke="black" stroke-width="1"/><line x1="374.4" y1="130" x2="405.6" y2="130" stroke="black" stroke-width="1.5"/><line x1="225" y1="15" x2="225" y2="85" stroke="red" stroke-width="1.5"/><polygon points="225,85 219,74.608 231,74.608" fill="red"/><text x="225" y="10" text-anchor="middle" fill="red" font-size="10" font-weight="normal">carga</text></svg></p>
+<p>&nbsp;</p>
+<p>La viga de acero de 6m tiene R = 13,889m al centro.</p> 
+<p>Es como estar en un circulo de 14 KILOMETROS de radio.</p> 
+<p>Por eso la deflexion es tan pequena (apenas 2.7 cm).</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>PARTE 7: Y que tiene que ver con d²v/dx²? </h3>
+<p>&nbsp;</p>
+<p>Esto se explica en el tutorial de Euler.</p> 
+<p>Resumen rapido: para deflexiones PEQUENAS (vigas),</p> 
+<p>la curvatura κ = 1/R es APROXIMADAMENTE igual a la segunda derivada:</p> 
+<p>&nbsp;</p>
+<!-- FORMEQ CALLED: len=18 --><p><span class="eq"><var>κ</var> ≈ <span class="dvc"><i>d</i><sup>2</sup><var>v</var><span class="dvl"></span><i>d</i><var>x</var><sup>2</sup></span></span></p>
+<p>&nbsp;</p>
+<p>La aproximacion es excelente porque las vigas se deforman MUY poco.</p> 
+<p>Ejemplo: viga de 6m que baja 2.7cm → error menor a 0.01%.</p> 
+ </body></html>

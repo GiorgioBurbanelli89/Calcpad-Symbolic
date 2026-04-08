@@ -104,8 +104,13 @@ namespace Calcpad.Wpf
             items.Add(new ListBoxItem() { Content = "#write", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "$Area{f(x) @ x = a : b}", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "$Block{ }", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "$Chart{x; y @ type=line : title=Title}", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "$Derivative{f(x) @ x = a}", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "$Draw{line,x1,y1,x2,y2,color,lw : circle,x,y,r @ w=600 : h=400 : title=Title}", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "$Fem2D{x_j; y_j; e_j; values @ w=600 : h=400}", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "$Fem3D{x_j; y_j; z_j; e_j; values @ w=600 : h=400}", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "$Find{f(x) @ x = a : b}", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "$Frame{nodes; elements; supports; deformed; moments @ w=800 : h=500}", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "$Inf{f(x) @ x = a : b}", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "$Inline{ }", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "$Integral{f(x) @ x = a : b}", Foreground = Brushes.DarkMagenta });
@@ -116,6 +121,8 @@ namespace Calcpad.Wpf
             items.Add(new ListBoxItem() { Content = "$Root{f(x) = const @ x = a : b}", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "$Slope{f(x) @ x = a}", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "$Sum{f(k) @ k = a : b}", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "$Table{v1; v2; v3 @ \"H1\"; \"H2\"; \"H3\" & fmt=4 & row=1}", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "$Struct{beam,0,0,L,0 : pin,0,0 : roller,L,0 : force,L/2,0,down,P @ w=600 : h=250}", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "$Sup{f(x) @ x = a : b}", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "$While{ }", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "A", Foreground = Brushes.DarkCyan });

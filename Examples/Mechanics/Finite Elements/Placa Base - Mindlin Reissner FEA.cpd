@@ -1,0 +1,376 @@
+"Placa Base con Columna Tubular y Pernos - FEA Mindlin-Reissner
+
+"1. Datos de entrada
+
+"1.1 Columna tubular rectangular (HSS)
+'Ancho del tubo -'b_col = 200 mm
+'Alto del tubo -'h_col = 250 mm
+'Espesor del tubo -'t_col = 10 mm
+'Carga axial -'P_col = 600 kN
+'Momento -'M_col = 80 kN*m
+
+"1.2 Placa base
+'Ancho -'B_p = 400 mm
+'Largo -'N_p = 450 mm
+'Espesor -'t_p = 25 mm
+'Acero (A36) -'F_y = 250 MPa
+'Modulo de elasticidad -'E = 200000 MPa
+'Relacion de Poisson -'ν = 0.3
+'Modulo de corte -'G = E/(2*(1 + ν))
+G & MPa
+
+"1.3 Soldadura perimetral (columna a placa)
+'Tamano del filete -'a_w = 8 mm
+'Longitud de soldadura (perimetro rectangular) -
+L_w = 2*(b_col + h_col)
+L_w
+
+"1.4 Pernos de anclaje (4 pernos)
+'Diametro del perno -'d_b = 20 mm
+'Longitud embebida -'L_emb = 500 mm
+'Rigidez axial del perno -
+k_bolt = E*3.14159*(d_b/2)^2/L_emb
+k_bolt & N/mm
+'Distancia del perno al borde -'e_p = 40 mm
+
+"1.5 Apoyo de concreto (pedestal)
+'Concreto -'f_c = 21 MPa
+'Rigidez Winkler -'k_conc = 50000 kN/m^3
+
+"1.6 Adimensionalizar al sistema N-mm para FEA
+#hide
+E_n = E & N/mm^2
+G_n = G & N/mm^2
+t_n = t_p & mm
+B_n = B_p & mm
+N_n = N_p & mm
+P_n = P_col & N
+M_n = M_col & N*mm
+kb_n = k_bolt & N/mm
+kc_n = k_conc & N/mm^3
+bc_n = b_col & mm
+hc_n = h_col & mm
+ep_n = e_p & mm
+aw_n = a_w & mm
+fc_n = f_c & N/mm^2
+#show
+
+"2. Modelo FEA Mindlin-Reissner
+'La placa base se modela como placa gruesa sobre fundacion elastica (Winkler).
+'Los pernos de anclaje son resortes puntuales en las esquinas.
+'La carga de la columna se aplica como carga puntual y momento en el centro.
+
+"2.1 Malla
+'DOFs por nodo (w, θx, θy) -'n_dof = 3
+n_x = 8', 'n_y = 8
+n_e = n_x*n_y
+n_j = (n_x + 1)*(n_y + 1)
+dx_n = B_n/n_x
+dy_n = N_n/n_y
+n_total = n_dof*n_j
+'Factor de correccion de corte -'κ = 5/6
+#hide
+n_1 = n_x + 1
+x_j = vector(n_j)
+y_j = vector(n_j)
+#for j = 0 : n_y
+	#for i = 0 : n_x
+		k = j*n_1 + i + 1
+		x_j.k = i*dx_n
+		y_j.k = j*dy_n
+	#loop
+#loop
+e_j = matrix(n_e; 4)
+#for j = 0 : n_y - 1
+	#for i = 0 : n_x - 1
+		e = j*n_x + i + 1
+		bl = j*n_1 + i + 1
+		e_j.(e; 1) = bl
+		e_j.(e; 2) = bl + 1
+		e_j.(e; 3) = bl + n_1 + 1
+		e_j.(e; 4) = bl + n_1
+	#loop
+#loop
+j_e(e) = row(e_j; e)
+x_c(e) = sum(extract(x_j; j_e(e)))/4
+y_c(e) = sum(extract(y_j; j_e(e)))/4
+#show
+#equ
+
+"2.2 Visualizacion
+
+"Vista en planta (placa Mindlin-Reissner)
+#hide
+w_s = 250
+k_s = w_s/B_n
+d_s = 40
+h_s = N_n*k_s
+cx_s = d_s + w_s/2
+cy_s = d_s + h_s/2
+pb_s = e_p*k_s
+bs = b_col*k_s
+hs_c = h_col*k_s
+ts = t_col*k_s
+aw_s = a_w*k_s
+#show
+#svg w_s+2*d_s h_s+2*d_s
+.text cx_s d_s-8 "Vista_en_planta_-_Placa_Mindlin-Reissner" 10 navy middle bold
+.rect d_s d_s w_s h_s lightgray 0.3 black 1.5
+#for e = 1 : n_e
+	x = x_c(e)*k_s+d_s
+	y = h_s-y_c(e)*k_s+d_s
+	.rect x-dx_n/2*k_s y-dy_n/2*k_s dx_n*k_s dy_n*k_s lightblue 0.15 steelBlue 0.4
+#loop
+.rect cx_s-bs/2 cy_s-hs_c/2 bs hs_c lightyellow 0.5 black 1.5
+.rect cx_s-bs/2+ts cy_s-hs_c/2+ts bs-2*ts hs_c-2*ts white 1 black 0.5
+.text cx_s cy_s "HSS" 9 black middle bold
+.line cx_s-bs/2-aw_s cy_s-hs_c/2-aw_s cx_s+bs/2+aw_s cy_s-hs_c/2-aw_s orange 2.5
+.line cx_s+bs/2+aw_s cy_s-hs_c/2-aw_s cx_s+bs/2+aw_s cy_s+hs_c/2+aw_s orange 2.5
+.line cx_s+bs/2+aw_s cy_s+hs_c/2+aw_s cx_s-bs/2-aw_s cy_s+hs_c/2+aw_s orange 2.5
+.line cx_s-bs/2-aw_s cy_s+hs_c/2+aw_s cx_s-bs/2-aw_s cy_s-hs_c/2-aw_s orange 2.5
+.text cx_s+bs/2+aw_s+5 cy_s "Soldadura" 7 orange start
+.text cx_s+bs/2+aw_s+5 cy_s+10 "filete" 7 orange start
+.circle d_s+pb_s d_s+h_s-pb_s 5 red 0.8 darkred 1.5
+.circle d_s+w_s-pb_s d_s+h_s-pb_s 5 red 0.8 darkred 1.5
+.circle d_s+pb_s d_s+pb_s 5 red 0.8 darkred 1.5
+.circle d_s+w_s-pb_s d_s+pb_s 5 red 0.8 darkred 1.5
+.text d_s+pb_s+8 d_s+h_s-pb_s "Perno" 7 red start
+.line d_s cy_s-hs_c/2-aw_s-5 d_s+w_s cy_s-hs_c/2-aw_s-5 black 0.3
+.text cx_s cy_s-hs_c/2-aw_s-12 b_col 8 blue middle
+.line d_s-8 cy_s-hs_c/2 d_s-8 cy_s+hs_c/2 black 0.3
+.text d_s-20 cy_s h_col 8 blue middle
+#end svg
+
+"Vista lateral (columna + soldadura + placa + concreto)
+#hide
+sv = 0.5
+tp_s = clrunits(t_n)*sv
+bc_s = clrunits(b_col)*sv
+tc_s = clrunits(t_col)*sv
+Bp_s = clrunits(B_n)*sv
+ep_s = clrunits(e_p)*sv
+aw_sv = clrunits(a_w)*sv
+col_h = 120
+ped_h = 60
+ped_w = Bp_s+40
+tot_h = col_h+tp_s+ped_h+40
+tot_w = ped_w+80
+cx_l = tot_w/2
+col_top = 25
+base_y = col_top+col_h+tp_s
+#show
+#svg tot_w tot_h
+.text cx_l 10 "Vista_lateral" 10 navy middle bold
+.rect cx_l-bc_s/2 col_top bc_s col_h lightyellow 0.5 black 1.5
+.rect cx_l-bc_s/2+tc_s col_top bc_s-2*tc_s col_h white 1 black 0.5
+.text cx_l col_top+col_h/2 "HSS" 10 black middle
+.rect cx_l-Bp_s/2 col_top+col_h Bp_s tp_s steelBlue 0.6 black 1.5
+.text cx_l col_top+col_h+tp_s/2+1 "Placa_t_p" 6 white middle bold
+.polygon cx_l-bc_s/2-aw_sv col_top+col_h cx_l-bc_s/2 col_top+col_h cx_l-bc_s/2 col_top+col_h+tp_s orange 0.8
+.polygon cx_l+bc_s/2+aw_sv col_top+col_h cx_l+bc_s/2 col_top+col_h cx_l+bc_s/2 col_top+col_h+tp_s orange 0.8
+.text cx_l+bc_s/2+aw_sv+3 col_top+col_h+tp_s/2 "Soldadura" 7 orange start
+.rect cx_l-ped_w/2 base_y ped_w ped_h lightgray 0.5 gray 1.5
+.text cx_l base_y+ped_h/2 "Pedestal_concreto" 8 gray middle
+.circle cx_l-Bp_s/2+ep_s base_y 4 red 0.8 darkred 1.5
+.circle cx_l+Bp_s/2-ep_s base_y 4 red 0.8 darkred 1.5
+.line cx_l-Bp_s/2+ep_s base_y cx_l-Bp_s/2+ep_s base_y+ped_h*0.6 red 1
+.line cx_l+Bp_s/2-ep_s base_y cx_l+Bp_s/2-ep_s base_y+ped_h*0.6 red 1
+.text cx_l+Bp_s/2-ep_s+5 base_y+ped_h*0.3 "Pernos" 7 red start
+.arrow cx_l col_top-12 cx_l col_top-1 green 2
+.text cx_l+5 col_top-15 "P" 11 green start bold
+.line cx_l-Bp_s/2 base_y+ped_h+3 cx_l+Bp_s/2 base_y+ped_h+3 black 0.3
+.text cx_l base_y+ped_h+10 B_n 8 blue middle
+#end svg
+
+"2.3 Funciones de forma Q4
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+dN_1ξ(η) = -(1 - η)/4
+dN_2ξ(η) = (1 - η)/4
+dN_3ξ(η) = (1 + η)/4
+dN_4ξ(η) = -(1 + η)/4
+dN_1η(ξ) = -(1 - ξ)/4
+dN_2η(ξ) = -(1 + ξ)/4
+dN_3η(ξ) = (1 + ξ)/4
+dN_4η(ξ) = (1 - ξ)/4
+
+"2.4 Matrices constitutivas
+'Todo en N y mm: sin conversiones necesarias
+#hide
+D_b_mat = E_n*t_n^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+D_s_mat = κ*G_n*t_n*[1; 0|0; 1]
+#show
+
+"2.5 Rigidez del elemento (integracion selectiva)
+#hide
+J_11 = dx_n/2
+J_22 = dy_n/2
+det_J = J_11*J_22
+g_p = 1/sqr(3)
+n_k = n_dof*4
+K_e = symmetric(n_k)
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g_p','η_g = -g_p
+	#else if ig ≡ 2
+		ξ_g = g_p','η_g = -g_p
+	#else if ig ≡ 3
+		ξ_g = g_p','η_g = g_p
+	#else
+		ξ_g = -g_p','η_g = g_p
+	#end if
+	dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+	dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+	dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+	dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+	B_b = [0; 0; -dNdx_1; 0; 0; -dNdx_2; 0; 0; -dNdx_3; 0; 0; -dNdx_4 | _
+	       0; dNdy_1; 0; 0; dNdy_2; 0; 0; dNdy_3; 0; 0; dNdy_4; 0 | _
+	       0; dNdx_1; -dNdy_1; 0; dNdx_2; -dNdy_2; 0; dNdx_3; -dNdy_3; 0; dNdx_4; -dNdy_4]
+	BtDB = transp(B_b)*D_b_mat*B_b*det_J
+	#for i = 1 : n_k
+		#for j = i : n_k
+			K_e.(i; j) = K_e.(i; j) + BtDB.(i; j)
+		#loop
+	#loop
+#loop
+ξ_g = 0','η_g = 0
+NN_1 = N_1(ξ_g; η_g)','NN_2 = N_2(ξ_g; η_g)
+NN_3 = N_3(ξ_g; η_g)','NN_4 = N_4(ξ_g; η_g)
+dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+B_s = [dNdx_1; 0; -NN_1; dNdx_2; 0; -NN_2; dNdx_3; 0; -NN_3; dNdx_4; 0; -NN_4 | _
+       dNdy_1; NN_1; 0; dNdy_2; NN_2; 0; dNdy_3; NN_3; 0; dNdy_4; NN_4; 0]
+BtDB_s = transp(B_s)*D_s_mat*B_s*det_J*4
+#for i = 1 : n_k
+	#for j = i : n_k
+		K_e.(i; j) = K_e.(i; j) + BtDB_s.(i; j)
+	#loop
+#loop
+
+"2.6 Ensamblaje global
+K = symmetric(n_total)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		#for j = i : 4
+			j_1 = e_j.(e; i)
+			j_2 = e_j.(e; j)
+			i_1 = n_dof*(j_1 - 1) + 1
+			i_2 = n_dof*(j_2 - 1) + 1
+			k_ij = submatrix(K_e; n_dof*(i - 1) + 1; n_dof*i; n_dof*(j - 1) + 1; n_dof*j)
+			#if j_1 > j_2
+				add(transp(k_ij); K; i_2; i_1)
+			#else
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+
+"2.7 Condiciones de borde
+'Resortes Winkler del concreto en todos los nodos:
+k_node = k_conc*dx_n*dy_n
+#for i = 1 : n_j
+	j = n_dof*(i - 1) + 1
+	K.(j; j) = K.(j; j) + k_node
+#loop
+'Pernos de anclaje en las 4 esquinas (resorte axial en w):
+j_b1 = 1
+j_b2 = n_1
+j_b3 = n_y*n_1 + 1
+j_b4 = n_j
+K.(n_dof*(j_b1 - 1) + 1; n_dof*(j_b1 - 1) + 1) = K.(n_dof*(j_b1 - 1) + 1; n_dof*(j_b1 - 1) + 1) + k_bolt
+K.(n_dof*(j_b2 - 1) + 1; n_dof*(j_b2 - 1) + 1) = K.(n_dof*(j_b2 - 1) + 1; n_dof*(j_b2 - 1) + 1) + k_bolt
+K.(n_dof*(j_b3 - 1) + 1; n_dof*(j_b3 - 1) + 1) = K.(n_dof*(j_b3 - 1) + 1; n_dof*(j_b3 - 1) + 1) + k_bolt
+K.(n_dof*(j_b4 - 1) + 1; n_dof*(j_b4 - 1) + 1) = K.(n_dof*(j_b4 - 1) + 1; n_dof*(j_b4 - 1) + 1) + k_bolt
+
+"2.8 Cargas (distribuidas en el perimetro de soldadura del tubo)
+F = vector(n_total)
+'La carga se distribuye en los nodos del perimetro rectangular del tubo.
+cx_p = B_n/2
+cy_p = N_n/2
+tol = dx_n/2
+n_weld = 0
+#for i = 1 : n_j
+	xi = x_j.i
+	yi = y_j.i
+	dx_i = abs(xi - cx_p)
+	dy_i = abs(yi - cy_p)
+	on_x = dx_i > b_col/2 - tol ∧ dx_i < b_col/2 + tol ∧ dy_i < h_col/2 + tol
+	on_y = dy_i > h_col/2 - tol ∧ dy_i < h_col/2 + tol ∧ dx_i < b_col/2 + tol
+	#if on_x ∨ on_y
+		n_weld = n_weld + 1
+	#end if
+#loop
+'Nodos en el perimetro de soldadura: 'n_weld
+P_node = P/max(n_weld; 1)
+M_arm = N_n/2
+#for i = 1 : n_j
+	xi = x_j.i
+	yi = y_j.i
+	dx_i = abs(xi - cx_p)
+	dy_i = abs(yi - cy_p)
+	on_x = dx_i > b_col/2 - tol ∧ dx_i < b_col/2 + tol ∧ dy_i < h_col/2 + tol
+	on_y = dy_i > h_col/2 - tol ∧ dy_i < h_col/2 + tol ∧ dx_i < b_col/2 + tol
+	#if on_x ∨ on_y
+		F.(n_dof*(i - 1) + 1) = F.(n_dof*(i - 1) + 1) - P_node
+		F.(n_dof*(i - 1) + 1) = F.(n_dof*(i - 1) + 1) + M_col*(yi - cy_p)/(n_weld*M_arm^2/3)
+	#end if
+#loop
+#show
+'Carga distribuida en 'n_weld' nodos del perimetro de soldadura
+'Resolviendo...
+Z = clsolve(K; F)
+
+"3. Resultados
+#hide
+W_z = matrix(n_x + 1; n_y + 1)
+#for i_x = 0 : n_x
+	#for i_y = 0 : n_y
+		k = i_y*n_1 + i_x + 1
+		W_z.(i_x + 1; i_y + 1) = Z.(n_dof*(k - 1) + 1)
+	#loop
+#loop
+w_f(x; y) = spline(1 + x/dx_n; 1 + y/dy_n; W_z)
+PlotWidth = 250
+PlotHeight = 250
+PlotStep = 10
+#show
+
+"3.1 Deflexiones de la placa base (mm)
+$Map{w_f(x; y) @ x = 0 : B_n & y = 0 : N_n}
+'Deflexion maxima en el centro:
+w_f(B_n/2; N_n/2)'mm
+
+"3.2 Presion del concreto
+#hide
+Q_z = matrix(n_x + 1; n_y + 1)
+#for i_x = 0 : n_x
+	#for i_y = 0 : n_y
+		k = i_y*n_1 + i_x + 1
+		Q_z.(i_x + 1; i_y + 1) = -k_conc*Z.(n_dof*(k - 1) + 1)
+	#loop
+#loop
+q_f(x; y) = spline(1 + x/dx_n; 1 + y/dy_n; Q_z)
+#show
+'Presion del concreto bajo la placa (MPa):
+$Map{q_f(x; y) @ x = 0 : B_n & y = 0 : N_n}
+'Presion maxima:
+q_f(B_n/2; N_n/2)'MPa
+'Presion admisible (0.85·φ·f_c):
+f_p_adm = 0.65*0.85*f_c
+f_p_adm'MPa
+
+"3.3 Fuerzas en los pernos de anclaje
+'Fuerza en cada perno (positivo = traccion):
+T_1 = -k_bolt*Z.(n_dof*(j_b1 - 1) + 1)/1000
+T_2 = -k_bolt*Z.(n_dof*(j_b2 - 1) + 1)/1000
+T_3 = -k_bolt*Z.(n_dof*(j_b3 - 1) + 1)/1000
+T_4 = -k_bolt*Z.(n_dof*(j_b4 - 1) + 1)/1000
+'Perno 1 -'T_1'kN
+'Perno 2 -'T_2'kN
+'Perno 3 -'T_3'kN
+'Perno 4 -'T_4'kN

@@ -1,0 +1,28 @@
+
+L = 6
+h = 0.4
+M = L*h/2
+x + y = r"Viga simplemente apoyada - Matriz de Rigidez
+
+"Datos
+E = 200000
+I = 833.33
+L = 6
+q = 10
+
+"Rigidez a flexion
+EI = E*I
+
+"Coeficientes de la matriz
+k11 = 12*EI/L
+k12 = 6*EI/L
+k22 = 4*EI/L
+k23 = 2*EI/L
+
+"Cargas equivalentes
+F1 = q*L/2
+M1 = q*L/12
+
+"Deflexion maxima
+vmax = 5*q*L/
+

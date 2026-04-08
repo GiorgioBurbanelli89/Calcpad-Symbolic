@@ -1,0 +1,162 @@
+"Debug Mindlin - 1 elemento, carga puntual central
+
+'Sistema kN-m adimensional
+'E -'E_a = 35000000
+'ν -'ν = 0.15
+'G -'G_a = E_a/(2*(1 + ν))
+'κ -'κ = 5/6
+'t -'t_a = 0.1
+'a -'a = 6
+'b -'b = 4
+
+'1 elemento, 4 nodos, nodo 5 en el centro (agregado)
+'Nodos: 1=(0,0) 2=(6,0) 3=(6,4) 4=(0,4)
+'Apoyos: nodos 1-4 (w=0)
+'Carga: F = -q*a*b = -10*6*4 = -240 kN en nodo central
+
+'Pero con 1 elemento no hay nodo central.
+'Uso 2x2 elementos con nodo central (3,2)
+
+n_dof = 3
+n_x = 6', 'n_y = 4
+n_j = (n_x + 1)*(n_y + 1)
+n_e = n_x*n_y
+d_x = a/n_x
+d_y = b/n_y
+n_total = n_dof*n_j
+n_k = n_dof*4
+J_11 = d_x/2
+J_22 = d_y/2
+det_J = J_11*J_22
+
+'D_b:
+D_b = E_a*t_a^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+D_b
+
+'D_s (con factor anti-locking):
+h_e = max(d_x; d_y)
+α_s = 1
+α_s
+D_s = α_s*κ*G_a*t_a*[1; 0|0; 1]
+D_s
+
+'Ratio D_s/D_b (diagonal):
+'K_s/K_b ≈'D_s.(1; 1)*d_x^2/D_b.(1; 1)
+
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+dN_1ξ(η) = -(1 - η)/4
+dN_2ξ(η) = (1 - η)/4
+dN_3ξ(η) = (1 + η)/4
+dN_4ξ(η) = -(1 + η)/4
+dN_1η(ξ) = -(1 - ξ)/4
+dN_2η(ξ) = -(1 + ξ)/4
+dN_3η(ξ) = (1 + ξ)/4
+dN_4η(ξ) = (1 - ξ)/4
+
+'K_e (flexion 2x2 + corte 1x1):
+#hide
+g = 1/sqr(3)
+K_e = symmetric(n_k)
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g','η_g = -g
+	#else if ig ≡ 2
+		ξ_g = g','η_g = -g
+	#else if ig ≡ 3
+		ξ_g = g','η_g = g
+	#else
+		ξ_g = -g','η_g = g
+	#end if
+	dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+	dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+	dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+	dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+	B_b = [0; 0; -dNdx_1; 0; 0; -dNdx_2; 0; 0; -dNdx_3; 0; 0; -dNdx_4 | _
+	       0; dNdy_1; 0; 0; dNdy_2; 0; 0; dNdy_3; 0; 0; dNdy_4; 0 | _
+	       0; dNdx_1; -dNdy_1; 0; dNdx_2; -dNdy_2; 0; dNdx_3; -dNdy_3; 0; dNdx_4; -dNdy_4]
+	BtDB = transp(B_b)*D_b*B_b*det_J
+	#for i = 1 : n_k
+		#for j = i : n_k
+			K_e.(i; j) = K_e.(i; j) + BtDB.(i; j)
+		#loop
+	#loop
+#loop
+ξ_g = 0','η_g = 0
+NN_1 = N_1(ξ_g; η_g)','NN_2 = N_2(ξ_g; η_g)
+NN_3 = N_3(ξ_g; η_g)','NN_4 = N_4(ξ_g; η_g)
+dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+B_s = [dNdx_1; 0; -NN_1; dNdx_2; 0; -NN_2; dNdx_3; 0; -NN_3; dNdx_4; 0; -NN_4 | _
+       dNdy_1; NN_1; 0; dNdy_2; NN_2; 0; dNdy_3; NN_3; 0; dNdy_4; NN_4; 0]
+BtDB_s = transp(B_s)*D_s*B_s*det_J*4
+#for i = 1 : n_k
+	#for j = i : n_k
+		K_e.(i; j) = K_e.(i; j) + BtDB_s.(i; j)
+	#loop
+#loop
+#show
+K_e
+
+'Ensamblaje 2x2:
+#hide
+'Conectividad generada:
+n_1 = n_x + 1
+e_j = matrix(n_e; 4)
+#for j = 0 : n_y - 1
+	#for i = 0 : n_x - 1
+		e = j*n_x + i + 1
+		bl = j*n_1 + i + 1
+		e_j.(e; 1) = bl
+		e_j.(e; 2) = bl + 1
+		e_j.(e; 3) = bl + n_1 + 1
+		e_j.(e; 4) = bl + n_1
+	#loop
+#loop
+K = symmetric(n_total)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		#for j = i : 4
+			j_1 = e_j.(e; i)
+			j_2 = e_j.(e; j)
+			i_1 = n_dof*(j_1 - 1) + 1
+			i_2 = n_dof*(j_2 - 1) + 1
+			k_ij = submatrix(K_e; n_dof*(i - 1) + 1; n_dof*i; n_dof*(j - 1) + 1; n_dof*j)
+			#if j_1 > j_2
+				add(transp(k_ij); K; i_2; i_1)
+			#else
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+'Apoyos: w=0 en todos los bordes
+k_p = 10^20
+#for j = 0 : n_y
+	#for i = 0 : n_x
+		#if i ≡ 0 ∨ i ≡ n_x ∨ j ≡ 0 ∨ j ≡ n_y
+			k = j*n_1 + i + 1
+			pos = n_dof*(k - 1) + 1
+			K.(pos; pos) = K.(pos; pos) + k_p
+		#end if
+	#loop
+#loop
+'Carga uniforme q=10 kN/m2
+F = vector(n_total)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		k = e_j.(e; i)
+		F.(n_dof*(k - 1) + 1) = F.(n_dof*(k - 1) + 1) - 10*d_x*d_y/4
+	#loop
+#loop
+#show
+'Resolviendo 'n_total' DOFs:
+Z = clsolve(K; F)
+'Nodo central (j=2,i=3): k = 2*7+3+1 = 18
+j_c = n_y/2*n_1 + n_x/2 + 1
+'j_c = 'j_c
+'w_center = 'Z.(n_dof*(j_c - 1) + 1)'m = 'Z.(n_dof*(j_c - 1) + 1)*1000'mm

@@ -1,0 +1,18 @@
+"Frame Viewer — 2D Portal Frame with Moment Diagrams
+
+"Nodes (x; y)
+nodes = [0; 0 | 0; 4 | 6; 4 | 6; 0]
+
+"Elements (node_i; node_j) — 1-indexed
+elem = [1; 2 | 2; 3 | 3; 4]
+
+"Supports (fixed nodes)
+sup = [1; 4]
+
+"Displacements (dx; dy per node)
+def = [0; 0 | 0.05; -0.002 | 0.04; -0.015 | 0; 0]
+
+"Moments (Mi; Mj per element)
+mom = [0; -30 | -30; 20 | 20; 0]
+
+$Frame{nodes; elem; sup; def; mom @ defScale=30 : diagScale=0.05 : title=Portal Frame}

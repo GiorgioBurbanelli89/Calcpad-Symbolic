@@ -1,0 +1,361 @@
+"Por que la fibra de arriba es MAS CORTA?
+"Zoom milimetrico para VER la diferencia
+'<hr/>
+
+"PASO 1: Corto un pedazo de viga ANTES de doblarla
+
+'<p>Tomo un pedazo rectangular de 100mm de largo y 20mm de alto.</p>
+'<p>Marco 5 fibras horizontales cada 5mm:</p>
+
+#svg 420 200
+.fillrect 0 0 420 200 #fafafa 1
+.text 210 15 ANTES_de_doblar:_pedazo_recto 11 black middle bold
+.rect 60 50 300 100 #d4e6f1 0.3 black 1.5
+.line 60 50 360 50 #cc0000 1.5
+.line 60 75 360 75 #cc6600 1
+.line 60 100 360 100 green 2
+.line 60 125 360 125 #6666cc 1
+.line 60 150 360 150 #0000cc 1.5
+.text 370 54 Fibra_1_(arriba) 8 #cc0000 start
+.text 370 79 Fibra_2 8 #cc6600 start
+.text 370 104 Fibra_3_(neutro) 8 green start bold
+.text 370 129 Fibra_4 8 #6666cc start
+.text 370 154 Fibra_5_(abajo) 8 #0000cc start
+.hdim 60 175 360 175 0 100mm
+.vdim 40 50 40 150 0 20mm
+.text 25 75 5mm 7 gray middle
+.text 25 100 0 7 green middle
+.text 25 125 5mm 7 gray middle
+.text 210 100 Las_5_fibras_miden_100mm_(iguales) 9 black middle
+#end svg
+
+'<p>Todas las fibras miden exactamente 100mm. Son iguales.</p>
+
+'<hr/>
+"PASO 2: Ahora DOBLO el pedazo (centro O arriba)
+
+'<p>Lo doblo hacia ABAJO. El centro O queda ARRIBA.</p>
+'<p>Las fibras ahora son ARCOS (curvas, no rectas):</p>
+
+#hide
+np_arc = 20
+cx_o = 210
+cy_o = -80
+r_f1 = 170
+r_f2 = 195
+r_f3 = 220
+r_f4 = 245
+r_f5 = 270
+ang_start = 60
+ang_end = 120
+ang_range = ang_end - ang_start
+x_f1 = vector(np_arc)
+y_f1 = vector(np_arc)
+x_f2 = vector(np_arc)
+y_f2 = vector(np_arc)
+x_f3 = vector(np_arc)
+y_f3 = vector(np_arc)
+x_f4 = vector(np_arc)
+y_f4 = vector(np_arc)
+x_f5 = vector(np_arc)
+y_f5 = vector(np_arc)
+#for k = 1 : np_arc
+    ang_k = ang_start + (k - 1)*ang_range/(np_arc - 1)
+    x_f1.(k) = cx_o + r_f1*cos(ang_k - 90)
+    y_f1.(k) = cy_o + r_f1*sin(ang_k - 90)
+    x_f2.(k) = cx_o + r_f2*cos(ang_k - 90)
+    y_f2.(k) = cy_o + r_f2*sin(ang_k - 90)
+    x_f3.(k) = cx_o + r_f3*cos(ang_k - 90)
+    y_f3.(k) = cy_o + r_f3*sin(ang_k - 90)
+    x_f4.(k) = cx_o + r_f4*cos(ang_k - 90)
+    y_f4.(k) = cy_o + r_f4*sin(ang_k - 90)
+    x_f5.(k) = cx_o + r_f5*cos(ang_k - 90)
+    y_f5.(k) = cy_o + r_f5*sin(ang_k - 90)
+#loop
+#show
+
+#svg 420 260
+.fillrect 0 0 420 260 #fafafa 1
+.text 210 15 DESPUES_de_doblar_(arcos_reales) 11 black middle bold
+#for k = 1 : np_arc - 1
+    .line x_f1.(k) y_f1.(k) x_f1.(k+1) y_f1.(k+1) #cc0000 2
+    .line x_f2.(k) y_f2.(k) x_f2.(k+1) y_f2.(k+1) #cc6600 1.5
+    .line x_f3.(k) y_f3.(k) x_f3.(k+1) y_f3.(k+1) green 2.5
+    .line x_f4.(k) y_f4.(k) x_f4.(k+1) y_f4.(k+1) #6666cc 1.5
+    .line x_f5.(k) y_f5.(k) x_f5.(k+1) y_f5.(k+1) #0000cc 2
+#loop
+.line x_f1.(1) y_f1.(1) x_f5.(1) y_f5.(1) black 1
+.line x_f1.(np_arc) y_f1.(np_arc) x_f5.(np_arc) y_f5.(np_arc) black 1
+.text 365 y_f1.(np_arc) F1_(arriba) 7 #cc0000 start bold
+.text 365 y_f2.(np_arc) F2 7 #cc6600 start
+.text 365 y_f3.(np_arc) F3_(neutro) 7 green start bold
+.text 365 y_f4.(np_arc) F4 7 #6666cc start
+.text 365 y_f5.(np_arc) F5_(abajo) 7 #0000cc start bold
+.text 80 245 F1_(roja)_=_arco_CORTO_(cerca_de_O) 9 #cc0000 start
+.text 80 258 F5_(azul)_=_arco_LARGO_(lejos_de_O) 9 #0000cc start
+#end svg
+
+'<p>AHORA se ve: los arcos de arriba (rojo, cerca de O) son MAS CORTOS</p>
+'<p>que los de abajo (azul, lejos de O). Son CURVAS reales, no rectas.</p>
+
+'<hr/>
+"PASO 3: Por que la longitud del arco = radio × angulo?
+
+'<p>Antes de medir las fibras, necesitas entender ESTA formula:</p>
+'<p>Longitud del arco = radio × angulo (en radianes)</p>
+'<p>Aqui se VE por que:</p>
+
+#svg 380 250
+.fillrect 0 0 380 250 #fafafa 1
+.text 190 15 Un_circulo_completo 11 black middle bold
+.circle 130 130 80 none 0 black 1.5
+.circle 130 130 3 black 1
+.line 130 130 210 130 black 1
+.text 170 123 R 11 black middle bold
+.text 230 70 Vuelta_completa: 9 black start
+.text 230 85 angulo_=_2π_rad 9 black start
+.text 230 100 arco_=_2πR 9 black start bold
+.text 230 115 (la_circunferencia) 8 gray start
+.text 230 145 Media_vuelta: 9 black start
+.text 230 160 angulo_=_π_rad 9 black start
+.text 230 175 arco_=_πR 9 black start bold
+.text 230 205 Cuarto_de_vuelta: 9 black start
+.text 230 220 angulo_=_π/2_rad 9 black start
+.text 230 235 arco_=_πR/2 9 black start bold
+#end svg
+
+'<p>El arco es PROPORCIONAL al angulo.</p>
+'<p>Doble angulo = doble arco. La constante de proporcionalidad es R:</p>
+
+#svg 380 160
+.fillrect 0 0 380 160 #fafafa 1
+.text 190 15 Arcos_con_MISMO_angulo,_diferente_radio 10 black middle bold
+.circle 190 140 3 black 1
+.text 195 148 O 8 black start
+.line 190 140 120 40 gray 0.5
+.line 190 140 260 40 gray 0.5
+.line 120 70 260 70 #cc0000 2
+.line 120 100 260 100 green 2
+.line 120 130 260 130 #0000cc 2
+.text 270 70 R=70_→_arco_corto 8 #cc0000 start
+.text 270 100 R=100_→_arco_medio 8 green start
+.text 270 130 R=130_→_arco_largo 8 #0000cc start
+#end svg
+
+'<p>MISMO angulo pero diferentes radios → diferentes longitudes.</p>
+'<p>Radio GRANDE = arco LARGO. Radio CHICO = arco CORTO.</p>
+'<p>Eso es todo! Arco = R × θ.</p>
+
+'<hr/>
+"PASO 4: Ahora si — mido cada fibra con NUMEROS
+
+'<p>ρ = 500mm (radio al eje neutro)</p>
+'<p>Seccion de 20mm de alto (10mm arriba, 10mm abajo del neutro).</p>
+'<p>θ = 0.2 radianes (el angulo del pedazo de viga).</p>
+
+'<h4>Cada fibra es un arco con diferente radio:</h4>
+
+#svg 350 250
+.fillrect 0 0 350 250 #fafafa 1
+.text 175 15 Cada_fibra_=_arco_concentrico 10 black middle bold
+.circle 175 25 3 black 1
+.text 180 30 O 9 black start
+.circle 175 25 100 none 0 #cc0000 1.5
+.circle 175 25 115 none 0 #cc6600 0.8
+.circle 175 25 130 none 0 green 2
+.circle 175 25 145 none 0 #6666cc 0.8
+.circle 175 25 160 none 0 #0000cc 1.5
+.darrow 25 25 25 125 #cc0000 1
+.text 8 75 490 7 #cc0000 middle
+.darrow 23 25 23 155 green 1
+.text -3 90 500 7 green middle
+.darrow 21 25 21 185 #0000cc 1
+.text -13 105 510 7 #0000cc middle
+.text 270 105 F1:_R=490_(corto) 7 #cc0000 start
+.text 270 140 F3:_R=500_(medio) 7 green start bold
+.text 270 175 F5:_R=510_(largo) 7 #0000cc start
+.text 175 230 Radio_grande_→_arco_largo 9 black middle
+.text 175 245 Radio_chico_→_arco_corto 9 black middle
+#end svg
+
+'<p>F1 (radio 490): arco CORTO (cerca de O).</p>
+'<p>F5 (radio 510): arco LARGO (lejos de O).</p>
+'<p>Ahora: arco = radio × θ, con θ = 0.2:</p>
+
+'<h4>Longitud de cada fibra:</h4>
+
+ρ = 500
+θ = 0.2
+
+'<p>Fibra 1 (y = +10mm, arriba, CERCA de O):</p>
+y_1 = 10
+dist_1 = ρ - y_1
+L_1 = dist_1*θ
+
+'<p>Fibra 2 (y = +5mm):</p>
+y_2 = 5
+dist_2 = ρ - y_2
+L_2 = dist_2*θ
+
+'<p>Fibra 3 = eje neutro (y = 0):</p>
+y_3 = 0
+dist_3 = ρ - y_3
+L_3 = dist_3*θ
+
+'<p>Fibra 4 (y = -5mm):</p>
+y_4 = -5
+dist_4 = ρ - y_4
+L_4 = dist_4*θ
+
+'<p>Fibra 5 (y = -10mm, abajo, LEJOS de O):</p>
+y_5 = -10
+dist_5 = ρ - y_5
+L_5 = dist_5*θ
+
+'<hr/>
+"PASO 5: GRAFICA — las longitudes son DIFERENTES
+
+'<p>Dibujemos las 5 fibras con su longitud REAL:</p>
+
+#svg 420 220
+.fillrect 0 0 420 220 #fafafa 1
+.text 210 15 Longitud_de_cada_fibra 11 black middle bold
+.line 30 40 30+98*3 40 #cc0000 2
+.text 30+98*3+5 44 F1:_98mm_(CORTA) 8 #cc0000 start bold
+.line 30 70 30+99*3 70 #cc6600 1.5
+.text 30+99*3+5 74 F2:_99mm 8 #cc6600 start
+.line 30 100 30+100*3 100 green 2.5
+.text 30+100*3+5 104 F3:_100mm_(neutro) 8 green start bold
+.line 30 130 30+101*3 130 #6666cc 1.5
+.text 30+101*3+5 134 F4:_101mm 8 #6666cc start
+.line 30 160 30+102*3 160 #0000cc 2
+.text 30+102*3+5 164 F5:_102mm_(LARGA) 8 #0000cc start bold
+.dashed 30+100*3 30 30+100*3 180 gray 0.5 3
+.text 210 195 La_diferencia_es_de_solo_2mm_en_100mm 9 black middle
+.text 210 210 pero_eso_genera_TODA_la_deformacion! 9 black middle bold
+#end svg
+
+'<p>F1 (arriba): 98mm → 2mm MAS CORTA que el neutro</p>
+'<p>F5 (abajo): 102mm → 2mm MAS LARGA que el neutro</p>
+'<p>El neutro (F3): 100mm → NO CAMBIO</p>
+
+'<hr/>
+"PASO 6: La DEFORMACION de cada fibra
+
+'<p>Deformacion = cuanto CAMBIO / longitud ORIGINAL</p>
+'<p>El original es el neutro (100mm). Cuanto cambio cada fibra?</p>
+
+#svg 420 200
+.fillrect 0 0 420 200 #fafafa 1
+.text 210 15 Antes_(100mm)_vs_Despues 10 black middle bold
+.text 30 40 ANTES 8 gray middle bold
+.text 30 55 (recto) 7 gray middle
+.line 50 40 50+100*2.5 40 #cc0000 1
+.line 50 55 50+100*2.5 55 green 1
+.line 50 70 50+100*2.5 70 #0000cc 1
+.text 310 40 100mm 7 black start
+.text 310 55 100mm 7 black start
+.text 310 70 100mm 7 black start
+.text 30 105 DESPUES 8 gray middle bold
+.text 30 120 (doblado) 7 gray middle
+.line 50 105 50+98*2.5 105 #cc0000 2
+.line 50 120 50+100*2.5 120 green 2
+.line 50 135 50+102*2.5 135 #0000cc 2
+.text 50+98*2.5+5 105 98mm_(-2mm) 7 #cc0000 start bold
+.text 50+100*2.5+5 120 100mm_(0) 7 green start bold
+.text 50+102*2.5+5 135 102mm_(+2mm) 7 #0000cc start bold
+.dashed 50+100*2.5 95 50+100*2.5 145 gray 0.5 3
+.text 210 165 F1_se_ACORTO_2mm 9 #cc0000 middle
+.text 210 180 F5_se_ALARGO_2mm 9 #0000cc middle
+.text 210 195 F3_NO_CAMBIO 9 green middle
+#end svg
+
+'<p>Deformacion = cuanto cambio / longitud original:</p>
+
+ε_1 = (L_1 - L_3)/L_3
+ε_2 = (L_2 - L_3)/L_3
+ε_3 = (L_3 - L_3)/L_3
+ε_4 = (L_4 - L_3)/L_3
+ε_5 = (L_5 - L_3)/L_3
+
+#svg 400 220
+.fillrect 0 0 400 220 #fafafa 1
+.text 200 15 Deformacion_de_cada_fibra 11 black middle bold
+.line 200 35 200 195 gray 0.5
+.text 200 30 0 8 gray middle
+.text 90 30 Compresion 8 #cc0000 middle
+.text 310 30 Tension 8 #0000cc middle
+.rect 200-40 45 40 20 #ffcccc 0.8 #cc0000 1
+.text 145 58 F1:_ε=-0.02 8 #cc0000 end
+.text 30 58 y=+10_(arriba) 8 #cc0000 start
+.rect 200-20 75 20 20 #ffcccc 0.5 #cc6600 1
+.text 165 88 F2:_-0.01 8 #cc6600 end
+.text 30 88 y=+5 8 #cc6600 start
+.circle 200 115 3 green 1
+.text 145 118 F3:_ε=0 8 green end
+.text 30 118 y=0_(neutro) 8 green start
+.rect 200 135 20 20 #ccccff 0.5 #6666cc 1
+.text 235 148 F4:_+0.01 8 #6666cc start
+.text 30 148 y=-5 8 #6666cc start
+.rect 200 165 40 20 #ccccff 0.8 #0000cc 1
+.text 255 178 F5:_ε=+0.02 8 #0000cc start
+.text 30 178 y=-10_(abajo) 8 #0000cc start
+.text 200 208 Arriba:_negativo_(compresion) 8 #cc0000 middle
+.text 200 220 Abajo:_positivo_(tension) 8 #0000cc middle
+#end svg
+
+'<p>PATRON: cuando y SUBE (positivo, hacia O), ε BAJA (negativo, compresion).</p>
+'<p>Son OPUESTOS. Por eso la formula tiene signo NEGATIVO:</p>
+
+#deq ε = -y/ρ
+
+'<p>Verificacion con cada fibra:</p>
+ε_check_1 = -y_1/ρ
+ε_check_2 = -y_2/ρ
+ε_check_3 = -y_3/ρ
+ε_check_4 = -y_4/ρ
+ε_check_5 = -y_5/ρ
+
+'<p>Todos coinciden! La formula funciona para CADA fibra.</p>
+
+'<hr/>
+"PASO 7: La formula general — por que el angulo NO importa?
+
+'<p>Hicimos la cuenta con θ = 0.2, pero funciona con CUALQUIER θ:</p>
+
+#svg 420 180
+.fillrect 0 0 420 180 #fafafa 1
+.text 210 15 El_angulo_θ_SIEMPRE_se_cancela 10 black middle bold
+.text 30 45 θ=0.1 9 black start
+.line 80 40 80+98*1.2 40 #cc0000 1.5
+.line 80 55 80+100*1.2 55 green 1.5
+.text 80+102*1.2 48 ε=-0.02 8 #cc0000 start bold
+.text 30 85 θ=0.2 9 black start
+.line 80 80 80+98*1.2 80 #cc0000 1.5
+.line 80 95 80+100*1.2 95 green 1.5
+.text 80+102*1.2 88 ε=-0.02 8 #cc0000 start bold
+.text 30 125 θ=0.5 9 black start
+.line 80 120 80+98*1.2 120 #cc0000 1.5
+.line 80 135 80+100*1.2 135 green 1.5
+.text 80+102*1.2 128 ε=-0.02 8 #cc0000 start bold
+.text 210 165 No_importa_θ:_la_deformacion_SIEMPRE_es_-0.02 9 black middle bold
+#end svg
+
+'<p>La algebra muestra por que:</p>
+'<p>ε = ((ρ-y)×θ - ρ×θ) / (ρ×θ)</p>
+'<p>ε = (ρ×θ - y×θ - ρ×θ) / (ρ×θ)</p>
+'<p>ε = (-y×θ) / (ρ×θ)</p>
+'<p>Los θ se CANCELAN:</p>
+
+#deq ε = -y/ρ
+
+#svg 420 140
+.fillrect 10 10 400 120 #fffff0 1
+.rect 10 10 400 120 none 1 #cccccc 0.5
+.text 210 35 RESUMEN 12 black middle bold
+.text 210 58 ε_=_-y/ρ 16 black middle bold
+.text 210 80 1._Arco_=_radio_×_angulo_(geometria_basica) 9 black middle
+.text 210 95 2._Fibra_cerca_de_O_→_radio_chico_→_arco_corto_→_se_acorta 9 #cc0000 middle
+.text 210 110 3._Fibra_lejos_de_O_→_radio_grande_→_arco_largo_→_se_estira 9 #0000cc middle
+.text 210 125 4._θ_se_cancela_→_solo_depende_de_y_y_ρ 9 black middle
+#end svg

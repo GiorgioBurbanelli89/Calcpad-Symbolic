@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Plate Color Map Test</title>
+  <script src="dist/calcpad-viz.umd.cjs"></script>
+</head>
+<body style="margin:20px;background:#f5f5f5;font-family:sans-serif;">
+  <h2>Simply Supported Plate — Displacement</h2>
+  <div id="plate1"></div>
+  <script>
+    // 10x10 mesh (11x11 = 121 nodes, 100 quad elements)
+    var nodes = [], nx = 11, ny = 11, Lx = 6, Ly = 4;
+    for (var j = 0; j < ny; j++)
+      for (var i = 0; i < nx; i++)
+        nodes.push([i * Lx / (nx-1), j * Ly / (ny-1)]);
+
+    var elements = [];
+    for (var j = 0; j < ny - 1; j++)
+      for (var i = 0; i < nx - 1; i++) {
+        var n0 = j * nx + i;
+        elements.push([n0, n0 + 1, n0 + nx + 1, n0 + nx]);
+      }
+
+    // Sinusoidal displacement (simply supported plate under uniform load)
+    var values = [];
+    for (var j = 0; j < ny; j++)
+      for (var i = 0; i < nx; i++) {
+        var x = i / (nx - 1);
+        var y = j / (ny - 1);
+        values.push(-Math.sin(Math.PI * x) * Math.sin(Math.PI * y) * 0.012);
+      }
+
+    // Supports on all 4 edges
+    var supports = [];
+    for (var i = 0; i < nx; i++) { supports.push(i); supports.push((ny-1)*nx + i); }
+    for (var j = 1; j < ny-1; j++) { supports.push(j*nx); supports.push(j*nx + nx-1); }
+
+    CalcpadViz.fem2d("plate1", {
+      nodes: nodes,
+      elements: elements,
+      values: values,
+      supports: supports,
+      options: { width: 750, height: 520, title: "Displacement uz (m)" }
+    });
+  </script>
+
+  <h2 style="margin-top:30px">Slab — Bending Moment Mxx</h2>
+  <div id="plate2"></div>
+  <script>
+    // Same mesh, bending moment values
+    var values2 = [];
+    for (var j = 0; j < ny; j++)
+      for (var i = 0; i < nx; i++) {
+        var x = i / (nx - 1);
+        var y = j / (ny - 1);
+        values2.push(Math.sin(Math.PI * x) * Math.sin(Math.PI * y) * 18.2);
+      }
+
+    CalcpadViz.fem2d("plate2", {
+      nodes: nodes,
+      elements: elements,
+      values: values2,
+      supports: supports,
+      options: { width: 750, height: 520, title: "Bending Moment Mxx (kN*m/m)" }
+    });
+  </script>
+</body>
+</html>

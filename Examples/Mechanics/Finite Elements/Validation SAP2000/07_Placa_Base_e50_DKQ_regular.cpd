@@ -1,0 +1,140 @@
+"Placa Base e50 - DKQ Shell-Thin (malla regular = SAP2000)
+
+"1. Datos (sistema N-mm adimensional)
+E_a = 200000','ν = 0.3','t_a = 50
+B_a = 500','N_a = 600
+P_a = 1480','G_a = E_a/(2*(1 + ν))
+n_dof = 3
+
+"2. Malla regular 11x13 (50mm spacing, identica a SAP2000)
+#hide
+n_x = 10','n_y = 12
+dx = B_a/n_x','dy = N_a/n_y
+n_1 = n_x + 1
+n_j = n_1*(n_y + 1)','n_e = n_x*n_y','n_total = n_dof*n_j
+
+x_j = vector(n_j)','y_j = vector(n_j)
+#for j = 0 : n_y
+	#for i = 0 : n_x
+		k = j*n_1 + i + 1
+		x_j.k = i*dx','y_j.k = j*dy
+	#loop
+#loop
+e_j = matrix(n_e; 4)
+#for j = 0 : n_y - 1
+	#for i = 0 : n_x - 1
+		e = j*n_x + i + 1','bl = j*n_1 + i + 1
+		e_j.(e; 1) = bl','e_j.(e; 2) = bl + 1
+		e_j.(e; 3) = bl + n_1 + 1','e_j.(e; 4) = bl + n_1
+	#loop
+#loop
+
+"3. DKQ Flexion (Kirchhoff discreto)
+D_b = E_a*t_a^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+g = 1/sqr(3)','n_k = 12
+J1 = dx/2','J2 = dy/2','dJ = J1*J2
+
+K_e = symmetric(n_k)
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ = -g','η = -g
+	#else if ig ≡ 2
+		ξ = g','η = -g
+	#else if ig ≡ 3
+		ξ = g','η = g
+	#else
+		ξ = -g','η = g
+	#end if
+	'Fila 1: κ_x = ∂βx/∂x → col θy = βx coefs
+	Rx_w1 = 3*ξ*(1 - η)/dx^2
+	Rx_t1 = (1 - η)*(3*ξ - 1)/(2*dx)
+	Rx_w2 = -3*ξ*(1 - η)/dx^2
+	Rx_t2 = (1 - η)*(1 + 3*ξ)/(2*dx)
+	Rx_w3 = -3*ξ*(1 + η)/dx^2
+	Rx_t3 = (1 + η)*(1 + 3*ξ)/(2*dx)
+	Rx_w4 = 3*ξ*(1 + η)/dx^2
+	Rx_t4 = (1 + η)*(3*ξ - 1)/(2*dx)
+	'Fila 2: κ_y = ∂βy/∂y → col θx = -βy coefs (negated)
+	Ry_w1 = 3*(1 - ξ)*η/dy^2
+	Ry_t1 = (1 - ξ)*(3*η - 1)/(2*dy)
+	Ry_w2 = 3*(1 + ξ)*η/dy^2
+	Ry_t2 = (1 + ξ)*(3*η - 1)/(2*dy)
+	Ry_w3 = -3*(1 + ξ)*η/dy^2
+	Ry_t3 = (1 + ξ)*(1 + 3*η)/(2*dy)
+	Ry_w4 = -3*(1 - ξ)*η/dy^2
+	Ry_t4 = (1 - ξ)*(1 + 3*η)/(2*dy)
+	'Fila 3: 2κ_xy
+	TT = 3*(2 - ξ^2 - η^2)/(2*dx*dy)
+	Rxy_bx1 = (1 - ξ)*(1 + 3*ξ)/(4*dy)
+	Rxy_by1 = (1 - η)*(1 + 3*η)/(4*dx)
+	Rxy_bx2 = (1 + ξ)*(1 - 3*ξ)/(4*dy)
+	Rxy_by2 = -(1 - η)*(1 + 3*η)/(4*dx)
+	Rxy_bx3 = (1 + ξ)*(3*ξ - 1)/(4*dy)
+	Rxy_by3 = (1 + η)*(3*η - 1)/(4*dx)
+	Rxy_bx4 = -(1 - ξ)*(1 + 3*ξ)/(4*dy)
+	Rxy_by4 = (1 + η)*(1 - 3*η)/(4*dx)
+	'B(3x12) en DOFs {w, θx, θy}: θx=-βy(neg), θy=βx
+	Bb = [ _
+	Rx_w1; 0; Rx_t1; Rx_w2; 0; Rx_t2; Rx_w3; 0; Rx_t3; Rx_w4; 0; Rx_t4 | _
+	Ry_w1; -Ry_t1; 0; Ry_w2; -Ry_t2; 0; Ry_w3; -Ry_t3; 0; Ry_w4; -Ry_t4; 0 | _
+	TT; -Rxy_by1; Rxy_bx1; -TT; -Rxy_by2; Rxy_bx2; TT; -Rxy_by3; Rxy_bx3; -TT; -Rxy_by4; Rxy_bx4]
+	BtDB = transp(Bb)*D_b*Bb*dJ
+	#for i = 1 : n_k
+		#for j = i : n_k
+			K_e.(i; j) = K_e.(i; j) + BtDB.(i; j)
+		#loop
+	#loop
+#loop
+
+"4. Ensamblaje
+K = symmetric(n_total)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		#for j = i : 4
+			j1 = e_j.(e; i)','j2 = e_j.(e; j)
+			i1 = n_dof*(j1 - 1) + 1','i2 = n_dof*(j2 - 1) + 1
+			kij = submatrix(K_e; n_dof*(i - 1) + 1; n_dof*i; n_dof*(j - 1) + 1; n_dof*j)
+			#if j1 > j2
+				add(transp(kij); K; i2; i1)
+			#else
+				add(kij; K; i1; i2)
+			#end if
+		#loop
+	#loop
+#loop
+
+"5. Springs (EXACTAMENTE como SAP2000)
+'SAP2000: 0.12 kN/mm en todos los 143 nodos (Winkler)
+'SAP2000: 202.81 kN/mm en 4 esquinas (Winkler + Bolt)
+'Convertir a N/mm (sistema N-mm): x1000
+'Springs en DOF w (DOF 1 en nuestro sistema {w, θx, θy})
+k_winkler = 0.12*1000
+k_corner = 202.81*1000
+#for k = 1 : n_j
+	K.(n_dof*(k - 1) + 1; n_dof*(k - 1) + 1) = K.(n_dof*(k - 1) + 1; n_dof*(k - 1) + 1) + k_winkler
+#loop
+'Esquinas: nodos 1 (0,0), 11 (500,0), 133 (0,600), 143 (500,600)
+k_extra = k_corner - k_winkler
+corners = [1; n_1; n_y*n_1 + 1; n_j]
+#for i = 1 : 4
+	k = corners.i
+	K.(n_dof*(k - 1) + 1; n_dof*(k - 1) + 1) = K.(n_dof*(k - 1) + 1; n_dof*(k - 1) + 1) + k_extra
+#loop
+
+"6. Carga puntual en centro (nodo 72)
+F = vector(n_total)
+jc = (n_y/2)*n_1 + n_x/2 + 1
+F.(n_dof*(jc - 1) + 1) = -P_a*1000
+#show
+
+"7. Solucion
+Z = clsolve(K; F)
+
+"8. Resultados
+w_c = Z.(n_dof*(jc - 1) + 1)*(1 mm)
+'Deflexion centro (DKQ Shell-Thin):
+w_c
+w_c | mm
+'SAP2000 Shell-Thin: -9.4336 mm
+'Ratio DKQ/SAP:
+w_c/(-9.4336 mm)

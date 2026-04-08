@@ -1,0 +1,293 @@
+"Viga en reposo vs Viga en flexion
+
+"(a) Viga en estado de reposo — las fibras son iguales: mp = nq
+#svg 500 220
+.fillrect 20 30 400 120 #d4e6f1 0.6
+.rect 20 30 400 120 none 1 #2c3e50 1.5
+.line 20 90 420 90 #2c3e50 0.8
+.dashed 80 90 370 90 #555555 1 5
+.text 225 95 y 11 #555555 middle
+.line 80 30 80 150 #555555 0.5
+.line 370 30 370 150 #555555 0.5
+.text 80 25 m 11 black middle
+.text 370 25 p 11 black middle
+.text 80 162 n 11 black middle
+.text 370 162 q 11 black middle
+.text 30 25 A 12 black middle bold
+.text 410 25 B 12 black middle bold
+.rect 150 55 120 70 none 0.15 #888888 0.8
+.text 210 95 f 10 #555555 middle
+.text 140 65 e 10 #555555 middle
+.hdim 150 185 270 185 0 dx
+.text 460 80 M 14 #2980b9 start bold
+.curvedarrow 455 90 15 90 270 #2980b9
+.text 10 80 M 14 #2980b9 end bold
+.curvedarrow 25 90 15 270 90 #2980b9
+.darrow 80 200 370 200 black 1
+.text 225 212 s 11 black middle
+.text 30 200 s 11 black start
+.text 380 200 s 11 black start
+.axes 10 180 20
+.text 470 93 x 11 black start
+#end svg
+
+'<p>mp = nq: todas las fibras horizontales tienen la misma longitud.</p>
+
+"(b) Seccion transversal — distribucion de esfuerzos
+#svg 200 200
+.line 80 20 140 20 black 1.5
+.line 80 20 60 180 black 1.5
+.line 140 20 160 180 black 1.5
+.line 60 180 160 180 black 1.5
+.fillrect 59 19 102 162 #d4e6f1 0.4
+.dashed 110 10 110 190 gray 1 4
+.text 115 195 z 10 black start
+.text 185 100 x 10 black start
+.arrow 110 100 180 100 black 1.5
+.arrow 110 100 110 10 black 1.5
+.text 100 10 y 10 black end
+#end svg
+
+'<hr/>
+"(c) Viga en FLEXION — las fibras cambian: mp < nq
+'<p>La viga se dobla. Centro O esta arriba. y positivo = hacia O.</p>
+
+#svg 460 280
+.fillrect 0 0 460 280 #fafafa 1
+.text 230 15 Viga_en_flexion 12 black middle bold
+.line 50 50 100 75 #2c3e50 1.5
+.line 100 75 160 95 #2c3e50 1.5
+.line 160 95 230 102 #2c3e50 1.5
+.line 230 102 300 95 #2c3e50 1.5
+.line 300 95 360 75 #2c3e50 1.5
+.line 360 75 410 50 #2c3e50 1.5
+.line 50 100 100 122 #2c3e50 1.5
+.line 100 122 160 140 #2c3e50 1.5
+.line 160 140 230 147 #2c3e50 1.5
+.line 230 147 300 140 #2c3e50 1.5
+.line 300 140 360 122 #2c3e50 1.5
+.line 360 122 410 100 #2c3e50 1.5
+.line 50 75 100 98 gray 0.8
+.line 100 98 160 117 gray 0.8
+.line 160 117 230 124 gray 0.8
+.line 230 124 300 117 gray 0.8
+.line 300 117 360 98 gray 0.8
+.line 360 98 410 75 gray 0.8
+.line 50 50 50 100 #2c3e50 1.5
+.line 410 50 410 100 #2c3e50 1.5
+.text 40 45 A 11 black middle bold
+.text 420 45 B 11 black middle bold
+.text 55 62 m 9 black start
+.text 395 62 p 9 black end
+.text 40 105 n 9 black middle
+.text 420 105 q 9 black middle
+.text 175 100 e 9 #555555 middle
+.text 285 100 f 9 #555555 middle
+.darrow 180 55 180 140 green 1.5
+.text 185 98 y 12 green start bold
+.text 130 52 Compresion 8 #cc0000 middle
+.text 130 150 Tension 8 #0000cc middle
+.curvedarrow 435 75 12 90 270 #2980b9
+.text 448 73 M 11 #2980b9 start bold
+.curvedarrow 20 75 12 270 90 #2980b9
+.text 8 73 M 11 #2980b9 end bold
+.hdim 140 195 320 195 0 dx
+.dashed 230 150 230 240 gray 0.5 4
+.text 235 235 O_(centro) 9 gray start
+.text 230 265 Viga_se_curva_hacia_ABAJO 9 gray middle
+.text 230 278 Arriba:_compresion_(mp<nq) 9 gray middle
+#end svg
+
+'<p>Arriba (m→p): las fibras se ACORTAN (compresion) → mp < nq</p>
+'<p>Abajo (n→q): las fibras se ALARGAN (tension)</p>
+'<p>Linea neutra: no cambia de longitud</p>
+'<p>ρ = radio de curvatura, dθ = angulo entre las secciones</p>
+
+'<hr/>
+"PASO 1: De donde sale ε = -y/ρ?
+
+'<p>Imagina que doblas una regla. Que pasa DENTRO?</p>
+
+'<h4>ANTES de doblar: todo mide igual</h4>
+#svg 400 80
+.fillrect 0 0 400 80 #fafafa 1
+.rect 30 15 340 50 #d4e6f1 0.4 black 1.5
+.dashed 30 40 370 40 green 1 4
+.text 200 44 Eje_neutro 8 green middle
+.text 390 22 Fibra_arriba 7 #cc0000 start
+.text 390 44 Eje_neutro 7 green start
+.text 390 62 Fibra_abajo 7 #0000cc start
+.line 30 20 370 20 #cc0000 1
+.line 30 60 370 60 #0000cc 1
+#end svg
+
+'<p>Las 3 fibras miden lo mismo.</p>
+
+'<h4>DESPUES de doblar: la viga se curva hacia ABAJO</h4>
+'<p>El centro de curvatura O esta ARRIBA.</p>
+
+#svg 420 200
+.fillrect 0 0 420 200 #fafafa 1
+.circle 210 15 3 gray 1
+.text 220 18 O_(centro_de_curvatura) 9 gray start
+.line 210 15 60 180 gray 0.5
+.line 210 15 360 180 gray 0.5
+.line 60 110 140 140 #cc0000 2
+.line 140 140 210 150 #cc0000 2
+.line 210 150 280 140 #cc0000 2
+.line 280 140 360 110 #cc0000 2
+.line 60 130 140 157 green 2
+.line 140 157 210 165 green 2
+.line 210 165 280 157 green 2
+.line 280 157 360 130 green 2
+.line 60 150 140 174 #0000cc 2
+.line 140 174 210 180 #0000cc 2
+.line 210 180 280 174 #0000cc 2
+.line 280 174 360 150 #0000cc 2
+.text 375 110 Arriba_(cerca_de_O) 7 #cc0000 start
+.text 375 120 MAS_CORTA 7 #cc0000 start bold
+.text 375 135 Eje_neutro 7 green start
+.text 375 145 NO_CAMBIA 7 green start bold
+.text 375 160 Abajo_(lejos_de_O) 7 #0000cc start
+.text 375 170 MAS_LARGA 7 #0000cc start bold
+.darrow 50 110 50 15 gray 1
+.text 35 60 ρ 11 gray middle bold
+.darrow 55 110 55 150 #cc6600 1.5
+.text 40 130 y 11 #cc6600 middle bold
+#end svg
+
+'<p>La fibra ROJA (cerca de O) recorre un arco MAS CORTO → se comprime.</p>
+'<p>La fibra AZUL (lejos de O) recorre un arco MAS LARGO → se estira.</p>
+'<p>ρ = distancia de O al eje neutro (radio de curvatura).</p>
+'<p>y = distancia del eje neutro a la fibra.</p>
+
+'<h4>CUANTO se acorta? Ejemplo con NUMEROS:</h4>
+'<p>Supongamos ρ = 1000 mm (radio de curvatura).</p>
+'<p>Supongamos y = 50 mm (fibra a 50mm del eje neutro).</p>
+'<p>La fibra esta a (ρ - y) = 950 mm del centro O.</p>
+'<p>El eje neutro esta a ρ = 1000 mm del centro O.</p>
+
+#svg 350 200
+.fillrect 0 0 350 200 #fafafa 1
+.text 175 15 Ejemplo_con_numeros 11 black middle bold
+.circle 175 20 3 gray 1
+.text 185 23 O 9 gray start
+.line 50 170 300 170 green 2
+.text 310 174 Eje_neutro 8 green start
+.line 50 130 300 130 #cc0000 2
+.text 310 134 Fibra_(y=50mm) 8 #cc0000 start
+.darrow 40 20 40 170 gray 1
+.text 18 95 ρ=1000 8 gray middle
+.darrow 320 130 320 170 #cc6600 1.5
+.text 330 150 y=50 9 #cc6600 start bold
+.darrow 35 20 35 130 #cc0000 1
+.text 8 75 ρ-y 8 #cc0000 middle
+.text 8 85 =950 8 #cc0000 middle
+#end svg
+
+'<p>Para un arco de CUALQUIER angulo θ:</p>
+'<p>Eje neutro recorre: 1000*θ</p>
+'<p>Fibra recorre: 950*θ</p>
+
+'<p>Deformacion = (lo que recorre la fibra - lo que recorre el neutro) / neutro:</p>
+
+ρ_ej = 1000
+y_ej = 50
+long_neutro = ρ_ej
+long_fibra = ρ_ej - y_ej
+ε_ej = (long_fibra - long_neutro)/long_neutro
+
+'<p>ε = (950 - 1000)/1000 = -50/1000 = -0.05 = -5%</p>
+'<p>Negativo = la fibra se ACORTO 5% (compresion).</p>
+'<p>Y si haces la algebra general:</p>
+'<p>ε = ((ρ-y)*θ - ρ*θ) / (ρ*θ) = -y*θ/(ρ*θ) = -y/ρ</p>
+'<p>θ se cancela! Solo queda:</p>
+
+#deq ε = -y/ρ
+
+'<p>Verificacion: ε = -50/1000 = -0.05 ✓</p>
+
+'<hr/>
+"PASO 2: De ε a σ (Ley de Hooke)
+
+'<p>Hooke (1678): el esfuerzo es proporcional a la deformacion.</p>
+#deq σ = E*ε = -E*y/ρ
+
+'<p>La distribucion de esfuerzos en la seccion es LINEAL:</p>
+
+#svg 350 200
+.fillrect 0 0 350 200 #fafafa 1
+.text 175 15 Distribucion_de_esfuerzos 11 black middle bold
+.rect 30 30 80 140 #e8e8e8 0.3 black 1.5
+.dashed 30 100 110 100 #009900 1 4
+.text 18 104 EN 8 #009900 end
+.line 110 100 250 100 gray 0.5
+.line 110 30 110 170 gray 0.5
+.line 110 30 250 30 #cc0000 1.5
+.line 110 170 250 170 #0000cc 1.5
+.line 250 30 250 170 black 1
+.line 250 30 110 100 #cc0000 1.5
+.line 250 170 110 100 #0000cc 1.5
+.fillrect 110 30 140 70 #ffcccc 0.3
+.fillrect 110 100 140 70 #ccccff 0.3
+.text 180 55 σ_compresion 9 #cc0000 middle
+.text 180 140 σ_tension 9 #0000cc middle
+.text 265 30 -E*y_max/ρ 8 #cc0000 start
+.text 265 170 +E*y_max/ρ 8 #0000cc start
+.text 120 104 σ=0 8 gray start
+.arrow 110 65 200 65 #cc0000 1
+.arrow 110 75 170 75 #cc0000 1
+.arrow 110 85 140 85 #cc0000 1
+.arrow 110 115 140 115 #0000cc 1
+.arrow 110 125 170 125 #0000cc 1
+.arrow 110 135 200 135 #0000cc 1
+#end svg
+
+'<p>Arriba (y positivo): compresion (σ negativo) — flechas hacia la seccion.</p>
+'<p>Abajo (y negativo): tension (σ positivo) — flechas hacia afuera.</p>
+'<p>En el eje neutro: σ = 0.</p>
+'<p>La distribucion es un TRIANGULO (lineal en y).</p>
+
+'<hr/>
+"PASO 3: De σ a M (integrando)
+
+'<p>Cada fibra de area dA genera una fuerza dF = σ*dA a distancia y.</p>
+'<p>El momento de esa fuerza respecto al eje neutro es y*dF = y*σ*dA.</p>
+'<p>El momento TOTAL es la suma de todas las fibras:</p>
+
+'<p style="text-align:center"><span class="eq"><var>M</var> = ∫ <var>y</var> · <var>σ</var> · d<var>A</var> = ∫ <var>y</var> · (<span class="dvc">−<var>E</var> · <var>y</var><span class="dvl"></span><var>ρ</var></span>) · d<var>A</var> = <span class="dvc">−<var>E</var><span class="dvl"></span><var>ρ</var></span> · ∫ <var>y</var><sup>2</sup> · d<var>A</var></span></p>
+
+'<p>La integral ∫y²dA solo depende de la FORMA de la seccion.</p>
+'<p>Se llama MOMENTO DE INERCIA I:</p>
+
+'<p style="text-align:center"><span class="eq"><var>I</var> = ∫ <var>y</var><sup>2</sup> · d<var>A</var></span></p>
+
+#svg 300 200
+.fillrect 0 0 300 200 #fafafa 1
+.text 150 15 Inercia_de_seccion_rectangular 10 black middle bold
+.rect 90 35 120 130 #d4e6f1 0.4 black 1.5
+.dashed 90 100 210 100 #009900 1 4
+.text 155 104 EN 8 #009900 start
+.hdim 90 180 210 180 0 b
+.vdim 70 35 70 165 0 h
+.darrow 220 100 220 35 gray 1
+.text 225 68 h/2 9 gray start
+.darrow 220 100 220 165 gray 1
+.text 225 133 h/2 9 gray start
+#end svg
+
+'<p>Para un rectangulo b × h:</p>
+#deq I = b*h^3/12
+
+'<h4>Resultado final:</h4>
+'<p>M = (-E/ρ) * I = -EI/ρ</p>
+'<p>Como κ = 1/ρ y la convencion de signos absorbe el negativo:</p>
+
+#deq M = EI*κ
+
+'<p>Y como κ ≈ d²v/dx² para deflexiones pequenas:</p>
+
+#deq M = EI*d^2v/dx^2
+
+'<p>MOMENTO = RIGIDEZ × CURVATURA</p>
+'<p>Esta es la ecuacion fundamental de Euler (1744).</p>

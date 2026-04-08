@@ -1,0 +1,99 @@
+"Test #svg con comandos CAD
+
+"1. Viga simplemente apoyada con cotas
+L = 300
+h_v = 20
+#svg 500 200
+.fillrect 80 80 L h_v #f0f0ff 1
+.rect 80 80 L h_v none 1 black 1.5
+.support 80 80+h_v pin
+.support 80+L 80+h_v roller
+.hdim 80 80 80+L 80 -25 L=6m
+.vdim 80+L 80 80+L 80+h_v 20 h
+.arrow 80+L/2 30 80+L/2 75 red 2
+.text 80+L/2 22 P=10kN 12 red middle
+.cnode 80 80+h_v+35 A
+.cnode 80+L 80+h_v+35 B
+#end svg
+
+"2. Seccion transversal con cotas
+b_s = 60
+h_s = 100
+#svg 250 250
+.rect 75 50 b_s h_s lightblue 0.3 black 1.5
+.hatch 75 50 b_s h_s 8 lightgray
+.dashed 75 50+h_s/2 75+b_s 50+h_s/2 blue 1
+.text 75+b_s/2 50+h_s/2+4 Eje_neutro 10 blue middle
+.hdim 75 50 75+b_s 50 -20 b=0.3m
+.vdim 75+b_s 50 75+b_s 50+h_s 25 h=0.5m
+.cnode 75+b_s/2 50+h_s+30 Seccion 20
+#end svg
+
+"3. Diagrama de cuerpo libre
+#svg 500 250
+.color gray
+.beam 50 120 400 120 12
+.color black
+.support 50 120 pin
+.support 400 120 roller
+.arrow 200 40 200 115 red 2
+.text 200 30 P 14 red middle bold
+.arrow 50 120 50 180 blue 2
+.text 35 190 R_A 12 blue end
+.arrow 400 120 400 180 blue 2
+.text 420 190 R_B 12 blue start
+.moment 120 120 20 green
+.text 120 95 M 12 green middle
+.hdim 50 210 400 210 0 L
+.axes 430 200 30
+#end svg
+
+"4. Portico con nodos numerados
+n_col = 150
+n_beam_l = 200
+#svg 400 300
+.color #333333
+.beam 80 50 80 50+n_col 10
+.beam 80+n_beam_l 50 80+n_beam_l 50+n_col 10
+.beam 80 50 80+n_beam_l 50 10
+.support 80 50+n_col fixed
+.support 80+n_beam_l 50+n_col fixed
+.color black
+.cnode 80 50 1
+.cnode 80+n_beam_l 50 2
+.cnode 80 50+n_col 3
+.cnode 80+n_beam_l 50+n_col 4
+.arrow 30 50+n_col/2 75 50+n_col/2 red 2
+.text 20 50+n_col/2 H 12 red end
+.arrow 80+n_beam_l/2 20 80+n_beam_l/2 45 blue 2
+.text 80+n_beam_l/2 12 q 12 blue middle
+.vdim 80 50 80 50+n_col -30 h=3m
+.hdim 80 50+n_col 80+n_beam_l 50+n_col 25 L=4m
+#end svg
+
+"5. Mesh FEA con #for
+n_x = 4
+n_y = 3
+dx_m = 60
+dy_m = 50
+ox = 50
+oy = 30
+#svg 400 250
+.color green
+#for j = 0 : n_y - 1
+    #for i = 0 : n_x - 1
+        .rect ox+i*dx_m oy+j*dy_m dx_m dy_m lime 0.1 green 1
+        e = j*n_x + i + 1
+        .text ox+i*dx_m+dx_m/2 oy+j*dy_m+dy_m/2+4 e 10 green middle
+    #loop
+#loop
+.color red
+#for j = 0 : n_y
+    #for i = 0 : n_x
+        nd = j*(n_x+1) + i + 1
+        .circle ox+i*dx_m oy+j*dy_m 3 orangered 1
+    #loop
+#loop
+.color black
+.text ox+n_x*dx_m/2 oy+n_y*dy_m+25 Malla_4x3_=_12_elementos 12 black middle
+#end svg

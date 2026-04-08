@@ -17,6 +17,7 @@ namespace Calcpad.Cli
             var inputLines = ReadLines(fileName);
             var outputLines = new List<string>();
             var hasForm = false;
+            var insideCodeBlock = false;
             foreach (var line in inputLines)
             {
                 ReadOnlySpan<char> s;
@@ -37,7 +38,25 @@ namespace Calcpad.Cli
                 }
                 else
                 {
-                    s = ReplaceCStyleOperators(line.TrimStart('\t'));
+                    var trimmed = line.TrimStart('\t').TrimStart();
+                    // Track #python/#maxima blocks — don't replace operators inside them
+                    if (trimmed.StartsWith("#python", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#maxima", StringComparison.OrdinalIgnoreCase))
+                        insideCodeBlock = true;
+                    else if (trimmed.StartsWith("#end python", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end maxima", StringComparison.OrdinalIgnoreCase))
+                        insideCodeBlock = false;
+
+                    if (insideCodeBlock ||
+                        trimmed.StartsWith("$Chart", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("$Fem2D", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("$Fem3D", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("$Frame", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("$Struct", StringComparison.OrdinalIgnoreCase))
+                        s = line.TrimStart('\t');
+                    else
+                        s = ReplaceCStyleOperators(line.TrimStart('\t'));
+
                     if (!hasForm)
                         hasForm = MacroParser.HasInputFields(s);
                 }

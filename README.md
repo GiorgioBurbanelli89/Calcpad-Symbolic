@@ -107,6 +107,43 @@ Macro library with predefined SVG functions for FEM diagrams:
 - Loading (distributed, point force, moment)
 - Color mapping (blue to green to yellow to red gradient)
 
+### 12. `$Table` — HTML Tables from Vectors/Matrices (NEW)
+
+Generate formatted HTML tables directly from computed vectors and matrices.
+
+```
+$Table{v1; v2; v3 @ "Header1"; "Header2"; "Header3" & fmt=3 & row=1}
+$Table{M @ "Col A"; "Col B"; "Col C" & fmt=2 & row=1 & border=1 & zebra=1}
+```
+
+**Options:** `fmt=N` (decimal places), `row=1` (show row numbers), `border=0` (hide borders), `zebra=0` (no alternating rows).
+
+Ideal for FEM result tables: bolt reactions, nodal displacements, element forces.
+
+### 13. FEM Examples — Base Plates, Footings, Slabs (NEW)
+
+Complete finite element analysis examples with step-by-step symbolic formulation, color maps ($Map), result tables ($Table), and Python verification:
+
+**Shell-Thin (DKQ — Batoz & Tahar 1982):**
+- **Base Plate W-Shape:** 600x500mm, 16 anchor bolts, Pu+Mx, compression-only Winkler contact (iterative), Von Mises. Validated vs SAP2000 (ratio 1.0002).
+- **Base Plate HSS Tubular:** 500x400mm, 10 bolts (auto-filtered outside tube), Pu+Mx+My as 4 independent cases. K_DKQ assembled once, copied with `add()` for each case.
+- **Rectangular Slab:** Simply supported, uniform load, validated vs Navier exact solution.
+
+**Shell-Thick (Mindlin-Reissner + MITC4 — Bathe & Dvorkin 1985):**
+- **Isolated Footing:** 4x4m, 600mm thick, Winkler soil, MITC4 elements (no hourglass, no shear locking). Smooth concentric contours matching SAFE (CSI).
+
+**Features across all FEM examples:**
+- Symbolic formulation with `#deq` and `#sym diff()` — shape functions, B-matrices, double integrals rendered as equations
+- Compression-only Winkler contact (iterative convergence in 2-3 iterations)
+- Anchor bolts as axial springs with automatic inside/outside filtering
+- Von Mises stress maps and moment distributions in tonf*m/m
+- `$Table` for bolt reactions showing compression vs tension (lift)
+- SVG layout diagrams with mesh, profile footprint, and bolt positions
+- Python verification scripts with jet color maps (matplotlib)
+- Validated against SAP2000 via comtypes API and SAFE (CSI)
+
+**Validation pipeline:** Theory (Batoz/Zienkiewicz/Bathe) → Calcpad → Python → SAP2000/SAFE → Hekatan Struct
+
 ---
 
 ## Installation
@@ -149,6 +186,7 @@ dotnet run --project Symbolic.Wpf
 | `$Fem3D{...}` | Command | Interactive 3D FEM mesh |
 | `$Chart{...}` | Command | Interactive chart |
 | `$Mesh{...}` | Command | SVG FEM mesh |
+| `$Table{v1; v2 @ "H1"; "H2" & fmt=3}` | Command | HTML table from vectors/matrices |
 | `expr & [u1; u2; u3]` | Operator | Adimensionalize + stamp units |
 | `expr \| [u1; u2; u3]` | Operator | Convert units per element |
 

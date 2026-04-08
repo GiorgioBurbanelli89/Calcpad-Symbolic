@@ -1,0 +1,21 @@
+"Test vectores con unidades - cada elemento con unidad
+
+"1. Cada elemento con unidad explicita
+K = [200 kN/m; -100 kN/m|-100 kN/m; 300 kN/m]
+F = [10 kN; -5 kN]
+u = lsolve(K; F)
+u
+u | [mm; mm]
+
+"2. Alternativa: definir adimensional y luego &
+K_2 = [200; -100|-100; 300]
+F_2 = [10; -5]
+u_2 = lsolve(K_2; F_2)
+u_2
+'Si K esta en kN/m y F en kN, entonces u esta en m:
+u_2 & [mm; mm]
+
+"3. Resumen de como usar unidades en FEA
+'Opcion A: cada valor con unidad → lsolve → resultado con unidad → | para convertir
+'Opcion B: todo adimensional → lsolve → & para estampar unidades al final
+'Opcion B es mas simple para FEA donde K se construye por ensamblaje

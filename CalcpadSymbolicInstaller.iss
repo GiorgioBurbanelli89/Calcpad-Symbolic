@@ -41,13 +41,15 @@ Name: "fileassoc"; Description: "Associate .cpd files with Calcpad-Symbolic"; Gr
 Source: "Symbolic.Wpf\bin\Release\net10.0-windows\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs; Excludes: "runtimes\linux*,runtimes\osx*,runtimes\linux-*,*.dylib"
 
 ; Examples — in Documents folder (like CalcpadCE original)
-Source: "Examples\Symbolic\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Symbolic"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist
-Source: "Examples\Finite Elements\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Finite Elements"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist
+Source: "Examples\Symbolic\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Symbolic"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist; Excludes: "*.html"
+Source: "Examples\Finite Elements\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Finite Elements"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist; Excludes: "*.html"
 Source: "Examples\Mathematics\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Mathematics"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist; Excludes: "*.py,__pycache__,*.html,*.txt"
 Source: "Examples\Mechanics\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Mechanics"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist; Excludes: "*.py,__pycache__,*.html"
 Source: "Examples\Physics\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Physics"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist; Excludes: "*.py,__pycache__,*.html"
 Source: "Examples\Demos\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Demos"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist; Excludes: "*.html"
 Source: "Examples\Structural Design\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Structural Design"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist; Excludes: "*.html"
+Source: "Examples\Structural Analysis\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Structural Analysis"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist; Excludes: "*.html"
+Source: "Examples\Python Blocks\*"; DestDir: "{userdocs}\Calcpad-Symbolic\Examples\Python Blocks"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist; Excludes: "*.html"
 
 ; Documentation
 Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion isreadme

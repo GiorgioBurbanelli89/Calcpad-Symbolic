@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Frame Viewer Test</title>
+  <script src="dist/calcpad-viz.umd.cjs"></script>
+</head>
+<body style="margin:0;background:#111;font-family:sans-serif;color:#ccc;">
+  <h2 style="padding:10px">Frame Viewer — Portico 2D</h2>
+  <div id="frame1"></div>
+  <script>
+    // Portal frame: 2 columns + 1 beam
+    CalcpadViz.frameViewer("frame1", {
+      nodes: [
+        [0, 0, 0],   // 0: base izq
+        [0, 4, 0],   // 1: top izq
+        [6, 4, 0],   // 2: top der
+        [6, 0, 0],   // 3: base der
+      ],
+      elements: [
+        [0, 1],  // columna izq
+        [1, 2],  // viga
+        [2, 3],  // columna der
+      ],
+      supports: [0, 3],
+      loads: [
+        [1, 10, 0, 0],   // 10kN horizontal en nodo 1
+        [2, 0, -20, 0],  // -20kN vertical en nodo 2
+      ],
+      deformed: [
+        [0, 0, 0],
+        [0.05, -0.002, 0],
+        [0.04, -0.015, 0],
+        [0, 0, 0],
+      ],
+      moments: [
+        [0, -30],     // columna izq: 0 abajo, -30 arriba
+        [-30, 20],    // viga: -30 izq, 20 der
+        [20, 0],      // columna der: 20 arriba, 0 abajo
+      ],
+      shears: [
+        [10, 10],     // columna izq: cortante constante
+        [-8, -12],    // viga
+        [-8, -8],     // columna der
+      ],
+      reactions: [
+        [-10, 12, 0, 0, 0, 15],  // reacción base izq
+        [0, 8, 0, 0, 0, -5],     // reacción base der
+      ],
+      options: {
+        width: 900,
+        height: 550,
+        defScale: 30,
+        diagScale: 0.05,
+        title: "Portal Frame — M, V, Deformed",
+        showMoments: true,
+        showShears: false,
+        showDeformed: true,
+      }
+    });
+  </script>
+</body>
+</html>

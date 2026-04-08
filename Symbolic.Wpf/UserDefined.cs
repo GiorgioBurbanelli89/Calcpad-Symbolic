@@ -111,7 +111,10 @@ namespace Calcpad.Wpf
             }
             else if (Validator.IsKeyword(lineContent, "#def"))
                 GetMacros(lineContent[4..], lineNumber);
-            else if (Validator.IsKeyword(lineContent, "#end def"))
+            else if (Validator.IsKeyword(lineContent, "#function"))
+                GetUserFunction(lineContent[9..], lineNumber);
+            else if (Validator.IsKeyword(lineContent, "#end def") ||
+                     Validator.IsKeyword(lineContent, "#end function"))
             {
                 if (!string.IsNullOrEmpty(_macroName))
                 {
@@ -120,6 +123,24 @@ namespace Calcpad.Wpf
                     GetMacroVariablesAndFunctions(_macroBuilder.ToString().AsSpan(), lineNumber);
                     _macroName = null;
                     _macroBuilder.Clear();
+                }
+            }
+            else if (lineContent.Contains("CALCPAD:", StringComparison.Ordinal))
+            {
+                // Scan for CALCPAD:varname= patterns in Python/Maxima code (e.g. print(f"CALCPAD:uy_ops={uy}"))
+                var idx = lineContent.IndexOf("CALCPAD:", StringComparison.Ordinal);
+                while (idx >= 0)
+                {
+                    var rest = lineContent[(idx + 8)..];
+                    var eqIdx = rest.IndexOf('=');
+                    if (eqIdx > 0)
+                    {
+                        var varName = rest[..eqIdx].Trim().ToString();
+                        if (!string.IsNullOrEmpty(varName))
+                            Variables.TryAdd(varName, lineNumber);
+                    }
+                    var nextIdx = rest.IndexOf("CALCPAD:", StringComparison.Ordinal);
+                    idx = nextIdx >= 0 ? idx + 8 + nextIdx : -1;
                 }
             }
             else if (Validator.IsKeyword(lineContent, "#read"))
@@ -329,6 +350,22 @@ namespace Calcpad.Wpf
                             }
                         }
                     }
+                }
+            }
+        }
+
+        private void GetUserFunction(ReadOnlySpan<char> lineContent, int lineNumber)
+        {
+            // #function FrameKe(E; A; I; L) → extract "FrameKe" and register as function
+            var trimmed = lineContent.Trim();
+            var parenIdx = trimmed.IndexOf('(');
+            if (parenIdx > 0)
+            {
+                var name = trimmed[..parenIdx].Trim().ToString();
+                if (!string.IsNullOrEmpty(name))
+                {
+                    Functions.TryAdd(name, lineNumber);
+                    FunctionDefs.Add(new(trimmed.ToString(), lineNumber));
                 }
             }
         }

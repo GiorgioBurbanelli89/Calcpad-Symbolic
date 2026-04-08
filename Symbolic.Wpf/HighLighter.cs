@@ -188,6 +188,25 @@ namespace Calcpad.Wpf
         ];
 
         private static readonly FrozenSet<char> Operators = new HashSet<char>() { '!', '^', '/', '÷', '\\', '⦼', '*', '-', '+', '<', '>', '≤', '≥', '≡', '≠', '=', '∧', '∨', '∠', '⊕', '←' }.ToFrozenSet();
+
+        private static readonly FrozenSet<string> PythonKeywords = new HashSet<string>()
+        {
+            "False", "None", "True", "and", "as", "assert", "async", "await",
+            "break", "class", "continue", "def", "del", "elif", "else", "except",
+            "finally", "for", "from", "global", "if", "import", "in", "is",
+            "lambda", "nonlocal", "not", "or", "pass", "raise", "return",
+            "try", "while", "with", "yield"
+        }.ToFrozenSet();
+
+        private static readonly FrozenSet<string> PythonBuiltins = new HashSet<string>()
+        {
+            "print", "range", "len", "int", "float", "str", "list", "dict",
+            "tuple", "set", "type", "isinstance", "hasattr", "getattr", "setattr",
+            "enumerate", "zip", "map", "filter", "sorted", "reversed",
+            "abs", "max", "min", "sum", "round", "pow", "open", "input",
+            "super", "property", "staticmethod", "classmethod"
+        }.ToFrozenSet();
+
         private static readonly bool[] DelimitersMap = new bool[128];
         private static readonly bool[] BracketsMap = new bool[128];
         private static readonly FrozenSet<string> Functions =
@@ -409,7 +428,36 @@ namespace Calcpad.Wpf
             "setunits",
             "clrunits",
             "fft",
-            "ift"
+            "ift",
+            // #sym symbolic functions (AngouriMath)
+            "diff",
+            "integrate",
+            "solve",
+            "limit",
+            "simplify",
+            "expand",
+            "factor",
+            "series",
+            "eval",
+            "subs",
+            "substitute",
+            "pdiff",
+            "gradient",
+            "divergence",
+            "curl",
+            "laplacian",
+            "jacobian",
+            "hessian",
+            "inv",
+            "laplace",
+            "ilaplace",
+            "ode1",
+            "ode2",
+            "strain",
+            "stress",
+            "voigt",
+            "invariants",
+            "dyadic"
        }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
         private static readonly FrozenSet<string> Keywords =
@@ -521,6 +569,7 @@ namespace Calcpad.Wpf
             "$product",
             "$plot",
             "$map",
+            "$table",
             "$block",
             "$inline",
         }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
@@ -630,6 +679,63 @@ namespace Calcpad.Wpf
 
                 InitState(p, text, lineNumber, newline);
                 p.Inlines.Clear();
+
+                // Detect code block boundaries and use passthrough highlighting
+                var trimmedText = text.TrimStart();
+                var isInCodeBlock = IsInsideCodeBlock(p, trimmedText);
+                if (trimmedText.StartsWith("#python", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#maxima", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#pip ", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#function ", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#end function", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.Equals("#sym", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#svg", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#end svg", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Render the block start keyword line itself
+                    p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                // $Chart, $Fem2D, $Fem3D, $Draw — passthrough (preserve spaces and special chars)
+                if (trimmedText.StartsWith("$Chart", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("$Fem2D", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("$Fem3D", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("$Frame", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("$Struct", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("$Draw", StringComparison.OrdinalIgnoreCase))
+                {
+                    p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                // Lines inside a multiline $Viz block (between $Draw{ and })
+                if (IsInsideVizBlock(p, trimmedText))
+                {
+                    p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                if (isInCodeBlock && (
+                    trimmedText.StartsWith("#end python", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#end maxima", StringComparison.OrdinalIgnoreCase)))
+                {
+                    p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                if (isInCodeBlock)
+                {
+                    ParseExternalLanguageLine(p, text, lineNumber);
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+
                 _tagHelper = new();
                 _allowUnaryMinus = true;
                 _builder.Clear();
@@ -1509,6 +1615,12 @@ namespace Calcpad.Wpf
 
         private Types CheckError(Types t, ref string s)
         {
+            // Skip error checking for #deq and #sym lines (display-only / symbolic)
+            var kw = _state.Keyword;
+            if (kw != null && (kw.Equals("#deq", StringComparison.OrdinalIgnoreCase) ||
+                               kw.Equals("#sym", StringComparison.OrdinalIgnoreCase)))
+                return t;
+
             if (t == Types.Function)
             {
                 if (!IsFunction(s, _state.Line))
@@ -2223,6 +2335,229 @@ namespace Calcpad.Wpf
                     };
                     Process.Start(startInfo);
                 }
+            }
+        }
+
+        // Scan backward through preceding paragraphs to determine if we're inside a #python/#maxima block
+        private static bool IsInsideCodeBlock(Paragraph current, string currentTrimmed)
+        {
+            // If this line IS a block start keyword, we're at the start (not "inside" yet)
+            if (currentTrimmed.StartsWith("#python", StringComparison.OrdinalIgnoreCase) ||
+                currentTrimmed.StartsWith("#maxima", StringComparison.OrdinalIgnoreCase) ||
+                currentTrimmed.StartsWith("#function ", StringComparison.OrdinalIgnoreCase) ||
+                currentTrimmed.StartsWith("#svg", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            var prev = current.PreviousBlock as Paragraph;
+            while (prev is not null)
+            {
+                var prevText = new TextRange(prev.ContentStart, prev.ContentEnd).Text.TrimStart();
+                // Found #end before finding block start → we're NOT in a block
+                if (prevText.StartsWith("#end python", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end maxima", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end function", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end svg", StringComparison.OrdinalIgnoreCase))
+                    return false;
+                // Found block start → we ARE in a block
+                if (prevText.StartsWith("#python", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#maxima", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#function ", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#svg", StringComparison.OrdinalIgnoreCase))
+                    return true;
+                prev = prev.PreviousBlock as Paragraph;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Check if current paragraph is inside a multiline $Viz block ($Draw{..}, $Chart{..}, etc.)
+        /// by scanning backwards for $Draw{ (without }) or a closing }.
+        /// </summary>
+        private static bool IsInsideVizBlock(Paragraph current, string currentTrimmed)
+        {
+            // If this line IS a $Viz start, we're not "inside" — we handle it above
+            if (currentTrimmed.StartsWith("$", StringComparison.Ordinal) &&
+                (currentTrimmed.StartsWith("$Draw", StringComparison.OrdinalIgnoreCase) ||
+                 currentTrimmed.StartsWith("$Chart", StringComparison.OrdinalIgnoreCase) ||
+                 currentTrimmed.StartsWith("$Fem", StringComparison.OrdinalIgnoreCase) ||
+                 currentTrimmed.StartsWith("$Frame", StringComparison.OrdinalIgnoreCase) ||
+                 currentTrimmed.StartsWith("$Struct", StringComparison.OrdinalIgnoreCase)))
+                return false;
+
+            var prev = current.PreviousBlock as Paragraph;
+            while (prev is not null)
+            {
+                var prevText = new TextRange(prev.ContentStart, prev.ContentEnd).Text.TrimStart();
+                // Found a closing } before finding a $Viz start → NOT inside
+                if (prevText == "}")
+                    return false;
+                // Found a $Viz start with { but no } on the same line → we ARE inside
+                if ((prevText.StartsWith("$Draw", StringComparison.OrdinalIgnoreCase) ||
+                     prevText.StartsWith("$Chart", StringComparison.OrdinalIgnoreCase) ||
+                     prevText.StartsWith("$Fem", StringComparison.OrdinalIgnoreCase) ||
+                     prevText.StartsWith("$Frame", StringComparison.OrdinalIgnoreCase) ||
+                     prevText.StartsWith("$Struct", StringComparison.OrdinalIgnoreCase)) &&
+                    prevText.Contains('{') && !prevText.Contains('}'))
+                    return true;
+                // Found a single-line $Viz (has both { and }) → NOT inside
+                if ((prevText.StartsWith("$Draw", StringComparison.OrdinalIgnoreCase) ||
+                     prevText.StartsWith("$Chart", StringComparison.OrdinalIgnoreCase) ||
+                     prevText.StartsWith("$Fem", StringComparison.OrdinalIgnoreCase) ||
+                     prevText.StartsWith("$Frame", StringComparison.OrdinalIgnoreCase) ||
+                     prevText.StartsWith("$Struct", StringComparison.OrdinalIgnoreCase)) &&
+                    prevText.Contains('{') && prevText.Contains('}'))
+                    return false;
+                prev = prev.PreviousBlock as Paragraph;
+            }
+            return false;
+        }
+
+        // External language syntax highlighting (Python, Maxima, etc.)
+        // Preserves text unchanged - only applies colors
+        private void ParseExternalLanguageLine(Paragraph p, string text, int lineNumber)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                p.Inlines.Add(new Run(""));
+                return;
+            }
+
+            var sb = new StringBuilder();
+            var inString = false;
+            var stringChar = '\0';
+            int i = 0;
+            int len = text.Length;
+
+            while (i < len)
+            {
+                var c = text[i];
+
+                // Comment detection (# for Python, /* for Maxima)
+                if (!inString && c == '#')
+                {
+                    FlushPythonToken(p, sb);
+                    p.Inlines.Add(new Run(text[i..])
+                    {
+                        Foreground = Brushes.Green
+                    });
+                    return;
+                }
+
+                // Maxima comment /*...*/
+                if (!inString && c == '/' && i + 1 < len && text[i + 1] == '*')
+                {
+                    FlushPythonToken(p, sb);
+                    p.Inlines.Add(new Run(text[i..])
+                    {
+                        Foreground = Brushes.Green
+                    });
+                    return;
+                }
+
+                // String detection
+                if (!inString && (c == '"' || c == '\''))
+                {
+                    FlushPythonToken(p, sb);
+                    inString = true;
+                    stringChar = c;
+                    sb.Append(c);
+                    i++;
+                    while (i < len)
+                    {
+                        c = text[i];
+                        sb.Append(c);
+                        if (c == stringChar && text[i - 1] != '\\')
+                        {
+                            i++;
+                            break;
+                        }
+                        i++;
+                    }
+                    p.Inlines.Add(new Run(sb.ToString())
+                    {
+                        Foreground = Brushes.Brown
+                    });
+                    sb.Clear();
+                    inString = false;
+                    continue;
+                }
+
+                // Number detection
+                if (!inString && (char.IsDigit(c) ||
+                    (c == '.' && i + 1 < len &&
+                     char.IsDigit(text[i + 1]))))
+                {
+                    FlushPythonToken(p, sb);
+                    while (i < len && (char.IsDigit(text[i]) ||
+                           text[i] == '.' || text[i] == 'e' ||
+                           text[i] == 'E' ||
+                           ((text[i] == '+' || text[i] == '-') &&
+                            i > 0 && (text[i - 1] == 'e' ||
+                            text[i - 1] == 'E'))))
+                    {
+                        sb.Append(text[i]);
+                        i++;
+                    }
+                    p.Inlines.Add(new Run(sb.ToString())
+                    {
+                        Foreground = Brushes.DarkCyan
+                    });
+                    sb.Clear();
+                    continue;
+                }
+
+                // Identifier detection (keywords, builtins, variables)
+                if (!inString && (char.IsLetter(c) || c == '_'))
+                {
+                    FlushPythonToken(p, sb);
+                    while (i < len && (char.IsLetterOrDigit(text[i]) ||
+                           text[i] == '_'))
+                    {
+                        sb.Append(text[i]);
+                        i++;
+                    }
+                    var word = sb.ToString();
+                    Brush brush;
+                    FontWeight weight = FontWeights.Normal;
+                    if (PythonKeywords.Contains(word))
+                    {
+                        brush = Colors[(int)Types.Keyword];
+                        weight = FontWeights.Bold;
+                    }
+                    else if (PythonBuiltins.Contains(word))
+                    {
+                        brush = Brushes.Blue;
+                        weight = FontWeights.Bold;
+                    }
+                    else
+                    {
+                        brush = Brushes.Black;
+                    }
+                    p.Inlines.Add(new Run(word)
+                    {
+                        Foreground = brush,
+                        FontWeight = weight
+                    });
+                    sb.Clear();
+                    continue;
+                }
+
+                sb.Append(c);
+                i++;
+            }
+
+            FlushPythonToken(p, sb);
+        }
+
+        private static void FlushPythonToken(Paragraph p, StringBuilder sb)
+        {
+            if (sb.Length > 0)
+            {
+                p.Inlines.Add(new Run(sb.ToString())
+                {
+                    Foreground = Brushes.Black
+                });
+                sb.Clear();
             }
         }
     }

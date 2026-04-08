@@ -1,0 +1,51 @@
+"Test de notacion para derivadas en #deq
+
+"Derivadas Leibniz (fracciones):
+'1a derivada:
+#deq dv/dx
+
+'2a derivada:
+#deq d^2v/dx^2
+
+'4a derivada:
+#deq d^4v/dx^4
+
+'Parciales:
+#deq ∂f/∂x
+
+'Parcial 2do orden:
+#deq ∂^2u/∂x^2
+
+'Parcial mixta:
+#deq ∂^2u/∂x∂y
+
+"Notacion prima:
+'1a derivada:
+#deq v'(x)
+
+'2a derivada:
+#deq v''(x)
+
+'4a derivada:
+#deq v''''(x)
+
+"Con constantes:
+#deq EI*d^4v/dx^4
+
+"Ecuacion de Euler:
+#deq EI*d^4v/dx^4 = q(x)
+
+"Momento:
+#deq M(x) = EI*d^2v/dx^2
+
+"Cortante:
+#deq V(x) = dM/dx
+
+"Carga:
+#deq q(x) = dV/dx
+
+"Variables con subindice:
+#deq v_{max} = 5*q*L^4/(384*EI)
+
+"Funciones especiales:
+#deq κ(x) = d^2v/dx^2

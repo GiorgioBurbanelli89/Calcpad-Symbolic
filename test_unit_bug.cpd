@@ -1,0 +1,36 @@
+"Test: por que falla la multiplicacion matricial con unidades
+
+"1. Escalares (funciona)
+a = 200000 MPa
+b = 0.2 m
+c = a*b
+c
+c & kN/m
+
+"2. kN vs t*m/s^2
+x = 1 kN
+y = 1 t*m/s^2
+'Son iguales?
+x
+y
+'Suma:
+z = x + y
+z
+
+"3. Matrices 2x2 simples
+A = [1 kN; 2 kN|3 kN; 4 kN]
+B_m = [1/m; 0|0; 1/m]
+'A*B:
+C_m = A*B_m
+C_m
+
+"4. El problema real: D*B donde D tiene unidades compuestas
+D_v = [40000 kN/m; 8000 kN/m|8000 kN/m; 40000 kN/m]
+B_v = [1; 0; -1|0; 1; 0] / (1 m)
+'D*B:
+DB = D_v*B_v
+DB
+
+"5. B^T * D * B
+BtDB = transp(B_v)*D_v*B_v
+BtDB

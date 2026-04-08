@@ -1,0 +1,43 @@
+"Test: #function en CalcpadCE
+'<hr/>
+"1. Función escalar simple
+#function Hipotenusa(a; b)
+    c2 = a^2 + b^2
+    Hipotenusa = sqr(c2)
+#end function
+
+'Hipotenusa de 3 y 4:
+h = Hipotenusa(3; 4)
+
+'<hr/>
+"2. Función que retorna matriz (rigidez de viga)
+#function BeamKe(E; I; L)
+    k11 = 12*E*I/L^3
+    k12 = 6*E*I/L^2
+    k22 = 4*E*I/L
+    k21 = 2*E*I/L
+    BeamKe = [k11; k12; -k11; k12 | k12; k22; -k12; k21 | -k11; -k12; k11; -k12 | k12; k21; -k12; k22]
+#end function
+
+'Rigidez de columna (E=200000, I=0.001, L=3):
+K_col = BeamKe(200000000; 0.0001; 3)
+
+'Rigidez de viga (E=200000, I=0.002, L=6):
+K_viga = BeamKe(200000000; 0.0002; 6)
+
+'<hr/>
+"3. Verificación
+'K_col(2,2) = 4EI/L:
+K_col.(2; 2)
+'4*200000000*0.0001/3 =
+4*200000000*0.0001/3
+
+'K_viga(1,1) = 12EI/L³:
+K_viga.(1; 1)
+'12*200000000*0.0002/6³ =
+12*200000000*0.0002/6^3
+
+'<hr/>
+"4. Variables locales no contaminan
+'c2 (de Hipotenusa) no debe existir aquí:
+'Si esto da error, las variables son locales ✓

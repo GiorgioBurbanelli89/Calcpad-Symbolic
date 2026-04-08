@@ -1,0 +1,125 @@
+"Debug Mindlin - Losa simplemente apoyada 6x4m
+
+'Datos (sistema kN-m consistente)
+'a -'a = 6'm
+'b -'b = 4'm
+'t -'t = 0.1'm
+'q -'q = 10'kN/m²
+'E -'E = 35000000'kN/m²
+'ν -'ν = 0.15
+'G -'G = E/(2*(1 + ν))
+'κ -'κ = 5/6
+'n_dof -'n_dof = 3
+
+'Malla 2x2 minima para debug
+n_x = 2', 'n_y = 2
+n_e = n_x*n_y
+n_j = (n_x + 1)*(n_y + 1)
+d_x = a/n_x
+d_y = b/n_y
+n_total = n_dof*n_j
+
+'D_b flexion:
+D_b = E*t^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+D_b
+'D_s corte:
+D_s = κ*G*t*[1; 0|0; 1]
+D_s
+
+'Jacobiano:
+J_11 = d_x/2
+J_22 = d_y/2
+det_J = J_11*J_22
+J_11', 'J_22', 'det_J
+
+'Funciones de forma:
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+dN_1ξ(η) = -(1 - η)/4
+dN_2ξ(η) = (1 - η)/4
+dN_3ξ(η) = (1 + η)/4
+dN_4ξ(η) = -(1 + η)/4
+dN_1η(ξ) = -(1 - ξ)/4
+dN_2η(ξ) = -(1 + ξ)/4
+dN_3η(ξ) = (1 + ξ)/4
+dN_4η(ξ) = (1 - ξ)/4
+
+'=== K_e FLEXION (2x2 Gauss) ===
+g = 1/sqr(3)
+#hide
+n_k = n_dof*4
+K_b = symmetric(n_k)
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g','η_g = -g
+	#else if ig ≡ 2
+		ξ_g = g','η_g = -g
+	#else if ig ≡ 3
+		ξ_g = g','η_g = g
+	#else
+		ξ_g = -g','η_g = g
+	#end if
+	dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+	dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+	dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+	dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+	B_b = [0; 0; -dNdx_1; 0; 0; -dNdx_2; 0; 0; -dNdx_3; 0; 0; -dNdx_4 | _
+	       0; dNdy_1; 0; 0; dNdy_2; 0; 0; dNdy_3; 0; 0; dNdy_4; 0 | _
+	       0; dNdx_1; -dNdy_1; 0; dNdx_2; -dNdy_2; 0; dNdx_3; -dNdy_3; 0; dNdx_4; -dNdy_4]
+	BtDB = transp(B_b)*D_b*B_b*det_J
+	#for i = 1 : n_k
+		#for j = i : n_k
+			K_b.(i; j) = K_b.(i; j) + BtDB.(i; j)
+		#loop
+	#loop
+#loop
+#show
+'K_b (flexion 12x12):
+Precision = 10^-1
+K_b
+
+'=== K_s CORTE (1x1 Gauss reducida) ===
+#hide
+K_s = symmetric(n_k)
+ξ_g = 0','η_g = 0
+NN_1 = N_1(ξ_g; η_g)','NN_2 = N_2(ξ_g; η_g)
+NN_3 = N_3(ξ_g; η_g)','NN_4 = N_4(ξ_g; η_g)
+dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+B_s = [dNdx_1; 0; -NN_1; dNdx_2; 0; -NN_2; dNdx_3; 0; -NN_3; dNdx_4; 0; -NN_4 | _
+       dNdy_1; NN_1; 0; dNdy_2; NN_2; 0; dNdy_3; NN_3; 0; dNdy_4; NN_4; 0]
+BtDB_s = transp(B_s)*D_s*B_s*det_J*4
+#for i = 1 : n_k
+	#for j = i : n_k
+		K_s.(i; j) = K_s.(i; j) + BtDB_s.(i; j)
+	#loop
+#loop
+#show
+'K_s (corte 12x12):
+K_s
+
+'=== K_e TOTAL ===
+#hide
+K_e = symmetric(n_k)
+#for i = 1 : n_k
+	#for j = i : n_k
+		K_e.(i; j) = K_b.(i; j) + K_s.(i; j)
+	#loop
+#loop
+#show
+'K_e total (12x12):
+K_e
+
+'=== DIAGONAL CHECK ===
+'K_b diagonal:
+#for i = 1 : n_k
+	#hide
+	kb_i = K_b.(i; i)
+	ks_i = K_s.(i; i)
+	#show
+	'DOF 'i': K_b='kb_i', K_s='ks_i', ratio='ks_i/kb_i
+#loop

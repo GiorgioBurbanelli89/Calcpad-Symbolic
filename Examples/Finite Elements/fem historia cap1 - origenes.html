@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Created with Calcpad</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <script src="file:///C:/Users/j-b-j/Documents/Hekatan Calc 1.0.0/Calcpad-Symbolic/Symbolic.Cli/bin/Debug/net10.0/doc/jquery-3.6.3.min.js"></script>
+    <script src="file:///C:/Users/j-b-j/Documents/Hekatan Calc 1.0.0/Calcpad-Symbolic/Symbolic.Cli/bin/Debug/net10.0/doc/calcpad-viz.umd.cjs"></script>
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-size: 11pt;
+            font-family: 'Segoe UI', 'Arial Nova', Helvetica, sans-serif;
+            margin-left: 5mm;
+            max-width: 190mm;
+        }
+
+        h1, h2, h3, h4, h5, h6, .errorHeader, .roundBox {
+            font-family: 'Arial Nova', Helvetica, sans-serif;
+            margin: 0.5em 0 0.5em 0;
+            padding: 0;
+            line-height: 150%;
+        }
+
+        h1 {font-size: 2.1em;}
+        h2 {font-size: 1.7em;}
+        h3 {font-size: 1.4em;}
+        h4 {font-size: 1.2em;}
+        h5 {font-size: 1.1em;}
+        h6 {font-size: 1em;}
+
+        p, li {
+            margin: 0.3em 0 0.3em 0;
+            padding: 0;
+            line-height: 150%;
+        }
+
+        select, kbd {
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        a:hover {
+            background-color: #e9f6ff;
+        }
+
+        .eq, input[type="text"], table.matrix {
+            font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+        }
+
+            .eq var {
+                color: #06d;
+                font-size: 105%;
+            }
+
+            .eq i {
+                color: #086;
+                font-style: normal;
+                font-size: 90%;
+            }
+
+            i.unit {
+                color: #043!important;
+                font-size: 90%!important;
+                vertical-align: -1pt;
+            }
+
+            sup.unit {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 70%!important;
+            }
+
+            .eq b {
+                font-weight: 600;
+            }
+
+            .eq sub {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 80%;
+                vertical-align: -18%;
+                margin-left: 1pt;
+            }
+
+            .eq sup {
+                display: inline-block;
+                margin-left: 1pt;
+                margin-top: -3pt;
+                font-size: 75%;
+            }
+
+            .eq small {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 70%;
+            }
+
+                .eq small var {
+                    font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+                    font-size: 8.5pt;
+                }
+
+                .eq small i {
+                    font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+                    font-size: 6pt;
+                }
+
+            .eq u, input, select {
+                background-color: LightYellow;
+            }
+
+                input[type="text"], select {
+                    font-size: 10pt;
+                    padding: 0.2em 0.4em;
+                    border: 0.5pt solid #CCC;
+                    border-radius: 0.35em;
+                    box-shadow: 0.06em 0.06em 0.5em #ddd;
+                    min-width: 3em;
+                }
+
+                input[type="text"] {
+                    text-align: right;
+                }
+
+                input[type="checkbox"],
+                input[type="radio"] {
+                    vertical-align: baseline;
+                    position: relative;
+                    bottom: -1pt;
+                    margin-right: 1pt;
+                }
+
+                    input[type="checkbox"].post:disabled:not(:checked),
+                    input[type="checkbox"].post:disabled:not(:checked) + label,
+                    input[type="radio"].post:disabled:not(:checked),
+                    input[type="radio"].post:disabled:not(:checked) + label {
+                        display: none;
+                    }
+
+                select:disabled {
+                    background: none;
+                    color: #444;
+                }
+
+                select.post:disabled {
+                    font-size: 12pt;
+                    border: none;
+                    box-shadow: none;
+                    color: red;
+                    background: none;
+                    appearance: none;
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                }
+
+                select.post:disabled::-ms-expand {
+                    display: none;
+                }
+
+                input[type="text"]:focus {
+                    box-shadow: 0.1em 0.1em 1em #ccc;
+                    color: black;
+                }
+
+        td, th {
+            padding: 2pt 4pt 2pt 4pt;
+            vertical-align: top;
+        }
+
+        small {
+            font-weight: normal;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+            table.bordered {
+                margin-top: 1em;
+            }
+
+                table.bordered th {
+                    background-color: #F0F0F0;
+                    border: solid 1pt #AAAAAA;
+                }
+
+                table.bordered td {
+                    border: solid 1pt #CCCCCC;
+                }
+
+            table.centered td, .matrix .td {
+                text-align: center;
+            }
+
+            table.data td {
+                text-align: right;
+            }
+
+                table.data td:first-child {
+                    text-align: left;
+                    padding-left: 0;
+                }
+
+        .matrix {
+            display: inline-table;
+        }
+
+            .matrix .tr {
+                display: table-row;
+            }
+
+            .matrix .td {
+                white-space: nowrap;
+                padding: 0 2pt 0 2pt;
+                min-width: 10pt;
+                display: table-cell;
+                font-size: 10pt;
+            }
+
+                .matrix .td:first-child,
+                .matrix .td:last-child {
+                    width: 0.75pt;
+                    min-width: 0.75pt;
+                    max-width: 0.75pt;
+                    padding: 0 1pt 0 1pt;
+                }
+
+                .matrix .td:first-child {
+                    border-left: solid 1pt black;
+                }
+
+                .matrix .td:last-child {
+                    border-right: solid 1pt black;
+                }
+
+            .matrix .tr:first-child .td:first-child,
+            .matrix .tr:first-child .td:last-child {
+                border-top: solid 1pt black;
+            }
+
+            .matrix .tr:last-child .td:first-child,
+            .matrix .tr:last-child .td:last-child {
+                border-bottom: solid 1pt black;
+            }
+
+        .block {
+            display: inline-block;
+            vertical-align: middle;
+            padding-left: 4pt;
+            margin-left: -1pt;
+            border-left: solid 1pt #80b0e8;
+            background: linear-gradient(to right, rgba(0, 192, 255, 0.06), rgba(0, 192, 255, 0.03));
+        }
+
+            .block .block {
+                background: linear-gradient(to right, rgba(0, 192, 255, 0.04), rgba(0, 192, 255, 0.02));
+            }
+
+        .dvcs:has(.block):not(.block *) {
+            display: inline-block;
+            border-left: solid 1pt #80b0e8;
+            padding-left: 0;
+            margin-left: 3pt;
+        }
+
+            .dvcs:has(.block):not(.block *)::before {
+                content: " 🞀";
+                font-size: 9pt;
+                color: #90c4f0;
+                margin-left: -4.5pt;
+            }
+
+        .arr {
+            color: #90c4f0;
+        }
+
+        .r0, .r1, .r2, .r3,
+        .o0, .o1, .o2, .o3,
+        .b1, .b2, .b3,
+        .c1, .c2, .c3, .c4,
+        .c5, .c6, .c7, .c8 {
+            display: inline-block;
+        }
+
+        .r0, .r1, .r2, .r3 {
+            margin-top: -1.5pt;
+            margin-right: 1.5pt;
+            vertical-align: top;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: right top;
+        }
+
+        .o0, .o1, .o2, .o3 {
+            border-top: solid 0.75pt;
+            line-height: 130%;
+            vertical-align: middle;
+            margin-top: 0.75pt;
+            padding-top: 1.25pt;
+            padding-left: 1pt;
+            padding-right: 1pt;
+        }
+
+        .r {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 150%;
+            display: inline-block;
+            vertical-align: top;
+            margin-left: -9.5pt;
+            position: relative;
+            top: 1pt;
+        }
+
+        .r0 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDEwIDIwIiBoZWlnaHQ9IjE1cHQiIHdpZHRoPSIxMHB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMCwxMyAyLDEyIDUsMTkgOSwwIiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MC42cHQ7IHN0cm9rZS1saW5lam9pbjpyb3VuZDsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IGZpbGw6bm9uZSIgLz4NCiAgPGxpbmUgeDE9IjIuMiIgeTE9IjEyLjMiIHgyPSI0LjYiIHkyPSIxOC43IiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MC44cHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 8pt;
+            height: 16pt;
+            margin-left: -8pt;
+        }
+
+        .r1 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDE1IDQwIiBoZWlnaHQ9IjMwcHQiIHdpZHRoPSIxNXB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMSwyNiAzLDI0IDgsMzggMTQsMCIgc3R5bGU9InN0cm9rZTpibGFjazsgc3Ryb2tlLXdpZHRoOjAuNnB0OyBzdHJva2UtbGluZWpvaW46cm91bmQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyBmaWxsOm5vbmUiIC8+DQogIDxsaW5lIHgxPSIzLjIiIHkxPSIyNC40IiB4Mj0iNy42IiB5Mj0iMzcuNiIgc3R5bGU9InN0cm9rZTpibGFjazsgc3Ryb2tlLXdpZHRoOjFwdDsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IiAvPg0KPC9zdmc+");
+            width: 12pt;
+            height: 32pt;
+            margin-left: -12pt;
+        }
+
+        .r2 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDIwIDYwIiBoZWlnaHQ9IjQ1cHQiIHdpZHRoPSIyMHB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMiwzNyA1LDM0IDExLDU1IDE5LDAiIHN0eWxlPSJzdHJva2U6YmxhY2s7IHN0cm9rZS13aWR0aDowLjZwdDsgc3Ryb2tlLWxpbmVqb2luOnJvdW5kOyBzdHJva2UtbGluZWNhcDpyb3VuZDsgZmlsbDpub25lIiAvPg0KICA8bGluZSB4MT0iNS4xIiB5MT0iMzQuNiIgeDI9IjEwLjYiIHkyPSI1NC40IiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MS4ycHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 16pt;
+            height: 48pt;
+            margin-left: -16pt;
+        }
+
+        .r3 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDI1IDgwIiBoZWlnaHQ9IjYwcHQiIHdpZHRoPSIyNXB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMyw1MCA3LDQ2IDE1LDc0IDI0LDAiIHN0eWxlPSJzdHJva2U6YmxhY2s7IHN0cm9rZS13aWR0aDowLjZwdDsgc3Ryb2tlLWxpbmVqb2luOnJvdW5kOyBzdHJva2UtbGluZWNhcDpyb3VuZDsgZmlsbDpub25lIiAvPg0KICA8bGluZSB4MT0iNy4xIiB5MT0iNDYuOCIgeDI9IjE0LjUiIHkyPSI3My4yIiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MS4ycHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 19pt;
+            height: 62pt;
+            margin-left: -19pt;
+        }
+
+        .nth {
+            position: relative;
+            bottom: 1pt;
+        }
+
+        .eq small.nth {font-size: 70%;}
+        .dvr small {font-size: 70%;}
+        .dvr small var {font-size: 105%;}
+        sup.raised {vertical-align: top;}
+        sup .r0, sup .r1, sup .r2, sup .r3 {
+            zoom: 0.7;
+            -moz-transform: scale(0.7);
+            -webkit-transform: scale(0.7);
+            transform: scale(0.7);
+            transform-origin: top right;
+            max-height: none;
+        }
+
+        sup .r0 { margin-left: -5pt; }
+        sup .r1 { margin-left: -11pt; }
+        sup .r2 { margin-left: -13pt; }
+        sup .r3 { margin-left: -16pt; }
+
+        .b1, .b2, .b3, .c1, .c2, .c3, .c4, .c5, .c6, .c7, .c8 {
+            vertical-align: middle;
+            font-weight: 100;
+            font-stretch: ultra-condensed;
+        }
+
+        .b2, .b3, .c2, .c3, .c4, .c5, .c6, .c7, .c8 {
+            font-family: 'Jost* Hairline', sans-serif;
+        }
+
+        .b0, .b1, .c1 {
+            font-family: 'Jost* Thin', sans-serif;
+        }
+
+        .b0 {
+            font-size: 120%;
+            font-weight: 600;
+            padding: 0 1pt 0 1pt;
+        }
+
+        .b1 {
+            font-size: 240%;
+            margin-top: -3pt;
+            margin-left: -1pt;
+            margin-right: -1pt;
+        }
+
+        .b2 {
+            font-size: 370%;
+            margin-top: -5pt;
+            margin-left: -3pt;
+            margin-right: -3pt;
+        }
+
+        .b3 {
+            font-size: 520%;
+            margin-top: -8pt;
+            margin-left: -5pt;
+            margin-right: -5pt;
+        }
+
+        .c1 {
+            font-size: 240%;
+            margin-top: -4pt;
+        }
+
+        .c2 {
+            font-size: 360%;
+            margin-top: -6pt;
+            margin-left: -2.5pt;
+            margin-right: -0.5pt;
+        }
+
+        .c3 {
+            font-size: 480%;
+            margin-top: -8pt;
+            margin-left: -3pt;
+            margin-right: -1pt;
+        }
+
+        .c4 {
+            font-size: 600%;
+            margin-top: -10pt;
+            margin-left: -4pt;
+            margin-right: -2pt;
+            transform: scaleX(0.9);
+        }
+
+        .c5 {
+            font-size: 710%;
+            margin-top: -11.5pt;
+            margin-left: -6pt;
+            margin-right: -4pt;
+            transform: scaleX(0.8);
+        }
+
+        .c6 {
+            font-size: 820%;
+            margin-top: -13pt;
+            margin-left: -7pt;
+            margin-right: -5pt;
+            transform: scaleX(0.7);
+        }
+
+        .c7 {
+            font-size: 930%;
+            margin-top: -14.5pt;
+            margin-left: -8pt;
+            margin-right: -6pt;
+            transform: scaleX(0.6);
+        }
+
+        .c8 {
+            font-size: 1040%;
+            margin-top: -16pt;
+            margin-left: -9pt;
+            margin-right: -7pt;
+            transform: scaleX(0.5);
+        }
+
+        .dvc, .dvr, .dvs {
+            display: inline-block;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .dvc {
+            padding-left: 2pt;
+            padding-right: 2pt;
+            text-align: center;
+            line-height: 110%;
+        }
+
+        .dvr {
+            text-align: center;
+            line-height: 110%;
+            position: relative;
+            top: -3pt;
+        }
+
+        .dvs {
+            text-align: left;
+            line-height: 110%;
+        }
+
+        .dvl {
+            display: block;
+            border-bottom: solid 1pt black;
+            margin-top: 1pt;
+            margin-bottom: 1pt;
+        }
+
+        .nary {
+            color: #C080F0;
+            font-size: 240%;
+            font-family: Georgia Pro Light, serif;
+            font-weight: 200;
+            line-height: 70%;
+            display: block;
+            margin: 0 1pt 2.5pt 1pt;
+        }
+
+            .nary em {
+                display: block;
+                transform: scaleX(0.7) rotate(7deg);
+            }
+
+        .dvc.down {
+            position: relative;
+            top: 0.5em;
+        }
+
+        .dvc.up {
+            position: relative;
+            bottom: 0.6em;
+        }
+
+        .low {
+            font-size: 70%;
+            display: inline-block;
+            position: relative;
+            top: 1.2em;
+        }
+
+        .cond {
+            color: #E000D0;
+        }
+
+        .err {
+            color: Crimson;
+            background-color: #FEE;
+        }
+
+        .ok {
+            color: Green;
+            background-color: #F0FFF0;
+        }
+
+        .ref {
+            float: right;
+            margin-left: 18pt;
+            color: Green;
+            background-color: #F8FFF0;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        .side {
+            float: right;
+            max-width: 50%;
+        }
+
+        .plot {
+            max-width: 100%
+        }
+
+        .indent {
+            border-left: 0.75pt solid #dddddd;
+            padding-left: 2em;
+        }
+
+        span.indent {
+            display: inline-block;
+        }
+
+        .fold {
+            height: 2.4em;
+            overflow: hidden;
+        }
+
+        .unfold {
+            height: auto;
+            overflow: auto;
+        }
+
+            .fold > :first-child, .unfold > :first-child {
+                cursor: pointer;
+            }
+
+                .fold > :first-child:hover, .unfold > :first-child:hover {
+                    color: #0066bb;
+                    text-decoration: underline;
+                }
+
+                .fold > :first-child::after {
+                    content: " ... ▼";
+                    font-size: 80%;
+                }
+
+                .unfold > :first-child::after {
+                    content: " ▲";
+                    font-size: 80%;
+                }
+
+        .vec {
+            font-family: 'Cambria Math', serif;
+            color: #8af;
+            font-style: normal;
+            display: inline-block;
+            vertical-align: 2pt;
+            margin-left: 3pt;
+            margin-right: -7pt;
+        }
+
+        small .vec, sup .vec {
+            margin-left: 2pt;
+            margin-right: -6pt;
+        }
+
+        #Units {
+            float: right;
+        }
+
+        @media screen {
+            .no-screen {
+                display: none;
+            }
+        }
+
+        @media print {
+            .side {
+                zoom: 0.8;
+                -moz-transform: scale(0.8);
+            }
+
+            body {
+                margin: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+
+        @page {
+            size: A4 portrait;
+            margin-left: 20mm;
+            margin-right: 10mm;
+            margin-top: 10mm;
+            margin-bottom: 10mm;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .value {
+            position: relative;
+            background-color: #f4fbff;
+            border-radius: 3pt;
+        }
+
+            .value:after {
+                content: "";
+                position: absolute;
+                left: 100%;
+                top: -100%;
+                transform: translateY(-50%);
+                margin-left: 2pt;
+                height: 16pt;
+                line-height: 16pt;
+                vertical-align: middle;
+                width: fit-content;
+                white-space: nowrap;
+                min-width: 10pt;
+                z-index: 1;
+                padding: 0 6pt 0 6pt;
+                border-radius: 6pt 6pt 6pt 0;
+                background: #000;
+                color: #fff;
+                font-family: 'Segoe UI', sans-serif;
+                font-style: normal;
+                font-size: 10pt;
+                text-align: center;
+                display: none;
+                opacity: 0;
+                transition: opacity 2s;
+                user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                -moz-user-select: none;
+            }
+
+            .value:hover:after {
+                content: attr(data-value);
+                display: block;
+                opacity: 1;
+            }
+
+        .errorHeader {
+            color: white;
+            background-color: crimson;
+            font-size: 10pt;
+            position: fixed;
+            top: 0;
+            left: 0;
+            margin-top: 0;
+            width: 100vw;
+            max-width: 100%;
+            height: 1.8em;
+            line-height: 1.2em;
+            padding-left: 6pt;
+            overflow-x: hidden;
+        }
+
+        .roundBox {
+            background-color: #fee;
+            color: crimson;
+            font-size: 9pt;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            display: inline-block;
+            border-radius: 4pt;
+            min-width: 1.1em;
+            padding-left: 2pt;
+            padding-right: 2pt;
+            margin-top: 2pt;
+        }
+
+            .roundBox:hover {
+                background-color: white;
+            }
+
+        .lineLink {
+            background: none;
+            color: #b0e0ff;
+            font-family: Calibri, sans-serif;
+            font-size: 10pt;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: left;
+            display: inline-block;
+            position: absolute;
+            left: 0;
+            width: 2em;
+            height: 4em;
+            z-index: 1;
+        }
+
+            .lineLink:hover {
+                background: none;
+                color: #09e;
+            }
+    </style>
+</head>
+<body>
+    <script>
+        var contextMenu = false;
+        function getVerticalPosition(line) { return document.querySelector("[data-text='" + line + "']").getBoundingClientRect().top; }
+        function isNumeric(s) { return s.match(/^-?\d+(?:\.\d+)?$/); }
+        if (window.jQuery) {
+            function getHtmlWithInput() {
+                $("input[type=text]").each(function () {
+                    $(this).attr("value", $(this).val());
+                });
+                $("input[type=hidden]").each(function () {
+                    $(this).attr("value", $(this).val());
+                });
+                $("textarea").each(function () {
+                    $(this).html($(this).val());
+                });
+                $("input[type=radio]").each(function () {
+                    if (this.checked)
+                        $(this).attr("checked", "checked");
+                    else
+                        $(this).removeAttr("checked");
+                });
+                $("input[type=checkbox]").each(function () {
+                    if (this.checked)
+                        $(this).attr("checked", "checked");
+                    else
+                        $(this).removeAttr("checked");
+                });
+                $("select option").each(function () {
+                    if (this.selected) {
+                        $(this).attr("selected", "true");
+                    }
+                    else
+                        $(this).removeAttr("selected");
+                });
+                return document.body.outerHTML;
+            }
+
+            function getTargetId(element) {
+                var id = $(element).attr("name");
+                if (id != null && id.length > 0)
+                    return id;
+
+                return $(element).data("target");
+            }
+
+            function getValue(id, source) {
+                var value = "";
+                var target = $("#" + id + " input");
+                var domObj = target.get(0);
+                if (domObj == null || domObj.Length == 0) {
+                    target = $("#" + id + " .eq u");
+                    target.each(function () {
+                        value += $(this).text() + ";";
+                    });
+                    $(source).prop('disabled', true);
+                }
+                else {
+                    target.each(function () {
+                        value += $(this).val() + ";";
+                    });
+                }
+                if (value.length > 1) {
+                    value = value.slice(0, -1);
+                }
+                return value;
+            }
+
+            $(document).ready(function () {
+
+                $(".dvcs:has(.block) > :first-child").html("&hairsp;");
+
+                $("#Units").change(function () { $(".Units").text($(this).val()); });
+
+                $(".fold > :first-child").click(function () {
+                    if ($(this).parent().hasClass("fold")) {
+                        $(this).parent().removeClass("fold").addClass("unfold");
+                    }
+                    else {
+                        $(this).parent().removeClass("unfold").addClass("fold");
+                    }
+                });
+
+                $("select").each(function (index) {
+                    if ($(this).prop("id") != "Units") {
+                        var id = getTargetId(this);
+                        if (id != null && id.length > 0) {
+                            var value = getValue(id, this);
+                            $(this).val(value);
+                        }
+                    }
+
+                });
+
+                $("select").change(function () {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var target = $("#" + id + " input");
+                        if (target != null) {
+                            var values = $(this).val().split(";");
+                            target.each(function (index) {
+                                $(this).val(values[index]);
+                            });
+                        }
+                    }
+                });
+
+                $("input:radio, input:checkbox").each(function (index) {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var value = getValue(id, this);
+                        $(this).prop("checked", $(this).val() == value);
+                    }
+                });
+
+                $("input:radio, input:checkbox").change(function () {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var target = $("#" + id + " input");
+                        if (target != null) {
+                            if ($(this).prop("checked")) {
+                                var values = $(this).val().split(";");
+                                target.each(function (index) {
+                                    $(this).val(values[index]);
+                                });
+                            }
+                            else if ($(this).prop("type") == "checkbox") {
+                                target.each(function () {
+                                    $(this).val("0");
+                                });
+                            }
+                        }
+                    }
+                });
+
+                $(".line:not(style, script)").each(function () {
+                    var line = $(this).prop("id").split("-")[1];
+                    var $lineLink = $('<a class="lineLink" href="#0" data-text="' + line + '" title="Code line ' + line + '">&larr;</a>');
+                    $(this).append($lineLink);
+                    $lineLink.hide();
+                    $(this).hover(function () {
+                        $(".lineLink").hide();
+                        $lineLink.show();
+                    });
+                    $(window).scroll(function () {
+                        $lineLink.hide();
+                    });
+                });
+
+                $("body").mouseleave(function () {
+                    $(".lineLink").hide();
+                });
+
+                $(".roundBox").click(function () {
+                    var line = $(this).data("line");
+                    var e = document.getElementById("line-" + line);
+                    if (e) {
+                        window.scrollTo(0, e.offsetTop - $(this).outerHeight() - 20);
+                    }
+                });
+                $(".money").each(function () { $(this).text(Number(($(this).text())).toFixed(2)); });
+
+                $("input").change(function() {
+                    var e = $(this);
+                    var s = e.val();
+                    if (isNumeric(s)) {
+                        e.css("color", "black");
+                        e.removeAttr("title");
+                    } else {
+                        e.css("color", "red");
+                        e.attr("title", "Invalid number");
+                    }
+                });
+
+                $("a").click(function () {
+                    chrome.webview.postMessage('clicked');
+                });
+
+                window.addEventListener('click', () => {
+                    chrome.webview.postMessage('focused');
+                });
+            });
+        }
+        document.oncontextmenu = function () { contextMenu = true; };
+        document.onmousedown = function () { contextMenu = false; };
+    </script><h3>Capitulo 1: Origenes del Metodo de Elementos Finitos </h3>
+<h3>De Euler (1744) al primer elemento finito (1956) </h3>
+<hr/> 
+<p>&nbsp;</p>
+<h3>1.1 El problema original: La viga de Euler (1744) </h3>
+<p>Leonhard Euler en 1744 resolvio el problema de la viga elastica.</p> 
+<p>Encontro una ecuacion diferencial que describe como se dobla:</p> 
+<p>&nbsp;</p>
+<!-- FORMEQ CALLED: len=27 --><p><span class="eq"><span class="dvc"><var>E</var> · <var>I</var> · <i>d</i><sup class="unit">4</sup> · <var>v</var><span class="dvl"></span><i>d</i></span> · <var>x</var><sup>4</sup> = <var>q</var>  ( <var>x</var> ) </span></p>
+<p>&nbsp;</p>
+<p>E = modulo de elasticidad (rigidez del material)</p> 
+<p>I = momento de inercia (geometria de la seccion)</p> 
+<p>v = deflexion vertical (lo que buscamos)</p> 
+<p>q = carga distribuida</p> 
+<p>&nbsp;</p>
+<p>Para casos simples, Euler podia resolverla a mano:</p> 
+<p>&nbsp;</p>
+<div id="cviz_0" style="display:inline-block"></div><script>CalcpadViz.structDraw("cviz_0",{elements:[{type:"support",x:0,y:0,supportType:"pin"},{type:"support",x:10,y:0,supportType:"roller"},{type:"beam",x1:0,y1:0,x2:10,y2:0,text:"Viga de Euler"},{type:"node",x:0,y:0,text:"A"},{type:"node",x:10,y:0,text:"B"},{type:"label",x:5,y:2,text:"q (carga uniforme)"},{type:"dim",x1:0,y1:0,x2:10,y2:0,text:"L"}],options:{width:600,height:200,title:"Viga de Euler con carga uniforme q",}});</script><p>&nbsp;</p>
+<h4>Solucion exacta de Euler para viga SA con carga uniforme:</h4> 
+<p><span class="eq"><var>E</var><sub>1</sub> = 200000</span></p>
+<p><span class="eq"><var>I</var><sub>1</sub> = 5 · 10<sup>-5</sup> = 5×10<sup>-5</sup></span></p>
+<p><span class="eq"><var>L</var><sub>1</sub> = 6</span></p>
+<p><span class="eq"><var>q</var><sub>1</sub> = 10</span></p>
+<p>&nbsp;</p>
+<!-- FORMEQ CALLED: len=46 --><p><span class="eq"><var>v</var>  ( <var>x</var> )  = <span class="dvc"><var>q</var> · <var>x</var><span class="dvl"></span>24 · <var>E</var> · <var>I</var></span> ·  ( <i>L</i><sup class="unit">3</sup> − 2 <i>L</i> · <var>x</var><sup>2</sup> + <var>x</var><sup>3</sup> ) </span></p>
+<!-- FORMEQ CALLED: len=32 --><p><span class="eq"><var>v</var><sub>{max}</sub> = <span class="dvc">5 · <var>q</var> · <i>L</i><sup class="unit">4</sup><span class="dvl"></span>384 · <var>E</var> · <var>I</var></span></span></p>
+<p>&nbsp;</p>
+<p><span class="eq"><var>v</var><sub>max1</sub> = <span class="dvc">5 · <var>q</var><sub>1</sub> · <var>L</var><sub>1</sub><sup>4</sup><span class="dvl"></span>384 · <var>E</var><sub>1</sub> · <var>I</var><sub>1</sub></span> = <span class="dvc">5 · 10 · 6<sup>4</sup><span class="dvl"></span>384 · 200000 · 5×10<sup>-5</sup></span> = 16.875</span></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div id="cviz_1" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_1",{series:[{x:[0,0.1224489796,0.2448979592,0.3673469388,0.4897959184,0.612244898,0.7346938776,0.8571428571,0.9795918367,1.102040816,1.224489796,1.346938776,1.469387755,1.591836735,1.714285714,1.836734694,1.959183673,2.081632653,2.204081633,2.326530612,2.448979592,2.571428571,2.693877551,2.816326531,2.93877551,3.06122449,3.183673469,3.306122449,3.428571429,3.551020408,3.673469388,3.795918367,3.918367347,4.040816327,4.163265306,4.285714286,4.408163265,4.530612245,4.653061224,4.775510204,4.897959184,5.020408163,5.142857143,5.265306122,5.387755102,5.510204082,5.632653061,5.755102041,5.87755102,6],y:[0,1.101132199,2.196887629,3.282095601,4.351810236,5.40131047,6.426100051,7.421907539,8.384686306,9.310614538,10.19609523,11.0377562,11.83245007,12.57725427,13.26947105,13.90662748,14.48647542,15.00699157,15.46637742,15.86305928,16.19568828,16.46314036,16.66451626,16.79914155,16.8665666,16.8665666,16.79914155,16.66451626,16.46314036,16.19568828,15.86305928,15.46637742,15.00699157,14.48647542,13.90662748,13.26947105,12.57725427,11.83245007,11.0377562,10.19609523,9.310614538,8.384686306,7.421907539,6.426100051,5.40131047,4.351810236,3.282095601,2.196887629,1.101132199,0],type:"line"}],options:{width:600,height:350,title:"Solucion exacta de Euler",xLabel:"x (m)",yLabel:"v (m)",}});</script><p>&nbsp;</p>
+<p>Euler podia resolver esto porque la geometria es simple (rectangular).</p> 
+<p>Pero que pasa con formas complicadas? Ahi empezo el problema...</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>1.2 Lord Rayleigh (1877): Metodo de la Energia </h3>
+<p>Rayleigh tuvo una idea brillante: en vez de resolver la ecuacion diferencial,</p> 
+<p>MINIMIZAR la energia. La estructura se deforma de la manera que minimiza</p> 
+<p>la energia total = energia interna - trabajo externo.</p> 
+<p>&nbsp;</p>
+<!-- FORMEQ CALLED: len=14 --><p><span class="eq"><var>Π</var> = <var>U</var> − <i>W</i></span></p>
+<p>&nbsp;</p>
+<p>U = energia de deformacion (la estructura almacena energia al deformarse)</p> 
+<p>W = trabajo de las fuerzas externas</p> 
+<p>&nbsp;</p>
+<p>Para una viga:</p> 
+<!-- FORMEQ CALLED: len=46 --><p><span class="eq"><var>U</var> = <var>1/2*∫</var><sub>{0}^{L} E*I*(d^2*v/d*x^2)^2*d*x</sub></span></p>
+<!-- FORMEQ CALLED: len=26 --><p><span class="eq"><i>W</i> = <var>∫</var><sub>{0}^{L} q*v*d*x</sub></span></p>
+<p>&nbsp;</p>
+<p>La idea de Rayleigh: ADIVINAR la forma de v(x) con una funcion simple</p> 
+<p>y minimizar la energia. No es exacto, pero es muy buena aproximacion!</p> 
+<p>&nbsp;</p>
+<h4>Ejemplo: Adivinar v(x) = C*sin(pi*x/L)</h4> 
+<p>Esta funcion cumple: v(0)=0 y v(L)=0 (condiciones de apoyo).</p> 
+<p>Solo tenemos que encontrar C (la amplitud).</p> 
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div id="cviz_2" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_2",{series:[{x:[0,0.1224489796,0.2448979592,0.3673469388,0.4897959184,0.612244898,0.7346938776,0.8571428571,0.9795918367,1.102040816,1.224489796,1.346938776,1.469387755,1.591836735,1.714285714,1.836734694,1.959183673,2.081632653,2.204081633,2.326530612,2.448979592,2.571428571,2.693877551,2.816326531,2.93877551,3.06122449,3.183673469,3.306122449,3.428571429,3.551020408,3.673469388,3.795918367,3.918367347,4.040816327,4.163265306,4.285714286,4.408163265,4.530612245,4.653061224,4.775510204,4.897959184,5.020408163,5.142857143,5.265306122,5.387755102,5.510204082,5.632653061,5.755102041,5.87755102,6],y:[0,0.06407021998,0.1278771617,0.1911586287,0.2536545839,0.315108218,0.3752670049,0.4338837391,0.490717552,0.5455349012,0.5981105305,0.6482283953,0.6956825506,0.7402779971,0.7818314825,0.8201722546,0.855142763,0.8865993064,0.914412623,0.938468422,0.958667853,0.9749279122,0.9871817834,0.9953791129,0.9994862162,0.9994862162,0.9953791129,0.9871817834,0.9749279122,0.958667853,0.938468422,0.914412623,0.8865993064,0.855142763,0.8201722546,0.7818314825,0.7402779971,0.6956825506,0.6482283953,0.5981105305,0.5455349012,0.490717552,0.4338837391,0.3752670049,0.315108218,0.2536545839,0.1911586287,0.1278771617,0.06407021998,1.224646799E-16],type:"line"}],options:{width:600,height:350,title:"Funcion adivinada",xLabel:"x (m)",yLabel:"forma (normalizada)",}});</script><p>&nbsp;</p>
+<p>Minimizando la energia, encontramos C:</p> 
+<!-- FORMEQ CALLED: len=24 --><p><span class="eq"><i>C</i> = <span class="dvc"><var>q</var> · <i>L</i><sup class="unit">4</sup><span class="dvl"></span><var>π</var><sup>4</sup> · <var>E</var> · <var>I</var></span></span></p>
+<p>&nbsp;</p>
+<p><span class="eq"><var>C</var><sub>r</sub> = <span class="dvc"><var>q</var><sub>1</sub> · <var>L</var><sub>1</sub><sup>4</sup><span class="dvl"></span><var>π</var><sup>4</sup> · <var>E</var><sub>1</sub> · <var>I</var><sub>1</sub></span> = <span class="dvc">10 · 6<sup>4</sup><span class="dvl"></span>3.141593<sup>4</sup> · 200000 · 5×10<sup>-5</sup></span> = 13.304713</span></p>
+<p>&nbsp;</p>
+<p>Deflexion maxima por Rayleigh: </p>
+<p><span class="eq"><var>v</var><sub>max_rayleigh</sub> = <var>C</var><sub>r</sub> = 13.304713</span></p>
+<p>&nbsp;</p>
+<p>Comparacion con Euler exacto: </p>
+<p><span class="eq"><var>error</var><sub>rayleigh</sub> = <span class="dvc"><var>v</var><sub>max_rayleigh</sub> − <var>v</var><sub>max1</sub><span class="dvl"></span><var>v</var><sub>max1</sub></span> · 100 = <span class="dvc">13.304713 − 16.875<span class="dvl"></span>16.875</span> · 100 = -21.157256</span></p>
+<p>&nbsp;</p>
+<p>Error de solo ~0.4%! Rayleigh adivino la forma y la energia hizo el resto.</p> 
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div id="cviz_3" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_3",{series:[{x:[0,0.1224489796,0.2448979592,0.3673469388,0.4897959184,0.612244898,0.7346938776,0.8571428571,0.9795918367,1.102040816,1.224489796,1.346938776,1.469387755,1.591836735,1.714285714,1.836734694,1.959183673,2.081632653,2.204081633,2.326530612,2.448979592,2.571428571,2.693877551,2.816326531,2.93877551,3.06122449,3.183673469,3.306122449,3.428571429,3.551020408,3.673469388,3.795918367,3.918367347,4.040816327,4.163265306,4.285714286,4.408163265,4.530612245,4.653061224,4.775510204,4.897959184,5.020408163,5.142857143,5.265306122,5.387755102,5.510204082,5.632653061,5.755102041,5.87755102,6],y:[0,1.101132199,2.196887629,3.282095601,4.351810236,5.40131047,6.426100051,7.421907539,8.384686306,9.310614538,10.19609523,11.0377562,11.83245007,12.57725427,13.26947105,13.90662748,14.48647542,15.00699157,15.46637742,15.86305928,16.19568828,16.46314036,16.66451626,16.79914155,16.8665666,16.8665666,16.79914155,16.66451626,16.46314036,16.19568828,15.86305928,15.46637742,15.00699157,14.48647542,13.90662748,13.26947105,12.57725427,11.83245007,11.0377562,10.19609523,9.310614538,8.384686306,7.421907539,6.426100051,5.40131047,4.351810236,3.282095601,2.196887629,1.101132199,0],type:"line",label:"Euler (exacto)"},{x:[0,0.1224489796,0.2448979592,0.3673469388,0.4897959184,0.612244898,0.7346938776,0.8571428571,0.9795918367,1.102040816,1.224489796,1.346938776,1.469387755,1.591836735,1.714285714,1.836734694,1.959183673,2.081632653,2.204081633,2.326530612,2.448979592,2.571428571,2.693877551,2.816326531,2.93877551,3.06122449,3.183673469,3.306122449,3.428571429,3.551020408,3.673469388,3.795918367,3.918367347,4.040816327,4.163265306,4.285714286,4.408163265,4.530612245,4.653061224,4.775510204,4.897959184,5.020408163,5.142857143,5.265306122,5.387755102,5.510204082,5.632653061,5.755102041,5.87755102,6],y:[0,0.8524358888,1.701368936,2.543310693,3.374801441,4.192424405,4.992819799,5.772698625,6.528856194,7.258185293,7.957688952,8.624492759,9.255856676,9.849186293,10.40204349,10.91215646,11.37742904,11.79594932,12.16599751,12.48605302,12.75480065,12.97113607,13.13417031,13.24323343,13.29787726,13.29787726,13.24323343,13.13417031,12.97113607,12.75480065,12.48605302,12.16599751,11.79594932,11.37742904,10.91215646,10.40204349,9.849186293,9.255856676,8.624492759,7.957688952,7.258185293,6.528856194,5.772698625,4.992819799,4.192424405,3.374801441,2.543310693,1.701368936,0.8524358888,1.629357419E-15],type:"line",label:"Rayleigh (aproximado)"}],options:{width:600,height:350,title:"Euler exacto vs Rayleigh aproximado",xLabel:"x (m)",yLabel:"v (m)",}});</script><p>&nbsp;</p>
+<p>Las dos curvas son casi identicas! El metodo de la energia funciona.</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>1.3 Ritz (1909): Mejorar la aproximacion </h3>
+<p>Walter Ritz mejoro la idea de Rayleigh: en vez de UNA funcion,</p> 
+<p>usar VARIAS funciones sumadas con coeficientes:</p> 
+<p>&nbsp;</p>
+<!-- FORMEQ CALLED: len=54 --><p><span class="eq"><var>v</var>  ( <var>x</var> )  = <var>a</var><sub>1*φ_1(x) + a_2*φ_2(x) + a_3*φ_3(x) + ...</sub></span></p>
+<p>&nbsp;</p>
+<p>Cada phi es una funcion base (como sin(n*pi*x/L) para n=1,2,3...).</p> 
+<p>Mas funciones = mejor aproximacion.</p> 
+<p>&nbsp;</p>
+<h4>Ejemplo: Ritz con 1, 2 y 3 terminos</h4> 
+<p>&nbsp;</p>
+<div id="cviz_4" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_4",{series:[{x:[0,0.1224489796,0.2448979592,0.3673469388,0.4897959184,0.612244898,0.7346938776,0.8571428571,0.9795918367,1.102040816,1.224489796,1.346938776,1.469387755,1.591836735,1.714285714,1.836734694,1.959183673,2.081632653,2.204081633,2.326530612,2.448979592,2.571428571,2.693877551,2.816326531,2.93877551,3.06122449,3.183673469,3.306122449,3.428571429,3.551020408,3.673469388,3.795918367,3.918367347,4.040816327,4.163265306,4.285714286,4.408163265,4.530612245,4.653061224,4.775510204,4.897959184,5.020408163,5.142857143,5.265306122,5.387755102,5.510204082,5.632653061,5.755102041,5.87755102,6],y:[0,1.101132199,2.196887629,3.282095601,4.351810236,5.40131047,6.426100051,7.421907539,8.384686306,9.310614538,10.19609523,11.0377562,11.83245007,12.57725427,13.26947105,13.90662748,14.48647542,15.00699157,15.46637742,15.86305928,16.19568828,16.46314036,16.66451626,16.79914155,16.8665666,16.8665666,16.79914155,16.66451626,16.46314036,16.19568828,15.86305928,15.46637742,15.00699157,14.48647542,13.90662748,13.26947105,12.57725427,11.83245007,11.0377562,10.19609523,9.310614538,8.384686306,7.421907539,6.426100051,5.40131047,4.351810236,3.282095601,2.196887629,1.101132199,0],type:"line",label:"Exacto"},{x:[0,0.1224489796,0.2448979592,0.3673469388,0.4897959184,0.612244898,0.7346938776,0.8571428571,0.9795918367,1.102040816,1.224489796,1.346938776,1.469387755,1.591836735,1.714285714,1.836734694,1.959183673,2.081632653,2.204081633,2.326530612,2.448979592,2.571428571,2.693877551,2.816326531,2.93877551,3.06122449,3.183673469,3.306122449,3.428571429,3.551020408,3.673469388,3.795918367,3.918367347,4.040816327,4.163265306,4.285714286,4.408163265,4.530612245,4.653061224,4.775510204,4.897959184,5.020408163,5.142857143,5.265306122,5.387755102,5.510204082,5.632653061,5.755102041,5.87755102,6],y:[0,1.085355083,2.166250209,3.238243749,4.29693065,5.337960541,6.357055608,7.350028169,8.312797889,9.241408538,10.13204426,10.98104523,11.78492274,12.54037347,13.24429312,13.89378912,14.48619257,15.01906914,15.49022914,15.89773646,16.23991657,16.51536338,16.72294502,16.8618085,16.93138318,16.93138318,16.8618085,16.72294502,16.51536338,16.23991657,15.89773646,15.49022914,15.01906914,14.48619257,13.89378912,13.24429312,12.54037347,11.78492274,10.98104523,10.13204426,9.241408538,8.312797889,7.350028169,6.357055608,5.337960541,4.29693065,3.238243749,2.166250209,1.085355083,2.074562299E-15],type:"line",label:"1 termino"},{x:[0,0.1224489796,0.2448979592,0.3673469388,0.4897959184,0.612244898,0.7346938776,0.8571428571,0.9795918367,1.102040816,1.224489796,1.346938776,1.469387755,1.591836735,1.714285714,1.836734694,1.959183673,2.081632653,2.204081633,2.326530612,2.448979592,2.571428571,2.693877551,2.816326531,2.93877551,3.06122449,3.183673469,3.306122449,3.428571429,3.551020408,3.673469388,3.795918367,3.918367347,4.040816327,4.163265306,4.285714286,4.408163265,4.530612245,4.653061224,4.775510204,4.897959184,5.020408163,5.142857143,5.265306122,5.387755102,5.510204082,5.632653061,5.755102041,5.87755102,6],y:[0,1.098681189,2.192410932,3.276274236,4.345428274,5.395136628,6.420801407,7.417992628,8.382474363,9.310227242,10.19746704,11.0406592,11.83652922,12.58206913,13.27454015,13.91147196,14.49065905,15.01015453,15.46826222,15.86352741,16.19472708,16.46086012,16.66113816,16.79497757,16.86199303,16.86199303,16.79497757,16.66113816,16.46086012,16.19472708,15.86352741,15.46826222,15.01015453,14.49065905,13.91147196,13.27454015,12.58206913,11.83652922,11.0406592,10.19746704,9.310227242,8.382474363,7.417992628,6.420801407,5.395136628,4.345428274,3.276274236,2.192410932,1.098681189,2.100174179E-15],type:"line",label:"2 terminos"},{x:[0,0.1224489796,0.2448979592,0.3673469388,0.4897959184,0.612244898,0.7346938776,0.8571428571,0.9795918367,1.102040816,1.224489796,1.346938776,1.469387755,1.591836735,1.714285714,1.836734694,1.959183673,2.081632653,2.204081633,2.326530612,2.448979592,2.571428571,2.693877551,2.816326531,2.93877551,3.06122449,3.183673469,3.306122449,3.428571429,3.551020408,3.673469388,3.795918367,3.918367347,4.040816327,4.163265306,4.285714286,4.408163265,4.530612245,4.653061224,4.775510204,4.897959184,5.020408163,5.142857143,5.265306122,5.387755102,5.510204082,5.632653061,5.755102041,5.87755102,6],y:[0,1.100389336,2.195653186,3.280720249,4.350625048,5.400554671,6.425888682,7.422230802,8.385431613,9.31160226,10.19711973,11.03862494,11.83301528,12.57743355,13.26925523,13.90607619,14.48570218,15.00614161,15.46560213,15.86249118,16.19542028,16.46321213,16.66490933,16.79978367,16.86734437,16.86734437,16.79978367,16.66490933,16.46321213,16.19542028,15.86249118,15.46560213,15.00614161,14.48570218,13.90607619,13.26925523,12.57743355,11.83301528,11.03862494,10.19711973,9.31160226,8.385431613,7.422230802,6.425888682,5.400554671,4.350625048,3.280720249,2.195653186,1.100389336,2.103493478E-15],type:"line",label:"3 terminos"}],options:{width:600,height:350,title:"Ritz",xLabel:"x (m)",yLabel:"v (m)",}});</script><p>&nbsp;</p>
+<p>Con 3 terminos ya es practicamente exacto!</p> 
+<p>Pero esto solo funciona si las funciones phi cubren toda la estructura.</p> 
+<p>Para formas complicadas no hay funciones phi simples...</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>1.4 Galerkin (1915): Otro camino al mismo resultado </h3>
+<p>Boris Galerkin propuso: en vez de minimizar energia,</p> 
+<p>hacer que el ERROR sea cero en promedio.</p> 
+<p>&nbsp;</p>
+<p>Si la ecuacion real es EI*v&apos;&apos; = q, y nuestra aproximacion da un residuo R:</p> 
+<!-- FORMEQ CALLED: len=30 --><p><span class="eq"><var>R</var> = <var>E*I*v''''</var><sub>{aprox} - q</sub></span></p>
+<p>&nbsp;</p>
+<p>Galerkin dice: el residuo ponderado por las funciones base debe ser cero:</p> 
+<!-- FORMEQ CALLED: len=28 --><p><span class="eq"><var>∫</var><sub>{0}^{L} R*φ_i*d*x</sub> = 0</span></p>
+<p>&nbsp;</p>
+<p>Esto da el MISMO resultado que Rayleigh-Ritz para problemas de elasticidad!</p> 
+<p>Son dos caminos diferentes que llegan al mismo lugar.</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>1.5 Courant (1943): Dividir en TRIANGULOS </h3>
+<p>Richard Courant tuvo la idea clave: en vez de funciones que cubren</p> 
+<p>TODA la estructura, dividir en pedazos pequenos (triangulos) y</p> 
+<p>usar funciones simples en cada pedazo.</p> 
+<p>&nbsp;</p>
+<p>Esto es el NACIMIENTO del concepto de elemento finito!</p> 
+<p>&nbsp;</p>
+<div id="cviz_5" style="display:inline-block"></div><script>CalcpadViz.structDraw("cviz_5",{elements:[{type:"node",x:0,y:0,text:"1"},{type:"node",x:5,y:0,text:"2"},{type:"node",x:2.5,y:3,text:"3"},{type:"beam",x1:0,y1:0,x2:5,y2:0,text:"elem 1"},{type:"beam",x1:5,y1:0,x2:2.5,y2:3,text:"elem 2"},{type:"beam",x1:2.5,y1:3,x2:0,y2:0,text:"elem 3"},{type:"label",x:2.5,y:0.8,text:"Triangulo de Courant"}],options:{width:500,height:250,title:"Courant 1943",}});</script><p>&nbsp;</p>
+<p>Dentro de cada triangulo, el desplazamiento es LINEAL (plano).</p> 
+<p>Las funciones de forma son simples porque cada elemento es pequeno.</p> 
+<p>Muchos elementos pequenos = buena aproximacion de formas complicadas.</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>1.6 Turner, Clough, Martin y Topp (1956): El primer FEM real </h3>
+<p>Ingenieros de Boeing necesitaban analizar alas de aviones.</p> 
+<p>Combinaron las ideas de Ritz + Courant y crearon el primer programa.</p> 
+<p>Dividieron el ala en triangulos, calcularon rigidez de cada uno,</p> 
+<p>y ensamblaron todo en una gran ecuacion K*u = F.</p> 
+<p>&nbsp;</p>
+<p>El nombre "Finite Element Method" lo puso Ray Clough en 1960.</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>1.7 Como funciona FEM: el proceso completo </h3>
+<p>&nbsp;</p>
+<p>1. DIVIDIR la estructura en elementos (barras, triangulos, quads)</p> 
+<p>2. Para cada elemento: calcular su matriz de RIGIDEZ K usando funciones de forma</p> 
+<p>3. ENSAMBLAR todas las K en una K global grande</p> 
+<p>4. Aplicar condiciones de FRONTERA (apoyos)</p> 
+<p>5. RESOLVER K*u = F para encontrar desplazamientos u</p> 
+<p>6. Calcular esfuerzos y reacciones</p> 
+<p>&nbsp;</p>
+<h4>Ejemplo: 2 barras — el FEM mas simple posible</h4> 
+<p>&nbsp;</p>
+<div id="cviz_6" style="display:inline-block"></div><script>CalcpadViz.structDraw("cviz_6",{elements:[{type:"support",x:0,y:0,supportType:"fixed"},{type:"bar",x1:0,y1:0,x2:4,y2:0,text:"Elem 1 (k1)"},{type:"bar",x1:4,y1:0,x2:8,y2:0,text:"Elem 2 (k2)"},{type:"node",x:0,y:0,text:"1 (fijo)"},{type:"node",x:4,y:0,text:"2"},{type:"node",x:8,y:0,text:"3"},{type:"force",x:8,y:0,dir:"right",text:"F=100"}],options:{width:600,height:180,title:"FEM con 2 barras",}});</script><p>&nbsp;</p>
+<p>Paso 1: Rigidez de cada elemento </p>
+<p><span class="eq"><var>E</var><sub>fem</sub> = 200000</span></p>
+<p><span class="eq"><var>A</var><sub>fem</sub> = 0.001</span></p>
+<p><span class="eq"><var>L</var><sub>fem</sub> = 4</span></p>
+<p><span class="eq"><var>k</var><sub>fem</sub> = <span class="dvc"><var>E</var><sub>fem</sub> · <var>A</var><sub>fem</sub><span class="dvl"></span><var>L</var><sub>fem</sub></span> = <span class="dvc">200000 · 0.001<span class="dvl"></span>4</span> = 50</span></p>
+<p>&nbsp;</p>
+<p>Paso 2: K local de cada barra (2x2) </p>
+<p>K1 = k*[1,-1; -1,1] para nodos (1,2)</p> 
+<p>K2 = k*[1,-1; -1,1] para nodos (2,3)</p> 
+<p>&nbsp;</p>
+<p>Paso 3: Ensamblar K global (nodo 1 fijo, quedan 2 DOF) </p>
+<p><span class="eq"><b><var>K</var></b><sub>fem</sub> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">2 · <var>k</var><sub>fem</sub></span><span class="td">-<var>k</var><sub>fem</sub></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">-<var>k</var><sub>fem</sub></span><span class="td"><var>k</var><sub>fem</sub></span><span class="td"></span></span></span> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">2 · 50</span><span class="td">-50</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">-50</span><span class="td">50</span><span class="td"></span></span></span> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">100</span><span class="td">-50</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-50</span><span class="td">50</span><span class="td"></span></span>
+</span>
+</span></p>
+<p><span class="eq"><var><span class="vec">⃗</span>F</var><sub>fem</sub> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">100</span><span class="td"></span></span></span></span></p>
+<p>&nbsp;</p>
+<p>Paso 4: Resolver </p>
+<p><span class="eq"><var><span class="vec">⃗</span>u</var><sub>fem</sub> = <b><var>K</var></b><sub>fem</sub><sup>−1</sup> · <var><span class="vec">⃗</span>F</var><sub>fem</sub> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">2</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">4</span><span class="td"></span></span>
+</span>
+</span></p>
+<p><span class="eq"><var>u2</var><sub>fem</sub> = <var><span class="vec">⃗</span>u</var><sub>fem.1</sub> = 2</span></p>
+<p><span class="eq"><var>u3</var><sub>fem</sub> = <var><span class="vec">⃗</span>u</var><sub>fem.2</sub> = 4</span></p>
+<p>&nbsp;</p>
+<p>Paso 5: Fuerzas internas </p>
+<p><span class="eq"><var>N1</var><sub>fem</sub> = <var>k</var><sub>fem</sub> · <var>u2</var><sub>fem</sub> = 50 · 2 = 100</span></p>
+<p><span class="eq"><var>N2</var><sub>fem</sub> = <var>k</var><sub>fem</sub> ·  ( <var>u3</var><sub>fem</sub> − <var>u2</var><sub>fem</sub> )  = 50 ·  ( 4 − 2 )  = 100</span></p>
+<p>Reaccion en apoyo: </p>
+<p><span class="eq"><var>R</var><sub>fem</sub> = -<var>N1</var><sub>fem</sub> = -100</span></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div id="cviz_7" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_7",{series:[{x:[0,4,8],y:[0,2,4],type:"line"}],options:{width:600,height:350,title:"Resultado FEM",xLabel:"x (m)",yLabel:"u (mm)",}});</script><p>&nbsp;</p>
+<p>Eso es TODO el metodo de elementos finitos:</p> 
+<p>Dividir → Rigidez → Ensamblar → Resolver → Resultados</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>Resumen historico </h3>
+<p>1744 — Euler: ecuacion de la viga (solucion exacta para casos simples)</p> 
+<p>1877 — Rayleigh: minimizar energia (aproximacion con 1 funcion)</p> 
+<p>1909 — Ritz: varias funciones base (mejor aproximacion)</p> 
+<p>1915 — Galerkin: residuos ponderados (mismo resultado que Ritz)</p> 
+<p>1943 — Courant: dividir en triangulos (el concepto clave)</p> 
+<p>1956 — Turner/Clough/Boeing: primer FEM computacional</p> 
+<p>1960 — Clough: inventa el nombre "Finite Element Method"</p> 
+<p>Hoy — SAP2000, ETABS, ANSYS, OpenSees: todos usan FEM</p> 
+ </body></html>

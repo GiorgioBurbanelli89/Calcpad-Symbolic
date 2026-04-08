@@ -2,11 +2,11 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "examples-server",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8766"],
-      "cwd": "Calcpad.Cli/Examples",
-      "port": 8766
+      "name": "fem-tutorial",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8767"],
+      "cwd": "Examples/Finite Elements",
+      "port": 8767
     }
   ]
 }

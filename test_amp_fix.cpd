@@ -1,0 +1,39 @@
+"Test & en matrices con ceros
+
+"1. El problema: 0 sin unidad
+A = [1 kN; 2 kN|3 kN; 4 kN]
+B_1 = [1/m; 0|0; 1/m]
+'Falla:
+'C = A*B_1
+
+"2. Solucion: & unidad a toda la matriz B
+B_2 = [1; 0|0; 1] & 1/m
+B_2
+'Ahora multiplicar:
+C_2 = A*B_2
+C_2
+
+"3. B de membrana con & 1/m
+L = 1 m
+dNdx = 1/L
+dNdy = 0.5/L
+B_mem = [dNdx; 0; -dNdx; 0|0; dNdy; 0; -dNdy|dNdy; dNdx; -dNdy; -dNdx] & 1/m
+B_mem
+
+"4. D * B
+E = 200000 MPa
+t = 0.2 m
+D = E*t/(1 - 0.04)*[1; 0.2|0.2; 1|0; 0] & kN/m
+D
+DB = D*B_mem
+DB
+
+"5. B^T * D * B * area
+area = (0.5 m)^2
+K = transp(B_mem)*D*B_mem*area
+K
+
+"6. Solve con & mm
+F = [10; -5; 3; -2] & kN
+u = lsolve(K; F) & [mm; mm; mm; mm]
+u

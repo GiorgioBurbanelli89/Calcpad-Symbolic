@@ -1,0 +1,51 @@
+
+
+ SAP2000 v24.1.0 Ultimate 64-bit (Analysis Build 9917/64)                       
+ File: C:\Users\j-b-j\Document...idation SAP2000\07_Placa_Base_e50_3D_meshed.OUT
+                                                                     
+                                                                       
+
+ D I S P L A C E M E N T   D E G R E E S   O F   F R E E D O M
+
+         (A) = Active DOF, equilibrium equation
+         (-) = Restrained DOF, reaction computed
+         (+) = Constrained DOF
+         (>) = External substructure DOF
+         ( ) = Null DOF
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+       1 TO      10    A   A   A   A   A   A
+      11               -   -   -   A   A   A
+      12               A   A   A   A   A   A
+      13               -   -   -   A   A   A
+      14               A   A   A   A   A   A
+      15               -   -   -   A   A   A
+      16               A   A   A   A   A   A
+      17               -   -   -   A   A   A
+      18 TO      28    A   A   A   A   A   A
+      29               -   -   -   A   A   A
+      30               A   A   A   A   A   A
+      31               -   -   -   A   A   A
+      32               A   A   A   A   A   A
+      33               -   -   -   A   A   A
+      34               A   A   A   A   A   A
+      35               -   -   -   A   A   A
+      36 TO      46    A   A   A   A   A   A
+      47               -   -   -   A   A   A
+      48               A   A   A   A   A   A
+      49               -   -   -   A   A   A
+      50               A   A   A   A   A   A
+      51               -   -   -   A   A   A
+      52               A   A   A   A   A   A
+      53               -   -   -   A   A   A
+      54 TO      64    A   A   A   A   A   A
+      65               -   -   -   A   A   A
+      66               A   A   A   A   A   A
+      67               -   -   -   A   A   A
+      68               A   A   A   A   A   A
+      69               -   -   -   A   A   A
+      70               A   A   A   A   A   A
+      71               -   -   -   A   A   A
+      72 TO      81    A   A   A   A   A   A
+      82 TO      85    A   A   A            
+      86 TO     137    A   A   A   A   A   A

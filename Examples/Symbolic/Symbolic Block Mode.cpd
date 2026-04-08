@@ -1,0 +1,28 @@
+"Test #sym bloque multilínea
+
+"1. Bloque de derivadas e integrales
+#sym
+diff(x^2 + 3*x; x)
+diff(sin(x)*cos(x); x)
+integrate(x^2; x)
+solve(x^2 - 4; x)
+#end sym
+
+"2. Bloque de cálculo vectorial
+#sym
+pdiff(x^2*y + y^3; x)
+gradient(x^2 + y^2; x; y)
+laplacian(x^2 + y^2; x; y)
+#end sym
+
+"3. Bloque ODE y Laplace
+#sym
+laplace(sin(t); t; s)
+laplace(cos(t); t; s)
+ode2(0; 4)
+ode2(2; 5)
+#end sym
+
+"4. #sym inline (sigue funcionando)
+#sym diff(x^3; x)
+#sym det(a; b; c; d)

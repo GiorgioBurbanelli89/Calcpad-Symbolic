@@ -1,0 +1,58 @@
+"#sym Completo — Laplace, ODE, Tensores
+
+"1. Transformada de Laplace
+#sym laplace(1; t; s)
+#sym laplace(t; t; s)
+#sym laplace(t^2; t; s)
+#sym laplace(sin(t); t; s)
+#sym laplace(cos(t); t; s)
+#sym laplace(sin(w*t); t; s)
+#sym laplace(cos(w*t); t; s)
+#sym laplace(exp(-a*t); t; s)
+#sym laplace(sinh(t); t; s)
+#sym laplace(cosh(t); t; s)
+#sym laplace(exp(-a*t)*sin(w*t); t; s)
+#sym laplace(exp(-a*t)*cos(w*t); t; s)
+#sym laplace(t*sin(w*t); t; s)
+#sym laplace(t*exp(-a*t); t; s)
+
+"2. Laplace Inversa
+#sym ilaplace(1/s; s; t)
+#sym ilaplace(1/s^2; s; t)
+
+"3. EDO 1er orden: y' + a·y = 0
+#sym ode1(2)
+#sym ode1(3)
+#sym ode1(-1)
+
+"4. EDO 2do orden: y'' + a·y' + b·y = 0
+`Raíces reales distintas:
+#sym ode2(5; 6)
+`Raíces repetidas:
+#sym ode2(4; 4)
+`Raíces complejas (oscilación):
+#sym ode2(0; 4)
+`Amortiguado subcrítico:
+#sym ode2(2; 5)
+
+"5. Tensor de Deformación 2D
+`Campo de desplazamiento u = x²·y, v = x·y²
+#sym strain(x^2*y; x*y^2; x; y)
+
+"6. Tensor de Deformación 3D
+#sym strain(x^2; y^2; z^2; x; y; z)
+
+"7. Tensor de Esfuerzos (Hooke isotrópico)
+`ε₁₁ = 0.001, ε₂₂ = 0.002, ε₁₂ = 0.0005
+`E = 200000 MPa, ν = 0.3
+#sym stress(0.001; 0.002; 0.0005; 200000; 0.3)
+
+"8. Notación de Voigt
+#sym voigt(s_11; s_12; s_21; s_22)
+
+"9. Invariantes tensoriales
+#sym invariants(3; 1; 1; 2)
+
+"10. Producto diádico a ⊗ b
+#sym dyadic(1; 2; 3; 4)
+#sym dyadic(n_1; n_2; n_1; n_2)

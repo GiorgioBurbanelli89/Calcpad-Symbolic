@@ -1,0 +1,20 @@
+"Test $Table
+v1 = [10; 20; 30; 40; 50]
+v2 = [1.5; 2.5; 3.5; 4.5; 5.5]
+v3 = [100; 200; 300; 400; 500]
+
+"Con bordes (default)
+$Table{v1; v2; v3 @ "Fuerza (tonf)"; "Desp (mm)"; "Momento (tonf*m)"}
+
+"Con numeros de fila y formato
+$Table{v1; v2; v3 @ "F"; "d"; "M" & fmt=2 & row=1}
+
+"Sin bordes (border=0)
+$Table{v1; v2 @ "X"; "Y" & border=0 & row=1}
+
+"Sin zebra (zebra=0)
+$Table{v1; v2; v3 @ "A"; "B"; "C" & fmt=1 & row=1 & zebra=0}
+
+"Matriz a tabla
+M = [1; 2; 3|4; 5; 6|7; 8; 9]
+$Table{M @ "Col A"; "Col B"; "Col C" & fmt=0 & row=1}

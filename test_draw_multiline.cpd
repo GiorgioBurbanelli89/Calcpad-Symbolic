@@ -1,0 +1,10 @@
+L = 6
+h = 3
+q = 10
+M = q*L^2/8
+$Draw{
+line,0,0,L,0
+line,0,0,0,h
+line,L,0,L,h
+line,0,h,L,h
+}

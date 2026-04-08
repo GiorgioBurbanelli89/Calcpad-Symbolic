@@ -59,7 +59,9 @@ namespace Calcpad.Core
             Maxima,
             End_Maxima,
             Pip,
-            SkipLine
+            SkipLine,
+            Svg,
+            End_Svg
         }
         private enum KeywordResult  
         {
@@ -178,6 +180,12 @@ namespace Calcpad.Core
                     return KeywordResult.Continue;
                 case Keyword.Pip:
                     ParseKeywordPip(s);
+                    return KeywordResult.Continue;
+                case Keyword.Svg:
+                    ParseKeywordSvg(s);
+                    return KeywordResult.Continue;
+                case Keyword.End_Svg:
+                    ParseKeywordEndSvg();
                     return KeywordResult.Continue;
                 case Keyword.NoSub:
                     _parser.VariableSubstitution = MathParser.VariableSubstitutionOptions.VariablesOnly;
@@ -746,7 +754,7 @@ namespace Calcpad.Core
         private void ParseKeywordDeq(ReadOnlySpan<char> s)
         {
             _sb.Append($"<!-- FORMEQ CALLED: len={s.Length} -->");
-            // Saltar "#formeq "
+            // Saltar "#deq "
             var spaceIdx = s.IndexOf(' ');
             if (spaceIdx < 0) return;
             var expr = s[(spaceIdx + 1)..].ToString();
@@ -765,6 +773,16 @@ namespace Calcpad.Core
                 var part = parts[i].Trim();
                 if (string.IsNullOrEmpty(part)) continue;
 
+                if (i > 0) sb2.Append(_lastDeqSeparator);
+
+                // Try special rendering for derivatives and primes
+                var specialHtml = TryRenderDeqSpecial(part);
+                if (specialHtml != null)
+                {
+                    sb2.Append(specialHtml);
+                    continue;
+                }
+
                 try
                 {
                     _parser.Parse(part, false);
@@ -775,13 +793,11 @@ namespace Calcpad.Core
                         var w = new HtmlWriter(Settings.Math, _parser.Phasor);
                         html = w.FormatVariable(part, string.Empty, false);
                     }
-                    if (i > 0) sb2.Append(" = ");
                     sb2.Append(html);
                 }
                 catch
                 {
                     // Si el parser falla, renderizar como texto con formato de variable
-                    if (i > 0) sb2.Append(" = ");
                     var w = new HtmlWriter(Settings.Math, _parser.Phasor);
                     sb2.Append(w.FormatVariable(part, string.Empty, false));
                 }
@@ -794,6 +810,972 @@ namespace Calcpad.Core
                 _sb.Append($"<p{HtmlId}><span class=\"eq\">{sb2}</span></p>\n");
             else
                 _sb.Append($"<p{HtmlId}><span class=\"err\">#formeq: no output for '{expr}'</span></p>\n");
+        }
+
+        /// <summary>
+        /// Try to render special #deq patterns that the MathParser can't handle:
+        /// - Leibniz derivatives: d^2v/dx^2, dv/dx, d^4v/dx^4, ∂^2u/∂x^2
+        /// - Prime notation: v'(x), v''(x), f''''(x)
+        /// - Partial derivatives: ∂f/∂x
+        /// Returns null if the part is not a special pattern.
+        /// </summary>
+        private string TryRenderDeqSpecial(string part)
+        {
+            // --- Pattern 1: Leibniz derivative fractions ---
+            // d^nf/dx^n, d^2v/dx^2, df/dx, ∂f/∂x, ∂^2u/∂x^2, ∂^2u/∂x∂y
+            var leibnizMatch = System.Text.RegularExpressions.Regex.Match(part,
+                @"^([d∂](?:\^(\d+))?)(\w+)\s*/\s*([d∂])(\w)(?:\^(\d+))?(?:([d∂])(\w)(?:\^(\d+))?)?$");
+            if (leibnizMatch.Success)
+            {
+                var dSym = leibnizMatch.Groups[1].Value;   // d or ∂ or d^2 or ∂^2
+                var order = leibnizMatch.Groups[2].Value;    // order number (empty for 1st)
+                var func = leibnizMatch.Groups[3].Value;     // function name (v, u, f...)
+                var dSym2 = leibnizMatch.Groups[4].Value;    // d or ∂ in denominator
+                var var1 = leibnizMatch.Groups[5].Value;     // variable (x, y...)
+                var order2 = leibnizMatch.Groups[6].Value;   // order in denominator
+                var dSym3 = leibnizMatch.Groups[7].Value;    // second ∂ in denominator (mixed)
+                var var2 = leibnizMatch.Groups[8].Value;     // second variable
+                var order3 = leibnizMatch.Groups[9].Value;   // second order
+
+                // Build numerator: d²v or ∂²u
+                var numSb = new System.Text.StringBuilder();
+                numSb.Append($"<i>{EscapeDeqChar(dSym[0])}</i>");
+                if (!string.IsNullOrEmpty(order))
+                    numSb.Append($"<sup>{order}</sup>");
+                numSb.Append(DeqRenderVar(func));
+
+                // Build denominator: dx² or ∂x² or ∂x∂y
+                var denSb = new System.Text.StringBuilder();
+                denSb.Append($"<i>{EscapeDeqChar(dSym2[0])}</i>");
+                denSb.Append(DeqRenderVar(var1));
+                if (!string.IsNullOrEmpty(order2))
+                    denSb.Append($"<sup>{order2}</sup>");
+                if (!string.IsNullOrEmpty(dSym3))
+                {
+                    denSb.Append($"<i>{EscapeDeqChar(dSym3[0])}</i>");
+                    denSb.Append(DeqRenderVar(var2));
+                    if (!string.IsNullOrEmpty(order3))
+                        denSb.Append($"<sup>{order3}</sup>");
+                }
+
+                return $"<span class=\"dvc\">{numSb}<span class=\"dvl\"></span>{denSb}</span>";
+            }
+
+            // --- Pattern 2: Prime notation: v'(x), v''(x), f''''(x), θ'  ---
+            // Also handles: κ(x), v(x) without primes but with special chars
+            var primeMatch = System.Text.RegularExpressions.Regex.Match(part,
+                @"^(\w+)('{1,6})(?:\(([^)]*)\))?$");
+            if (primeMatch.Success)
+            {
+                var funcName = primeMatch.Groups[1].Value;
+                var primes = primeMatch.Groups[2].Value;
+                var args = primeMatch.Groups[3].Value;
+
+                var sb = new System.Text.StringBuilder();
+                sb.Append(DeqRenderVar(funcName));
+                // Render primes as superscript with proper prime characters
+                var primeStr = new string('\u2032', primes.Length); // ′ (prime character)
+                sb.Append($"<sup>{primeStr}</sup>");
+                if (!string.IsNullOrEmpty(args))
+                {
+                    sb.Append('(');
+                    sb.Append(DeqRenderVar(args));
+                    sb.Append(')');
+                }
+                return sb.ToString();
+            }
+
+            // --- Pattern 3: Simple function call with special chars: κ(x), Π(x) ---
+            // These fail in parser because κ etc. are not recognized
+            var funcCallMatch = System.Text.RegularExpressions.Regex.Match(part,
+                @"^([κΠΣπθφψωαβγδεζηλμνξρστυχ∂∇Δ]\w*)\(([^)]*)\)$");
+            if (funcCallMatch.Success)
+            {
+                var funcName = funcCallMatch.Groups[1].Value;
+                var args = funcCallMatch.Groups[2].Value;
+                return $"{DeqRenderVar(funcName)}({DeqRenderVar(args)})";
+            }
+
+            // --- Pattern 4: Standalone Leibniz without fraction: EI*d^4v/dx^4 or similar ---
+            // Handle expressions with embedded Leibniz derivatives multiplied by constants
+            var embeddedMatch = System.Text.RegularExpressions.Regex.Match(part,
+                @"^(.+?)\*([d∂](?:\^(\d+))?)(\w+)\s*/\s*([d∂])(\w)(?:\^(\d+))?$");
+            if (embeddedMatch.Success)
+            {
+                var prefix = embeddedMatch.Groups[1].Value.Trim();
+                // Render prefix through parser, derivative as fraction
+                string prefixHtml;
+                try
+                {
+                    _parser.Parse(prefix, false);
+                    prefixHtml = _parser.ToHtml();
+                    if (string.IsNullOrWhiteSpace(prefixHtml))
+                        prefixHtml = DeqRenderVar(prefix);
+                }
+                catch { prefixHtml = DeqRenderVar(prefix); }
+
+                var dSym = embeddedMatch.Groups[2].Value;
+                var order = embeddedMatch.Groups[3].Value;
+                var func = embeddedMatch.Groups[4].Value;
+                var dSym2 = embeddedMatch.Groups[5].Value;
+                var var1 = embeddedMatch.Groups[6].Value;
+                var order2 = embeddedMatch.Groups[7].Value;
+
+                var numSb = new System.Text.StringBuilder();
+                numSb.Append($"<i>{EscapeDeqChar(dSym[0])}</i>");
+                if (!string.IsNullOrEmpty(order))
+                    numSb.Append($"<sup>{order}</sup>");
+                numSb.Append(DeqRenderVar(func));
+
+                var denSb = new System.Text.StringBuilder();
+                denSb.Append($"<i>{EscapeDeqChar(dSym2[0])}</i>");
+                denSb.Append(DeqRenderVar(var1));
+                if (!string.IsNullOrEmpty(order2))
+                    denSb.Append($"<sup>{order2}</sup>");
+
+                return $"{prefixHtml} · <span class=\"dvc\">{numSb}<span class=\"dvl\"></span>{denSb}</span>";
+            }
+
+            return null; // not a special pattern
+        }
+
+        /// <summary>Render a variable name with subscript support for #deq</summary>
+        private static string DeqRenderVar(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return "";
+            var i = name.IndexOf('_');
+            if (i > 0 && i + 1 < name.Length)
+            {
+                var main = name[..i];
+                var sub = name[(i + 1)..];
+                // Handle {} braces in subscript: v_{max} → v<sub>max</sub>
+                if (sub.StartsWith("{") && sub.EndsWith("}"))
+                    sub = sub[1..^1];
+                return $"<var>{main}</var><sub>{sub}</sub>";
+            }
+            return $"<var>{name}</var>";
+        }
+
+        /// <summary>Escape d or ∂ for HTML rendering in derivatives</summary>
+        private static string EscapeDeqChar(char c) => c switch
+        {
+            '∂' or '\u2202' => "∂",
+            _ => c.ToString()
+        };
+
+        // ─── #svg W H / #end svg — Inline SVG drawing block ──────────────────
+        // Lines starting with . are SVG primitives; other lines evaluate normally
+        // (variables, #for, #if, math) so flow control works inside #svg blocks.
+        //
+        // Syntax: #svg 600 400
+        //   .rect 0 0 100 50 green 0.2
+        //   .circle 50 50 20 blue
+        //   .line 0 0 100 100 red 2
+        //   .text 50 80 Hello World
+        //   .arrow 10 10 90 10 black
+        //   .arc cx cy r startAngle endAngle color strokeWidth
+        //   .ellipse cx cy rx ry color opacity
+        //   .polyline x1 y1 x2 y2 x3 y3 ... color strokeWidth
+        //   .polygon x1 y1 x2 y2 x3 y3 ... color opacity
+        //   .dashed x1 y1 x2 y2 color strokeWidth dashLength
+        //   #for i = 1 : 5
+        //     .circle i*80 100 10 red
+        //   #loop
+        // #end svg
+
+        private bool _insideSvgBlock;
+        private int _svgWidth;
+        private int _svgHeight;
+        private System.Text.StringBuilder _svgBuffer;
+        private bool _svgSavedVisible;
+        internal int _svgSbPositionBeforeLine = -1;
+
+        private void ParseKeywordSvg(ReadOnlySpan<char> s)
+        {
+            // Parse: #svg W H  or  #svg 600 400
+            var text = s.ToString().Trim();
+            var parts = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            _svgWidth = parts.Length > 1 ? (int)EvalSvgExpr(parts[1]) : 600;
+            _svgHeight = parts.Length > 2 ? (int)EvalSvgExpr(parts[2]) : 400;
+            _insideSvgBlock = true;
+            _svgBuffer = new System.Text.StringBuilder(2048);
+            _svgSavedVisible = _isVisible;
+            _svgSbPositionBeforeLine = -1;
+        }
+
+        private void ParseKeywordEndSvg()
+        {
+            if (!_insideSvgBlock || _svgBuffer == null)
+            {
+                AppendError("#end svg", "No matching #svg", _currentLine);
+                return;
+            }
+            _insideSvgBlock = false;
+            _svgSbPositionBeforeLine = -1;
+
+            if (_svgSavedVisible)
+            {
+                var svg = $"<svg viewBox=\"0 0 {_svgWidth} {_svgHeight}\" " +
+                    $"width=\"{_svgWidth}\" height=\"{_svgHeight}\" " +
+                    $"xmlns=\"http://www.w3.org/2000/svg\" " +
+                    $"style=\"font-family:'Segoe UI',Arial,sans-serif;font-size:12px\">" +
+                    $"{_svgBuffer}</svg>";
+                _sb.Append($"<div{HtmlId}>{svg}</div>\n");
+            }
+            _svgBuffer = null;
+        }
+
+        /// <summary>Process a SVG primitive line like ".rect 0 0 100 50 green 0.2"</summary>
+        private void ProcessSvgPrimitive(string line)
+        {
+            if (_svgBuffer == null || !_svgSavedVisible) return;
+
+            // Split: .command arg1 arg2 arg3 ...
+            // But text after last numeric arg is treated as text content
+            var trimmed = line.TrimStart();
+            if (trimmed.Length < 2 || trimmed[0] != '.') return;
+
+            var spaceIdx = trimmed.IndexOf(' ');
+            if (spaceIdx < 0) return;
+
+            var cmd = trimmed[1..spaceIdx].ToLowerInvariant();
+            var argsStr = trimmed[(spaceIdx + 1)..].Trim();
+
+            switch (cmd)
+            {
+                case "line":
+                    SvgLine(argsStr);
+                    break;
+                case "dashed":
+                    SvgDashed(argsStr);
+                    break;
+                case "rect":
+                    SvgRect(argsStr);
+                    break;
+                case "circle":
+                    SvgCircle(argsStr);
+                    break;
+                case "ellipse":
+                    SvgEllipse(argsStr);
+                    break;
+                case "text":
+                    SvgText(argsStr);
+                    break;
+                case "arrow":
+                    SvgArrow(argsStr);
+                    break;
+                case "arc":
+                    SvgArc(argsStr);
+                    break;
+                case "polyline":
+                    SvgPolyline(argsStr);
+                    break;
+                case "polygon":
+                    SvgPolygon(argsStr);
+                    break;
+                case "style":
+                    break;
+                // ── CAD commands from CadCli ──
+                case "dim": case "cota":
+                    SvgDim(argsStr); break;
+                case "hdim": case "cotah":
+                    SvgHDim(argsStr); break;
+                case "vdim": case "cotav":
+                    SvgVDim(argsStr); break;
+                case "darrow": case "flechadoble":
+                    SvgDArrow(argsStr); break;
+                case "beam": case "viga":
+                    SvgBeam(argsStr); break;
+                case "axes": case "ejes":
+                    SvgAxes(argsStr); break;
+                case "cnode": case "cn": case "cid":
+                    SvgCNode(argsStr); break;
+                case "tnode": case "tn": case "tid":
+                    SvgTNode(argsStr); break;
+                case "support": case "apoyo":
+                    SvgSupport(argsStr); break;
+                case "moment": case "giro":
+                    SvgMoment(argsStr); break;
+                case "hatch": case "rayado":
+                    SvgHatch(argsStr); break;
+                case "fillrect":
+                    SvgFillRect(argsStr); break;
+                // ── Compound/preset figures ──
+                case "angle": case "angulo":
+                    SvgAngle(argsStr); break;
+                case "radian":
+                    SvgRadian(argsStr); break;
+                case "spring": case "resorte":
+                    SvgSpring(argsStr); break;
+                case "grid": case "cuadricula":
+                    SvgGrid(argsStr); break;
+                case "curvedarrow": case "flechacurva":
+                    SvgCurvedArrow(argsStr); break;
+                case "color":
+                    _svgCurrentColor = SvgSplitArgs(argsStr)[0]; break;
+                case "lw": case "linewidth":
+                    _svgCurrentLw = SvgNum(SvgSplitArgs(argsStr)[0]); break;
+                case "fontsize": case "fs":
+                    _svgCurrentFontSize = SvgNum(SvgSplitArgs(argsStr)[0]); break;
+            }
+        }
+
+        // SVG state
+        private string _svgCurrentColor = "black";
+        private string _svgCurrentLw = "1.5";
+        private string _svgCurrentFontSize = "12";
+
+        // Parse args, evaluating Calcpad expressions for numeric values
+        private string[] SvgSplitArgs(string s)
+        {
+            return s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        private double EvalSvgExpr(string expr)
+        {
+            try
+            {
+                _parser.Parse(expr.Trim());
+                _parser.Calculate(false, -1);
+                var rv = _parser.ResultValue;
+                return rv is IScalarValue sv ? sv.Re : 0;
+            }
+            catch { return 0; }
+        }
+
+        private string SvgNum(string expr)
+        {
+            var val = EvalSvgExpr(expr);
+            return val.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        // .line x1 y1 x2 y2 [color] [strokeWidth]
+        private void SvgLine(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 4) return;
+            var color = p.Length > 4 ? p[4] : "black";
+            var sw = p.Length > 5 ? SvgNum(p[5]) : "1.5";
+            _svgBuffer.Append($"<line x1=\"{SvgNum(p[0])}\" y1=\"{SvgNum(p[1])}\" " +
+                $"x2=\"{SvgNum(p[2])}\" y2=\"{SvgNum(p[3])}\" " +
+                $"stroke=\"{color}\" stroke-width=\"{sw}\"/>");
+        }
+
+        // .dashed x1 y1 x2 y2 [color] [strokeWidth] [dashLen]
+        private void SvgDashed(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 4) return;
+            var color = p.Length > 4 ? p[4] : "gray";
+            var sw = p.Length > 5 ? SvgNum(p[5]) : "1";
+            var dash = p.Length > 6 ? SvgNum(p[6]) : "5";
+            _svgBuffer.Append($"<line x1=\"{SvgNum(p[0])}\" y1=\"{SvgNum(p[1])}\" " +
+                $"x2=\"{SvgNum(p[2])}\" y2=\"{SvgNum(p[3])}\" " +
+                $"stroke=\"{color}\" stroke-width=\"{sw}\" stroke-dasharray=\"{dash}\"/>");
+        }
+
+        // .rect x y w h [color] [opacity] [strokeColor] [strokeWidth]
+        private void SvgRect(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 4) return;
+            var fill = p.Length > 4 ? p[4] : "none";
+            var opacity = p.Length > 5 ? SvgNum(p[5]) : "1";
+            var stroke = p.Length > 6 ? p[6] : "black";
+            var sw = p.Length > 7 ? SvgNum(p[7]) : "1";
+            _svgBuffer.Append($"<rect x=\"{SvgNum(p[0])}\" y=\"{SvgNum(p[1])}\" " +
+                $"width=\"{SvgNum(p[2])}\" height=\"{SvgNum(p[3])}\" " +
+                $"fill=\"{fill}\" fill-opacity=\"{opacity}\" stroke=\"{stroke}\" stroke-width=\"{sw}\"/>");
+        }
+
+        // .circle cx cy r [color] [opacity] [strokeColor] [strokeWidth]
+        private void SvgCircle(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 3) return;
+            var fill = p.Length > 3 ? p[3] : "black";
+            var opacity = p.Length > 4 ? SvgNum(p[4]) : "1";
+            var stroke = p.Length > 5 ? p[5] : "none";
+            var sw = p.Length > 6 ? SvgNum(p[6]) : "1";
+            _svgBuffer.Append($"<circle cx=\"{SvgNum(p[0])}\" cy=\"{SvgNum(p[1])}\" r=\"{SvgNum(p[2])}\" " +
+                $"fill=\"{fill}\" fill-opacity=\"{opacity}\" stroke=\"{stroke}\" stroke-width=\"{sw}\"/>");
+        }
+
+        // .ellipse cx cy rx ry [color] [opacity]
+        private void SvgEllipse(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 4) return;
+            var fill = p.Length > 4 ? p[4] : "black";
+            var opacity = p.Length > 5 ? SvgNum(p[5]) : "1";
+            _svgBuffer.Append($"<ellipse cx=\"{SvgNum(p[0])}\" cy=\"{SvgNum(p[1])}\" " +
+                $"rx=\"{SvgNum(p[2])}\" ry=\"{SvgNum(p[3])}\" " +
+                $"fill=\"{fill}\" fill-opacity=\"{opacity}\"/>");
+        }
+
+        // .text x y content [fontSize] [color] [anchor] [fontWeight]
+        // Content uses _ for spaces. If content starts with a letter, it's literal text.
+        // If it's a pure number or arithmetic expression, it evaluates.
+        // Use "quotes" for text that might conflict with variable names.
+        private void SvgText(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 3) return;
+            var x = SvgNum(p[0]);
+            var y = SvgNum(p[1]);
+
+            string textContent;
+            string fontSize = "12";
+            string color = "black";
+            string anchor = "middle";
+            string weight = "normal";
+
+            var rawText = p[2];
+            // If text is in "quotes", use literal (remove quotes)
+            if (rawText.StartsWith("\"") && rawText.EndsWith("\""))
+                textContent = rawText[1..^1].Replace('_', ' ');
+            else
+            {
+                // Try to evaluate as expression (handles variables like i, e, j, x+1, etc.)
+                try
+                {
+                    var val = EvalSvgExpr(rawText);
+                    textContent = Math.Round(val, 6).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    // Clean up: 3.000000 → 3
+                    if (textContent.Contains('.'))
+                        textContent = textContent.TrimEnd('0').TrimEnd('.');
+                }
+                catch
+                {
+                    // If evaluation fails, treat as literal text
+                    textContent = rawText.Replace('_', ' ');
+                }
+            }
+
+            if (p.Length > 3) fontSize = SvgNum(p[3]);
+            if (p.Length > 4) color = p[4];
+            if (p.Length > 5) anchor = p[5];
+            if (p.Length > 6) weight = p[6];
+
+            _svgBuffer.Append($"<text x=\"{x}\" y=\"{y}\" text-anchor=\"{anchor}\" " +
+                $"fill=\"{color}\" font-size=\"{fontSize}\" font-weight=\"{weight}\">" +
+                $"{System.Web.HttpUtility.HtmlEncode(textContent)}</text>");
+        }
+
+        // .arrow x1 y1 x2 y2 [color] [strokeWidth]
+        private void SvgArrow(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 4) return;
+            var color = p.Length > 4 ? p[4] : "black";
+            var sw = p.Length > 5 ? SvgNum(p[5]) : "1.5";
+
+            double x1 = EvalSvgExpr(p[0]), y1 = EvalSvgExpr(p[1]);
+            double x2 = EvalSvgExpr(p[2]), y2 = EvalSvgExpr(p[3]);
+            double dx = x2 - x1, dy = y2 - y1;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 0.001) return;
+            double ux = dx / len, uy = dy / len;
+            double headLen = Math.Min(12, len * 0.3);
+            // Arrow head: two lines from tip, rotated ±30 degrees
+            double cos30 = 0.866, sin30 = 0.5;
+            double ax1 = x2 - headLen * (ux * cos30 + uy * sin30);
+            double ay1 = y2 - headLen * (-ux * sin30 + uy * cos30);
+            double ax2 = x2 - headLen * (ux * cos30 - uy * sin30);
+            double ay2 = y2 - headLen * (ux * sin30 + uy * cos30);
+
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            _svgBuffer.Append($"<line x1=\"{x1.ToString(inv)}\" y1=\"{y1.ToString(inv)}\" " +
+                $"x2=\"{x2.ToString(inv)}\" y2=\"{y2.ToString(inv)}\" stroke=\"{color}\" stroke-width=\"{sw}\"/>");
+            _svgBuffer.Append($"<polygon points=\"{x2.ToString(inv)},{y2.ToString(inv)} " +
+                $"{ax1.ToString(inv)},{ay1.ToString(inv)} {ax2.ToString(inv)},{ay2.ToString(inv)}\" " +
+                $"fill=\"{color}\"/>");
+        }
+
+        // .arc cx cy r startAngle endAngle [color] [strokeWidth]
+        private void SvgArc(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 5) return;
+            double cx = EvalSvgExpr(p[0]), cy = EvalSvgExpr(p[1]), r = EvalSvgExpr(p[2]);
+            double startDeg = EvalSvgExpr(p[3]), endDeg = EvalSvgExpr(p[4]);
+            var color = p.Length > 5 ? p[5] : "black";
+            var sw = p.Length > 6 ? SvgNum(p[6]) : "1.5";
+
+            double startRad = startDeg * Math.PI / 180;
+            double endRad = endDeg * Math.PI / 180;
+            double x1 = cx + r * Math.Cos(startRad), y1 = cy + r * Math.Sin(startRad);
+            double x2 = cx + r * Math.Cos(endRad), y2 = cy + r * Math.Sin(endRad);
+            int largeArc = Math.Abs(endDeg - startDeg) > 180 ? 1 : 0;
+
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            _svgBuffer.Append($"<path d=\"M {x1.ToString(inv)} {y1.ToString(inv)} " +
+                $"A {r.ToString(inv)} {r.ToString(inv)} 0 {largeArc} 1 " +
+                $"{x2.ToString(inv)} {y2.ToString(inv)}\" " +
+                $"fill=\"none\" stroke=\"{color}\" stroke-width=\"{sw}\"/>");
+        }
+
+        // .polyline x1 y1 x2 y2 ... [color] [strokeWidth]
+        private void SvgPolyline(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 4) return;
+            // Find where coordinates end and style begins
+            var points = new System.Text.StringBuilder();
+            int i;
+            for (i = 0; i + 1 < p.Length; i += 2)
+            {
+                if (!double.TryParse(p[i], out _) && EvalSvgExpr(p[i]) == 0) break;
+                if (points.Length > 0) points.Append(' ');
+                points.Append($"{SvgNum(p[i])},{SvgNum(p[i + 1])}");
+            }
+            var color = i < p.Length ? p[i] : "black";
+            var sw = i + 1 < p.Length ? SvgNum(p[i + 1]) : "1.5";
+            _svgBuffer.Append($"<polyline points=\"{points}\" fill=\"none\" stroke=\"{color}\" stroke-width=\"{sw}\"/>");
+        }
+
+        // .polygon x1 y1 x2 y2 ... [color] [opacity]
+        private void SvgPolygon(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 6) return;
+            var points = new System.Text.StringBuilder();
+            int i;
+            for (i = 0; i + 1 < p.Length; i += 2)
+            {
+                if (!double.TryParse(p[i], out _) && EvalSvgExpr(p[i]) == 0) break;
+                if (points.Length > 0) points.Append(' ');
+                points.Append($"{SvgNum(p[i])},{SvgNum(p[i + 1])}");
+            }
+            var color = i < p.Length ? p[i] : "blue";
+            var opacity = i + 1 < p.Length ? SvgNum(p[i + 1]) : "0.3";
+            _svgBuffer.Append($"<polygon points=\"{points}\" fill=\"{color}\" fill-opacity=\"{opacity}\" stroke=\"{color}\" stroke-width=\"1\"/>");
+        }
+
+        // ── CAD command implementations ──────────────────────────────────────
+
+        // .dim x1 y1 x2 y2 offset [text] — diagonal dimension with arrows
+        private void SvgDim(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 5) return;
+            double x1 = EvalSvgExpr(p[0]), y1 = EvalSvgExpr(p[1]);
+            double x2 = EvalSvgExpr(p[2]), y2 = EvalSvgExpr(p[3]);
+            double off = EvalSvgExpr(p[4]);
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            double dx = x2 - x1, dy = y2 - y1;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 0.01) return;
+            double ux = dx / len, uy = dy / len;
+            double nx = -uy * off, ny = ux * off;
+            double ax = x1 + nx, ay = y1 + ny, bx = x2 + nx, by = y2 + ny;
+            string dimText = p.Length > 5 ? p[5].Replace('_', ' ') : Math.Round(len, 2).ToString(inv);
+            // Extension lines
+            _svgBuffer.Append($"<line x1=\"{x1.ToString(inv)}\" y1=\"{y1.ToString(inv)}\" x2=\"{ax.ToString(inv)}\" y2=\"{ay.ToString(inv)}\" stroke=\"gray\" stroke-width=\"0.5\"/>");
+            _svgBuffer.Append($"<line x1=\"{x2.ToString(inv)}\" y1=\"{y2.ToString(inv)}\" x2=\"{bx.ToString(inv)}\" y2=\"{by.ToString(inv)}\" stroke=\"gray\" stroke-width=\"0.5\"/>");
+            // Dimension line with arrows
+            SvgDimLine(ax, ay, bx, by, dimText);
+        }
+
+        // .hdim x1 y1 x2 y2 offset [text] — horizontal dimension
+        private void SvgHDim(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 5) return;
+            double x1 = EvalSvgExpr(p[0]), y1 = EvalSvgExpr(p[1]);
+            double x2 = EvalSvgExpr(p[2]), y2 = EvalSvgExpr(p[3]);
+            double off = EvalSvgExpr(p[4]);
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            double ay = y1 - off, by = y2 - off;
+            double hLen = Math.Abs(x2 - x1);
+            string dimText = p.Length > 5 ? p[5].Replace('_', ' ') : Math.Round(hLen, 2).ToString(inv);
+            _svgBuffer.Append($"<line x1=\"{x1.ToString(inv)}\" y1=\"{y1.ToString(inv)}\" x2=\"{x1.ToString(inv)}\" y2=\"{ay.ToString(inv)}\" stroke=\"gray\" stroke-width=\"0.5\"/>");
+            _svgBuffer.Append($"<line x1=\"{x2.ToString(inv)}\" y1=\"{y2.ToString(inv)}\" x2=\"{x2.ToString(inv)}\" y2=\"{by.ToString(inv)}\" stroke=\"gray\" stroke-width=\"0.5\"/>");
+            SvgDimLine(x1, ay, x2, by, dimText);
+        }
+
+        // .vdim x1 y1 x2 y2 offset [text] — vertical dimension
+        private void SvgVDim(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 5) return;
+            double x1 = EvalSvgExpr(p[0]), y1 = EvalSvgExpr(p[1]);
+            double x2 = EvalSvgExpr(p[2]), y2 = EvalSvgExpr(p[3]);
+            double off = EvalSvgExpr(p[4]);
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            double ax = x1 + off, bx = x2 + off;
+            double vLen = Math.Abs(y2 - y1);
+            string dimText = p.Length > 5 ? p[5].Replace('_', ' ') : Math.Round(vLen, 2).ToString(inv);
+            _svgBuffer.Append($"<line x1=\"{x1.ToString(inv)}\" y1=\"{y1.ToString(inv)}\" x2=\"{ax.ToString(inv)}\" y2=\"{y1.ToString(inv)}\" stroke=\"gray\" stroke-width=\"0.5\"/>");
+            _svgBuffer.Append($"<line x1=\"{x2.ToString(inv)}\" y1=\"{y2.ToString(inv)}\" x2=\"{bx.ToString(inv)}\" y2=\"{y2.ToString(inv)}\" stroke=\"gray\" stroke-width=\"0.5\"/>");
+            SvgDimLine(ax, y1, bx, y2, dimText);
+        }
+
+        // Helper: draw dimension line with arrowheads + centered text
+        private void SvgDimLine(double x1, double y1, double x2, double y2, string text)
+        {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            double dx = x2 - x1, dy = y2 - y1;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 0.01) return;
+            double ux = dx / len, uy = dy / len;
+            double hl = Math.Min(8, len * 0.2);
+            double cos30 = 0.866, sin30 = 0.5;
+            // Arrow at start (pointing toward x1,y1)
+            double a1x = x1 + hl * (ux * cos30 + uy * sin30), a1y = y1 + hl * (-ux * sin30 + uy * cos30);
+            double a2x = x1 + hl * (ux * cos30 - uy * sin30), a2y = y1 + hl * (ux * sin30 + uy * cos30);
+            // Arrow at end (pointing toward x2,y2)
+            double b1x = x2 - hl * (ux * cos30 + uy * sin30), b1y = y2 - hl * (-ux * sin30 + uy * cos30);
+            double b2x = x2 - hl * (ux * cos30 - uy * sin30), b2y = y2 - hl * (ux * sin30 + uy * cos30);
+            // Line
+            _svgBuffer.Append($"<line x1=\"{x1.ToString(inv)}\" y1=\"{y1.ToString(inv)}\" x2=\"{x2.ToString(inv)}\" y2=\"{y2.ToString(inv)}\" stroke=\"{_svgCurrentColor}\" stroke-width=\"0.8\"/>");
+            // Arrowheads
+            _svgBuffer.Append($"<polygon points=\"{x1.ToString(inv)},{y1.ToString(inv)} {a1x.ToString(inv)},{a1y.ToString(inv)} {a2x.ToString(inv)},{a2y.ToString(inv)}\" fill=\"{_svgCurrentColor}\"/>");
+            _svgBuffer.Append($"<polygon points=\"{x2.ToString(inv)},{y2.ToString(inv)} {b1x.ToString(inv)},{b1y.ToString(inv)} {b2x.ToString(inv)},{b2y.ToString(inv)}\" fill=\"{_svgCurrentColor}\"/>");
+            // Text
+            double mx = (x1 + x2) / 2, my = (y1 + y2) / 2 - 4;
+            _svgBuffer.Append($"<text x=\"{mx.ToString(inv)}\" y=\"{my.ToString(inv)}\" text-anchor=\"middle\" fill=\"{_svgCurrentColor}\" font-size=\"11\">{System.Web.HttpUtility.HtmlEncode(text)}</text>");
+        }
+
+        // .darrow x1 y1 x2 y2 [color] — double-headed arrow
+        private void SvgDArrow(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 4) return;
+            var color = p.Length > 4 ? p[4] : _svgCurrentColor;
+            double x1 = EvalSvgExpr(p[0]), y1 = EvalSvgExpr(p[1]);
+            double x2 = EvalSvgExpr(p[2]), y2 = EvalSvgExpr(p[3]);
+            var savedColor = _svgCurrentColor;
+            _svgCurrentColor = color;
+            SvgDimLine(x1, y1, x2, y2, "");
+            _svgCurrentColor = savedColor;
+        }
+
+        // .beam x1 y1 x2 y2 [width] [color] — beam with hatching
+        private void SvgBeam(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 4) return;
+            double x1 = EvalSvgExpr(p[0]), y1 = EvalSvgExpr(p[1]);
+            double x2 = EvalSvgExpr(p[2]), y2 = EvalSvgExpr(p[3]);
+            double bw = p.Length > 4 ? EvalSvgExpr(p[4]) : 8;
+            var color = p.Length > 5 ? p[5] : _svgCurrentColor;
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            double dx = x2 - x1, dy = y2 - y1;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 0.01) return;
+            double nx = -dy / len * bw / 2, ny = dx / len * bw / 2;
+            // Rectangle outline
+            _svgBuffer.Append($"<polygon points=\"{(x1+nx).ToString(inv)},{(y1+ny).ToString(inv)} {(x2+nx).ToString(inv)},{(y2+ny).ToString(inv)} {(x2-nx).ToString(inv)},{(y2-ny).ToString(inv)} {(x1-nx).ToString(inv)},{(y1-ny).ToString(inv)}\" fill=\"white\" stroke=\"{color}\" stroke-width=\"1.5\"/>");
+        }
+
+        // .axes x y [size] — coordinate axes
+        private void SvgAxes(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 2) return;
+            double x = EvalSvgExpr(p[0]), y = EvalSvgExpr(p[1]);
+            double sz = p.Length > 2 ? EvalSvgExpr(p[2]) : 40;
+            SvgArrow($"{x} {y} {x + sz} {y} {_svgCurrentColor} 1.5");
+            SvgArrow($"{x} {y} {x} {y - sz} {_svgCurrentColor} 1.5");
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            _svgBuffer.Append($"<text x=\"{(x + sz + 5).ToString(inv)}\" y=\"{(y + 4).ToString(inv)}\" fill=\"{_svgCurrentColor}\" font-size=\"12\">x</text>");
+            _svgBuffer.Append($"<text x=\"{(x - 5).ToString(inv)}\" y=\"{(y - sz - 3).ToString(inv)}\" text-anchor=\"end\" fill=\"{_svgCurrentColor}\" font-size=\"12\">y</text>");
+        }
+
+        // .cnode cx cy label [radius] [color] — circle with label inside
+        private void SvgCNode(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 3) return;
+            double cx = EvalSvgExpr(p[0]), cy = EvalSvgExpr(p[1]);
+            string label = p[2].Replace('_', ' ');
+            double r = p.Length > 3 ? EvalSvgExpr(p[3]) : 12;
+            var color = p.Length > 4 ? p[4] : _svgCurrentColor;
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            _svgBuffer.Append($"<circle cx=\"{cx.ToString(inv)}\" cy=\"{cy.ToString(inv)}\" r=\"{r.ToString(inv)}\" fill=\"white\" stroke=\"{color}\" stroke-width=\"1.5\"/>");
+            _svgBuffer.Append($"<text x=\"{cx.ToString(inv)}\" y=\"{(cy + 4).ToString(inv)}\" text-anchor=\"middle\" fill=\"{color}\" font-size=\"11\" font-weight=\"bold\">{System.Web.HttpUtility.HtmlEncode(label)}</text>");
+        }
+
+        // .tnode cx cy label [size] [color] — triangle with label
+        private void SvgTNode(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 3) return;
+            double cx = EvalSvgExpr(p[0]), cy = EvalSvgExpr(p[1]);
+            string label = p[2].Replace('_', ' ');
+            double sz = p.Length > 3 ? EvalSvgExpr(p[3]) : 12;
+            var color = p.Length > 4 ? p[4] : _svgCurrentColor;
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            double h = sz * 0.866;
+            _svgBuffer.Append($"<polygon points=\"{cx.ToString(inv)},{(cy - h * 2 / 3).ToString(inv)} {(cx - sz / 2).ToString(inv)},{(cy + h / 3).ToString(inv)} {(cx + sz / 2).ToString(inv)},{(cy + h / 3).ToString(inv)}\" fill=\"white\" stroke=\"{color}\" stroke-width=\"1.5\"/>");
+            _svgBuffer.Append($"<text x=\"{cx.ToString(inv)}\" y=\"{(cy + 2).ToString(inv)}\" text-anchor=\"middle\" fill=\"{color}\" font-size=\"9\" font-weight=\"bold\">{System.Web.HttpUtility.HtmlEncode(label)}</text>");
+        }
+
+        // .support x y type — pin/roller/fixed support
+        private void SvgSupport(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 3) return;
+            double x = EvalSvgExpr(p[0]), y = EvalSvgExpr(p[1]);
+            var type = p[2].ToLowerInvariant();
+            var color = p.Length > 3 ? p[3] : _svgCurrentColor;
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            double sz = 12;
+            switch (type)
+            {
+                case "pin":
+                    _svgBuffer.Append($"<polygon points=\"{x.ToString(inv)},{y.ToString(inv)} {(x - sz).ToString(inv)},{(y + sz * 1.2).ToString(inv)} {(x + sz).ToString(inv)},{(y + sz * 1.2).ToString(inv)}\" fill=\"white\" stroke=\"{color}\" stroke-width=\"1.5\"/>");
+                    _svgBuffer.Append($"<line x1=\"{(x - sz * 1.3).ToString(inv)}\" y1=\"{(y + sz * 1.2).ToString(inv)}\" x2=\"{(x + sz * 1.3).ToString(inv)}\" y2=\"{(y + sz * 1.2).ToString(inv)}\" stroke=\"{color}\" stroke-width=\"1.5\"/>");
+                    // Hatch lines below
+                    for (int i = 0; i < 5; i++)
+                    {
+                        double hx = x - sz * 1.3 + i * sz * 2.6 / 5;
+                        _svgBuffer.Append($"<line x1=\"{hx.ToString(inv)}\" y1=\"{(y + sz * 1.2).ToString(inv)}\" x2=\"{(hx - 4).ToString(inv)}\" y2=\"{(y + sz * 1.6).ToString(inv)}\" stroke=\"{color}\" stroke-width=\"0.8\"/>");
+                    }
+                    break;
+                case "roller":
+                    double cr = 5;
+                    _svgBuffer.Append($"<polygon points=\"{x.ToString(inv)},{y.ToString(inv)} {(x - sz).ToString(inv)},{(y + sz).ToString(inv)} {(x + sz).ToString(inv)},{(y + sz).ToString(inv)}\" fill=\"white\" stroke=\"{color}\" stroke-width=\"1.5\"/>");
+                    _svgBuffer.Append($"<circle cx=\"{(x - sz / 2).ToString(inv)}\" cy=\"{(y + sz + cr).ToString(inv)}\" r=\"{cr.ToString(inv)}\" fill=\"white\" stroke=\"{color}\" stroke-width=\"1\"/>");
+                    _svgBuffer.Append($"<circle cx=\"{(x + sz / 2).ToString(inv)}\" cy=\"{(y + sz + cr).ToString(inv)}\" r=\"{cr.ToString(inv)}\" fill=\"white\" stroke=\"{color}\" stroke-width=\"1\"/>");
+                    _svgBuffer.Append($"<line x1=\"{(x - sz * 1.3).ToString(inv)}\" y1=\"{(y + sz + cr * 2).ToString(inv)}\" x2=\"{(x + sz * 1.3).ToString(inv)}\" y2=\"{(y + sz + cr * 2).ToString(inv)}\" stroke=\"{color}\" stroke-width=\"1.5\"/>");
+                    break;
+                case "fixed":
+                    _svgBuffer.Append($"<line x1=\"{x.ToString(inv)}\" y1=\"{(y - sz).ToString(inv)}\" x2=\"{x.ToString(inv)}\" y2=\"{(y + sz).ToString(inv)}\" stroke=\"{color}\" stroke-width=\"2.5\"/>");
+                    for (int i = 0; i < 5; i++)
+                    {
+                        double hy = y - sz + i * sz * 2 / 5;
+                        _svgBuffer.Append($"<line x1=\"{x.ToString(inv)}\" y1=\"{hy.ToString(inv)}\" x2=\"{(x - 8).ToString(inv)}\" y2=\"{(hy + 5).ToString(inv)}\" stroke=\"{color}\" stroke-width=\"0.8\"/>");
+                    }
+                    break;
+            }
+        }
+
+        // .moment cx cy [r] [direction] [color] — curved arrow (moment)
+        private void SvgMoment(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 2) return;
+            double cx = EvalSvgExpr(p[0]), cy = EvalSvgExpr(p[1]);
+            double r = p.Length > 2 ? EvalSvgExpr(p[2]) : 15;
+            var color = p.Length > 3 ? p[3] : _svgCurrentColor;
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            // Draw 270° arc from 45° to 315°
+            double s1 = 45 * Math.PI / 180, s2 = 315 * Math.PI / 180;
+            double sx = cx + r * Math.Cos(s1), sy = cy + r * Math.Sin(s1);
+            double ex = cx + r * Math.Cos(s2), ey = cy + r * Math.Sin(s2);
+            _svgBuffer.Append($"<path d=\"M {sx.ToString(inv)} {sy.ToString(inv)} A {r.ToString(inv)} {r.ToString(inv)} 0 1 1 {ex.ToString(inv)} {ey.ToString(inv)}\" fill=\"none\" stroke=\"{color}\" stroke-width=\"1.5\"/>");
+            // Arrowhead at end
+            double ux = Math.Sin(s2), uy = -Math.Cos(s2);
+            double hl = 6;
+            _svgBuffer.Append($"<polygon points=\"{ex.ToString(inv)},{ey.ToString(inv)} {(ex - hl * ux - hl * 0.4 * uy).ToString(inv)},{(ey - hl * uy + hl * 0.4 * ux).ToString(inv)} {(ex - hl * ux + hl * 0.4 * uy).ToString(inv)},{(ey - hl * uy - hl * 0.4 * ux).ToString(inv)}\" fill=\"{color}\"/>");
+        }
+
+        // .hatch x y w h [spacing] [color] — diagonal hatch lines
+        private void SvgHatch(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 4) return;
+            double x = EvalSvgExpr(p[0]), y = EvalSvgExpr(p[1]);
+            double w = EvalSvgExpr(p[2]), h = EvalSvgExpr(p[3]);
+            double sp = p.Length > 4 ? EvalSvgExpr(p[4]) : 6;
+            var color = p.Length > 5 ? p[5] : "gray";
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            // Clip
+            var clipId = $"hatch_{_svgBuffer.Length}";
+            _svgBuffer.Append($"<defs><clipPath id=\"{clipId}\"><rect x=\"{x.ToString(inv)}\" y=\"{y.ToString(inv)}\" width=\"{w.ToString(inv)}\" height=\"{h.ToString(inv)}\"/></clipPath></defs>");
+            _svgBuffer.Append($"<g clip-path=\"url(#{clipId})\">");
+            double maxD = w + h;
+            for (double d = sp; d < maxD; d += sp)
+            {
+                double lx1 = x + d, ly1 = y;
+                double lx2 = x, ly2 = y + d;
+                _svgBuffer.Append($"<line x1=\"{lx1.ToString(inv)}\" y1=\"{ly1.ToString(inv)}\" x2=\"{lx2.ToString(inv)}\" y2=\"{ly2.ToString(inv)}\" stroke=\"{color}\" stroke-width=\"0.5\"/>");
+            }
+            _svgBuffer.Append("</g>");
+        }
+
+        // .fillrect x y w h color [opacity] — filled rectangle (no border)
+        private void SvgFillRect(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 5) return;
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            var opacity = p.Length > 5 ? SvgNum(p[5]) : "1";
+            _svgBuffer.Append($"<rect x=\"{SvgNum(p[0])}\" y=\"{SvgNum(p[1])}\" width=\"{SvgNum(p[2])}\" height=\"{SvgNum(p[3])}\" fill=\"{p[4]}\" fill-opacity=\"{opacity}\" stroke=\"none\"/>");
+        }
+
+        // ── Compound preset figures ─────────────────────────────────────
+
+        // .angle cx cy r startDeg endDeg [label] [color] — draw angle arc with label
+        private void SvgAngle(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 5) return;
+            double cx = EvalSvgExpr(p[0]), cy = EvalSvgExpr(p[1]);
+            double r = EvalSvgExpr(p[2]);
+            double startDeg = EvalSvgExpr(p[3]), endDeg = EvalSvgExpr(p[4]);
+            string label = p.Length > 5 ? p[5].Replace('_', ' ') : "";
+            var color = p.Length > 6 ? p[6] : "blue";
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+
+            // Draw the two radii
+            double s1 = startDeg * Math.PI / 180, s2 = endDeg * Math.PI / 180;
+            double rx1 = cx + (r + 15) * Math.Cos(s1), ry1 = cy - (r + 15) * Math.Sin(s1);
+            double rx2 = cx + (r + 15) * Math.Cos(s2), ry2 = cy - (r + 15) * Math.Sin(s2);
+            _svgBuffer.Append($"<line x1=\"{cx.ToString(inv)}\" y1=\"{cy.ToString(inv)}\" x2=\"{rx1.ToString(inv)}\" y2=\"{ry1.ToString(inv)}\" stroke=\"gray\" stroke-width=\"0.8\"/>");
+            _svgBuffer.Append($"<line x1=\"{cx.ToString(inv)}\" y1=\"{cy.ToString(inv)}\" x2=\"{rx2.ToString(inv)}\" y2=\"{ry2.ToString(inv)}\" stroke=\"gray\" stroke-width=\"0.8\"/>");
+
+            // Draw the arc
+            double ax1 = cx + r * Math.Cos(s1), ay1 = cy - r * Math.Sin(s1);
+            double ax2 = cx + r * Math.Cos(s2), ay2 = cy - r * Math.Sin(s2);
+            double sweep = endDeg - startDeg;
+            int largeArc = Math.Abs(sweep) > 180 ? 1 : 0;
+            int sweepDir = sweep > 0 ? 0 : 1; // SVG: 0=counterclockwise in screen coords (= math positive)
+            _svgBuffer.Append($"<path d=\"M {ax1.ToString(inv)} {ay1.ToString(inv)} A {r.ToString(inv)} {r.ToString(inv)} 0 {largeArc} {sweepDir} {ax2.ToString(inv)} {ay2.ToString(inv)}\" fill=\"none\" stroke=\"{color}\" stroke-width=\"2\"/>");
+
+            // Label at midpoint of arc
+            if (!string.IsNullOrEmpty(label))
+            {
+                double midDeg = (startDeg + endDeg) / 2;
+                double midRad = midDeg * Math.PI / 180;
+                double lx = cx + (r + 8) * Math.Cos(midRad), ly = cy - (r + 8) * Math.Sin(midRad);
+                _svgBuffer.Append($"<text x=\"{lx.ToString(inv)}\" y=\"{(ly + 4).ToString(inv)}\" text-anchor=\"middle\" fill=\"{color}\" font-size=\"11\" font-weight=\"bold\">{System.Web.HttpUtility.HtmlEncode(label)}</text>");
+            }
+        }
+
+        // .radian cx cy R [color] — complete radian diagram (circle + radius + arc + label)
+        private void SvgRadian(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 3) return;
+            double cx = EvalSvgExpr(p[0]), cy = EvalSvgExpr(p[1]);
+            double R = EvalSvgExpr(p[2]);
+            var color = p.Length > 3 ? p[3] : "black";
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            double rad573 = 57.2957795; // 1 radian in degrees
+
+            // Full circle (light)
+            _svgBuffer.Append($"<circle cx=\"{cx.ToString(inv)}\" cy=\"{cy.ToString(inv)}\" r=\"{R.ToString(inv)}\" fill=\"none\" stroke=\"#aaaaaa\" stroke-width=\"1\"/>");
+            // Center dot
+            _svgBuffer.Append($"<circle cx=\"{cx.ToString(inv)}\" cy=\"{cy.ToString(inv)}\" r=\"3\" fill=\"{color}\" stroke=\"none\"/>");
+
+            // Horizontal radius
+            _svgBuffer.Append($"<line x1=\"{cx.ToString(inv)}\" y1=\"{cy.ToString(inv)}\" x2=\"{(cx + R).ToString(inv)}\" y2=\"{cy.ToString(inv)}\" stroke=\"{color}\" stroke-width=\"1.5\"/>");
+            // Label R on horizontal
+            _svgBuffer.Append($"<text x=\"{(cx + R / 2).ToString(inv)}\" y=\"{(cy + 15).ToString(inv)}\" text-anchor=\"middle\" fill=\"{color}\" font-size=\"12\" font-weight=\"bold\">R</text>");
+
+            // Second radius at 1 radian (57.3°) upward
+            double endX = cx + R * Math.Cos(rad573 * Math.PI / 180);
+            double endY = cy - R * Math.Sin(rad573 * Math.PI / 180);
+            _svgBuffer.Append($"<line x1=\"{cx.ToString(inv)}\" y1=\"{cy.ToString(inv)}\" x2=\"{endX.ToString(inv)}\" y2=\"{endY.ToString(inv)}\" stroke=\"{color}\" stroke-width=\"1.5\"/>");
+            // Label R on diagonal
+            double rmx = (cx + endX) / 2 - 10, rmy = (cy + endY) / 2;
+            _svgBuffer.Append($"<text x=\"{rmx.ToString(inv)}\" y=\"{rmy.ToString(inv)}\" text-anchor=\"middle\" fill=\"{color}\" font-size=\"12\" font-weight=\"bold\">R</text>");
+
+            // RED arc = the arc of length R (1 radian)
+            double ax1 = cx + R, ay1 = cy; // start at 0°
+            // SVG arc: from (ax1,ay1) to (endX,endY), radius R, counterclockwise (sweep=0)
+            _svgBuffer.Append($"<path d=\"M {ax1.ToString(inv)} {ay1.ToString(inv)} A {R.ToString(inv)} {R.ToString(inv)} 0 0 0 {endX.ToString(inv)} {endY.ToString(inv)}\" fill=\"none\" stroke=\"red\" stroke-width=\"3.5\"/>");
+            // Label "arco = R" next to red arc
+            double arcMidDeg = rad573 / 2;
+            double arcMidRad = arcMidDeg * Math.PI / 180;
+            double alx = cx + (R + 20) * Math.Cos(arcMidRad), aly = cy - (R + 20) * Math.Sin(arcMidRad);
+            _svgBuffer.Append($"<text x=\"{alx.ToString(inv)}\" y=\"{aly.ToString(inv)}\" text-anchor=\"start\" fill=\"red\" font-size=\"12\" font-weight=\"bold\">arco = R</text>");
+
+            // BLUE angle arc (small, near center)
+            double sr = R * 0.25;
+            double sax = cx + sr, say = cy;
+            double sex = cx + sr * Math.Cos(rad573 * Math.PI / 180);
+            double sey = cy - sr * Math.Sin(rad573 * Math.PI / 180);
+            _svgBuffer.Append($"<path d=\"M {sax.ToString(inv)} {say.ToString(inv)} A {sr.ToString(inv)} {sr.ToString(inv)} 0 0 0 {sex.ToString(inv)} {sey.ToString(inv)}\" fill=\"none\" stroke=\"blue\" stroke-width=\"2\"/>");
+            // Label "1 rad"
+            double slx = cx + (sr + 8) * Math.Cos(arcMidRad), sly = cy - (sr + 8) * Math.Sin(arcMidRad);
+            _svgBuffer.Append($"<text x=\"{slx.ToString(inv)}\" y=\"{(sly + 4).ToString(inv)}\" text-anchor=\"start\" fill=\"blue\" font-size=\"11\" font-weight=\"bold\">1 rad = 57.3\u00b0</text>");
+        }
+
+        // .spring x1 y1 x2 y2 [nCoils] [color] — zigzag spring
+        private void SvgSpring(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 4) return;
+            double x1 = EvalSvgExpr(p[0]), y1 = EvalSvgExpr(p[1]);
+            double x2 = EvalSvgExpr(p[2]), y2 = EvalSvgExpr(p[3]);
+            int nCoils = p.Length > 4 ? (int)EvalSvgExpr(p[4]) : 6;
+            var color = p.Length > 5 ? p[5] : _svgCurrentColor;
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            double dx = x2 - x1, dy = y2 - y1;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 1) return;
+            double ux = dx / len, uy = dy / len;
+            double nx = -uy * 8, ny = ux * 8; // perpendicular offset
+            var pts = new System.Text.StringBuilder();
+            pts.Append($"{x1.ToString(inv)},{y1.ToString(inv)} ");
+            double leadIn = len * 0.1;
+            // Lead-in
+            double lx = x1 + ux * leadIn, ly = y1 + uy * leadIn;
+            pts.Append($"{lx.ToString(inv)},{ly.ToString(inv)} ");
+            // Coils
+            double coilLen = (len - 2 * leadIn) / nCoils;
+            for (int i = 0; i < nCoils; i++)
+            {
+                double t = leadIn + (i + 0.25) * coilLen;
+                double px = x1 + ux * t + nx * (i % 2 == 0 ? 1 : -1);
+                double py = y1 + uy * t + ny * (i % 2 == 0 ? 1 : -1);
+                pts.Append($"{px.ToString(inv)},{py.ToString(inv)} ");
+                t = leadIn + (i + 0.75) * coilLen;
+                px = x1 + ux * t + nx * (i % 2 == 0 ? -1 : 1);
+                py = y1 + uy * t + ny * (i % 2 == 0 ? -1 : 1);
+                pts.Append($"{px.ToString(inv)},{py.ToString(inv)} ");
+            }
+            // Lead-out
+            lx = x2 - ux * leadIn; ly = y2 - uy * leadIn;
+            pts.Append($"{lx.ToString(inv)},{ly.ToString(inv)} ");
+            pts.Append($"{x2.ToString(inv)},{y2.ToString(inv)}");
+            _svgBuffer.Append($"<polyline points=\"{pts}\" fill=\"none\" stroke=\"{color}\" stroke-width=\"1.5\"/>");
+        }
+
+        // .grid x y w h [spacing] [color] — coordinate grid
+        private void SvgGrid(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 4) return;
+            double x = EvalSvgExpr(p[0]), y = EvalSvgExpr(p[1]);
+            double w = EvalSvgExpr(p[2]), h = EvalSvgExpr(p[3]);
+            double sp = p.Length > 4 ? EvalSvgExpr(p[4]) : 20;
+            var color = p.Length > 5 ? p[5] : "#e0e0e0";
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            for (double gx = x; gx <= x + w; gx += sp)
+                _svgBuffer.Append($"<line x1=\"{gx.ToString(inv)}\" y1=\"{y.ToString(inv)}\" x2=\"{gx.ToString(inv)}\" y2=\"{(y + h).ToString(inv)}\" stroke=\"{color}\" stroke-width=\"0.5\"/>");
+            for (double gy = y; gy <= y + h; gy += sp)
+                _svgBuffer.Append($"<line x1=\"{x.ToString(inv)}\" y1=\"{gy.ToString(inv)}\" x2=\"{(x + w).ToString(inv)}\" y2=\"{gy.ToString(inv)}\" stroke=\"{color}\" stroke-width=\"0.5\"/>");
+        }
+
+        // .curvedarrow cx cy r startDeg endDeg [color] — arc with arrowhead at end
+        private void SvgCurvedArrow(string args)
+        {
+            var p = SvgSplitArgs(args);
+            if (p.Length < 5) return;
+            double cx = EvalSvgExpr(p[0]), cy = EvalSvgExpr(p[1]);
+            double r = EvalSvgExpr(p[2]);
+            double startDeg = EvalSvgExpr(p[3]), endDeg = EvalSvgExpr(p[4]);
+            var color = p.Length > 5 ? p[5] : _svgCurrentColor;
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            double s1 = startDeg * Math.PI / 180, s2 = endDeg * Math.PI / 180;
+            // SVG Y is flipped, so negate sin for Y coords
+            double ax1 = cx + r * Math.Cos(s1), ay1 = cy - r * Math.Sin(s1);
+            double ax2 = cx + r * Math.Cos(s2), ay2 = cy - r * Math.Sin(s2);
+            double sweep = endDeg - startDeg;
+            int largeArc = Math.Abs(sweep) > 180 ? 1 : 0;
+            int sweepDir = sweep > 0 ? 0 : 1;
+            _svgBuffer.Append($"<path d=\"M {ax1.ToString(inv)} {ay1.ToString(inv)} A {r.ToString(inv)} {r.ToString(inv)} 0 {largeArc} {sweepDir} {ax2.ToString(inv)} {ay2.ToString(inv)}\" fill=\"none\" stroke=\"{color}\" stroke-width=\"1.5\"/>");
+            // Arrowhead at end — tangent direction
+            double tangentAngle = s2 + (sweep > 0 ? Math.PI / 2 : -Math.PI / 2);
+            double hl = 7;
+            double tx = Math.Cos(tangentAngle), ty = -Math.Sin(tangentAngle);
+            double nx2 = -ty, ny2 = tx;
+            _svgBuffer.Append($"<polygon points=\"{ax2.ToString(inv)},{ay2.ToString(inv)} {(ax2 - hl * tx + hl * 0.35 * nx2).ToString(inv)},{(ay2 - hl * ty + hl * 0.35 * ny2).ToString(inv)} {(ax2 - hl * tx - hl * 0.35 * nx2).ToString(inv)},{(ay2 - hl * ty - hl * 0.35 * ny2).ToString(inv)}\" fill=\"{color}\"/>");
         }
 
         // #sym diff(x^2 + 3*x; x)
@@ -1057,6 +2039,7 @@ namespace Calcpad.Core
         // ─── #python / #end python — Execute Python code block ─────
 
         private bool _insidePythonBlock;
+        private int _pythonBlockStartLine;
         private List<string> _pythonBlockLines;
 
         private void ParseKeywordPython(ReadOnlySpan<char> s)
@@ -1068,6 +2051,7 @@ namespace Calcpad.Core
             if (string.IsNullOrEmpty(rest))
             {
                 _insidePythonBlock = true;
+                _pythonBlockStartLine = _currentLine;
                 _pythonBlockLines = new List<string>();
                 return;
             }
@@ -1084,11 +2068,16 @@ namespace Calcpad.Core
             ExecutePythonCode(code);
         }
 
+        private string HtmlIdForLine(int line) =>
+            Debug && (_loops.Count == 0 || _loops.Peek().Iteration == 1) ?
+            $" id=\"line-{line + 1}\" class=\"line\"" : "";
+
         private void ExecutePythonCode(string code)
         {
             if (!_calculate || !_isVisible) return;
             try
             {
+                PipProgressChanged?.Invoke("Running Python...");
                 var tempFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "calcpad_python_" + Guid.NewGuid().ToString("N")[..8] + ".py");
                 // Write BOM-free UTF-8
                 System.IO.File.WriteAllText(tempFile, code, new System.Text.UTF8Encoding(false));
@@ -1104,6 +2093,7 @@ namespace Calcpad.Core
                     StandardOutputEncoding = System.Text.Encoding.UTF8,
                     StandardErrorEncoding = System.Text.Encoding.UTF8
                 };
+                psi.Environment["PYTHONIOENCODING"] = "utf-8";
 
                 using var proc = System.Diagnostics.Process.Start(psi);
                 var stdout = proc.StandardOutput.ReadToEnd();
@@ -1113,10 +2103,11 @@ namespace Calcpad.Core
                 // Clean up temp file
                 try { System.IO.File.Delete(tempFile); } catch { }
 
-                // Render output
+                // Render output — first line gets clickable data-line, rest just display
                 if (!string.IsNullOrWhiteSpace(stdout))
                 {
                     var lines = stdout.Split('\n');
+                    var isFirst = true;
                     foreach (var line in lines)
                     {
                         var trimmed = line.TrimEnd('\r');
@@ -1138,16 +2129,20 @@ namespace Calcpad.Core
                                 }
                                 continue;
                             }
-                            // Render with CalcpadCE template: try as math expression, fallback to text
-                            _sb.Append($"<p{HtmlId}><span class=\"eq\">{RenderPythonLine(trimmed)}</span></p>\n");
+                            // First output line gets data-line of #python keyword for click navigation
+                            var lineId = isFirst ? HtmlIdForLine(_pythonBlockStartLine) : "";
+                            isFirst = false;
+                            _sb.Append($"<p{lineId}><span class=\"eq\">{RenderPythonLine(trimmed)}</span></p>\n");
                         }
                     }
                 }
                 if (!string.IsNullOrWhiteSpace(stderr))
                     _sb.Append($"<p{HtmlId}><span class=\"err\">{System.Web.HttpUtility.HtmlEncode(stderr.Trim())}</span></p>\n");
+                PipProgressChanged?.Invoke(null);
             }
             catch (Exception ex)
             {
+                PipProgressChanged?.Invoke(null);
                 _sb.Append($"<p{HtmlId}><span class=\"err\">Python error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
             }
         }
@@ -1295,9 +2290,16 @@ namespace Calcpad.Core
             return html;
         }
 
+        // ─── $Viz multiline block accumulation ($Draw{..}, $Chart{..}, etc.) ─────
+
+        private bool _insideVizBlock;
+        private string _vizBlockHeader; // e.g. "$Draw{"
+        private List<string> _vizBlockLines;
+
         // ─── #maxima / #end maxima — Execute Maxima CAS block ─────
 
         private bool _insideMaximaBlock;
+        private int _maximaBlockStartLine;
         private List<string> _maximaBlockLines;
 
         private void ParseKeywordMaxima(ReadOnlySpan<char> s)
@@ -1308,6 +2310,7 @@ namespace Calcpad.Core
             if (string.IsNullOrEmpty(rest))
             {
                 _insideMaximaBlock = true;
+                _maximaBlockStartLine = _currentLine;
                 _maximaBlockLines = new List<string>();
                 return;
             }
@@ -1356,13 +2359,16 @@ namespace Calcpad.Core
                 if (!string.IsNullOrWhiteSpace(stdout))
                 {
                     var lines = stdout.Split('\n');
+                    var isFirst = true;
                     foreach (var line in lines)
                     {
                         var trimmed = line.TrimEnd('\r').Trim();
                         if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("batch") ||
                             trimmed.StartsWith("read and") || trimmed.StartsWith("display2d"))
                             continue;
-                        _sb.Append($"<p{HtmlId}><span class=\"eq\">{System.Web.HttpUtility.HtmlEncode(trimmed)}</span></p>\n");
+                        var lineId = isFirst ? HtmlIdForLine(_maximaBlockStartLine) : "";
+                        isFirst = false;
+                        _sb.Append($"<p{lineId}><span class=\"eq\">{System.Web.HttpUtility.HtmlEncode(trimmed)}</span></p>\n");
                     }
                 }
             }
@@ -1374,6 +2380,9 @@ namespace Calcpad.Core
 
         // ─── #pip — Install Python packages ─────────────────────────
 
+        /// <summary>Event raised when pip starts installing packages, for UI progress feedback.</summary>
+        public static event Action<string> PipProgressChanged;
+
         private void ParseKeywordPip(ReadOnlySpan<char> s)
         {
             var spaceIdx = s.IndexOf(' ');
@@ -1384,6 +2393,9 @@ namespace Calcpad.Core
 
             try
             {
+                // Notify UI: installing packages
+                PipProgressChanged?.Invoke($"pip {args}...");
+
                 var psi = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = "pip",
@@ -1396,23 +2408,55 @@ namespace Calcpad.Core
 
                 using var proc = System.Diagnostics.Process.Start(psi);
                 var stdout = proc.StandardOutput.ReadToEnd();
+                var stderr = proc.StandardError.ReadToEnd();
                 proc.WaitForExit(120000); // 2 min timeout for install
+
+                // Restore UI status
+                PipProgressChanged?.Invoke(null);
 
                 if (_isVisible)
                 {
-                    // Show only relevant lines (skip "Requirement already satisfied")
                     var lines = stdout.Split('\n');
+                    var hasOutput = false;
                     foreach (var line in lines)
                     {
                         var trimmed = line.TrimEnd('\r').Trim();
                         if (trimmed.StartsWith("Successfully") || trimmed.StartsWith("Installing") ||
-                            trimmed.StartsWith("Collecting"))
+                            trimmed.StartsWith("Collecting") || trimmed.StartsWith("Downloading"))
+                        {
                             _sb.Append($"<p{HtmlId}><code>{System.Web.HttpUtility.HtmlEncode(trimmed)}</code></p>\n");
+                            hasOutput = true;
+                        }
+                    }
+                    // If nothing interesting in stdout, check if already satisfied
+                    if (!hasOutput)
+                    {
+                        foreach (var line in lines)
+                        {
+                            var trimmed = line.TrimEnd('\r').Trim();
+                            if (trimmed.StartsWith("Requirement already satisfied"))
+                            {
+                                _sb.Append($"<p{HtmlId}><code style=\"color:#888\">✓ {System.Web.HttpUtility.HtmlEncode(args)} (already installed)</code></p>\n");
+                                break;
+                            }
+                        }
+                    }
+                    // Show errors if any
+                    if (!string.IsNullOrWhiteSpace(stderr))
+                    {
+                        var errLines = stderr.Split('\n');
+                        foreach (var line in errLines)
+                        {
+                            var trimmed = line.TrimEnd('\r').Trim();
+                            if (!string.IsNullOrEmpty(trimmed) && !trimmed.StartsWith("[notice]"))
+                                _sb.Append($"<p{HtmlId}><span class=\"err\">pip: {System.Web.HttpUtility.HtmlEncode(trimmed)}</span></p>\n");
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
+                PipProgressChanged?.Invoke(null);
                 if (_isVisible)
                     _sb.Append($"<p{HtmlId}><span class=\"err\">pip error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
             }
@@ -1554,6 +2598,7 @@ namespace Calcpad.Core
                 _sb.Append($"<span class=\"eq\">{sb2}</span>");
         }
 
+        private static string _lastDeqSeparator = " = ";
         private static List<string> SplitByEqualsOutsideBrackets(string s)
         {
             var parts = new List<string>();
@@ -1567,14 +2612,18 @@ namespace Calcpad.Core
                 else if (c == ']') depth--;
                 else if (c == '(') pDepth++;
                 else if (c == ')') pDepth--;
-                else if (c == '=' && depth == 0 && pDepth == 0)
+                else if ((c == '=' || c == '≈' || c == '≡' || c == '≠') && depth == 0 && pDepth == 0)
                 {
                     // Skip == (comparison)
-                    if (i + 1 < s.Length && s[i + 1] == '=') { i++; continue; }
+                    if (c == '=' && i + 1 < s.Length && s[i + 1] == '=') { i++; continue; }
                     // Skip <=, >=, !=
-                    if (i > 0 && (s[i - 1] == '<' || s[i - 1] == '>' || s[i - 1] == '!')) continue;
+                    if (c == '=' && i > 0 && (s[i - 1] == '<' || s[i - 1] == '>' || s[i - 1] == '!')) continue;
                     parts.Add(s[start..i]);
+                    // Store the separator so we can render ≈ instead of =
+                    _lastDeqSeparator = c == '=' ? " = " : $" {c} ";
                     start = i + 1;
+                    // Handle multi-byte UTF chars
+                    if (c != '=') while (start < s.Length && s[start] == ' ') start++;
                 }
             }
             parts.Add(s[start..]);

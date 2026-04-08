@@ -134,18 +134,26 @@ namespace Calcpad.Core
 
         public static RealValue operator -(RealValue a) => new(-a.D, a.Units, a.IsUnit);
 
-        public static RealValue operator +(RealValue a, RealValue b) =>
-
-            new(
+        public static RealValue operator +(RealValue a, RealValue b)
+        {
+            // Zero is compatible with any unit (0 + X = X, X + 0 = X)
+            if (b.D == 0d) return a;
+            if (a.D == 0d) return new(b.D, b.Units);
+            return new(
                 a.D + b.D * Unit.Convert(a.Units, b.Units, '+'),
                 a.Units
             );
+        }
 
-        public static RealValue operator -(RealValue a, RealValue b) =>
-            new(
+        public static RealValue operator -(RealValue a, RealValue b)
+        {
+            if (b.D == 0d) return a;
+            if (a.D == 0d) return new(-b.D, b.Units);
+            return new(
                 a.D - b.D * Unit.Convert(a.Units, b.Units, '-'),
                 a.Units
             );
+        }
 
         public static RealValue operator *(RealValue a, RealValue b)
         {

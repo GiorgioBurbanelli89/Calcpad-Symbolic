@@ -1,0 +1,347 @@
+"Analisis de Placa Delgada por FEM - Elemento DKQ (Discrete Kirchhoff Quadrilateral)
+'<hr/>
+'Referencia: Batoz &amp; Tahar (1982), Zienkiewicz-Taylor Vol. 2 Cap. 1.18 y 2.5
+'El DKQ es el elemento "Shell-Thin" de SAP2000/ETABS.
+'Impone la condicion de Kirchhoff (γ=0) en puntos discretos (midside).
+'4 nodos, 3 GDL/nodo: w, β_x = ∂w/∂x, β_y = ∂w/∂y → 12 GDL/elemento.
+'Libre de bloqueo por corte (shear locking).
+'<h4>Datos de entrada</h4>
+'Misma losa que "Rectangular Slab FEA" para comparar.
+'Dimensiones -'a = 6'm, 'b = 4'm
+'Espesor -'t = 0.1'm
+'Carga -'q = 10'kN/m²
+'Modulo de elasticidad -'E = 35000'MPa
+'Relacion de Poisson -'ν = 0.15
+'<h4>Malla de elementos finitos</h4>
+'Elemento DKQ: 'n = 12' GDL por elemento (vs 16 en Kirchhoff-Hermite)
+'GDL por nodo -'k_1 = 3
+'Elementos en cada direccion -'n_a = 6', 'n_b = 4
+'Total de elementos -'n_e = n_a*n_b
+'Total de nodos -'n_j = (n_a + 1)*(n_b + 1)
+'Dimension del elemento -'a_1 = a/n_a', 'b_1 = b/n_b
+'Nodos apoyados -'n_s = 2*(n_a + n_b)
+#hide
+x_j = vector(n_j)','y_j = vector(n_j)
+x = 0', 'y = 0
+#for j = 1 : n_j
+	x_j.j = x
+	y_j.j = y
+	y = y + b_1
+	#if y > b
+		y = 0
+		x = x + a_1
+	#end if
+#loop
+e_j = matrix(n_e; 4)
+#for i_a = 1 : n_a
+	#for i_b = 1 : n_b
+		e = i_b + n_b*(i_a - 1)
+		j = e + i_a - 1
+		e_j.(e; 1) = j
+		e_j.(e; 2) = j + n_b + 1
+		e_j.(e; 3) = j + n_b + 2
+		e_j.(e; 4) = j + 1
+	#loop
+#loop
+s_j = vector(n_s)
+i_s = 0
+#for i = 1 : n_a + 1
+	j = (n_b + 1)*i - n_b
+	i_s = i_s + 1
+	s_j.i_s = j
+#loop
+#for i = 1 : n_a + 1
+	j = (n_b + 1)*i
+	i_s = i_s + 1
+	s_j.i_s = j
+#loop
+#for i = 2 : n_b
+	j = i
+	i_s = i_s + 1
+	s_j.i_s = j
+#loop
+#for i = 2 : n_b
+	j = n_a*(n_b + 1) + i
+	i_s = i_s + 1
+	s_j.i_s = j
+#loop
+#show
+'Coordenadas de nodos
+x_j'm
+y_j'm
+'Conectividad (nodos de cada elemento)
+transp(e_j)
+'Nodos apoyados
+s_j
+'Coordenadas de centros de elementos
+j_e(e) = row(e_j; e)
+x_c(e) = sum(extract(x_j; j_e(e)))/4', ' _
+y_c(e) = sum(extract(y_j; j_e(e)))/4
+#val
+#hide
+w = 400
+k = w/a
+d = 20
+h = b/a*w
+r = 0.04*k
+#show
+'<svg viewbox="'-d' '-d' 'w + 2*d' 'h + 2*d'" xmlns="http://www.w3.org/2000/svg" version="1.1" style=" font-family: Segoe UI; font-size:10px; width:'w'pt; height:'h'pt">
+'<style>.joint{fill:orangeRed;} .support{stroke:red; stroke-width:1; fill:lightpink;} .element{stroke:seaGreen; stroke-width:1; fill:lime; fill-opacity:0.1; stroke-opacity:0.5}</style>
+'<rect x="'0'" y="'0'" width="'w'" height="'h'" style="fill:yellow; fill-opacity:0.2" />
+#for e = 1 : n_e
+	#hide
+	x = x_c(e)*k
+	y = y_c(e)*k
+	#show
+	'<text x="'x'" y="'h - y'" text-anchor="middle">'e'</text>
+	'<rect x="'x - a_1/2*k'" y="'h - y - b_1/2*k'" width="'a_1*k'" height="'b_1*k'" class="element" />
+#loop
+#for i = 1 : n_s
+	j = s_j.i
+	#hide
+	x = x_j.j*k
+	y = h - y_j.j*k
+	#show
+	#if y_j.j ≡ 0 ∨ y_j.j ≡ b
+		'<line x1="'x - 4*r'" y1="'y'" x2="'x + 4*r'" y2="'y'" class="support"/>
+	#end if
+	#if x_j.j ≡ 0 ∨ x_j.j ≡ a
+		'<line x1="'x'" y1="'y - 4*r'" x2="'x'" y2="'y + 4*r'" class="support"/>
+	#end if
+	'<circle cx="'x'" cy="'y'" r="'2*r'" class="support"/>
+#loop
+#for j = 1 : n_j
+	#hide
+	x = x_j.j*k
+	y = h - y_j.j*k
+	#show
+	'<circle cx="'x'" cy="'y'" r="'r'" class="joint" />
+	'<text x="'x + 2*r'" y="'y - r'" text-anchor="start">'j'</text>
+#loop
+'</svg>
+#equ
+'<h4>Formulacion del elemento DKQ</h4>
+'<p><b>Teoria</b></p>
+'En Kirchhoff: γ_xz = γ_yz = 0 (sin corte transversal).
+'El DKQ impone esta condicion SOLO en los puntos medios de los lados.
+'Interpolacion cubica de w a lo largo del lado + constraint Kirchhoff:
+#noc
+β_s,mid = (3/(2*l))*(w_j - w_i) - (1/4)*(β_s,i + β_s,j)
+#equ
+'Esto da un incremento cuadratico en las rotaciones respecto a la interpolacion lineal.
+'<p><b>Funciones de forma - esquinas y puntos medios</b></p>
+'Bilineares (esquinas, i=1..4):
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+'Serendipity (puntos medios, k=5..8):
+N_5(ξ; η) = (1 - ξ^2)*(1 - η)/2
+N_6(ξ; η) = (1 + ξ)*(1 - η^2)/2
+N_7(ξ; η) = (1 - ξ^2)*(1 + η)/2
+N_8(ξ; η) = (1 - ξ)*(1 - η^2)/2
+'<p><b>Interpolacion DKQ de las rotaciones</b></p>
+'Para elemento rectangular a_1 × b_1, las rotaciones se interpolan como:
+#noc
+β_x(ξ; η) = Σ(N_i)*β_x,i + Σ(N_k+4)*Δβ_x,k
+β_y(ξ; η) = Σ(N_i)*β_y,i + Σ(N_k+4)*Δβ_y,k
+#equ
+'donde Δβ es el incremento por la condicion de Kirchhoff discreta.
+'Para el caso rectangular, β_x solo se modifica por los lados horizontales (N_5, N_7)
+'y β_y solo por los verticales (N_6, N_8).
+'<p><b>Matriz constitutiva</b> (momento-curvatura)</p>
+D = E*t^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+'<p><b>Matriz deformacion-desplazamiento B</b> (3×12)</p>
+'Curvaturas: κ = {∂β_x/∂x, ∂β_y/∂y, ∂β_x/∂y + ∂β_y/∂x} = B·d_e
+'Para elemento rectangular (Jacobiano diagonal):
+'∂/∂x = (2/a_1)·∂/∂ξ, ∂/∂y = (2/b_1)·∂/∂η
+'Fila 1 - κ_x = ∂β_x/∂x:
+B_1(j; ξ; η) = take(j; _
+3*ξ*(1 - η)/a_1^2; (1 - η)*(3*ξ - 1)/(2*a_1); 0; _
+-3*ξ*(1 - η)/a_1^2; (1 - η)*(1 + 3*ξ)/(2*a_1); 0; _
+-3*ξ*(1 + η)/a_1^2; (1 + η)*(1 + 3*ξ)/(2*a_1); 0; _
+3*ξ*(1 + η)/a_1^2; (1 + η)*(3*ξ - 1)/(2*a_1); 0)
+'Fila 2 - κ_y = ∂β_y/∂y:
+B_2(j; ξ; η) = take(j; _
+3*(1 - ξ)*η/b_1^2; 0; (1 - ξ)*(3*η - 1)/(2*b_1); _
+3*(1 + ξ)*η/b_1^2; 0; (1 + ξ)*(3*η - 1)/(2*b_1); _
+-3*(1 + ξ)*η/b_1^2; 0; (1 + ξ)*(1 + 3*η)/(2*b_1); _
+-3*(1 - ξ)*η/b_1^2; 0; (1 - ξ)*(1 + 3*η)/(2*b_1))
+'Fila 3 - 2κ_xy = ∂β_x/∂y + ∂β_y/∂x:
+B_3(j; ξ; η) = take(j; _
+3*(2 - ξ^2 - η^2)/(2*a_1*b_1); (1 - ξ)*(1 + 3*ξ)/(4*b_1); (1 - η)*(1 + 3*η)/(4*a_1); _
+-3*(2 - ξ^2 - η^2)/(2*a_1*b_1); (1 + ξ)*(1 - 3*ξ)/(4*b_1); -(1 - η)*(1 + 3*η)/(4*a_1); _
+3*(2 - ξ^2 - η^2)/(2*a_1*b_1); (1 + ξ)*(3*ξ - 1)/(4*b_1); (1 + η)*(3*η - 1)/(4*a_1); _
+-3*(2 - ξ^2 - η^2)/(2*a_1*b_1); -(1 - ξ)*(1 + 3*ξ)/(4*b_1); (1 + η)*(1 - 3*η)/(4*a_1))
+'Columna j de B (vector 3×1):
+B(j; ξ; η) = [B_1(j; ξ; η); B_2(j; ξ; η); B_3(j; ξ; η)]
+'<p><b>Integracion de Gauss 2×2</b></p>
+'Puntos de Gauss -'g = 1/sqr(3)
+'Determinante del Jacobiano -'J_det = a_1*b_1/4
+'Peso de cada punto: w_g = 1 (4 puntos)
+'<p><b>Matriz de rigidez del elemento</b></p>
+'La rigidez se calcula por cuadratura de Gauss:
+#noc
+K_e,ij = J_det*(B_i^T*D*B_j|ξ=-g,η=-g + B_i^T*D*B_j|ξ=g,η=-g + B_i^T*D*B_j|ξ=g,η=g + B_i^T*D*B_j|ξ=-g,η=g)
+#equ
+#hide
+K_e = utriang(n)
+Precision = 10^-4
+#show
+BTDB_e(i; j; ξ; η) = transp(B(i; ξ; η))*D*B(j; ξ; η)
+K_e(i; j) = J_det*(BTDB_e(i; j; -g; -g) + BTDB_e(i; j; g; -g) + BTDB_e(i; j; g; g) + BTDB_e(i; j; -g; g))
+$Repeat{$Repeat{K_e.(i; j) = K_e(i; j) @ j = i : n} @ i = 1 : n}
+K_e
+'<p><b>Vector de cargas del elemento</b></p>
+'Carga uniforme aplicada solo a los GDL de w (desplazamiento vertical).
+'Para carga q uniforme en elemento rectangular:
+#noc
+F_e,w = q*a_1*b_1/4
+#equ
+#hide
+F_e = vector(n)
+#for i = 1 : 4
+	F_e.(k_1*(i - 1) + 1) = q*a_1*b_1/4
+#loop
+#show
+F_e'kN
+'<h4>Solucion</h4>
+'Matriz de rigidez global
+#hide
+n = k_1*n_j
+K = symmetric(n)
+'Ensamblaje de matrices de rigidez de elementos
+#for e = 1 : n_e
+	#for i = 1 : 4
+		#for j = i : 4
+			j_1 = e_j.(e; i)
+			j_2 = e_j.(e; j)
+			i_1 = k_1*(j_1 - 1) + 1
+			i_2 = k_1*(j_2 - 1) + 1
+			k_ij = submatrix(K_e; k_1*(i - 1) + 1; k_1*i; k_1*(j - 1) + 1; k_1*j)
+			#if j_1 > j_2
+				add(transp(k_ij); K; i_2; i_1)
+			#else
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+k_s = 10^20
+'Condiciones de apoyo: w = 0 en borde, β_x = 0 en bordes horizontales, β_y = 0 en bordes verticales
+#for i = 1 : n_s
+	j = k_1*(s_j.i - 1) + 1
+	K.(j; j) = K.(j; j) + k_s
+	#if y_j.s_j.i ≡ 0 ∨ y_j.s_j.i ≡ b
+		K.(j + 1; j + 1) = K.(j + 1; j + 1) + k_s
+	#end if
+	#if x_j.s_j.i ≡ 0 ∨ x_j.s_j.i ≡ a
+		K.(j + 2; j + 2) = K.(j + 2; j + 2) + k_s
+	#end if
+#loop
+#show
+K
+'Vector de cargas global
+#hide
+F = vector(n)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		j = e_j.(e; i)
+		#for k = 1 : k_1
+			l = k_1*(j - 1) + k
+			F.l = F.l + F_e.(k_1*(i - 1) + k)
+		#loop
+	#loop
+#loop
+#show
+F'kN
+'Solucion del sistema K·Z = F
+Z = clsolve(K; F)'mm
+'<h4>Resultados</h4>
+'Desplazamientos nodales (w)
+#hide
+W_z = matrix(n_a + 1; n_b + 1)
+w(j) = Z.(k_1*j - 2)
+$Repeat{$Repeat{W_z.(i; j) = round(w((i - 1)*(n_b + 1) + j)*1000)/1000 @ j = 1 : n_b + 1} @ i = 1 : n_a + 1}
+w(x; y) = spline(1 + x/a_1; 1 + y/b_1; W_z)
+PlotWidth = 50*a
+PlotHeight = 50*b
+PlotStep = 10
+#show
+transp(W_z)'mm
+$Map{-w(x; y) @ x = 0 : a & y = 0 : b}
+'Deflexion maxima en el centro -
+w(a/2; b/2)'mm
+'<h4>Comparacion con solucion analitica</h4>
+'Navier (Timoshenko Table 35): α = 0.00772 para a/b = 1.5 (a = lado corto = 4 m)
+D_f = E*t^3/(12*(1 - ν^2))
+w_Navier = 0.00772*q*b^4/D_f
+w_Navier'mm
+'Ratio FEM/Navier -'w(a/2; b/2)/w_Navier
+'<h4>Momentos flectores</h4>
+Z_j(j) = slice(Z; k_1*(j - 1) + 1; k_1*j)
+Z_e(e) = [Z_j(e_j.(e; 1)); Z_j(e_j.(e; 2)); Z_j(e_j.(e; 3)); Z_j(e_j.(e; 4))]
+#hide
+B(ξ; η) = [ _
+B_1(1; ξ; η); B_1(2; ξ; η); B_1(3; ξ; η); _
+B_1(4; ξ; η); B_1(5; ξ; η); B_1(6; ξ; η); _
+B_1(7; ξ; η); B_1(8; ξ; η); B_1(9; ξ; η); _
+B_1(10; ξ; η); B_1(11; ξ; η); B_1(12; ξ; η)| _
+B_2(1; ξ; η); B_2(2; ξ; η); B_2(3; ξ; η); _
+B_2(4; ξ; η); B_2(5; ξ; η); B_2(6; ξ; η); _
+B_2(7; ξ; η); B_2(8; ξ; η); B_2(9; ξ; η); _
+B_2(10; ξ; η); B_2(11; ξ; η); B_2(12; ξ; η)| _
+B_3(1; ξ; η); B_3(2; ξ; η); B_3(3; ξ; η); _
+B_3(4; ξ; η); B_3(5; ξ; η); B_3(6; ξ; η); _
+B_3(7; ξ; η); B_3(8; ξ; η); B_3(9; ξ; η); _
+B_3(10; ξ; η); B_3(11; ξ; η); B_3(12; ξ; η)]
+M_j = matrix(3; n_j)
+c_j = vector(n_j)
+#for e = 1 : n_e
+	Z_е = Z_e(e)
+	j_1 = e_j.(e; 1)
+	x_1 = x_j.j_1
+	y_1 = y_j.j_1
+	M_e(ξ; η) = -D*B(ξ; η)*Z_е
+	#for i = 1 : 4
+		j = e_j.(e; i)
+		c_j.j = c_j.j + 1
+		ξ_i = 2*(x_j.j - x_1)/a_1 - 1
+		η_i = 2*(y_j.j - y_1)/b_1 - 1
+		M_e = M_e(ξ_i; η_i)
+		add(M_e; M_j; 1; j)
+	#loop
+#loop
+#for j = 1 : n_j
+	M_j.(1; j) = M_j.(1; j)/c_j.j
+	M_j.(2; j) = M_j.(2; j)/c_j.j
+	M_j.(3; j) = M_j.(3; j)/c_j.j
+#loop
+Mx = matrix(n_a + 1; n_b + 1)
+My = matrix(n_a + 1; n_b + 1)
+Mxy = matrix(n_a + 1; n_b + 1)
+#for i = 1 : n_a + 1
+	#for k = 1 : n_b + 1
+		j = (i - 1)*(n_b + 1) + k
+		Mx.(i; k) = M_j.(1; j)
+		My.(i; k) = M_j.(2; j)
+		Mxy.(i; k) = M_j.(3; j)
+	#loop
+#loop
+M_x(x; y) = spline(1 + x/a_1; 1 + y/b_1; Mx)
+M_y(x; y) = spline(1 + x/a_1; 1 + y/b_1; My)
+M_xy(x; y) = spline(1 + x/a_1; 1 + y/b_1; Mxy)
+#show
+#val
+'<p><b>Momentos flectores M_x</b></p>
+transp(Mx)'kNm/m
+$Map{M_x(x; y) @ x = 0 : a & y = 0 : b}
+'Valor maximo -'M_x(a/2; b/2)'kNm/m
+'<p><b>Momentos flectores M_y</b></p>
+transp(My)'kNm/m
+$Map{M_y(x; y) @ x = 0 : a & y = 0 : b}
+'Valor maximo -'M_y(a/2; b/2)'kNm/m
+'<p><b>Momentos torsores M_xy</b></p>
+transp(Mxy)'kNm/m
+$Map{M_xy(x; y) @ x = 0 : a & y = 0 : b}
+'Valor maximo -'M_xy(0; 0)'kNm/m

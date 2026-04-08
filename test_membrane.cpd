@@ -1,0 +1,286 @@
+"Teoria de Membrana - Muro de Corte con Carga Lateral (Q4 Plane Stress)
+
+"1. Teoria
+'La membrana es un elemento plano que solo resiste esfuerzos en su plano.
+'No tiene rigidez a flexion (no resiste momentos).
+'Cada nodo tiene 2 DOFs: u (horizontal) y v (vertical).
+'Se usa para: muros de corte, vigas profundas, paneles.
+
+"1.1 Relacion esfuerzo-deformacion (Plane Stress)
+'En estado plano de esfuerzos (σz = 0):
+#noc
+ε_x = (σ_x - ν*σ_y)/E
+ε_y = (σ_y - ν*σ_x)/E
+γ_xy = τ_xy/G
+#equ
+'Invertida (forma constitutiva):
+#noc
+D = E*t_w/(1 - ν^2)*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+#equ
+
+"1.2 Funciones de forma bilineales Q4
+'Funciones de forma en coordenadas naturales (ξ, η de -1 a 1):
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+'Grafica de N1 y N2 a lo largo de η=0:
+f_N1(ξ) = (1 - ξ)/2
+f_N2(ξ) = (1 + ξ)/2
+$Plot{f_N1(ξ) | f_N2(ξ) @ ξ = -1 : 1}
+'Estas son C0: valor continuo, derivada puede saltar.
+'Solo necesitan C0 porque las deformaciones son derivadas PRIMERAS.
+
+'Derivadas simbolicas:
+#sym
+diff((1 - x)*(1 - y)/4; x)
+diff((1 - x)*(1 - y)/4; y)
+#end sym
+
+"1.3 Matriz B (deformacion-desplazamiento)
+'Para cada nodo i, la submatriz Bi es:
+#noc
+B_i = [dN_i/dx; 0|0; dN_i/dy|dN_i/dy; dN_i/dx]
+#equ
+'La matriz B completa (3x8) concatena B1, B2, B3, B4.
+'La rigidez del elemento se calcula con integracion de Gauss 2x2:
+#noc
+K_e = $Area{$Area{B^T*D*B*det(J) @ ξ = -1 : 1} @ η = -1 : 1}
+#equ
+
+"2. Ejemplo - Muro de Corte con Carga Lateral
+
+"2.1 Datos de entrada
+'Ancho del muro -'W_m = 5 m
+'Altura del muro -'H_m = 3 m
+'Espesor del muro -'t_w = 0.2 m
+'Carga lateral en la parte superior -'P = 100 kN
+'Modulo de elasticidad -'E = 25000 MPa
+'Relacion de Poisson -'ν = 0.2
+
+"2.2 Adimensionalizar para FEA (& convierte a numero puro)
+E_a = E & kN/m^2
+W_a = W_m & m
+H_a = H_m & m
+t_a = t_w & m
+P_a = P & kN
+
+"2.3 Malla de elementos finitos
+'DOFs por nodo -'n_dof = 2
+'Elementos en cada direccion -'n_x = 8', 'n_y = 6
+'Total de elementos -'n_e = n_x*n_y
+'Total de nodos -'n_j = (n_x + 1)*(n_y + 1)
+'Tamano de elemento -
+d_x = W_a/n_x
+d_y = H_a/n_y
+'Total de DOFs -'n_total = n_dof*n_j
+#hide
+n_1 = n_x + 1
+x_j = vector(n_j)
+y_j = vector(n_j)
+#for j = 0 : n_y
+	#for i = 0 : n_x
+		k = j*n_1 + i + 1
+		x_j.k = i*d_x
+		y_j.k = j*d_y
+	#loop
+#loop
+e_j = matrix(n_e; 4)
+#for j = 0 : n_y - 1
+	#for i = 0 : n_x - 1
+		e = j*n_x + i + 1
+		bl = j*n_1 + i + 1
+		e_j.(e; 1) = bl
+		e_j.(e; 2) = bl + 1
+		e_j.(e; 3) = bl + n_1 + 1
+		e_j.(e; 4) = bl + n_1
+	#loop
+#loop
+n_s = n_1
+s_j = vector(n_s)
+#for i = 1 : n_s
+	s_j.i = i
+#loop
+n_top = n_1
+j_e(e) = row(e_j; e)
+x_c(e) = sum(extract(x_j; j_e(e)))/4
+y_c(e) = sum(extract(y_j; j_e(e)))/4
+#show
+#val
+"2.3 Visualizacion del muro
+#hide
+w_s = 350
+k_s = w_s/W_a
+d_s = 40
+h_s = H_a*k_s
+r_s = 0.03*k_s
+ar_h = 15
+#show
+#svg w_s+2*d_s h_s+2*d_s+ar_h
+'Malla con carga lateral y apoyos
+.rect d_s d_s+ar_h w_s h_s lightyellow 0.5 goldenRod 1
+#for e = 1 : n_e
+	x = x_c(e)*k_s+d_s
+	y = h_s-y_c(e)*k_s+d_s+ar_h
+	.rect x-d_x/2*k_s y-d_y/2*k_s d_x*k_s d_y*k_s lime 0.1 seaGreen 0.6
+	.text x y e 6 gray middle
+#loop
+#for i = 1 : n_s
+	x = x_j.(s_j.i)*k_s+d_s
+	y = h_s+d_s+ar_h
+	.rect x-2 y 4 8 gray 0.8
+#loop
+#for i = 1 : n_top
+	j_top = n_y*n_1+i
+	x = x_j.j_top*k_s+d_s
+	y = d_s+ar_h
+	.arrow x-ar_h y x y red 1.5
+#loop
+.text d_s-5 d_s+ar_h "P" 12 red start bold
+.text d_s+w_s/2 h_s+d_s+ar_h+15 "Apoyos_fijos_(u=v=0)" 9 gray middle
+.text d_s+w_s/2 d_s "Membrana_Q4_-_2_DOF/nodo_-_Bilineal_C0" 10 navy middle bold
+#end svg
+
+#equ
+"2.4 Funciones de forma Q4
+'Derivadas de las funciones de forma:
+dN_1ξ(η) = -(1 - η)/4
+dN_2ξ(η) = (1 - η)/4
+dN_3ξ(η) = (1 + η)/4
+dN_4ξ(η) = -(1 + η)/4
+dN_1η(ξ) = -(1 - ξ)/4
+dN_2η(ξ) = -(1 + ξ)/4
+dN_3η(ξ) = (1 + ξ)/4
+dN_4η(ξ) = (1 - ξ)/4
+
+"2.5 Matriz constitutiva
+c_D = E_a*t_a/(1 - ν^2)
+D_mat = c_D*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+D_mat
+
+"2.6 Rigidez del elemento
+'Jacobiano (elementos rectangulares):
+J_11 = d_x/2
+J_22 = d_y/2
+det_J = J_11*J_22
+'Integracion de Gauss 2x2:
+g = 1/sqr(3)
+#hide
+n_k = n_dof*4
+K_e = symmetric(n_k)
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g','η_g = -g
+	#else if ig ≡ 2
+		ξ_g = g','η_g = -g
+	#else if ig ≡ 3
+		ξ_g = g','η_g = g
+	#else
+		ξ_g = -g','η_g = g
+	#end if
+	dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+	dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+	dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+	dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+	B = [dNdx_1; 0; dNdx_2; 0; dNdx_3; 0; dNdx_4; 0 | _
+	     0; dNdy_1; 0; dNdy_2; 0; dNdy_3; 0; dNdy_4 | _
+	     dNdy_1; dNdx_1; dNdy_2; dNdx_2; dNdy_3; dNdx_3; dNdy_4; dNdx_4]
+	BtDB = transp(B)*D_mat*B*det_J
+	#for i = 1 : n_k
+		#for j = i : n_k
+			K_e.(i; j) = K_e.(i; j) + BtDB.(i; j)
+		#loop
+	#loop
+#loop
+#show
+'Matriz de rigidez del elemento K_e (8x8):
+Precision = 10^-1
+K_e
+
+"2.7 Ensamblaje global y solucion
+#hide
+K = symmetric(n_total)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		#for j = i : 4
+			j_1 = e_j.(e; i)
+			j_2 = e_j.(e; j)
+			i_1 = n_dof*(j_1 - 1) + 1
+			i_2 = n_dof*(j_2 - 1) + 1
+			k_ij = submatrix(K_e; n_dof*(i - 1) + 1; n_dof*i; n_dof*(j - 1) + 1; n_dof*j)
+			#if j_1 > j_2
+				add(transp(k_ij); K; i_2; i_1)
+			#else
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+k_p = 10^20
+#for i = 1 : n_s
+	j = n_dof*(s_j.i - 1) + 1
+	K.(j; j) = K.(j; j) + k_p
+	K.(j + 1; j + 1) = K.(j + 1; j + 1) + k_p
+#loop
+F = vector(n_total)
+p_n = P_a/n_top
+#for i = 1 : n_top
+	j_top = n_y*n_1 + i
+	F.(n_dof*(j_top - 1) + 1) = p_n
+#loop
+#show
+'Resolviendo K·u = F ...
+Z = clsolve(K; F)
+
+"3. Resultados
+#hide
+u_disp = vector(n_j)
+v_disp = vector(n_j)
+#for i = 1 : n_j
+	u_disp.i = Z.(n_dof*i - 1)
+	v_disp.i = Z.(n_dof*i)
+#loop
+u_max = 0','u_node = 0
+#for i = 1 : n_top
+	j_top = n_y*n_1 + i
+	u_i = u_disp.j_top
+	#if abs(u_i) > abs(u_max)
+		u_max = u_i
+		u_node = j_top
+	#end if
+#loop
+#show
+'Desplazamiento horizontal maximo en la parte superior:
+u_max_u = u_max*(1 m)
+u_max_u
+u_max_u | mm
+'en el nodo 'u_node
+
+"3.1 Mapa de desplazamientos horizontales
+#hide
+U_grid = matrix(n_x + 1; n_y + 1)
+#for i_x = 0 : n_x
+	#for i_y = 0 : n_y
+		k = i_y*n_1 + i_x + 1
+		U_grid.(i_x + 1; i_y + 1) = u_disp.k
+	#loop
+#loop
+u_map(x; y) = spline(1 + x/d_x; 1 + y/d_y; U_grid)
+PlotWidth = 250
+PlotHeight = 150
+PlotStep = 10
+#show
+'Desplazamiento horizontal u (adimensional, sistema m):
+$Map{u_map(x; y) @ x = 0 : W_a & y = 0 : H_a}
+
+"3.2 Validacion
+'Teoria de vigas Euler-Bernoulli (voladizo):
+I_w = t_w*W_m^3/12
+'Momento de inercia -'I_w
+'Deflexion en la punta (teoria de vigas):
+δ_beam = P*H_m^3/(3*E*I_w)
+δ_beam
+δ_beam | mm
+'Relacion FEA/Euler-Bernoulli:
+u_max_u/δ_beam
+'(Mayor que 1 porque FEA incluye deformacion por corte)
