@@ -223,6 +223,24 @@ namespace Calcpad.Core
                             if (s >= -0.01 && s <= 1.01 && tt >= -0.01 && tt <= 1.01)
                             {
                                 double val = (1-s)*(1-tt)*eb.ev[0] + s*(1-tt)*eb.ev[1] + s*tt*eb.ev[2] + (1-s)*tt*eb.ev[3];
+                                // Gradient for shadow lighting
+                                double dvds = -(1-tt)*eb.ev[0] + (1-tt)*eb.ev[1] + tt*eb.ev[2] - tt*eb.ev[3];
+                                double dvdt = -(1-s)*eb.ev[0] - s*eb.ev[1] + s*eb.ev[2] + (1-s)*eb.ev[3];
+                                double dxds = -(1-tt)*eb.ex[0] + (1-tt)*eb.ex[1] + tt*eb.ex[2] - tt*eb.ex[3];
+                                double dxdt = -(1-s)*eb.ex[0] - s*eb.ex[1] + s*eb.ex[2] + (1-s)*eb.ex[3];
+                                double dyds = -(1-tt)*eb.ey[0] + (1-tt)*eb.ey[1] + tt*eb.ey[2] - tt*eb.ey[3];
+                                double dydt = -(1-s)*eb.ey[0] - s*eb.ey[1] + s*eb.ey[2] + (1-s)*eb.ey[3];
+                                double detJ2 = dxds*dydt - dxdt*dyds;
+                                double gradX = 0, gradY = 0;
+                                if (Math.Abs(detJ2) > 1e-12)
+                                {
+                                    // Physical gradient dv/dx, dv/dy
+                                    double dvdx = (dvds*dydt - dvdt*dyds) / detJ2;
+                                    double dvdy = (dvdt*dxds - dvds*dxdt) / detJ2;
+                                    // Scale to pixel-space: gradient per pixel
+                                    gradX = dvdx * dx / rasterW;
+                                    gradY = -dvdy * dy / rasterH; // negative: Y flipped
+                                }
                                 // Use per-group min/max if groups detected
                                 double lmin = vmin, lmax = vmax;
                                 if (hasGroups)
@@ -230,7 +248,7 @@ namespace Calcpad.Core
                                     if (physX < splitX) { lmin = vmin1; lmax = vmax1; }
                                     else { lmin = vmin2; lmax = vmax2; }
                                 }
-                                pixBmp.SetPixel(px, py, GetMapColor(val, lmin, lmax));
+                                pixBmp.SetPixel(px, py, GetMapColorShadow(val, lmin, lmax, gradX, gradY));
                                 break;
                             }
                         }

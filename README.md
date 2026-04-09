@@ -120,6 +120,28 @@ $Table{M @ "Col A"; "Col B"; "Col C" & fmt=2 & row=1 & border=1 & zebra=1}
 
 Ideal for FEM result tables: bolt reactions, nodal displacements, element forces.
 
+### 14. `$PlotMap` — FEM Color Maps on Arbitrary Geometry (NEW)
+
+Render color maps (contour plots) on arbitrary finite element meshes — triangles, quads, or mixed.
+
+```
+$PlotMap{xj; yj; values; ej}
+```
+
+- **xj, yj** — node coordinate vectors
+- **values** — scalar field per node (displacement, stress, pressure, etc.)
+- **ej** — connectivity matrix (each row = node indices of one element, 1-based)
+
+**Features:**
+- Pixel-by-pixel rasterization with inverse bilinear mapping (Newton iteration)
+- Phong shadow lighting from surface gradients
+- Rainbow colormap with discrete bands (same palette as $Map)
+- Automatic dual-legend when two separate element groups are detected (e.g., two footings)
+- Per-group min/max color scaling for full color variation in each group
+- Element edge mesh overlay in semi-transparent black
+
+Ideal for FEM results on non-rectangular geometry: trapezoidal plates, footings with tie beams, irregular meshes.
+
 ### 13. FEM Examples — Base Plates, Footings, Slabs (NEW)
 
 Complete finite element analysis examples with step-by-step symbolic formulation, color maps ($Map), result tables ($Table), and Python verification:
@@ -131,6 +153,11 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 
 **Shell-Thick (Mindlin-Reissner + MITC4 — Bathe & Dvorkin 1985):**
 - **Isolated Footing:** 4x4m, 600mm thick, Winkler soil, MITC4 elements (no hourglass, no shear locking). Smooth concentric contours matching SAFE (CSI).
+- **Corner/Edge/Party-wall Footings:** Eccentric column positions with tie beams (shell or frame beam).
+- **Two Independent Footings:** Combined $PlotMap with dual legend, validated vs SAP2000.
+- **Winkler - Joint Spring:** Lumped springs (k_nodo = ks × A_trib) at each node. Color maps of deflection and soil pressure.
+- **Winkler - Area Spring:** Consistent springs (ks × N^T × N integration) over each element. Same results, enables Soil Pressure in SAP2000.
+- **Trapezoidal Plate (Awatif):** Irregular geometry with general Jacobian, $PlotMap mesh mode.
 
 **Features across all FEM examples:**
 - Symbolic formulation with `#deq` and `#sym diff()` — shape functions, B-matrices, double integrals rendered as equations
@@ -187,6 +214,7 @@ dotnet run --project Symbolic.Wpf
 | `$Chart{...}` | Command | Interactive chart |
 | `$Mesh{...}` | Command | SVG FEM mesh |
 | `$Table{v1; v2 @ "H1"; "H2" & fmt=3}` | Command | HTML table from vectors/matrices |
+| `$PlotMap{xj; yj; values; ej}` | Command | FEM color map on arbitrary mesh |
 | `expr & [u1; u2; u3]` | Operator | Adimensionalize + stamp units |
 | `expr \| [u1; u2; u3]` | Operator | Convert units per element |
 

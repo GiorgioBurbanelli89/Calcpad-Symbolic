@@ -1357,15 +1357,6 @@ namespace Calcpad.Wpf
             {
                 if (!string.IsNullOrEmpty(htmlResult))
                 {
-                    // Debug: save output HTML to desktop
-                    try
-                    {
-                        var debugPath = System.IO.Path.Combine(
-                            Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                            "wpf_output_debug.html");
-                        System.IO.File.WriteAllText(debugPath, htmlResult);
-                    }
-                    catch { }
                     await _wv2Warper.NavigateToStringAsync(htmlResult);
                 }
             }
