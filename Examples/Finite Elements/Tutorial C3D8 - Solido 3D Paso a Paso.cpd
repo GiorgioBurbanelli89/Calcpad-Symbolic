@@ -1,0 +1,341 @@
+"Tutorial: Elemento C3D8 — Solido 3D Hexaedro Lineal (Paso a Paso)
+'<hr/>
+'<b>C3D8 = Continuum 3D, 8-node hexahedron</b> (notacion Abaqus)
+'Elemento fundamental para analisis 3D de solidos:
+'- 8 nudos
+'- 3 DOF por nudo (ux, uy, uz)
+'- 24 DOF totales
+'- Shape functions trilineales
+'- Integracion Gauss 2x2x2 = 8 puntos
+'
+'<b>Aplicaciones:</b>
+'1. Zapatas como solidos 3D (no como shell)
+'2. Muros de contencion
+'3. Pedestales, dados de fundacion
+'4. Estructuras masivas (presas, tuneles)
+'5. Conexiones soldadas de acero
+'6. Anclajes en concreto
+
+"PASO 1) Datos del elemento
+'Unidades consistentes N-mm (sin unidades explicitas)
+'<b>Cubo de concreto 1000x1000x1000 mm:</b>
+'Coordenadas de los 8 nudos:
+'Nudo 1: (0,0,0)     Nudo 5: (0,0,1000)
+'Nudo 2: (1000,0,0)  Nudo 6: (1000,0,1000)
+'Nudo 3: (1000,1000,0) Nudo 7: (1000,1000,1000)
+'Nudo 4: (0,1000,0)  Nudo 8: (0,1000,1000)
+'
+Lx = 1000','Ly = 1000','Lz = 1000
+Xn = [0; Lx; Lx; 0; 0; Lx; Lx; 0]
+Yn = [0; 0; Ly; Ly; 0; 0; Ly; Ly]
+Zn = [0; 0; 0; 0; Lz; Lz; Lz; Lz]
+'<b>Material concreto:</b>
+Ec = 22000','νc = 0.2
+'Parametros de Lame para 3D isotropico
+λ = Ec*νc/((1 + νc)*(1 - 2*νc))
+μ = Ec/(2*(1 + νc))
+
+"PASO 2) Funciones de forma trilineales
+'Coordenadas naturales (ξ, η, ζ) ∈ [-1, +1]
+'Nudo i con signos ξi, ηi, ζi:
+'Nudo 1: (-1,-1,-1)  Nudo 5: (-1,-1,+1)
+'Nudo 2: (+1,-1,-1)  Nudo 6: (+1,-1,+1)
+'Nudo 3: (+1,+1,-1)  Nudo 7: (+1,+1,+1)
+'Nudo 4: (-1,+1,-1)  Nudo 8: (-1,+1,+1)
+'
+'Ni(ξ,η,ζ) = (1 + ξi·ξ)(1 + ηi·η)(1 + ζi·ζ)/8
+N_1(ξ; η; ζ) = (1 - ξ)*(1 - η)*(1 - ζ)/8
+N_2(ξ; η; ζ) = (1 + ξ)*(1 - η)*(1 - ζ)/8
+N_3(ξ; η; ζ) = (1 + ξ)*(1 + η)*(1 - ζ)/8
+N_4(ξ; η; ζ) = (1 - ξ)*(1 + η)*(1 - ζ)/8
+N_5(ξ; η; ζ) = (1 - ξ)*(1 - η)*(1 + ζ)/8
+N_6(ξ; η; ζ) = (1 + ξ)*(1 - η)*(1 + ζ)/8
+N_7(ξ; η; ζ) = (1 + ξ)*(1 + η)*(1 + ζ)/8
+N_8(ξ; η; ζ) = (1 - ξ)*(1 + η)*(1 + ζ)/8
+
+"PASO 3) Derivadas de las funciones de forma
+'∂Ni/∂ξ:
+dN1x(η; ζ) = -(1 - η)*(1 - ζ)/8','dN2x(η; ζ) = (1 - η)*(1 - ζ)/8
+dN3x(η; ζ) = (1 + η)*(1 - ζ)/8','dN4x(η; ζ) = -(1 + η)*(1 - ζ)/8
+dN5x(η; ζ) = -(1 - η)*(1 + ζ)/8','dN6x(η; ζ) = (1 - η)*(1 + ζ)/8
+dN7x(η; ζ) = (1 + η)*(1 + ζ)/8','dN8x(η; ζ) = -(1 + η)*(1 + ζ)/8
+'∂Ni/∂η:
+dN1y(ξ; ζ) = -(1 - ξ)*(1 - ζ)/8','dN2y(ξ; ζ) = -(1 + ξ)*(1 - ζ)/8
+dN3y(ξ; ζ) = (1 + ξ)*(1 - ζ)/8','dN4y(ξ; ζ) = (1 - ξ)*(1 - ζ)/8
+dN5y(ξ; ζ) = -(1 - ξ)*(1 + ζ)/8','dN6y(ξ; ζ) = -(1 + ξ)*(1 + ζ)/8
+dN7y(ξ; ζ) = (1 + ξ)*(1 + ζ)/8','dN8y(ξ; ζ) = (1 - ξ)*(1 + ζ)/8
+'∂Ni/∂ζ:
+dN1z(ξ; η) = -(1 - ξ)*(1 - η)/8','dN2z(ξ; η) = -(1 + ξ)*(1 - η)/8
+dN3z(ξ; η) = -(1 + ξ)*(1 + η)/8','dN4z(ξ; η) = -(1 - ξ)*(1 + η)/8
+dN5z(ξ; η) = (1 - ξ)*(1 - η)/8','dN6z(ξ; η) = (1 + ξ)*(1 - η)/8
+dN7z(ξ; η) = (1 + ξ)*(1 + η)/8','dN8z(ξ; η) = (1 - ξ)*(1 + η)/8
+
+"PASO 4) Matriz constitutiva D (6x6) — 3D isotropico
+'Esfuerzos: [σxx, σyy, σzz, τxy, τyz, τzx]
+'Deformaciones: [εxx, εyy, εzz, γxy, γyz, γzx]
+'D relaciona σ = D·ε
+Dm = [λ + 2*μ; λ; λ; 0; 0; 0 | λ; λ + 2*μ; λ; 0; 0; 0 | λ; λ; λ + 2*μ; 0; 0; 0 | 0; 0; 0; μ; 0; 0 | 0; 0; 0; 0; μ; 0 | 0; 0; 0; 0; 0; μ]
+'<b>Matriz D (6x6):</b>
+Dm
+
+"PASO 5) Jacobiano en un punto de Gauss
+'Para este elemento rectangular, el Jacobiano es constante:
+'J = diag(Lx/2, Ly/2, Lz/2)
+'det(J) = Lx·Ly·Lz/8
+J11 = Lx/2','J22 = Ly/2','J33 = Lz/2
+detJ = J11*J22*J33
+
+"PASO 6) Matriz B en un punto de Gauss
+'Evaluamos en el punto de Gauss (ξ,η,ζ) = (-gp, -gp, -gp)
+'donde gp = 1/sqrt(3) (regla 2x2x2)
+gp = 1/sqr(3)
+ξg = -gp','ηg = -gp','ζg = -gp
+'Derivadas en coordenadas fisicas:
+dx1 = dN1x(ηg; ζg)/J11','dy1 = dN1y(ξg; ζg)/J22','dz1 = dN1z(ξg; ηg)/J33
+dx2 = dN2x(ηg; ζg)/J11','dy2 = dN2y(ξg; ζg)/J22','dz2 = dN2z(ξg; ηg)/J33
+dx3 = dN3x(ηg; ζg)/J11','dy3 = dN3y(ξg; ζg)/J22','dz3 = dN3z(ξg; ηg)/J33
+dx4 = dN4x(ηg; ζg)/J11','dy4 = dN4y(ξg; ζg)/J22','dz4 = dN4z(ξg; ηg)/J33
+dx5 = dN5x(ηg; ζg)/J11','dy5 = dN5y(ξg; ζg)/J22','dz5 = dN5z(ξg; ηg)/J33
+dx6 = dN6x(ηg; ζg)/J11','dy6 = dN6y(ξg; ζg)/J22','dz6 = dN6z(ξg; ηg)/J33
+dx7 = dN7x(ηg; ζg)/J11','dy7 = dN7y(ξg; ζg)/J22','dz7 = dN7z(ξg; ηg)/J33
+dx8 = dN8x(ηg; ζg)/J11','dy8 = dN8y(ξg; ζg)/J22','dz8 = dN8z(ξg; ηg)/J33
+'<b>Matriz B (6x24)</b>
+'Cada bloque de 3 columnas (u,v,w de un nudo) es:
+'[dx_i  0    0  ]
+'[ 0    dy_i 0  ]
+'[ 0    0    dz_i]
+'[dy_i  dx_i 0  ]
+'[ 0    dz_i dy_i]
+'[dz_i  0    dx_i]
+#hide
+Bm = matrix(6; 24)
+'Nudo 1:
+Bm.(1; 1) = dx1','Bm.(2; 2) = dy1','Bm.(3; 3) = dz1
+Bm.(4; 1) = dy1','Bm.(4; 2) = dx1
+Bm.(5; 2) = dz1','Bm.(5; 3) = dy1
+Bm.(6; 1) = dz1','Bm.(6; 3) = dx1
+'Nudo 2:
+Bm.(1; 4) = dx2','Bm.(2; 5) = dy2','Bm.(3; 6) = dz2
+Bm.(4; 4) = dy2','Bm.(4; 5) = dx2
+Bm.(5; 5) = dz2','Bm.(5; 6) = dy2
+Bm.(6; 4) = dz2','Bm.(6; 6) = dx2
+'Nudo 3:
+Bm.(1; 7) = dx3','Bm.(2; 8) = dy3','Bm.(3; 9) = dz3
+Bm.(4; 7) = dy3','Bm.(4; 8) = dx3
+Bm.(5; 8) = dz3','Bm.(5; 9) = dy3
+Bm.(6; 7) = dz3','Bm.(6; 9) = dx3
+'Nudo 4:
+Bm.(1; 10) = dx4','Bm.(2; 11) = dy4','Bm.(3; 12) = dz4
+Bm.(4; 10) = dy4','Bm.(4; 11) = dx4
+Bm.(5; 11) = dz4','Bm.(5; 12) = dy4
+Bm.(6; 10) = dz4','Bm.(6; 12) = dx4
+'Nudo 5:
+Bm.(1; 13) = dx5','Bm.(2; 14) = dy5','Bm.(3; 15) = dz5
+Bm.(4; 13) = dy5','Bm.(4; 14) = dx5
+Bm.(5; 14) = dz5','Bm.(5; 15) = dy5
+Bm.(6; 13) = dz5','Bm.(6; 15) = dx5
+'Nudo 6:
+Bm.(1; 16) = dx6','Bm.(2; 17) = dy6','Bm.(3; 18) = dz6
+Bm.(4; 16) = dy6','Bm.(4; 17) = dx6
+Bm.(5; 17) = dz6','Bm.(5; 18) = dy6
+Bm.(6; 16) = dz6','Bm.(6; 18) = dx6
+'Nudo 7:
+Bm.(1; 19) = dx7','Bm.(2; 20) = dy7','Bm.(3; 21) = dz7
+Bm.(4; 19) = dy7','Bm.(4; 20) = dx7
+Bm.(5; 20) = dz7','Bm.(5; 21) = dy7
+Bm.(6; 19) = dz7','Bm.(6; 21) = dx7
+'Nudo 8:
+Bm.(1; 22) = dx8','Bm.(2; 23) = dy8','Bm.(3; 24) = dz8
+Bm.(4; 22) = dy8','Bm.(4; 23) = dx8
+Bm.(5; 23) = dz8','Bm.(5; 24) = dy8
+Bm.(6; 22) = dz8','Bm.(6; 24) = dx8
+#show
+Bm
+
+"PASO 7) Rigidez del elemento — Integracion 2x2x2 Gauss completa
+'K_ele = Σ(8 puntos) B^T · D · B · det(J) · w
+'Con pesos w = 1 (Gauss estandar en cada direccion)
+#hide
+K_ele = matrix(24; 24)
+#for igx = 1 : 2
+    #for igy = 1 : 2
+        #for igz = 1 : 2
+            #if igx ≡ 1
+                ξgi = -gp
+            #else
+                ξgi = gp
+            #end if
+            #if igy ≡ 1
+                ηgi = -gp
+            #else
+                ηgi = gp
+            #end if
+            #if igz ≡ 1
+                ζgi = -gp
+            #else
+                ζgi = gp
+            #end if
+            'Derivadas en este punto de Gauss
+            d1x = dN1x(ηgi; ζgi)/J11','d1y = dN1y(ξgi; ζgi)/J22','d1z = dN1z(ξgi; ηgi)/J33
+            d2x = dN2x(ηgi; ζgi)/J11','d2y = dN2y(ξgi; ζgi)/J22','d2z = dN2z(ξgi; ηgi)/J33
+            d3x = dN3x(ηgi; ζgi)/J11','d3y = dN3y(ξgi; ζgi)/J22','d3z = dN3z(ξgi; ηgi)/J33
+            d4x = dN4x(ηgi; ζgi)/J11','d4y = dN4y(ξgi; ζgi)/J22','d4z = dN4z(ξgi; ηgi)/J33
+            d5x = dN5x(ηgi; ζgi)/J11','d5y = dN5y(ξgi; ζgi)/J22','d5z = dN5z(ξgi; ηgi)/J33
+            d6x = dN6x(ηgi; ζgi)/J11','d6y = dN6y(ξgi; ζgi)/J22','d6z = dN6z(ξgi; ηgi)/J33
+            d7x = dN7x(ηgi; ζgi)/J11','d7y = dN7y(ξgi; ζgi)/J22','d7z = dN7z(ξgi; ηgi)/J33
+            d8x = dN8x(ηgi; ζgi)/J11','d8y = dN8y(ξgi; ζgi)/J22','d8z = dN8z(ξgi; ηgi)/J33
+            'Construir B en este punto
+            Bgi = matrix(6; 24)
+            Bgi.(1; 1) = d1x','Bgi.(2; 2) = d1y','Bgi.(3; 3) = d1z
+            Bgi.(4; 1) = d1y','Bgi.(4; 2) = d1x
+            Bgi.(5; 2) = d1z','Bgi.(5; 3) = d1y
+            Bgi.(6; 1) = d1z','Bgi.(6; 3) = d1x
+            Bgi.(1; 4) = d2x','Bgi.(2; 5) = d2y','Bgi.(3; 6) = d2z
+            Bgi.(4; 4) = d2y','Bgi.(4; 5) = d2x
+            Bgi.(5; 5) = d2z','Bgi.(5; 6) = d2y
+            Bgi.(6; 4) = d2z','Bgi.(6; 6) = d2x
+            Bgi.(1; 7) = d3x','Bgi.(2; 8) = d3y','Bgi.(3; 9) = d3z
+            Bgi.(4; 7) = d3y','Bgi.(4; 8) = d3x
+            Bgi.(5; 8) = d3z','Bgi.(5; 9) = d3y
+            Bgi.(6; 7) = d3z','Bgi.(6; 9) = d3x
+            Bgi.(1; 10) = d4x','Bgi.(2; 11) = d4y','Bgi.(3; 12) = d4z
+            Bgi.(4; 10) = d4y','Bgi.(4; 11) = d4x
+            Bgi.(5; 11) = d4z','Bgi.(5; 12) = d4y
+            Bgi.(6; 10) = d4z','Bgi.(6; 12) = d4x
+            Bgi.(1; 13) = d5x','Bgi.(2; 14) = d5y','Bgi.(3; 15) = d5z
+            Bgi.(4; 13) = d5y','Bgi.(4; 14) = d5x
+            Bgi.(5; 14) = d5z','Bgi.(5; 15) = d5y
+            Bgi.(6; 13) = d5z','Bgi.(6; 15) = d5x
+            Bgi.(1; 16) = d6x','Bgi.(2; 17) = d6y','Bgi.(3; 18) = d6z
+            Bgi.(4; 16) = d6y','Bgi.(4; 17) = d6x
+            Bgi.(5; 17) = d6z','Bgi.(5; 18) = d6y
+            Bgi.(6; 16) = d6z','Bgi.(6; 18) = d6x
+            Bgi.(1; 19) = d7x','Bgi.(2; 20) = d7y','Bgi.(3; 21) = d7z
+            Bgi.(4; 19) = d7y','Bgi.(4; 20) = d7x
+            Bgi.(5; 20) = d7z','Bgi.(5; 21) = d7y
+            Bgi.(6; 19) = d7z','Bgi.(6; 21) = d7x
+            Bgi.(1; 22) = d8x','Bgi.(2; 23) = d8y','Bgi.(3; 24) = d8z
+            Bgi.(4; 22) = d8y','Bgi.(4; 23) = d8x
+            Bgi.(5; 23) = d8z','Bgi.(5; 24) = d8y
+            Bgi.(6; 22) = d8z','Bgi.(6; 24) = d8x
+            'Contribucion de este punto de Gauss
+            BtDBg = transp(Bgi)*Dm*Bgi*detJ
+            K_ele = K_ele + BtDBg
+        #loop
+    #loop
+#loop
+#show
+'<b>K_ele (24x24) — Rigidez del elemento solido 3D C3D8</b>
+'K_ele.(1; 1) = 'K_ele.(1; 1)' N/mm
+'K_ele.(3; 3) = 'K_ele.(3; 3)' N/mm (rigidez axial vertical)
+
+"PASO 8) Ejemplo ejecutable — Cubo apoyado, carga uniforme en cara superior
+'Probamos el elemento con una carga simple:
+'- Cara inferior (z=0): nudos 1,2,3,4 con UZ=0
+'- Carga vertical en cara superior: P total / 4 por nudo (5,6,7,8)
+P_total = 100000
+Pn = P_total/4
+#hide
+'Sistema global = solo 1 elemento = 24 DOF
+Kg = matrix(24; 24)
+#for i = 1 : 24
+    #for j = 1 : 24
+        Kg.(i; j) = K_ele.(i; j)
+    #loop
+#loop
+'Vector de fuerzas (Fz en nudos 5,6,7,8)
+'DOF para nudo i: UZ = 3*(i-1)+3 → nudos 5,6,7,8 → DOF 15,18,21,24
+Fg = vector(24)
+Fg.(15) = -Pn','Fg.(18) = -Pn','Fg.(21) = -Pn','Fg.(24) = -Pn
+'Restricciones: UZ=0 en nudos 1,2,3,4 (cara inferior)
+'Ademas UX=0 en nudo 1, UY=0 en nudos 1,2 para evitar movimiento rigido
+pen = 10^15
+'UZ = 0 en nudos 1-4
+Kg.(3; 3) = Kg.(3; 3) + pen
+Kg.(6; 6) = Kg.(6; 6) + pen
+Kg.(9; 9) = Kg.(9; 9) + pen
+Kg.(12; 12) = Kg.(12; 12) + pen
+'UX = 0 en nudo 1
+Kg.(1; 1) = Kg.(1; 1) + pen
+'UY = 0 en nudos 1 y 2
+Kg.(2; 2) = Kg.(2; 2) + pen
+Kg.(5; 5) = Kg.(5; 5) + pen
+'Resolver
+u = lsolve(Kg; Fg)
+#show
+'<b>Solucion del sistema:</b>
+u
+
+"PASO 9) Verificacion analitica
+'Para un cubo bajo compresion uniforme sobre la cara superior:
+'σ_zz = -P_total / area = -P_total / (Lx*Ly)
+'ε_zz = σ_zz / E  (aproximado — ignora efecto Poisson con BCs laterales libres)
+σ_zz = -P_total/(Lx*Ly)
+'Con BCs libres (Poisson free): ε_zz = σ_zz/E
+ε_zz_libre = σ_zz/Ec
+'Desplazamiento vertical en nudos superiores:
+w_teo_libre = ε_zz_libre*Lz
+'<b>Teorico (sin confinamiento lateral):</b>
+'w = 'w_teo_libre' mm
+'<b>FEM C3D8 — Desplazamientos verticales UZ de nudos superiores:</b>
+uz_5 = u.(15)','uz_6 = u.(18)','uz_7 = u.(21)','uz_8 = u.(24)
+uz_5
+uz_6
+uz_7
+uz_8
+'<b>Promedio UZ superior:</b>
+uz_avg = (uz_5 + uz_6 + uz_7 + uz_8)/4
+uz_avg
+
+"PASO 10) Visualizacion 3D con $Fem3D
+'<b>Malla del elemento hexaedrico:</b>
+'Los 8 nudos y la conectividad (1 elemento, 8 nudos):
+'ej_1 debe ser matriz (1 fila x 8 columnas) para $Fem3D
+ej_1 = matrix(1; 8)
+ej_1.(1; 1) = 1','ej_1.(1; 2) = 2','ej_1.(1; 3) = 3','ej_1.(1; 4) = 4
+ej_1.(1; 5) = 5','ej_1.(1; 6) = 6','ej_1.(1; 7) = 7','ej_1.(1; 8) = 8
+'Vector de valores nodales (UZ en cada nudo):
+uz_all = vector(8)
+uz_all.1 = u.(3)','uz_all.2 = u.(6)','uz_all.3 = u.(9)','uz_all.4 = u.(12)
+uz_all.5 = u.(15)','uz_all.6 = u.(18)','uz_all.7 = u.(21)','uz_all.8 = u.(24)
+'<b>Mesh 3D con color map de UZ:</b>
+$Fem3D{Xn; Yn; Zn; ej_1; uz_all @ w=600 & h=400}
+
+"Resumen
+'<b>El elemento C3D8 captura:</b>
+'1. Estado de esfuerzo 3D completo (σxx, σyy, σzz, τxy, τyz, τzx)
+'2. Efecto Poisson en 3 direcciones
+'3. Confinamiento lateral
+'4. Concentraciones de esfuerzo locales
+'
+'<b>Ventajas vs Shell:</b>
+'- No hace asunciones de espesor pequeño
+'- Captura esfuerzos transversales
+'- Valido para cualquier geometria 3D
+'
+'<b>Desventajas vs Shell:</b>
+'- 24 DOF por elemento (vs 12 del MITC4)
+'- Mallas 3D son 1-2 ordenes de magnitud mas grandes
+'- Requiere solvers sparse eficientes para ser practico
+'
+'<b>Aplicaciones reales en ingenieria civil:</b>
+'- Zapatas masivas
+'- Pedestales de anclaje
+'- Dados de fundacion
+'- Muros de contencion gruesos
+'- Estribos de puente
+'- Presas de concreto
+'
+'<b>En SAP2000:</b> Define Section Properties → Solid → "Solid" (C3D8 equivalente)
+'<b>En Abaqus:</b> Element type C3D8 (exact match)
+'<b>En ANSYS:</b> SOLID185
+'<b>En ETABS:</b> Solid elements en modo avanzado
+
+"Notacion Abaqus para elementos solidos
+'<b>C3D4:</b>  Tetraedro 4 nudos (lineal, no recomendado — muy rigido)
+'<b>C3D10:</b> Tetraedro 10 nudos (cuadratico, preferido para mallas irregulares)
+'<b>C3D8:</b>  Hexaedro 8 nudos (lineal) — ESTE TUTORIAL
+'<b>C3D8R:</b> Hexaedro 8 nudos con integracion reducida (1 Gauss + hourglass control)
+'<b>C3D8I:</b> Hexaedro 8 nudos con modos incompatibles (mejor en flexion pura)
+'<b>C3D20:</b> Hexaedro 20 nudos (cuadratico, muy preciso pero caro)
+'<b>C3D20R:</b> Hexaedro 20 nudos con integracion reducida

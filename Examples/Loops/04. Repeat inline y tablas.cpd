@@ -1,0 +1,48 @@
+"$Repeat — Bucle en una sola linea
+'Equivalente a un #for compacto.
+'Sintaxis: $Repeat{expresion @ var = inicio : fin}
+
+"1. Llenar vector con $Repeat
+a = vector(5)
+$Repeat{a.k = 2*k - 1 @ k = 1 : 5}
+a
+
+"2. Repeat anidado (matrices)
+B = matrix(3; 3)
+$Repeat{$Repeat{B.(i; j) = i*10 + j @ j = 1 : 3} @ i = 1 : 3}
+B
+
+"3. Sumatoria con $Sum
+'S = 1 + 1/4 + 1/9 + ... + 1/100
+S = $Sum{1/k^2 @ k = 1 : 10}
+S
+
+"4. Productoria con $Product
+'P = 1 * 2 * 3 * ... * 6 = 6!
+P = $Product{k @ k = 1 : 6}
+P
+
+"5. Generacion de tabla
+n = 6
+x = vector(n)
+fx = vector(n)
+#hide
+#for i = 1 : n
+    x.i = i*0.5
+    fx.i = sin(x.i)
+#loop
+#show
+$Table{x; fx @ "x"; "sin(x)" & fmt=4 & row=1}
+
+"6. Tabla con bucle visible
+'Serie de Fibonacci:
+n = 10
+fib = vector(n)
+fib.1 = 1
+fib.2 = 1
+#hide
+#for i = 3 : n
+    fib.i = fib.(i - 1) + fib.(i - 2)
+#loop
+#show
+$Table{fib @ "Fibonacci" & fmt=0 & row=1}

@@ -1,0 +1,303 @@
+"Portico Plano de 3 Niveles - Analisis Matricial
+'Ref: Yabar Ingenieros - Modulo 06
+'<hr/>
+
+"PASO 0) Datos generales
+'Unidades consistentes: tonf, m
+'(Se trabaja sin unidades explicitas para evitar conflictos en la matriz global)
+
+"PASO 1) Material
+Ep = 2.1*10^6
+νp = 0.2
+Gp = Ep/(2*(1 + νp))
+'Considerar cortante:
+Def_corte = 1
+
+"PASO 2) Secciones
+'b = ancho, h = peralte
+Nsec = 3
+bp = [0.3; 0.5; 0.6]','hp_s = [0.5; 0.5; 0.6]
+
+"PASO 3) Coordenadas de nudos
+Nn = 8
+Xn = [0; 0; 0; 0; 7; 7; 7; 7]','Yn = [0; 5; 8.5; 12; 0; 5; 8.5; 12]
+
+"PASO 4) Conectividad y secciones
+Nb = 9
+inicio = [1; 2; 3; 5; 6; 7; 2; 3; 4]','fin_n = [2; 3; 4; 6; 7; 8; 6; 7; 8]
+Sec = [3; 3; 3; 2; 2; 2; 1; 1; 1]
+
+"PASO 5) Apoyos
+'1 = restringido, 0 = libre (Rx, Ry, Rz por nudo)
+Na = 2','Apoyo = [1; 5]
+Rxv = [1; 1]','Ryv = [1; 1]','Rzv = [1; 1]
+
+"PASO 6) Cargas distribuidas (en sistema local)
+Ncd = 3','BarraCd = [7; 8; 9]
+qa = [5; 2; 4]','qb = [5; 6; 3]
+
+"PASO 7) Cargas concentradas en nudos
+Ncp = 3','NudoCp = [2; 3; 4]
+FxC = [5; 10; 20]','FyC = [0; 0; 0]','MzC = [0; 0; 0]
+
+"Propiedades de cada barra
+#hide
+Ngl = Nn*3
+Base = vector(Nb)','Peralte = vector(Nb)','Ar = vector(Nb)','Iz = vector(Nb)
+Lb = vector(Nb)','cx = vector(Nb)','cy = vector(Nb)','χ = vector(Nb)
+EAL = vector(Nb)','EIL = vector(Nb)
+EIL2 = vector(Nb)
+EIL3 = vector(Nb)
+
+#for i = 1 : Nb
+    Base.i = bp.(Sec.i)
+    Peralte.i = hp_s.(Sec.i)
+    Ar.i = Base.i*Peralte.i
+    Iz.i = Base.i*Peralte.i^3/12
+    Lb.i = sqr((Xn.(fin_n.i) - Xn.(inicio.i))^2 + (Yn.(fin_n.i) - Yn.(inicio.i))^2)
+    cx.i = (Xn.(fin_n.i) - Xn.(inicio.i))/Lb.i
+    cy.i = (Yn.(fin_n.i) - Yn.(inicio.i))/Lb.i
+    #if Def_corte ≡ 1
+        fc = 5/6
+        χ.i = 12*Ep*Iz.i/(Gp*fc*Ar.i*Lb.i^2)
+    #else
+        χ.i = 0
+    #end if
+    EAL.i = Ep*Ar.i/Lb.i
+    EIL.i = Ep*Iz.i/Lb.i
+    EIL2.i = Ep*Iz.i/Lb.i^2
+    EIL3.i = Ep*Iz.i/Lb.i^3
+#loop
+#show
+$Table{inicio; fin_n; Sec; Lb @ "Inicio"; "Fin"; "Sec"; "L (m)" & fmt=2 & row=1}
+
+"Ensamblaje de rigidez global
+#hide
+Kgg = matrix(Ngl; Ngl)
+
+#for i = 1 : Nb
+    'Construir Kl local 6x6
+    Kl = matrix(6; 6)
+    Kl.(1; 1) = EAL.i
+    Kl.(4; 4) = EAL.i
+    Kl.(1; 4) = -EAL.i
+    Kl.(4; 1) = -EAL.i
+    Kl.(2; 2) = 12*EIL3.i/(1 + χ.i)
+    Kl.(5; 5) = 12*EIL3.i/(1 + χ.i)
+    Kl.(2; 5) = -12*EIL3.i/(1 + χ.i)
+    Kl.(5; 2) = -12*EIL3.i/(1 + χ.i)
+    Kl.(3; 3) = (4 + χ.i)*EIL.i/(1 + χ.i)
+    Kl.(6; 6) = (4 + χ.i)*EIL.i/(1 + χ.i)
+    Kl.(3; 6) = (2 - χ.i)*EIL.i/(1 + χ.i)
+    Kl.(6; 3) = (2 - χ.i)*EIL.i/(1 + χ.i)
+    Kl.(2; 3) = 6*EIL2.i/(1 + χ.i)
+    Kl.(3; 2) = 6*EIL2.i/(1 + χ.i)
+    Kl.(2; 6) = 6*EIL2.i/(1 + χ.i)
+    Kl.(6; 2) = 6*EIL2.i/(1 + χ.i)
+    Kl.(5; 3) = -6*EIL2.i/(1 + χ.i)
+    Kl.(3; 5) = -6*EIL2.i/(1 + χ.i)
+    Kl.(5; 6) = -6*EIL2.i/(1 + χ.i)
+    Kl.(6; 5) = -6*EIL2.i/(1 + χ.i)
+
+    'Construir Tr 6x6
+    Tr = [cx.i; cy.i; 0; 0; 0; 0|-cy.i; cx.i; 0; 0; 0; 0|0; 0; 1; 0; 0; 0|0; 0; 0; cx.i; cy.i; 0|0; 0; 0; -cy.i; cx.i; 0|0; 0; 0; 0; 0; 1]
+
+    'Rigidez global de barra i
+    Kg = transp(Tr)*Kl*Tr
+
+    'Ensamblar en Kgg
+    ni = inicio.i
+    nj = fin_n.i
+    ri = (ni - 1)*3
+    rj = (nj - 1)*3
+    #for p = 1 : 6
+        #for q = 1 : 6
+            #if p ≤ 3
+                gi = ri + p
+            #else
+                gi = rj + p - 3
+            #end if
+            #if q ≤ 3
+                gj = ri + q
+            #else
+                gj = rj + q - 3
+            #end if
+            Kgg.(gi; gj) = Kgg.(gi; gj) + Kg.(p; q)
+        #loop
+    #loop
+#loop
+
+"Vector de cargas
+Fext = vector(Ngl)
+'Cargas concentradas:
+#for i = 1 : Ncp
+    nd = NudoCp.i
+    gdl = (nd - 1)*3
+    Fext.(gdl + 1) = Fext.(gdl + 1) + FxC.i
+    Fext.(gdl + 2) = Fext.(gdl + 2) + FyC.i
+    Fext.(gdl + 3) = Fext.(gdl + 3) + MzC.i
+#loop
+
+'Cargas distribuidas equivalentes:
+#for idx = 1 : Ncd
+    bi = BarraCd.idx
+    Li = Lb.bi
+    feq = vector(6)
+    feq.2 = -(7*qa.idx + 3*qb.idx)*Li/20
+    feq.3 = -(3*qa.idx + 2*qb.idx)*Li^2/60
+    feq.5 = -(3*qa.idx + 7*qb.idx)*Li/20
+    feq.6 = (2*qa.idx + 3*qb.idx)*Li^2/60
+    'Transformacion a coordenadas globales
+    cxi = cx.bi
+    cyi = cy.bi
+    Tri = [cxi; cyi; 0; 0; 0; 0|-cyi; cxi; 0; 0; 0; 0|0; 0; 1; 0; 0; 0|0; 0; 0; cxi; cyi; 0|0; 0; 0; -cyi; cxi; 0|0; 0; 0; 0; 0; 1]
+    feqg = transp(Tri)*feq
+    ni = inicio.bi
+    nj = fin_n.bi
+    ri = (ni - 1)*3
+    rj = (nj - 1)*3
+    #for p = 1 : 3
+        Fext.(ri + p) = Fext.(ri + p) + feqg.p
+        Fext.(rj + p) = Fext.(rj + p) + feqg.(p + 3)
+    #loop
+#loop
+
+"Condiciones de contorno (penalizacion)
+rest = vector(Ngl)
+#for i = 1 : Na
+    nd = Apoyo.i
+    gdl = (nd - 1)*3
+    #if Rxv.i ≡ 1
+        rest.(gdl + 1) = 1
+    #end if
+    #if Ryv.i ≡ 1
+        rest.(gdl + 2) = 1
+    #end if
+    #if Rzv.i ≡ 1
+        rest.(gdl + 3) = 1
+    #end if
+#loop
+#for i = 1 : Ngl
+    #if rest.i ≡ 1
+        Kgg.(i; i) = Kgg.(i; i)*(1 + 10^15)
+    #end if
+#loop
+#show
+
+"Resolucion del sistema
+#hide
+ugl = lsolve(Kgg; Fext)
+'Organizar por nudo:
+ux = vector(Nn)','uy = vector(Nn)','θz = vector(Nn)
+#for i = 1 : Nn
+    gdl = (i - 1)*3
+    ux.i = ugl.(gdl + 1)
+    uy.i = ugl.(gdl + 2)
+    θz.i = ugl.(gdl + 3)
+#loop
+#show
+'K·u = F
+$Table{ux; uy; θz @ "ux (m)"; "uy (m)"; "θz (rad)" & fmt=6 & row=1}
+
+"Reacciones
+#hide
+Reac = vector(Ngl)
+#for i = 1 : Nb
+    ni = inicio.i
+    nj = fin_n.i
+    ri = (ni - 1)*3
+    rj = (nj - 1)*3
+    uloc = vector(6)
+    #for p = 1 : 3
+        uloc.p = ugl.(ri + p)
+        uloc.(p + 3) = ugl.(rj + p)
+    #loop
+    'Reconstruir Kg de barra i
+    Kl = matrix(6; 6)
+    Kl.(1; 1) = EAL.i
+    Kl.(4; 4) = EAL.i
+    Kl.(1; 4) = -EAL.i
+    Kl.(4; 1) = -EAL.i
+    Kl.(2; 2) = 12*EIL3.i/(1 + χ.i)
+    Kl.(5; 5) = 12*EIL3.i/(1 + χ.i)
+    Kl.(2; 5) = -12*EIL3.i/(1 + χ.i)
+    Kl.(5; 2) = -12*EIL3.i/(1 + χ.i)
+    Kl.(3; 3) = (4 + χ.i)*EIL.i/(1 + χ.i)
+    Kl.(6; 6) = (4 + χ.i)*EIL.i/(1 + χ.i)
+    Kl.(3; 6) = (2 - χ.i)*EIL.i/(1 + χ.i)
+    Kl.(6; 3) = (2 - χ.i)*EIL.i/(1 + χ.i)
+    Kl.(2; 3) = 6*EIL2.i/(1 + χ.i)
+    Kl.(3; 2) = 6*EIL2.i/(1 + χ.i)
+    Kl.(2; 6) = 6*EIL2.i/(1 + χ.i)
+    Kl.(6; 2) = 6*EIL2.i/(1 + χ.i)
+    Kl.(5; 3) = -6*EIL2.i/(1 + χ.i)
+    Kl.(3; 5) = -6*EIL2.i/(1 + χ.i)
+    Kl.(5; 6) = -6*EIL2.i/(1 + χ.i)
+    Kl.(6; 5) = -6*EIL2.i/(1 + χ.i)
+    Tr = [cx.i; cy.i; 0; 0; 0; 0|-cy.i; cx.i; 0; 0; 0; 0|0; 0; 1; 0; 0; 0|0; 0; 0; cx.i; cy.i; 0|0; 0; 0; -cy.i; cx.i; 0|0; 0; 0; 0; 0; 1]
+    Kg = transp(Tr)*Kl*Tr
+    floc = Kg*uloc
+    #for p = 1 : 3
+        Reac.(ri + p) = Reac.(ri + p) + floc.p
+        Reac.(rj + p) = Reac.(rj + p) + floc.(p + 3)
+    #loop
+#loop
+#show
+'<b>Reacciones en apoyos (tonf, tonf*m):</b>
+#for i = 1 : Na
+    nd = Apoyo.i
+    gdl = (nd - 1)*3
+    'Nudo 'nd':~~~Rx = 'round(Reac.(gdl + 1)*100)/100'~~~Ry = 'round(Reac.(gdl + 2)*100)/100'~~~Mz = 'round(Reac.(gdl + 3)*100)/100
+#loop
+
+"Fuerzas internas por barra
+#hide
+'Almacenar N, V, M en vectores
+Ni_b = vector(Nb)','Vi_b = vector(Nb)','Mi_b = vector(Nb)
+Nj_b = vector(Nb)','Vj_b = vector(Nb)','Mj_b = vector(Nb)
+
+#for i = 1 : Nb
+    ni = inicio.i
+    nj = fin_n.i
+    ri = (ni - 1)*3
+    rj = (nj - 1)*3
+    uloc = vector(6)
+    #for p = 1 : 3
+        uloc.p = ugl.(ri + p)
+        uloc.(p + 3) = ugl.(rj + p)
+    #loop
+    Kl = matrix(6; 6)
+    Kl.(1; 1) = EAL.i
+    Kl.(4; 4) = EAL.i
+    Kl.(1; 4) = -EAL.i
+    Kl.(4; 1) = -EAL.i
+    Kl.(2; 2) = 12*EIL3.i/(1 + χ.i)
+    Kl.(5; 5) = 12*EIL3.i/(1 + χ.i)
+    Kl.(2; 5) = -12*EIL3.i/(1 + χ.i)
+    Kl.(5; 2) = -12*EIL3.i/(1 + χ.i)
+    Kl.(3; 3) = (4 + χ.i)*EIL.i/(1 + χ.i)
+    Kl.(6; 6) = (4 + χ.i)*EIL.i/(1 + χ.i)
+    Kl.(3; 6) = (2 - χ.i)*EIL.i/(1 + χ.i)
+    Kl.(6; 3) = (2 - χ.i)*EIL.i/(1 + χ.i)
+    Kl.(2; 3) = 6*EIL2.i/(1 + χ.i)
+    Kl.(3; 2) = 6*EIL2.i/(1 + χ.i)
+    Kl.(2; 6) = 6*EIL2.i/(1 + χ.i)
+    Kl.(6; 2) = 6*EIL2.i/(1 + χ.i)
+    Kl.(5; 3) = -6*EIL2.i/(1 + χ.i)
+    Kl.(3; 5) = -6*EIL2.i/(1 + χ.i)
+    Kl.(5; 6) = -6*EIL2.i/(1 + χ.i)
+    Kl.(6; 5) = -6*EIL2.i/(1 + χ.i)
+    Tr = [cx.i; cy.i; 0; 0; 0; 0|-cy.i; cx.i; 0; 0; 0; 0|0; 0; 1; 0; 0; 0|0; 0; 0; cx.i; cy.i; 0|0; 0; 0; -cy.i; cx.i; 0|0; 0; 0; 0; 0; 1]
+    Fint = Kl*Tr*uloc
+    Ni_b.i = Fint.1
+    Vi_b.i = Fint.2
+    Mi_b.i = Fint.3
+    Nj_b.i = Fint.4
+    Vj_b.i = Fint.5
+    Mj_b.i = Fint.6
+#loop
+#show
+'<b>Fuerzas internas (N, V, M) nudo inicio:</b>
+$Table{inicio; fin_n; Ni_b; Vi_b; Mi_b @ "i"; "j"; "N_i (tonf)"; "V_i (tonf)"; "M_i (tonf*m)" & fmt=4 & row=1}
+'<b>Fuerzas internas (N, V, M) nudo fin:</b>
+$Table{inicio; fin_n; Nj_b; Vj_b; Mj_b @ "i"; "j"; "N_j (tonf)"; "V_j (tonf)"; "M_j (tonf*m)" & fmt=4 & row=1}

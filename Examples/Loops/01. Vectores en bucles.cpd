@@ -1,0 +1,58 @@
+"Vectores en bucles #for
+'Regla fundamental: siempre pre-crear el vector con vector(n)
+'antes de asignar elementos dentro de un bucle #for.
+
+"1. Crear y llenar un vector
+n = 6
+a = vector(n)
+#hide
+#for k = 1 : n
+    a.k = k^2
+#loop
+#show
+a
+
+"2. Copiar con desplazamiento
+b = vector(n)
+#hide
+#for k = 2 : n
+    b.k = a.(k - 1)
+#loop
+#show
+b
+
+"3. Acceso con indice literal (fuera del bucle)
+'Despues del bucle, el vector sigue disponible:
+a.3
+a.5
+'<b>Esto funciona porque a fue creado con vector(n)</b>
+
+"4. Doble indexacion: vec.(expr)
+'Si necesitas usar una expresion como indice, usa parentesis:
+idx = [3; 1; 5; 2; 4; 6]
+c = vector(n)
+#hide
+#for k = 1 : n
+    c.k = a.(idx.k)
+#loop
+#show
+'c reordena a segun idx:
+c
+
+"5. Sumatoria con acumulador
+suma = 0
+#hide
+#for k = 1 : n
+    suma = suma + a.k
+#loop
+#show
+suma
+
+"6. Vector con formulas
+x = vector(5)
+#hide
+#for i = 1 : 5
+    x.i = sin(i*π/6)
+#loop
+#show
+x
