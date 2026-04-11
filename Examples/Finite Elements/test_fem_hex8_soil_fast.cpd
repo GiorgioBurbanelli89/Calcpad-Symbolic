@@ -1,0 +1,158 @@
+"Test fem_hex8 — Masa de suelo FAST (100% C# nativo)
+'<hr/>
+'<b>Todo el pre-procesamiento se hace en C# nativo:</b>
+'- mesh_hex8_nodes: genera las coordenadas en C#
+'- mesh_hex8_elems: genera la conectividad en C#
+'- mesh_soil_specs: genera cargas y BCs en C#
+'- fem_hex8: resuelve Ku=F con Eigen sparse Cholesky
+'
+'<b>Objetivo:</b> replicar el problema del PDF Serquen con 32000 hex8
+'en un solo paso, sin loops Calcpad.
+
+"PASO 1) Datos del problema
+Lx = 20','Ly = 20','Lz = 10
+nx = 20','ny = 20','nz = 10
+Es = 2000','νs = 0.42
+Pz = -100
+'<b>Lx='Lx' m, Ly='Ly' m, Lz='Lz' m</b>
+'<b>Malla: 'nx'×'ny'×'nz' = 'nx*ny*nz' elementos hex8</b>
+'<b>Nudos: '(nx+1)*(ny+1)*(nz+1)'</b>
+'<b>DOFs: '3*(nx+1)*(ny+1)*(nz+1)'</b>
+'<b>Material: E='Es' tonf/m², ν='νs' (arcilla rigida Serquen)</b>
+'<b>Carga: P='Pz' tonf en el centro superior</b>
+
+"PASO 2) Generar malla y specs con funciones nativas C#
+'<b>params_dims = [Lx; Ly; Lz; nx; ny; nz; centered=1]</b>
+params_dims = [Lx; Ly; Lz; nx; ny; nz; 1]
+
+'<b>Generar nudos (C# nativo):</b>
+nodes = mesh_hex8_nodes(params_dims)
+
+'<b>Generar conectividad (C# nativo):</b>
+params_divs = [nx; ny; nz]
+elems = mesh_hex8_elems(params_divs)
+
+'<b>Generar cargas y BCs (C# nativo):</b>
+params_soil = [Lx; Ly; Lz; nx; ny; nz; 1; Pz]
+specs = mesh_soil_specs(params_soil)
+
+'<b>Tamaño de specs (filas × 5):</b>
+n_rows(specs)
+
+"PASO 3) Resolver con fem_hex8 (Cholesky sparse Eigen)
+'<b>Ejecutando solver nativo...</b>
+u = fem_hex8(nodes; elems; Es; νs; specs)
+
+'<b>Longitud del vector solucion (3×N):</b>
+len(u)
+
+"PASO 4) Extraer esfuerzos nodales UZ
+'uz[i] = u.(3*i) — componente Z del nudo i
+Xn = col(nodes; 1)
+Yn = col(nodes; 2)
+Zn = col(nodes; 3)
+
+'Extraer UZ con fill_col o similar... por ahora usamos un vector calculado:
+'len(u) = 3N, entonces uz está en indices 3, 6, 9, ...
+nn_nodes = n_rows(nodes)
+uz_nodal = vector(nn_nodes)
+#hide
+#for id = 1 : nn_nodes
+    uz_nodal.(id) = u.(3*id)
+#loop
+#show
+
+'<b>UZ minimo (máxima compresión):</b>
+uz_min = min(uz_nodal)
+uz_min
+'<b>UZ maximo:</b>
+uz_max = max(uz_nodal)
+uz_max
+
+"PASO 5) Visualizacion 3D estilo SAP2000 — vista completa
+'<b>Color map UZ en la masa de suelo completa (colormap SAP2000):</b>
+$Fem3D{Xn; Yn; Zn; elems; uz_nodal @ w=700 & h=500}
+
+"PASO 6) Esfuerzos sigma_zz nodales (para ver el bulbo de presiones)
+'El "bulbo de presiones" clasico de Boussinesq es un contour de
+'ESFUERZOS, no de desplazamientos. Los desplazamientos UZ se
+'concentran cerca de la carga y casi todo el resto del dominio tiene
+'valores ~0, lo que hace que el bulbo no se vea en un contour de UZ.
+'
+'Calculamos sigma_zz ~ -E * eps_zz aproximando eps_zz con diferencias
+'nodales en Z. Mejor: aproximamos sigma_zz con la formula de Boussinesq
+'para un semi-espacio infinito (solo para visualizar).
+
+sigma_nodal = vector(nn_nodes)
+'<b>Cap:</b> limitamos los esfuerzos a sigma_cap para que el colormap
+'no sea dominado por la singularidad en el punto de carga. Valor tipico
+'para masa de suelo con carga puntual: 5-10% de |Pz|/Lz^2.
+sigma_cap = 15
+#hide
+#for id = 1 : nn_nodes
+    xn = Xn.(id)
+    yn = Yn.(id)
+    zn = Zn.(id)
+    'Distancia horizontal al punto de carga (0,0,Lz)
+    r_h = sqrt(xn*xn + yn*yn)
+    'Profundidad desde la superficie
+    zd = Lz - zn
+    'sigma_zz Boussinesq semi-espacio: 3P/(2·pi·R^5)·z^3
+    #if zd < 0.1
+        sig = 0
+    #else
+        R = sqrt(r_h*r_h + zd*zd)
+        sig = 3*abs(Pz)*zd*zd*zd/(2*π*R^5)
+    #end if
+    'Clipear al rango [0, sigma_cap]
+    #if sig > sigma_cap
+        sig = sigma_cap
+    #end if
+    sigma_nodal.(id) = sig
+#loop
+#show
+
+'<b>Sigma_zz cap aplicado:</b>
+sigma_cap
+'<b>Sigma_zz max (despues del cap):</b>
+sigma_max = max(sigma_nodal)
+sigma_max
+
+"PASO 7) Corte XZ en Y=0 — Bulbo de presiones (Boussinesq)
+'Extraemos la rebanada central en Y (j_mid)
+j_mid = floor(ny/2)
+n_slice = nz*nx
+elems_slice = matrix(n_slice; 8)
+#hide
+#for k = 0 : nz - 1
+    #for i = 0 : nx - 1
+        src_eid = k*nx*ny + j_mid*nx + i + 1
+        dst_eid = k*nx + i + 1
+        #for col = 1 : 8
+            elems_slice.(dst_eid; col) = elems.(src_eid; col)
+        #loop
+    #loop
+#loop
+#show
+
+'<b>Bulbo de presiones (corte XZ en Y≈0) — estilo Fig. SF-70 del PDF:</b>
+$Fem3D{Xn; Yn; Zn; elems_slice; sigma_nodal @ w=700 & h=450}
+
+"PASO 8) Corte YZ en X=0 — Bulbo desde el otro lado
+i_mid = floor(nx/2)
+n_slice2 = nz*ny
+elems_slice2 = matrix(n_slice2; 8)
+#hide
+#for k = 0 : nz - 1
+    #for j = 0 : ny - 1
+        src_eid = k*nx*ny + j*nx + i_mid + 1
+        dst_eid = k*ny + j + 1
+        #for col = 1 : 8
+            elems_slice2.(dst_eid; col) = elems.(src_eid; col)
+        #loop
+    #loop
+#loop
+#show
+
+'<b>Bulbo (corte YZ en X≈0) — vista ortogonal:</b>
+$Fem3D{Xn; Yn; Zn; elems_slice2; sigma_nodal @ w=700 & h=450}

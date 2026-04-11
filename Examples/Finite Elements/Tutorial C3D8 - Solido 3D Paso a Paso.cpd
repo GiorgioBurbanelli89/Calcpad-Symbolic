@@ -298,8 +298,37 @@ ej_1.(1; 5) = 5','ej_1.(1; 6) = 6','ej_1.(1; 7) = 7','ej_1.(1; 8) = 8
 uz_all = vector(8)
 uz_all.1 = u.(3)','uz_all.2 = u.(6)','uz_all.3 = u.(9)','uz_all.4 = u.(12)
 uz_all.5 = u.(15)','uz_all.6 = u.(18)','uz_all.7 = u.(21)','uz_all.8 = u.(24)
-'<b>Mesh 3D con color map de UZ:</b>
+'<b>Mesh 3D con color map de UZ (mm):</b>
 $Fem3D{Xn; Yn; Zn; ej_1; uz_all @ w=600 & h=400}
+
+"PASO 10b) Esfuerzos sigma_zz — Color map estilo SAP2000
+'Calcular esfuerzos nodales via la relacion constitutiva:
+'sigma = D * epsilon
+'Para cubo bajo compresion uniforme: epsilon_zz = uz/Lz (en cada nudo)
+'Y por Poisson: epsilon_xx = epsilon_yy = -nu * epsilon_zz
+'
+'sigma_zz = lambda*(eps_xx + eps_yy + eps_zz) + 2*mu*eps_zz
+'        = lambda*(-2*nu*eps_zz + eps_zz) + 2*mu*eps_zz
+'        = (lambda*(1 - 2*nu) + 2*mu)*eps_zz
+'        = E*eps_zz  (simplificacion para estado uniaxial)
+#hide
+sigma_zz_nodal = vector(8)
+'Base: eps_zz = 0 (sin desplazamiento)
+sigma_zz_nodal.1 = 0','sigma_zz_nodal.2 = 0
+sigma_zz_nodal.3 = 0','sigma_zz_nodal.4 = 0
+'Top: eps_zz = uz/Lz, sigma_zz = E*eps_zz
+sigma_zz_nodal.5 = Ec*uz_5/Lz
+sigma_zz_nodal.6 = Ec*uz_6/Lz
+sigma_zz_nodal.7 = Ec*uz_7/Lz
+sigma_zz_nodal.8 = Ec*uz_8/Lz
+#show
+'<b>Esfuerzos sigma_zz en los 8 nudos (N/mm2 = MPa):</b>
+sigma_zz_nodal
+'<b>Color map sigma_zz 3D (estilo SAP2000 SolidStress):</b>
+$Fem3D{Xn; Yn; Zn; ej_1; sigma_zz_nodal @ w=600 & h=400}
+'<b>Validacion con SAP2000:</b>
+'SAP2000 SolidStress S11 (local 1 = vertical) = -100 kN/m2 = -0.1 MPa
+'Calcpad sigma_zz (promedio nudos superiores) = 'round((sigma_zz_nodal.5+sigma_zz_nodal.6+sigma_zz_nodal.7+sigma_zz_nodal.8)/4*10000)/10000' MPa
 
 "Resumen
 '<b>El elemento C3D8 captura:</b>

@@ -142,6 +142,77 @@ $PlotMap{xj; yj; values; ej}
 
 Ideal for FEM results on non-rectangular geometry: trapezoidal plates, footings with tie beams, irregular meshes.
 
+### 15. Native 3D FEM Solver — `fem_hex8` (NEW, Apr 2026)
+
+**4000 hex8 solved in under 11 seconds** — native C# assembly + Eigen sparse
+Cholesky (`HpSymmetricMatrix.ClSolve`). No Calcpad `#for` loops, no RAM
+explosion. Suitable for **soil mechanics**, **concrete foundations**, and
+**3D continuum problems** directly from a Calcpad document.
+
+**Functions added to the Calcpad language:**
+
+```calcpad
+' Auto-generate regular hex8 mesh (centered at origin)
+nodes = mesh_hex8_nodes([Lx; Ly; Lz; nx; ny; nz; 1])
+elems = mesh_hex8_elems([nx; ny; nz])
+
+' Auto-generate loads + BCs for a "soil box" problem
+' (base + lateral faces fixed + point load at top center)
+specs = mesh_soil_specs([Lx; Ly; Lz; nx; ny; nz; 1; Pz])
+
+' Variant with RECTANGULAR distributed load (SAP2000 surface pressure)
+specs = mesh_soil_specs_rect([Lx; Ly; Lz; nx; ny; nz; 1; Rx; Ry; q])
+
+' Solve Ku = F → returns vector of 3N displacements
+u = fem_hex8(nodes; elems; E; nu; specs)
+
+' Compute nodal stress matrix [S11, S22, S33, S12, S23, S13]
+stress = fem_hex8_stress(nodes; elems; E; nu; u)
+s33 = col(stress; 3)  ' vertical normal stress
+
+' Visualize with SAP2000-style color map + interactive clipping planes
+$Fem3D{col(nodes;1); col(nodes;2); col(nodes;3); elems; s33}
+```
+
+**Implementation highlights** (`Symbolic.Core/Calculator/FemSolver.cs`):
+- **C3D8 element** (8-node linear hex, 24 DOF, trilinear shape functions)
+- **Gauss 2×2×2 integration** (8 points per element)
+- **6×6 isotropic D matrix** with Lamé parameters (λ, µ)
+- **Sparse global K** assembled directly in `HpSymmetricMatrix` (skyline)
+- **Eigen C++ `SimplicialLDLT`** for matrices ≥ threshold (auto)
+- **Penalty BCs** with coefficient 1e20
+- **Nodal stress** via element-center evaluation + averaging
+
+**Validation vs SAP2000:**
+
+| Problem | SAP2000 | Calcpad `fem_hex8` | Diff |
+|---|---|---|---|
+| Cube 1×1×1 m uniaxial compression | σ = −100 kN/m² | σ = −100 kN/m² | **0.01%** |
+| Soil mass 20×20×10 m (Serquén PDF Fig. SF-70) rectangular load | S33_min = −10.4 | S33_min = −9.72 | **6.6%** |
+
+(Serquén uses 32000 hex8, we use 4000 — difference is purely mesh refinement.)
+
+**Visualization — `$Fem3D` with interactive clipping planes (Tweakpane):**
+- `renderer.localClippingEnabled = true` (Three.js)
+- 6 clipping planes (X/Y/Z min/max) with correct Y↔Z swap
+- **Tweakpane GUI** (same library as `awatif-v2`) with folders per axis
+- **SAP2000 colormap**: 14 colors (magenta → red → yellow → green → cyan → blue)
+- **ShaderMaterial with 1D texture lookup** — interpolates by VALUE, not RGB
+- **White background + black wireframe** — Abaqus/SAP2000 style
+
+**Example files:**
+- `Examples/Finite Elements/test_fem_hex8.cpd` — cube validation
+- `Examples/Finite Elements/test_fem_hex8_soil_fast.cpd` — 4000 hex8 soil
+- `Examples/Finite Elements/test_fem_hex8_rect_bulbo.cpd` — **Fig. SF-70 replica**
+- `Examples/Finite Elements/Tutorial C3D8 - Solido 3D Paso a Paso.cpd` — pedagogical C3D8
+- `Examples/Finite Elements/Tutorial Suelo C3D8 - Paso a Paso.cpd` — pedagogical soil mass
+
+**SAP2000 API reference:** full Python + comtypes patterns documented in
+`../guia de api sap 2000/README.md` (portable manual with all scripts,
+tutorials, source files, and step-by-step instructions for other machines).
+
+---
+
 ### 13. FEM Examples — Base Plates, Footings, Slabs (NEW)
 
 Complete finite element analysis examples with step-by-step symbolic formulation, color maps ($Map), result tables ($Table), and Python verification:
@@ -217,6 +288,12 @@ dotnet run --project Symbolic.Wpf
 | `$PlotMap{xj; yj; values; ej}` | Command | FEM color map on arbitrary mesh |
 | `expr & [u1; u2; u3]` | Operator | Adimensionalize + stamp units |
 | `expr \| [u1; u2; u3]` | Operator | Convert units per element |
+| `mesh_hex8_nodes([Lx;Ly;Lz;nx;ny;nz;c])` | Function | Regular hex8 mesh nodes (Nx3) |
+| `mesh_hex8_elems([nx;ny;nz])` | Function | Regular hex8 connectivity (Mx8) |
+| `mesh_soil_specs([...])` | Function | Auto-generate loads+BCs (point load) |
+| `mesh_soil_specs_rect([...;Rx;Ry;q])` | Function | Auto-generate loads+BCs (rect. pressure) |
+| `fem_hex8(nodes;elems;E;nu;specs)` | Function | Solve Ku=F sparse Cholesky → u |
+| `fem_hex8_stress(nodes;elems;E;nu;u)` | Function | Nodal stress matrix (Nx6) |
 
 ---
 

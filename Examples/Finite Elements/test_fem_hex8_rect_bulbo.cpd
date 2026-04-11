@@ -1,0 +1,97 @@
+"Replica Fig. SF-70 del PDF Serquen — Bulbo de presiones S33 bajo carga rectangular
+'<hr/>
+'<b>Objetivo:</b> replicar exactamente la figura SF-70 del PDF:
+'  - Masa de suelo 20x20x10 m
+'  - Carga rectangular 5x3 m centrada en la superficie, w = 10 tonf/m²
+'  - Mostrar esfuerzos S33 FEM REALES (no Boussinesq analítico)
+'  - Corte XZ en Y=0 con clipping plane interactivo
+'
+'<b>Todo el pipeline es nativo C#:</b>
+'  1) mesh_hex8_nodes → genera coordenadas
+'  2) mesh_hex8_elems → genera conectividad
+'  3) mesh_soil_specs_rect → genera cargas distribuidas + BCs
+'  4) fem_hex8 → resuelve Ku=F (Cholesky sparse Eigen)
+'  5) fem_hex8_stress → calcula sigma_zz nodal real desde u
+
+"PASO 1) Datos (iguales al PDF Serquen)
+Lx = 20','Ly = 20','Lz = 10
+nx = 20','ny = 20','nz = 10
+Es = 2000','νs = 0.42
+'<b>Carga rectangular 5x3 m, w=10 tonf/m²:</b>
+Rx = 5','Ry = 3','w = 10
+'<b>Malla: 'nx*ny*nz' hex8, '(nx+1)*(ny+1)*(nz+1)' nudos, '3*(nx+1)*(ny+1)*(nz+1)' DOFs</b>
+
+"PASO 2) Generar malla y specs (100% nativo C#)
+params_dims = [Lx; Ly; Lz; nx; ny; nz; 1]
+nodes = mesh_hex8_nodes(params_dims)
+params_divs = [nx; ny; nz]
+elems = mesh_hex8_elems(params_divs)
+'<b>Specs con carga rectangular distribuida:</b>
+params_rect = [Lx; Ly; Lz; nx; ny; nz; 1; Rx; Ry; w]
+specs = mesh_soil_specs_rect(params_rect)
+'<b>Filas de specs (cargas + BCs):</b>
+n_rows(specs)
+
+"PASO 3) Resolver el sistema Ku = F
+'<b>fem_hex8 con Eigen Cholesky sparse — resuelve ~15k ecuaciones en segundos</b>
+u = fem_hex8(nodes; elems; Es; νs; specs)
+'<b>Longitud del vector solucion (3N):</b>
+len(u)
+
+"PASO 4) Calcular esfuerzos S33 reales desde u (nativo C#)
+'<b>fem_hex8_stress:</b> evalua sigma en el centro de cada elemento (xi=eta=zeta=0)
+'y promedia a los nudos circundantes. Retorna matriz Nx6 con [S11, S22, S33, S12, S23, S13].
+stress = fem_hex8_stress(nodes; elems; Es; νs; u)
+
+'Extraer columna S33 (vertical)
+s33 = col(stress; 3)
+'<b>S33 minimo (compresion, mas negativo):</b>
+s33_min = min(s33)
+s33_min
+'<b>S33 maximo:</b>
+s33_max = max(s33)
+s33_max
+'<b>En el PDF Fig SF-70: rango reportado -10.4 a +0 tonf/m² (inv. signo)</b>
+
+"PASO 5) Visualizacion 3D — Vista completa con clipping plane
+'Usa el panel Tweakpane de la derecha para activar corte XZ en Y=0
+'y ver el bulbo de presiones en el interior.
+Xn = col(nodes; 1)
+Yn = col(nodes; 2)
+Zn = col(nodes; 3)
+
+'<b>Vista 3D completa con colormap SAP2000 — activa "Eje Y" para cortar:</b>
+$Fem3D{Xn; Yn; Zn; elems; s33 @ w=750 & h=500}
+
+"PASO 6) Vista lateral del bulbo — corte XZ pre-extraido
+'Aqui extraemos automáticamente la rebanada central en Y para mostrar
+'directamente el bulbo sin necesidad de clippping manual.
+j_mid = floor(ny/2)
+n_slice = nz*nx
+elems_slice = matrix(n_slice; 8)
+#hide
+#for k = 0 : nz - 1
+    #for i = 0 : nx - 1
+        src_eid = k*nx*ny + j_mid*nx + i + 1
+        dst_eid = k*nx + i + 1
+        #for col = 1 : 8
+            elems_slice.(dst_eid; col) = elems.(src_eid; col)
+        #loop
+    #loop
+#loop
+#show
+
+'<b>Bulbo de presiones FEM (corte XZ en Y≈0) — ESTE es el equivalente de Fig. SF-70:</b>
+$Fem3D{Xn; Yn; Zn; elems_slice; s33 @ w=750 & h=500}
+
+"PASO 7) Conclusiones
+'<b>Comparacion con la figura SF-70 del PDF:</b>
+'- Rango reportado por Serquen: -10.4 a 0 tonf/m² (compresion)
+'- Rango calculado por nuestro fem_hex8: 's33_min' a 's33_max' tonf/m²
+'- El bulbo debe tener forma de "pera" con concentracion justo debajo
+'  del rectangulo cargado y decaimiento radial hacia abajo y los lados
+'
+'<b>Diferencias esperadas vs PDF:</b>
+'- PDF usa 40×40×20 = 32000 hex8 (malla mas fina)
+'- Nosotros usamos 20×20×10 = 4000 hex8 (mas gruesa para velocidad)
+'- El bulbo general debe ser visualmente identico

@@ -4,6 +4,7 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { Pane } from "tweakpane";
 import { getColormap } from "./utils/colormap";
 
 // Datos de entrada (serializados desde CalcpadCE C#)
@@ -39,26 +40,33 @@ export function fem3d(containerId: string, data: Fem3DData): void {
   const H = opts.height || 400;
   const defScale = opts.scale || 1;
   const showWire = opts.wireframe !== false;
-  const cmap = getColormap(opts.palette || "jet");
 
-  // Escena Three.js
+  // Detectar si hay elementos 3D (tet/hex) para aplicar estilo SAP2000 por defecto
+  const has3DSolids = data.elements.some(e => e.length === 4 || e.length === 8 ||
+                                                e.length === 10 || e.length === 20);
+  const defaultPalette = has3DSolids ? "sap2000" : "jet";
+  const cmap = getColormap(opts.palette || defaultPalette);
+
+  // Escena Three.js — fondo blanco estilo SAP2000
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1a1a2e);
+  scene.background = new THREE.Color(0xffffff);
 
   // Cámara perspectiva — near/far se ajustan al tamaño del modelo mas tarde
   const camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 100000);
 
   // Renderer WebGL — preserveDrawingBuffer permite screenshots
+  // localClippingEnabled=true permite clipping planes interactivos (corte del solido)
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
     preserveDrawingBuffer: true
   });
   renderer.setSize(W, H);
   renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.localClippingEnabled = true;
 
   // Wrapper flex: canvas + leyenda a la derecha (estilo Abaqus/SAP2000)
   const wrapper = document.createElement("div");
-  wrapper.style.cssText = "display:inline-flex; align-items:flex-start; gap:8px; background:#1a1a2e; padding:4px;";
+  wrapper.style.cssText = "display:inline-flex; align-items:flex-start; gap:8px; background:#ffffff; padding:4px; border:1px solid #888;";
   wrapper.appendChild(renderer.domElement);
   container.appendChild(wrapper);
 
@@ -92,9 +100,9 @@ export function fem3d(containerId: string, data: Fem3DData): void {
   camera.far = size * 100;
   camera.updateProjectionMatrix();
 
-  // Luces
-  scene.add(new THREE.AmbientLight(0x606060, 2));
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  // Luces: ambient alta + directional suave para no lavar los colores del contour
+  scene.add(new THREE.AmbientLight(0xffffff, 2.5));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.3);
   dirLight.position.set(tcx + size * 2, tcy + size * 2, tcz + size);
   scene.add(dirLight);
 
@@ -109,12 +117,14 @@ export function fem3d(containerId: string, data: Fem3DData): void {
   // Crear geometría de la malla FEM
   const geometry = new THREE.BufferGeometry();
   const positions: number[] = [];
-  const colors: number[] = [];
+  const colors: number[] = [];      // fallback cuando no hay valores
+  const scalars: number[] = [];     // valor normalizado [0,1] por vertice (para shader)
   const wirePositions: number[] = [];
 
   for (const elem of data.elements) {
     const verts: THREE.Vector3[] = [];
     const vertColors: [number, number, number][] = [];
+    const vertScalars: number[] = [];
 
     for (const ni of elem) {
       const [nx, ny, nz] = data.nodes[ni];
@@ -126,12 +136,14 @@ export function fem3d(containerId: string, data: Fem3DData): void {
       const [tx, ty, tz] = toThree(nx + ddx, ny + ddy, (nz || 0) + ddz);
       verts.push(new THREE.Vector3(tx, ty, tz));
 
-      // Color por valor
+      // Color por valor + scalar normalizado [0,1] para shader lookup
       if (data.values) {
         const t = (data.values[ni] - vmin) / (vmax - vmin);
+        vertScalars.push(t);
         const rgb = cmap(t);
         vertColors.push([rgb[0] / 255, rgb[1] / 255, rgb[2] / 255]);
       } else {
+        vertScalars.push(0);
         vertColors.push([0, 0.8, 0.4]);
       }
     }
@@ -248,6 +260,7 @@ export function fem3d(containerId: string, data: Fem3DData): void {
       positions.push(verts[b].x, verts[b].y, verts[b].z);
       positions.push(verts[c].x, verts[c].y, verts[c].z);
       colors.push(...vertColors[a], ...vertColors[b], ...vertColors[c]);
+      scalars.push(vertScalars[a], vertScalars[b], vertScalars[c]);
     }
 
     // Wireframe
@@ -262,22 +275,106 @@ export function fem3d(containerId: string, data: Fem3DData): void {
     }
   }
 
+  // Clipping planes (3 ejes + orientacion +/- = 6 planos posibles)
+  // Empiezan DESACTIVADOS (constante -∞) para mostrar el solido completo.
+  // El usuario los activa con sliders de UI (ver mas abajo).
+  // Nota: los planos estan en coordenadas Three.js (Y-arriba).
+  // Three.js axis:  x (rojo), y (verde=Z-ing), z (azul=Y-ing)
+  const hugeNeg = -1e12;
+  // Plano X (+): n=(1,0,0), clip fuera si x < const  → mostrar x >= const
+  // Plano X (-): n=(-1,0,0), clip fuera si x > const → mostrar x <= const
+  const clipXp = new THREE.Plane(new THREE.Vector3( 1, 0, 0), -hugeNeg);
+  const clipXn = new THREE.Plane(new THREE.Vector3(-1, 0, 0), -hugeNeg);
+  const clipYp = new THREE.Plane(new THREE.Vector3( 0, 1, 0), -hugeNeg);  // Three.js Y = eng Z
+  const clipYn = new THREE.Plane(new THREE.Vector3( 0,-1, 0), -hugeNeg);
+  const clipZp = new THREE.Plane(new THREE.Vector3( 0, 0, 1), -hugeNeg);  // Three.js Z = eng Y
+  const clipZn = new THREE.Plane(new THREE.Vector3( 0, 0,-1), -hugeNeg);
+  const clippingPlanes = [clipXp, clipXn, clipYp, clipYn, clipZp, clipZn];
+
   // Malla sólida
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   geometry.computeVertexNormals();
-  const material = new THREE.MeshLambertMaterial({
-    vertexColors: true,
-    side: THREE.DoubleSide,
-    transparent: false,
-  });
+
+  // Material: si hay valores, usar ShaderMaterial con lookup a textura 1D del colormap.
+  // Esto garantiza interpolacion CORRECTA por valor (no por RGB), imitando SAP2000/Abaqus.
+  let material: THREE.Material;
+  if (data.values && data.values.length > 0) {
+    // Construir textura 1D (N pixels) con el colormap
+    const N = 256;
+    const dataArr = new Uint8Array(N * 4);
+    for (let i = 0; i < N; i++) {
+      const t = i / (N - 1);
+      const rgb = cmap(t);
+      dataArr[i * 4 + 0] = rgb[0];
+      dataArr[i * 4 + 1] = rgb[1];
+      dataArr[i * 4 + 2] = rgb[2];
+      dataArr[i * 4 + 3] = 255;
+    }
+    const cmapTex = new THREE.DataTexture(dataArr, N, 1, THREE.RGBAFormat);
+    cmapTex.minFilter = THREE.LinearFilter;
+    cmapTex.magFilter = THREE.LinearFilter;
+    cmapTex.wrapS = THREE.ClampToEdgeWrapping;
+    cmapTex.wrapT = THREE.ClampToEdgeWrapping;
+    cmapTex.needsUpdate = true;
+
+    // Pasar el scalar [0,1] como atributo vertex
+    geometry.setAttribute("scalar", new THREE.Float32BufferAttribute(scalars, 1));
+
+    material = new THREE.ShaderMaterial({
+      uniforms: {
+        cmap: { value: cmapTex },
+        ambient: { value: 0.85 },
+      },
+      vertexShader: `
+        attribute float scalar;
+        varying float vScalar;
+        varying vec3 vNormal;
+        void main() {
+          vScalar = scalar;
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D cmap;
+        uniform float ambient;
+        varying float vScalar;
+        varying vec3 vNormal;
+        void main() {
+          // Lookup del colormap usando el valor escalar interpolado
+          // (interpolacion por VALOR, luego se aplica el colormap)
+          vec3 color = texture2D(cmap, vec2(clamp(vScalar, 0.0, 1.0), 0.5)).rgb;
+          // Iluminacion suave: ambiente alto + leve shading
+          vec3 lightDir = normalize(vec3(0.5, 0.8, 0.6));
+          float diff = max(dot(vNormal, lightDir), 0.0);
+          float shade = ambient + (1.0 - ambient) * diff;
+          gl_FragColor = vec4(color * shade, 1.0);
+        }
+      `,
+      side: THREE.DoubleSide,
+      transparent: false,
+      clippingPlanes: clippingPlanes,
+      clipShadows: true,
+    });
+  } else {
+    material = new THREE.MeshLambertMaterial({
+      vertexColors: true,
+      side: THREE.DoubleSide,
+      transparent: false,
+      clippingPlanes: clippingPlanes,
+    });
+  }
   scene.add(new THREE.Mesh(geometry, material));
 
-  // Wireframe (bordes)
+  // Wireframe (bordes) — negro sólido estilo SAP2000 (tambien clippeado)
   if (showWire && wirePositions.length > 0) {
     const wireGeo = new THREE.BufferGeometry();
     wireGeo.setAttribute("position", new THREE.Float32BufferAttribute(wirePositions, 3));
-    const wireMat = new THREE.LineBasicMaterial({ color: 0x000000, opacity: 0.5, transparent: true });
+    const wireMat = new THREE.LineBasicMaterial({
+      color: 0x000000, opacity: 0.85, transparent: true, linewidth: 1.5,
+      clippingPlanes: clippingPlanes,
+    });
     scene.add(new THREE.LineSegments(wireGeo, wireMat));
   }
 
@@ -293,14 +390,14 @@ export function fem3d(containerId: string, data: Fem3DData): void {
 
   // Leyenda de color (estilo Abaqus/SAP2000) — barra lateral con valores
   if (data.values && data.values.length > 0) {
-    const nBands = 12;
+    const nBands = 14;  // SAP2000 usa 14 bandas por defecto (13 colores + extremos)
     const legendH = H;
     const legend = document.createElement("div");
-    legend.style.cssText = "display:flex; flex-direction:column; color:#fff; font-family:sans-serif; font-size:11px; padding:4px 2px; height:" + legendH + "px; flex-shrink:0;";
+    legend.style.cssText = "display:flex; flex-direction:column; color:#000; font-family:sans-serif; font-size:11px; padding:4px 2px; height:" + legendH + "px; flex-shrink:0;";
 
     // Titulo (pequeño, arriba)
     const legendTitle = document.createElement("div");
-    legendTitle.style.cssText = "text-align:center; font-size:10px; color:#ccc; margin-bottom:3px; padding:0 4px; flex-shrink:0;";
+    legendTitle.style.cssText = "text-align:center; font-size:10px; color:#333; margin-bottom:3px; padding:0 4px; flex-shrink:0;";
     legendTitle.textContent = opts.title || "Value";
     legend.appendChild(legendTitle);
 
@@ -308,9 +405,9 @@ export function fem3d(containerId: string, data: Fem3DData): void {
     const bandsContainer = document.createElement("div");
     bandsContainer.style.cssText = "display:flex; flex-direction:row; flex:1; min-height:0;";
 
-    // Barra de color (bandas discretas como Abaqus)
+    // Barra de color (bandas discretas como Abaqus/SAP2000)
     const colorBar = document.createElement("div");
-    colorBar.style.cssText = "display:flex; flex-direction:column; width:22px; border:1px solid #666; flex-shrink:0;";
+    colorBar.style.cssText = "display:flex; flex-direction:column; width:22px; border:1px solid #333; flex-shrink:0;";
 
     // Labels numericos (uno por cada banda + extremos)
     const labelCol = document.createElement("div");
@@ -331,7 +428,7 @@ export function fem3d(containerId: string, data: Fem3DData): void {
       const t = 1 - i / (nLabels - 1);
       const val = vmin + t * (vmax - vmin);
       const label = document.createElement("div");
-      label.style.cssText = "white-space:nowrap; text-align:left; color:#fff;";
+      label.style.cssText = "white-space:nowrap; text-align:left; color:#000;";
       // Formato numero: cientifico si es muy chico o muy grande
       const absVal = Math.abs(val);
       let txt: string;
@@ -347,6 +444,98 @@ export function fem3d(containerId: string, data: Fem3DData): void {
     legend.appendChild(bandsContainer);
     wrapper.appendChild(legend);
   }
+
+  // --- Panel UI de Clipping Planes con Tweakpane (estilo awatif-v2/ParaView) ---
+  // Permite cortar el solido con planos X/Y/Z para ver contornos internos.
+  // Convencion de ejes:
+  //   X (ingenieria) = X (Three.js)
+  //   Y (ingenieria) = Z (Three.js)  ← por el swap Y↔Z
+  //   Z (ingenieria) = Y (Three.js)
+  const clipContainer = document.createElement("div");
+  clipContainer.style.cssText = "margin-top:6px; max-width:" + W + "px;";
+  container.appendChild(clipContainer);
+
+  // Parametros del clipping (bindings de Tweakpane)
+  const clipParams = {
+    xMin: (xmin + xmax) / 2,
+    xMax: (xmin + xmax) / 2,
+    yMin: (ymin + ymax) / 2,
+    yMax: (ymin + ymax) / 2,
+    zMin: (zmin + zmax) / 2,
+    zMax: (zmin + zmax) / 2,
+    enableXMin: false,
+    enableXMax: false,
+    enableYMin: false,
+    enableYMax: false,
+    enableZMin: false,
+    enableZMax: false,
+  };
+
+  // Actualizar los planos de clipping segun el estado actual
+  const updateClipping = () => {
+    // X: sin swap
+    clipXp.constant = clipParams.enableXMin ? -clipParams.xMin : -hugeNeg;
+    clipXn.constant = clipParams.enableXMax ?  clipParams.xMax : -hugeNeg;
+    // Y_eng → Z_three
+    clipZp.constant = clipParams.enableYMin ? -clipParams.yMin : -hugeNeg;
+    clipZn.constant = clipParams.enableYMax ?  clipParams.yMax : -hugeNeg;
+    // Z_eng → Y_three
+    clipYp.constant = clipParams.enableZMin ? -clipParams.zMin : -hugeNeg;
+    clipYn.constant = clipParams.enableZMax ?  clipParams.zMax : -hugeNeg;
+  };
+
+  const pane = new Pane({
+    title: "Clipping Planes (corte del solido)",
+    expanded: true,
+    container: clipContainer,
+  });
+
+  const makeAxisFolder = (
+    axisEng: "X" | "Y" | "Z",
+    rangeMin: number,
+    rangeMax: number
+  ) => {
+    const folder = pane.addFolder({ title: `Eje ${axisEng}`, expanded: false });
+    const lowKey = (axisEng.toLowerCase() + "Min") as keyof typeof clipParams;
+    const highKey = (axisEng.toLowerCase() + "Max") as keyof typeof clipParams;
+    const enLow = ("enable" + axisEng + "Min") as keyof typeof clipParams;
+    const enHigh = ("enable" + axisEng + "Max") as keyof typeof clipParams;
+    folder.addBinding(clipParams, enLow, { label: `${axisEng} ≥` })
+      .on("change", updateClipping);
+    folder.addBinding(clipParams, lowKey, {
+      label: `  min`,
+      min: rangeMin,
+      max: rangeMax,
+      step: (rangeMax - rangeMin) / 200,
+    }).on("change", updateClipping);
+    folder.addBinding(clipParams, enHigh, { label: `${axisEng} ≤` })
+      .on("change", updateClipping);
+    folder.addBinding(clipParams, highKey, {
+      label: `  max`,
+      min: rangeMin,
+      max: rangeMax,
+      step: (rangeMax - rangeMin) / 200,
+    }).on("change", updateClipping);
+    return folder;
+  };
+
+  makeAxisFolder("X", xmin, xmax);
+  makeAxisFolder("Y", ymin, ymax);
+  makeAxisFolder("Z", zmin, zmax);
+
+  // Boton: Quitar todos los cortes
+  pane.addButton({ title: "Quitar todos los cortes" }).on("click", () => {
+    clipParams.enableXMin = false;
+    clipParams.enableXMax = false;
+    clipParams.enableYMin = false;
+    clipParams.enableYMax = false;
+    clipParams.enableZMin = false;
+    clipParams.enableZMax = false;
+    pane.refresh();
+    updateClipping();
+  });
+
+  updateClipping();
 
   // Loop de animación
   function animate() {

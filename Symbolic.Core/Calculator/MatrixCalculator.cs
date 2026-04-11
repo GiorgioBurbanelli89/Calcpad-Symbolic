@@ -70,6 +70,10 @@ namespace Calcpad.Core
             { "fft", 36 },
             { "ift", 37 },
             { "lu", 38 },
+            { "mesh_hex8_nodes", 39 },
+            { "mesh_hex8_elems", 40 },
+            { "mesh_soil_specs", 41 },
+            { "mesh_soil_specs_rect", 42 },
         }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
         internal static readonly FrozenDictionary<string, int> Function2Index =
@@ -165,6 +169,8 @@ namespace Calcpad.Core
         new Dictionary<string, int>()
         {
             { "submatrix", 0 },
+            { "fem_hex8", 1 },
+            { "fem_hex8_stress", 2 },
         }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
         internal static readonly FrozenDictionary<string, int> MultiFunctionIndex =
@@ -225,6 +231,11 @@ namespace Calcpad.Core
                 ClrUnits,               // 35
                 Fft,                    // 36
                 Ift,                    // 37
+                Transpose,              // 38 — lu has special handling (LuIndex), this slot is unreachable
+                MeshHex8Nodes,          // 39
+                MeshHex8Elems,          // 40
+                MeshSoilSpecs,          // 41
+                MeshSoilSpecsRect,      // 42
             ];
 
             MatrixFunctions2 = [
@@ -301,7 +312,9 @@ namespace Calcpad.Core
             ];
 
             MatrixFunctions5 = [
-                Submatrix
+                Submatrix,              // 0
+                FemHex8,                // 1
+                FemHex8Stress,          // 2
             ];
 
             MatrixMultiFunctions = [
@@ -910,6 +923,101 @@ namespace Calcpad.Core
         }
 
         private static Matrix Submatrix(Matrix M, in IValue i1, in IValue j1, in IValue i2, in IValue j2) => M.Submatrix(IValue.AsInt(i1), IValue.AsInt(j1), IValue.AsInt(i2), IValue.AsInt(j2));
+
+        /// <summary>Generate hex8 box mesh nodes from parameter vector [Lx; Ly; Lz; nx; ny; nz; centered?].</summary>
+        private static Matrix MeshHex8Nodes(in IValue p) => FemSolver.GenerateNodesBox(IValue.AsVector(p));
+
+        /// <summary>Generate hex8 box mesh element connectivity from parameter vector [nx; ny; nz].</summary>
+        private static Matrix MeshHex8Elems(in IValue p) => FemSolver.GenerateElemsBox(IValue.AsVector(p));
+
+        /// <summary>Generate specs (loads+BCs) for standard soil box problem: [Lx; Ly; Lz; nx; ny; nz; centered; Pz].</summary>
+        private static Matrix MeshSoilSpecs(in IValue p) => FemSolver.GenerateSoilBoxSpecs(IValue.AsVector(p));
+
+        /// <summary>Generate specs for soil box with RECTANGULAR distributed load: [Lx;Ly;Lz;nx;ny;nz;centered;Rx;Ry;q].</summary>
+        private static Matrix MeshSoilSpecsRect(in IValue p) => FemSolver.GenerateSoilBoxSpecsRect(IValue.AsVector(p));
+
+        /// <summary>
+        /// Native FEM hex8 solver: solves Ku=F for a mesh of C3D8 elements using
+        /// sparse Cholesky (Eigen C++) with penalty-method BCs. Up to 30K elements in seconds.
+        ///
+        /// Signature: fem_hex8(nodes, elements, E, nu, specs)
+        ///   nodes:    Matrix Nx3 (x, y, z)
+        ///   elements: Matrix Mx8 (1-based node ids)
+        ///   E:        Young's modulus (scalar)
+        ///   nu:       Poisson ratio (scalar)
+        ///   specs:    Matrix Nspec x 5 with format:
+        ///               row[0] = 1  -> load:  [1, nodeId, fx, fy, fz]
+        ///               row[0] = 2  -> bc:    [2, dofIdx, fixedValue, 0, 0]
+        ///             Where dofIdx = 3*(nodeId-1)+direction (direction 1=x, 2=y, 3=z).
+        /// Returns: Vector u of length 3N (ux1, uy1, uz1, ux2, uy2, uz2, ...).
+        /// </summary>
+        private static Vector FemHex8(Matrix nodes, in IValue elementsVal, in IValue Eval, in IValue nuVal, in IValue specsVal)
+        {
+            var elements = IValue.AsMatrix(elementsVal);
+            var specs = IValue.AsMatrix(specsVal);
+            double E = IValue.AsReal(Eval).D;
+            double nu = IValue.AsReal(nuVal).D;
+
+            int nN = nodes.RowCount;
+            int ndof = 3 * nN;
+
+            // Split specs into loads matrix and bcs matrix
+            int nLoads = 0, nBcs = 0;
+            int nSpecs = specs.RowCount;
+            for (int i = 0; i < nSpecs; i++)
+            {
+                int type = (int)specs[i, 0].D;
+                if (type == 1) nLoads++;
+                else if (type == 2) nBcs++;
+            }
+
+            var loadsMat = new Matrix(nLoads, 4);
+            var bcsMat = new Matrix(nBcs, 2);
+            int li = 0, bi = 0;
+            for (int i = 0; i < nSpecs; i++)
+            {
+                int type = (int)specs[i, 0].D;
+                if (type == 1)
+                {
+                    loadsMat[li, 0] = specs[i, 1];  // nodeId
+                    loadsMat[li, 1] = specs[i, 2];  // fx
+                    loadsMat[li, 2] = specs[i, 3];  // fy
+                    loadsMat[li, 3] = specs[i, 4];  // fz
+                    li++;
+                }
+                else if (type == 2)
+                {
+                    bcsMat[bi, 0] = specs[i, 1];    // dofIdx
+                    bcsMat[bi, 1] = specs[i, 2];    // fixedValue
+                    bi++;
+                }
+            }
+
+            return FemSolver.SolveHex8(nodes, elements, E, nu, loadsMat, bcsMat);
+        }
+
+        /// <summary>
+        /// Compute nodal stress matrix from displacements.
+        ///
+        /// Signature: fem_hex8_stress(nodes, elems, E, nu, u)
+        ///   nodes: Matrix Nx3 (x,y,z)
+        ///   elems: Matrix Mx8 (1-based connectivity)
+        ///   E:     Young's modulus
+        ///   nu:    Poisson ratio
+        ///   u:     Vector 3N of displacements (ux1,uy1,uz1, ux2,...)
+        /// Returns: Matrix Nx6 with [S11, S22, S33, S12, S23, S13] per node.
+        ///   - col(result; 1) = S11 (sigma_xx)
+        ///   - col(result; 2) = S22 (sigma_yy)
+        ///   - col(result; 3) = S33 (sigma_zz) ← lo mas usado para bulbo de presiones
+        /// </summary>
+        private static Matrix FemHex8Stress(Matrix nodes, in IValue elementsVal, in IValue Eval, in IValue nuVal, in IValue uVal)
+        {
+            var elements = IValue.AsMatrix(elementsVal);
+            double E = IValue.AsReal(Eval).D;
+            double nu = IValue.AsReal(nuVal).D;
+            var u = IValue.AsVector(uVal);
+            return FemSolver.ComputeStressHex8(u, nodes, elements, E, nu);
+        }
         internal static Matrix JoinCols(IValue[] v)
         {
             var n = v.Length;

@@ -84,9 +84,32 @@ export function turbo(t: number): [number, number, number] {
   ]);
 }
 
+// SAP2000 default contour colormap — replica EXACTA del "Display Deformed Shape → Contours"
+// Orden observado en SAP2000 (de abajo/min hacia arriba/max en la leyenda):
+//   min → magenta → rosa → rojo → naranja → amarillo → verde → cian → azul → max (azul oscuro)
+// Este es el colormap clásico de SAP2000/CSiBridge/ETABS para shells y solids
+export function sap2000(t: number): [number, number, number] {
+  return lerpTable(t, [
+    [0.000, 255,   0, 255],  // magenta (min)
+    [0.077, 255,   0, 180],  // rosa
+    [0.154, 255,   0,   0],  // rojo
+    [0.231, 255,  80,   0],  // rojo-naranja
+    [0.308, 255, 140,   0],  // naranja
+    [0.385, 255, 190,   0],  // amarillo-naranja
+    [0.462, 255, 255,   0],  // amarillo
+    [0.538, 180, 255,   0],  // amarillo-verde
+    [0.615,   0, 255,   0],  // verde
+    [0.692,   0, 255, 180],  // verde-cian
+    [0.769,   0, 255, 255],  // cian
+    [0.846,   0, 180, 255],  // cian-azul
+    [0.923,   0,   0, 255],  // azul
+    [1.000,   0,   0, 180],  // azul oscuro (max)
+  ]);
+}
+
 // Mapas disponibles por nombre
 const colormaps: Record<string, (t: number) => [number, number, number]> = {
-  jet, rainbow, viridis, coolwarm, turbo,
+  jet, rainbow, viridis, coolwarm, turbo, sap2000,
 };
 
 // Obtener colormap por nombre (default: jet)
