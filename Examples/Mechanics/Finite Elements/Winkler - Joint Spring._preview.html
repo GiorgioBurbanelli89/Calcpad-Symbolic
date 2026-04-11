@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Winkler - Joint Spring</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+body { font-family: Calibri, sans-serif; max-width: 900px; margin: 2em auto; padding: 0 1em; line-height: 1.5; }
+h1 { color: #333; border-bottom: 2px solid #ccc; padding-bottom: 0.3em; }
+h2 { color: #555; }
+h3 { color: #666; }
+.math-region { background: #f8f9fa; border-left: 3px solid #4a90d9; padding: 8px 12px; margin: 8px 0; font-family: 'Times New Roman', serif; font-size: 14pt; }
+.text-region { margin: 4px 0; }
+.comment { color: #888; font-style: italic; font-size: 0.9em; }
+.plot-placeholder { background: #eef; border: 1px dashed #99c; padding: 20px; text-align: center; color: #66a; margin: 8px 0; }
+table { border-collapse: collapse; margin: 8px 0; }
+td, th { border: 1px solid #ccc; padding: 4px 8px; text-align: right; }
+</style>
+</head><body>
+<h1>Winkler - Joint Spring</h1>
+<h2>Resortes Winkler — Joint Spring (Resortes Puntuales)</h2>
+<div class="text-region"><hr/></div>
+<div class="text-region">Cada nodo recibe un resorte puntual con rigidez proporcional a su area tributaria:</div>
+<div class="math-region">$$k_{nodo} = k_s \cdot A_trib$$</div>
+<div class="text-region">Para malla uniforme de lado d_e:</div>
+<div class="text-region">• Interior:'k_nodo = k_s*d_e^2</div>
+<div class="text-region">• Borde:'k_nodo = k_s*d_e^2/2</div>
+<div class="text-region">• Esquina:'k_nodo = k_s*d_e^2/4</div>
+<div class="text-region">En SAP2000: se asigna como <b>Joint Spring UZ</b> a cada nodo.</div>
+<h2>1. Datos</h2>
+<div class="text-region">Zapata -'Lz = 2 m','Bz = 2 m','tz = 500 mm</div>
+<div class="text-region">Columna centrada -'Lc = 400 mm</div>
+<div class="text-region">Concreto -'Ec = 25000 MPa','νc = 0.2</div>
+<div class="math-region">$$Gc = \frac{Ec}{(2 \cdot (1 + νc))}$$</div>
+<div class="text-region">Factor corte -'κc = 5/6</div>
+<div class="text-region">Subgrade modulus -'ks = 0.000002 tf/mm/mm</div>
+<div class="text-region"><b>k_s = 20000 kN/m³</b></div>
+<div class="text-region">Carga -'Pu = 100 tf</div>
+<h2>2. Solucion FEM — MITC4 + Joint Spring</h2>
+<div class="math-region">$$Ew = Ec & MPa$$</div>
+<div class="math-region">$$tw = tz & mm$$</div>
+<div class="math-region">$$Lw = Lz & m$$</div>
+<div class="math-region">$$Lw = Lw \cdot 1000$$</div>
+<div class="math-region">$$Bw = Bz & m$$</div>
+<div class="math-region">$$Bw = Bw \cdot 1000$$</div>
+<div class="math-region">$$Lcw = Lc & mm$$</div>
+<div class="math-region">$$Gw = \frac{Ew}{(2 \cdot (1 + νc))}$$</div>
+<div class="math-region">$$PuN = Pu & tf$$</div>
+<div class="math-region">$$PuN = PuN \cdot 9806.65$$</div>
+<div class="math-region">$$kwN = ks & tf/mm/mm$$</div>
+<div class="math-region">$$kwN = kwN \cdot 9806.65$$</div>
+<div class="math-region">$$nd = 3$$</div>
+<div class="math-region">$$ne1 = 8$$</div>
+<div class="math-region">$$de = \frac{Lw}{ne1}$$</div>
+<div class="math-region">$$nj1 = ne1 + 1$$</div>
+<div class="math-region">$$nj = nj1^2$$</div>
+<div class="math-region">$$ne = ne1^2$$</div>
+<div class="math-region">$$nt = nd \cdot nj$$</div>
+<div class="math-region">$$xj = vector(nj)$$</div>
+<div class="math-region">$$yj = vector(nj)$$</div>
+<div class="comment">&#39; #for j = 0 : ne1</div>
+<div class="comment">&#39; 	#for i = 0 : ne1</div>
+<div class="math-region">$$k = j \cdot nj1 + i + 1$$</div>
+<div class="math-region">$$xj.k = i \cdot de$$</div>
+<div class="math-region">$$yj.k = j \cdot de$$</div>
+<div class="comment">&#39; 	#loop</div>
+<div class="comment">&#39; #loop</div>
+<div class="math-region">$$ej = matrix(ne; 4)$$</div>
+<div class="comment">&#39; #for j = 0 : ne1 - 1</div>
+<div class="comment">&#39; 	#for i = 0 : ne1 - 1</div>
+<div class="math-region">$$e = j \cdot ne1 + i + 1$$</div>
+<div class="math-region">$$bl = j \cdot nj1 + i + 1$$</div>
+<div class="math-region">$$ej.(e, 1) = bl$$</div>
+<div class="math-region">$$ej.(e, 2) = bl + 1$$</div>
+<div class="math-region">$$ej.(e, 3) = bl + nj1 + 1$$</div>
+<div class="math-region">$$ej.(e, 4) = bl + nj1$$</div>
+<div class="comment">&#39; 	#loop</div>
+<div class="comment">&#39; #loop</div>
+<div class="math-region">$$Dbm = Ew \cdot tw^3/(12 \cdot (1 - νc^2)) \cdot [1; νc; 0|νc; 1; 0|0; 0; (1 - νc)/2]$$</div>
+<div class="math-region">$$Dsm = κc \cdot Gw \cdot tw \cdot [1; 0|0; 1]$$</div>
+<div class="math-region">$$gp = \frac{1}{\sqrt{3)}$$</div>
+<div class="math-region">$$nk = 12$$</div>
+<div class="math-region">$$dN1x(\eta) = \frac{-(1 - η)}{4}$$</div>
+<div class="math-region">$$dN2x(\eta) = \frac{(1 - η)}{4}$$</div>
+<div class="math-region">$$dN3x(\eta) = \frac{(1 + η)}{4}$$</div>
+<div class="math-region">$$dN4x(\eta) = \frac{-(1 + η)}{4}$$</div>
+<div class="math-region">$$dN1y(\xi) = \frac{-(1 - ξ)}{4}$$</div>
+<div class="math-region">$$dN2y(\xi) = \frac{-(1 + ξ)}{4}$$</div>
+<div class="math-region">$$dN3y(\xi) = \frac{(1 + ξ)}{4}$$</div>
+<div class="math-region">$$dN4y(\xi) = \frac{(1 - ξ)}{4}$$</div>
+<div class="math-region">$$K = symmetric(nt)$$</div>
+<div class="comment">&#39; #for e = 1 : ne</div>
+<div class="math-region">$$i1 = ej.(e; 1)$$</div>
+<div class="math-region">$$i3 = ej.(e; 3)$$</div>
+<div class="math-region">$$dx = xj.i3 - xj.i1$$</div>
+<div class="math-region">$$dy = yj.i3 - yj.i1$$</div>
+<div class="math-region">$$J11 = \frac{dx}{2}$$</div>
+<div class="math-region">$$J22 = \frac{dy}{2}$$</div>
+<div class="math-region">$$detJ = J11 \cdot J22$$</div>
+<div class="math-region">$$Ke = symmetric(nk)$$</div>
+<div class="comment">&#39; 	#for ig = 1 : 4</div>
+<div class="comment">&#39; 		#if ig ≡ 1</div>
+<div class="math-region">$$ξg = -gp$$</div>
+<div class="math-region">$$ηg = -gp$$</div>
+<div class="comment">&#39; 		#else if ig ≡ 2</div>
+<div class="math-region">$$ξg = gp$$</div>
+<div class="math-region">$$ηg = -gp$$</div>
+<div class="comment">&#39; 		#else if ig ≡ 3</div>
+<div class="math-region">$$ξg = gp$$</div>
+<div class="math-region">$$ηg = gp$$</div>
+<div class="comment">&#39; 		#else</div>
+<div class="math-region">$$ξg = -gp$$</div>
+<div class="math-region">$$ηg = gp$$</div>
+<div class="comment">&#39; 		#end if</div>
+<div class="math-region">$$dx1 = \frac{dN1x(ηg)}{J11}$$</div>
+<div class="math-region">$$dy1 = \frac{dN1y(ξg)}{J22}$$</div>
+<div class="math-region">$$dx2 = \frac{dN2x(ηg)}{J11}$$</div>
+<div class="math-region">$$dy2 = \frac{dN2y(ξg)}{J22}$$</div>
+<div class="math-region">$$dx3 = \frac{dN3x(ηg)}{J11}$$</div>
+<div class="math-region">$$dy3 = \frac{dN3y(ξg)}{J22}$$</div>
+<div class="math-region">$$dx4 = \frac{dN4x(ηg)}{J11}$$</div>
+<div class="math-region">$$dy4 = \frac{dN4y(ξg)}{J22}$$</div>
+<div class="math-region">$$Bb = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _$$</div>
+<div class="math-region">$$0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _$$</div>
+<div class="math-region">$$0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]$$</div>
+<div class="math-region">$$BtDB = transp(Bb) \cdot Dbm \cdot Bb \cdot detJ$$</div>
+<div class="comment">&#39; 		#for i = 1 : nk</div>
+<div class="comment">&#39; 			#for j = i : nk</div>
+<div class="math-region">$$Ke.(i, j) = Ke.(i; j) + BtDB.(i; j)$$</div>
+<div class="comment">&#39; 			#loop</div>
+<div class="comment">&#39; 		#loop</div>
+<div class="comment">&#39; 	#loop</div>
+<div class="comment">&#39; 	#for ig = 1 : 4</div>
+<div class="comment">&#39; 		#if ig ≡ 1</div>
+<div class="math-region">$$ξg = -gp$$</div>
+<div class="math-region">$$ηg = -gp$$</div>
+<div class="comment">&#39; 		#else if ig ≡ 2</div>
+<div class="math-region">$$ξg = gp$$</div>
+<div class="math-region">$$ηg = -gp$$</div>
+<div class="comment">&#39; 		#else if ig ≡ 3</div>
+<div class="math-region">$$ξg = gp$$</div>
+<div class="math-region">$$ηg = gp$$</div>
+<div class="comment">&#39; 		#else</div>
+<div class="math-region">$$ξg = -gp$$</div>
+<div class="math-region">$$ηg = gp$$</div>
+<div class="comment">&#39; 		#end if</div>
+<div class="math-region">$$Bs = matrix(2; nk)$$</div>
+<div class="comment">&#39; 		#for it = 1 : 2</div>
+<div class="comment">&#39; 			#if it ≡ 1</div>
+<div class="math-region">$$ηt = -1$$</div>
+<div class="comment">&#39; 			#else</div>
+<div class="math-region">$$ηt = 1$$</div>
+<div class="comment">&#39; 			#end if</div>
+<div class="math-region">$$wt = \frac{(1 + ηt \cdot ηg)}{2}$$</div>
+<div class="math-region">$$dt1 = \frac{dN1x(ηt)}{J11}$$</div>
+<div class="math-region">$$dt2 = \frac{dN2x(ηt)}{J11}$$</div>
+<div class="math-region">$$dt3 = \frac{dN3x(ηt)}{J11}$$</div>
+<div class="math-region">$$dt4 = \frac{dN4x(ηt)}{J11}$$</div>
+<div class="math-region">$$Nt1 = \frac{(1 - ξg) \cdot (1 - ηt)}{4}$$</div>
+<div class="math-region">$$Nt2 = \frac{(1 + ξg) \cdot (1 - ηt)}{4}$$</div>
+<div class="math-region">$$Nt3 = \frac{(1 + ξg) \cdot (1 + ηt)}{4}$$</div>
+<div class="math-region">$$Nt4 = \frac{(1 - ξg) \cdot (1 + ηt)}{4}$$</div>
+<div class="math-region">$$Bs.(1, 1) = Bs.(1; 1) + wt \cdot dt1$$</div>
+<div class="math-region">$$Bs.(1, 3) = Bs.(1; 3) - wt \cdot Nt1$$</div>
+<div class="math-region">$$Bs.(1, 4) = Bs.(1; 4) + wt \cdot dt2$$</div>
+<div class="math-region">$$Bs.(1, 6) = Bs.(1; 6) - wt \cdot Nt2$$</div>
+<div class="math-region">$$Bs.(1, 7) = Bs.(1; 7) + wt \cdot dt3$$</div>
+<div class="math-region">$$Bs.(1, 9) = Bs.(1; 9) - wt \cdot Nt3$$</div>
+<div class="math-region">$$Bs.(1, 10) = Bs.(1; 10) + wt \cdot dt4$$</div>
+<div class="math-region">$$Bs.(1, 12) = Bs.(1; 12) - wt \cdot Nt4$$</div>
+<div class="comment">&#39; 		#loop</div>
+<div class="comment">&#39; 		#for it = 1 : 2</div>
+<div class="comment">&#39; 			#if it ≡ 1</div>
+<div class="math-region">$$ξt = -1$$</div>
+<div class="comment">&#39; 			#else</div>
+<div class="math-region">$$ξt = 1$$</div>
+<div class="comment">&#39; 			#end if</div>
+<div class="math-region">$$wt = \frac{(1 + ξt \cdot ξg)}{2}$$</div>
+<div class="math-region">$$dt1 = \frac{dN1y(ξt)}{J22}$$</div>
+<div class="math-region">$$dt2 = \frac{dN2y(ξt)}{J22}$$</div>
+<div class="math-region">$$dt3 = \frac{dN3y(ξt)}{J22}$$</div>
+<div class="math-region">$$dt4 = \frac{dN4y(ξt)}{J22}$$</div>
+<div class="math-region">$$Nt1 = \frac{(1 - ξt) \cdot (1 - ηg)}{4}$$</div>
+<div class="math-region">$$Nt2 = \frac{(1 + ξt) \cdot (1 - ηg)}{4}$$</div>
+<div class="math-region">$$Nt3 = \frac{(1 + ξt) \cdot (1 + ηg)}{4}$$</div>
+<div class="math-region">$$Nt4 = \frac{(1 - ξt) \cdot (1 + ηg)}{4}$$</div>
+<div class="math-region">$$Bs.(2, 1) = Bs.(2; 1) + wt \cdot dt1$$</div>
+<div class="math-region">$$Bs.(2, 2) = Bs.(2; 2) + wt \cdot Nt1$$</div>
+<div class="math-region">$$Bs.(2, 4) = Bs.(2; 4) + wt \cdot dt2$$</div>
+<div class="math-region">$$Bs.(2, 5) = Bs.(2; 5) + wt \cdot Nt2$$</div>
+<div class="math-region">$$Bs.(2, 7) = Bs.(2; 7) + wt \cdot dt3$$</div>
+<div class="math-region">$$Bs.(2, 8) = Bs.(2; 8) + wt \cdot Nt3$$</div>
+<div class="math-region">$$Bs.(2, 10) = Bs.(2; 10) + wt \cdot dt4$$</div>
+<div class="math-region">$$Bs.(2, 11) = Bs.(2; 11) + wt \cdot Nt4$$</div>
+<div class="comment">&#39; 		#loop</div>
+<div class="math-region">$$BtDBs = transp(Bs) \cdot Dsm \cdot Bs \cdot detJ$$</div>
+<div class="comment">&#39; 		#for i = 1 : nk</div>
+<div class="comment">&#39; 			#for j = i : nk</div>
+<div class="math-region">$$Ke.(i, j) = Ke.(i; j) + BtDBs.(i; j)$$</div>
+<div class="comment">&#39; 			#loop</div>
+<div class="comment">&#39; 		#loop</div>
+<div class="comment">&#39; 	#loop</div>
+<div class="comment">&#39; 	#for i = 1 : 4</div>
+<div class="comment">&#39; 		#for j = i : 4</div>
+<div class="math-region">$$j1 = ej.(e; i)$$</div>
+<div class="math-region">$$j2 = ej.(e; j)$$</div>
+<div class="math-region">$$i1 = nd \cdot (j1 - 1) + 1$$</div>
+<div class="math-region">$$i2 = nd \cdot (j2 - 1) + 1$$</div>
+<div class="math-region">$$kij = submatrix(Ke; nd \cdot (i - 1) + 1; nd \cdot i; nd \cdot (j - 1) + 1; nd \cdot j)$$</div>
+<div class="comment">&#39; 			#if j1 &gt; j2</div>
+<div class="math-region">$$add(transp(kij); K; i2; i1)$$</div>
+<div class="comment">&#39; 			#else</div>
+<div class="math-region">$$add(kij; K; i1; i2)$$</div>
+<div class="comment">&#39; 			#end if</div>
+<div class="comment">&#39; 		#loop</div>
+<div class="comment">&#39; 	#loop</div>
+<div class="comment">&#39; #loop</div>
+<div class="text-region">--- Resortes Joint Spring: k_nodo = ks × A_trib ---</div>
+<div class="comment">&#39; #for j = 0 : ne1</div>
+<div class="comment">&#39; 	#for i = 0 : ne1</div>
+<div class="math-region">$$k = j \cdot nj1 + i + 1$$</div>
+<div class="comment">&#39; 		#if i ≡ 0 ∨ i ≡ ne1</div>
+<div class="math-region">$$txk = \frac{de}{2}$$</div>
+<div class="comment">&#39; 		#else</div>
+<div class="math-region">$$txk = de$$</div>
+<div class="comment">&#39; 		#end if</div>
+<div class="comment">&#39; 		#if j ≡ 0 ∨ j ≡ ne1</div>
+<div class="math-region">$$tyk = \frac{de}{2}$$</div>
+<div class="comment">&#39; 		#else</div>
+<div class="math-region">$$tyk = de$$</div>
+<div class="comment">&#39; 		#end if</div>
+<div class="math-region">$$K.(nd*(k - 1) + 1; nd*(k - 1) + 1) = K.(nd \cdot (k - 1) + 1; nd \cdot (k - 1) + 1) + kwN \cdot txk \cdot tyk$$</div>
+<div class="comment">&#39; 	#loop</div>
+<div class="comment">&#39; #loop</div>
+<div class="math-region">$$F = vector(nt)$$</div>
+<div class="math-region">$$xc = \frac{Lw}{2}$$</div>
+<div class="math-region">$$yc = \frac{Bw}{2}$$</div>
+<div class="math-region">$$qc = \frac{PuN}{(Lcw^2)}$$</div>
+<div class="comment">&#39; #for j = 0 : ne1</div>
+<div class="comment">&#39; 	#for i = 0 : ne1</div>
+<div class="math-region">$$k = j \cdot nj1 + i + 1$$</div>
+<div class="comment">&#39; 		#if abs(xj.k - xc) ≤ Lcw/2 + de/2 ∧ abs(yj.k - yc) ≤ Lcw/2 + de/2</div>
+<div class="math-region">$$txk = de$$</div>
+<div class="math-region">$$tyk = de$$</div>
+<div class="comment">&#39; 			#if i ≡ 0 ∨ i ≡ ne1</div>
+<div class="math-region">$$txk = \frac{de}{2}$$</div>
+<div class="comment">&#39; 			#end if</div>
+<div class="comment">&#39; 			#if j ≡ 0 ∨ j ≡ ne1</div>
+<div class="math-region">$$tyk = \frac{de}{2}$$</div>
+<div class="comment">&#39; 			#end if</div>
+<div class="math-region">$$F.(nd*(k - 1) + 1) = F.(nd \cdot (k - 1) + 1) - qc \cdot txk \cdot tyk$$</div>
+<div class="comment">&#39; 		#end if</div>
+<div class="comment">&#39; 	#loop</div>
+<div class="comment">&#39; #loop</div>
+<div class="math-region">$$kint = kwN \cdot de \cdot de$$</div>
+<div class="math-region">$$kedge = \frac{kwN \cdot de \cdot de}{2}$$</div>
+<div class="math-region">$$kcorn = \frac{kwN \cdot de \cdot de}{4}$$</div>
+<div class="text-region">Rigidez Joint Spring por nodo:</div>
+<div class="text-region">  Interior: k = k_s × d_e² = 'round(kint*100)/100' N/mm</div>
+<div class="text-region">  Borde: k = k_s × d_e²/2 = 'round(kedge*100)/100' N/mm</div>
+<div class="text-region">  Esquina: k = k_s × d_e²/4 = 'round(kcorn*100)/100' N/mm</div>
+<div class="text-region">  SAP2000: Joint Spring UZ = 'round(kint/1000*100)/100' kN/m (interior)</div>
+<div class="math-region">$$Z = clsolve(K; F)$$</div>
+<div class="math-region">$$kc = (ne1/2) \cdot nj1 + ne1/2 + 1$$</div>
+<div class="math-region">$$wc = Z.(nd \cdot (kc - 1) + 1)$$</div>
+<div class="math-region">$$qc_{tonf} = \frac{kwN \cdot wc}{9806.65 \cdot 10^6}$$</div>
+<h2>3. Resultados</h2>
+<div class="text-region"><b>w_centro = </b>'round(wc*10000)/10000' mm</div>
+<div class="text-region"><b>q_centro = k_s × w = </b>'round(qc_tonf*100)/100' tonf/m²</div>
+<div class="text-region">q_promedio = P/A = 'round(PuN/9806.65/(Lw*Bw/10^6)*100)/100' tonf/m²</div>
+<h2>4. Color Maps</h2>
+<div class="math-region">$$Wz = matrix(nj1; nj1)$$</div>
+<div class="math-region">$$Qz = matrix(nj1; nj1)$$</div>
+<div class="comment">&#39; #for j = 0 : ne1</div>
+<div class="comment">&#39; 	#for i = 0 : ne1</div>
+<div class="math-region">$$k = j \cdot nj1 + i + 1$$</div>
+<div class="math-region">$$Wz.(i + 1, j + 1) = Z.(nd \cdot (k - 1) + 1)$$</div>
+<div class="math-region">$$Qz.(i + 1, j + 1) = \frac{kwN \cdot Z.(nd \cdot (k - 1) + 1)}{9806.65 \cdot 10^6}$$</div>
+<div class="comment">&#39; 	#loop</div>
+<div class="comment">&#39; #loop</div>
+<div class="math-region">$$wm(x, y) = spline(1 + x \cdot ne1/Lw; 1 + y \cdot ne1/Bw; Wz)$$</div>
+<div class="math-region">$$qm(x, y) = spline(1 + x \cdot ne1/Lw; 1 + y \cdot ne1/Bw; Qz)$$</div>
+<div class="comment">&#39; PlotWidth = 200&#39;,&#39;PlotHeight = 200&#39;,&#39;PlotStep = 20</div>
+<h3>4.1 Deflexion w (mm)</h3>
+<div class="plot-placeholder">[$Map{wm(x; y) @ x = 0 : Lw &amp; y = 0 : Bw}]</div>
+<h3>4.2 Presion de contacto q (tonf/m&#178;)</h3>
+<div class="plot-placeholder">[$Map{qm(x; y) @ x = 0 : Lw &amp; y = 0 : Bw}]</div>
+<h2>5. Nota</h2>
+<div class="text-region">En SAP2000: Joint Spring <b>no</b> habilita "Soil Pressure" en Display.</div>
+<div class="text-region">La presion se calcula manualmente: q = k_nodo × w / A_trib.</div>
+<div class="text-region">Para ver Soil Pressure en SAP2000, usar <b>Area Spring</b> (ver ejemplo aparte).</div>
+<hr><p style="color:#999;font-size:0.8em;">Generated by CpdToMcdx — Hekatan Calc</p>
+</body></html>

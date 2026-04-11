@@ -1,0 +1,140 @@
+"Elemento Cuadrilatero Q4 — Membrana (Integracion Gaussiana 2×2)
+'<hr/>
+'Calculo de la matriz de rigidez de un elemento cuadrilatero de 4 nodos
+'(membrana - estado plano de esfuerzos) usando integracion numerica Gauss 2×2.
+'Ref: Yabar Ingenieros — Modulo 05, HE-03 (Alexis Pompilla Yabar)
+
+"1. Datos del elemento
+'Coordenadas de los nodos (in):
+Xn = [3; 5; 5; 3]'~~~'Yn = [2; 2; 4; 4]'~~~'Nodos = [1; 2; 3; 4]
+$Table{Nodos; Xn; Yn @ "Nodo"; "X (in)"; "Y (in)" & fmt=0 & row=0}
+'Material:
+'Modulo de elasticidad -'Ep = 30*10^6
+'(psi)
+'Coeficiente de Poisson -'νp = 0.25
+'Espesor -'tp = 1
+'(in)
+
+"2. Funciones de interpolacion
+'Funciones de forma bilineal (coordenadas naturales ξ, η):
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+
+"3. Interpolacion de coordenadas
+xc(ξ; η) = N_1(ξ; η)*Xn.1 + N_2(ξ; η)*Xn.2 + N_3(ξ; η)*Xn.3 + N_4(ξ; η)*Xn.4
+yc(ξ; η) = N_1(ξ; η)*Yn.1 + N_2(ξ; η)*Yn.2 + N_3(ξ; η)*Yn.3 + N_4(ξ; η)*Yn.4
+
+"4. Matriz constitutiva (estado plano de esfuerzos)
+D = Ep/(1 - νp^2)*[1; νp; 0|νp; 1; 0|0; 0; (1 - νp)/2]
+D
+
+"5. Matriz de ampliacion
+'Transforma derivadas de forma (4×8) a deformaciones (3×4):
+Ia = [1; 0; 0; 0|0; 0; 0; 1|0; 1; 1; 0]
+Ia
+
+"6. Derivadas de las funciones de forma
+'Respecto a ξ:
+#sym diff((1 - ξ)*(1 - η)/4; ξ)
+#sym diff((1 + ξ)*(1 - η)/4; ξ)
+#sym diff((1 + ξ)*(1 + η)/4; ξ)
+#sym diff((1 - ξ)*(1 + η)/4; ξ)
+'Respecto a η:
+#sym diff((1 - ξ)*(1 - η)/4; η)
+#sym diff((1 + ξ)*(1 - η)/4; η)
+#sym diff((1 + ξ)*(1 + η)/4; η)
+#sym diff((1 - ξ)*(1 + η)/4; η)
+#hide
+dN1dξ(η) = -(1 - η)/4
+dN2dξ(η) = (1 - η)/4
+dN3dξ(η) = (1 + η)/4
+dN4dξ(η) = -(1 + η)/4
+dN1dη(ξ) = -(1 - ξ)/4
+dN2dη(ξ) = -(1 + ξ)/4
+dN3dη(ξ) = (1 + ξ)/4
+dN4dη(ξ) = (1 - ξ)/4
+#show
+
+"7. Puntos de Gauss (2×2)
+gp = 1/sqr(3)
+ξg = [-gp; gp; gp; -gp]
+ηg = [-gp; gp; -gp; gp]
+Wg = [1; 1; 1; 1]
+$Table{ξg; ηg; Wg @ "ξ"; "η"; "W" & fmt=4 & row=1}
+
+"8. Ensamblaje de rigidez
+#hide
+Kele = matrix(8; 8)
+#for k = 1 : 4
+	ξk = ξg.k','ηk = ηg.k
+	'--- Derivadas de N respecto a ξ y η ---
+	dNdξ = [dN1dξ(ηk); dN2dξ(ηk); dN3dξ(ηk); dN4dξ(ηk)]
+	dNdη = [dN1dη(ξk); dN2dη(ξk); dN3dη(ξk); dN4dη(ξk)]
+	'--- Jacobiano J(2x2) ---
+	J11 = dNdξ.1*Xn.1 + dNdξ.2*Xn.2 + dNdξ.3*Xn.3 + dNdξ.4*Xn.4
+	J12 = dNdξ.1*Yn.1 + dNdξ.2*Yn.2 + dNdξ.3*Yn.3 + dNdξ.4*Yn.4
+	J21 = dNdη.1*Xn.1 + dNdη.2*Xn.2 + dNdη.3*Xn.3 + dNdη.4*Xn.4
+	J22 = dNdη.1*Yn.1 + dNdη.2*Yn.2 + dNdη.3*Yn.3 + dNdη.4*Yn.4
+	Jm = [J11; J12|J21; J22]
+	detJk = J11*J22 - J12*J21
+	'--- Inversa del Jacobiano ---
+	Jinv = (1/detJk)*[J22; -J12|-J21; J11]
+	'--- Gamma ampliada 4x4 ---
+	Ga = [Jinv.(1;1); Jinv.(1;2); 0; 0|Jinv.(2;1); Jinv.(2;2); 0; 0|0; 0; Jinv.(1;1); Jinv.(1;2)|0; 0; Jinv.(2;1); Jinv.(2;2)]
+	'--- dN matrix 4x8 ---
+	dN = [dNdξ.1; 0; dNdξ.2; 0; dNdξ.3; 0; dNdξ.4; 0|dNdη.1; 0; dNdη.2; 0; dNdη.3; 0; dNdη.4; 0|0; dNdξ.1; 0; dNdξ.2; 0; dNdξ.3; 0; dNdξ.4|0; dNdη.1; 0; dNdη.2; 0; dNdη.3; 0; dNdη.4]
+	'--- B = Ia * Ga * dN ---
+	Bk = Ia*Ga*dN
+	'--- φk = Bt * D * B * detJ * t ---
+	phik = transp(Bk)*D*Bk*detJk*tp
+	'--- Acumular en Kele ---
+	#for i = 1 : 8
+		#for j = 1 : 8
+			Kele.(i; j) = Kele.(i; j) + Wg.k*phik.(i; j)
+		#loop
+	#loop
+#loop
+
+"9. Matriz de rigidez del elemento
+#show
+'<b>K_ele (in × 10⁴ psi):</b>
+#hide
+Kd = matrix(8; 8)
+#for i = 1 : 8
+	#for j = 1 : 8
+		Kd.(i; j) = round(Kele.(i; j)/10000*1000)/1000
+	#loop
+#loop
+#show
+Kd
+'(Valores en unidades de 10⁴ psi·in)
+'<b>Verificacion: K(1,1) = </b>'round(Kele.(1; 1)*100)/100' psi·in
+'Referencia MathCad: K(1,1) = 14666670 psi·in
+'<b>Ratio = </b>'round(Kele.(1; 1)/14666670*10000)/10000
+
+"10. Propiedades de la matriz
+'<b>Simetria:</b>
+#hide
+maxdiff = 0
+#for i = 1 : 7
+	#for j = i + 1 : 8
+		dij = abs(Kele.(i; j) - Kele.(j; i))
+		#if dij > maxdiff
+			maxdiff = dij
+		#end if
+	#loop
+#loop
+#show
+'Maxima diferencia K(i,j) - K(j,i) = 'maxdiff
+'<b>Diagonal positiva:</b>
+#hide
+mindiag = Kele.(1; 1)
+#for i = 2 : 8
+	#if Kele.(i; i) < mindiag
+		mindiag = Kele.(i; i)
+	#end if
+#loop
+#show
+'Minimo diagonal = 'round(mindiag*100)/100' psi·in > 0 ✓
