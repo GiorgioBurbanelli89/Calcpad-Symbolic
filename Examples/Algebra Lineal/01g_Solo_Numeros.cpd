@@ -1,0 +1,93 @@
+#margen 20
+"Norma y Producto Punto — Solo con numeros
+
+"NORMA
+
+'Tienes 2 numeros: 3 y 4.
+'Paso 1: eleva cada uno al cuadrado.
+a_1 = 3^2
+a_2 = 4^2
+
+'Paso 2: suma los cuadrados.
+a_s = a_1 + a_2
+
+'Paso 3: saca la raiz cuadrada.
+a_r = sqrt(a_s)
+
+'Eso es la norma. Nada mas.
+'Es Pitagoras: la hipotenusa del triangulo 3-4-5.
+
+"Otro ejemplo: numeros 1, 2, 3
+b_1 = 1^2
+b_2 = 2^2
+b_3 = 3^2
+b_s = b_1 + b_2 + b_3
+b_r = sqrt(b_s)
+
+"Otro: numeros 5, 0
+c_1 = 5^2
+c_2 = 0^2
+c_s = c_1 + c_2
+c_r = sqrt(c_s)
+
+'Si un numero es 0, no aporta nada.
+
+#pgb
+"PRODUCTO PUNTO
+
+'Tienes 2 listas de numeros.
+'Lista 1: 2, 5, 3
+'Lista 2: 4, 1, 6
+
+'Paso 1: multiplica cada par (posicion con posicion).
+p_1 = 2*4
+p_2 = 5*1
+p_3 = 3*6
+
+'Paso 2: suma todo.
+p_s = p_1 + p_2 + p_3
+
+'Eso es el producto punto. Nada mas.
+'Multiplicar par a par y sumar.
+
+"Otro ejemplo
+'Lista 1: 10, 0
+'Lista 2: 3, 7
+
+q_1 = 10*3
+q_2 = 0*7
+q_s = q_1 + q_2
+
+'El 0 hace que el segundo par no aporte nada.
+
+"Otro ejemplo
+'Lista 1: 10, 0
+'Lista 2: 0, 7
+
+r_1 = 10*0
+r_2 = 0*7
+r_s = r_1 + r_2
+
+'Todo da cero. Ningun par coincide.
+
+"Otro ejemplo
+'Lista 1: 3, 4
+'Lista 2: 3, 4 (la misma lista)
+
+s_1 = 3*3
+s_2 = 4*4
+s_s = s_1 + s_2
+
+'Cuando multiplicas una lista por si misma, el resultado es
+'la suma de cuadrados. Eso es la norma al cuadrado.
+s_raiz = sqrt(s_s)
+
+'Norma de [3, 4] = 5. Es lo mismo.
+
+#pgb
+"RESUMEN
+
+'<b>Norma</b>: elevar al cuadrado, sumar, raiz.
+'<b>Producto punto</b>: multiplicar par a par, sumar.
+'<b>Si haces producto punto de una lista consigo misma, obtienes la norma al cuadrado.</b>
+#end margen

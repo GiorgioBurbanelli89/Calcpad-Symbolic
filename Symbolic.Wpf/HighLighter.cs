@@ -509,6 +509,15 @@ namespace Calcpad.Wpf
             "#function",
             "#end function",
             "#deq",
+            "#end deq",
+            "#inl",
+            "#blk",
+            "#end blk",
+            "#cen",
+            "#end cen",
+            "#margen",
+            "#end margen",
+            "#pgb",
             "#sym",
             "#end sym",
             "#python",
@@ -528,6 +537,9 @@ namespace Calcpad.Wpf
             "#round",
             "#format",
             "#deq",
+            "#inl",
+            "#cen",
+            "#margen",
             "#sym",
             "#pip",
         }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
@@ -1646,7 +1658,12 @@ namespace Calcpad.Wpf
             // Skip error checking for #deq and #sym lines (display-only / symbolic)
             var kw = _state.Keyword;
             if (kw != null && (kw.Equals("#deq", StringComparison.OrdinalIgnoreCase) ||
-                               kw.Equals("#sym", StringComparison.OrdinalIgnoreCase)))
+                               kw.Equals("#sym", StringComparison.OrdinalIgnoreCase) ||
+                               kw.Equals("#inl", StringComparison.OrdinalIgnoreCase) ||
+                               kw.Equals("#blk", StringComparison.OrdinalIgnoreCase) ||
+                               kw.Equals("#cen", StringComparison.OrdinalIgnoreCase) ||
+                               kw.Equals("#margen", StringComparison.OrdinalIgnoreCase) ||
+                               kw.Equals("#pgb", StringComparison.OrdinalIgnoreCase)))
                 return t;
 
             if (t == Types.Function)

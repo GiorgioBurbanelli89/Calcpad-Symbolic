@@ -1,0 +1,75 @@
+#margen 20
+"Escalar vs Vector — Es lo mismo
+
+"CON ESCALARES (como ya entiendes)
+
+"Producto punto con escalares
+a1 = 2
+a2 = 5
+a3 = 3
+b1 = 4
+b2 = 1
+b3 = 6
+dp_escalar = a1*b1 + a2*b2 + a3*b3
+
+"Norma con escalares
+n_escalar = sqrt(a1^2 + a2^2 + a3^2)
+
+#pgb
+"CON VECTORES (es lo mismo pero escrito junto)
+
+"Los mismos numeros pero en una lista
+va = [2; 5; 3]
+vb = [4; 1; 6]
+
+"Producto punto con vectores
+dp_vector = dot(va; vb)
+
+"Norma con vectores
+n_vector = norm(va)
+
+#pgb
+"COMPARACION
+
+#blk
+dp_escalar ; dp_vector ; 'producto punto
+n_escalar ; n_vector ; 'norma
+#end blk
+
+'<b>Son iguales.</b>
+'El vector es solo una forma de escribir los mismos numeros juntos.
+'En vez de escribir a1, a2, a3 por separado, escribes [a1; a2; a3].
+
+#pgb
+"Por que escribirlos juntos?
+
+"Con escalares: 6 variables para 2 puntos
+x1 = 3
+y1 = 4
+x2 = 7
+y2 = 1
+dist_esc = sqrt((x2 - x1)^2 + (y2 - y1)^2)
+
+"Con vectores: 2 variables para 2 puntos
+p1 = [3; 4]
+p2 = [7; 1]
+dif = p2 - p1
+dist_vec = norm(dif)
+
+#blk
+dist_esc ; 'con escalares
+dist_vec ; 'con vectores
+#end blk
+
+'El resultado es el mismo.
+'Con vectores se escribe menos y se lee mejor.
+'Cuando tienes 100 numeros, no puedes usar 100 variables separadas.
+
+#pgb
+"RESUMEN
+
+'Un <b>vector</b> es solo una lista de numeros escritos juntos.
+'<b>dot()</b> hace lo mismo que multiplicar par a par y sumar — pero en una linea.
+'<b>norm()</b> hace lo mismo que elevar, sumar y raiz — pero en una linea.
+'No es magia. Es la misma aritmetica empaquetada.
+#end margen

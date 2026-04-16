@@ -45,6 +45,15 @@ namespace Calcpad.Wpf
             items.Add(new ListBoxItem() { Content = "#def", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "#deg", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "#deq", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "#end deq", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "#inl", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "#blk", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "#end blk", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "#cen", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "#end cen", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "#margen", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "#end margen", Foreground = Brushes.DarkMagenta });
+            items.Add(new ListBoxItem() { Content = "#pgb", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "#else if", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "#else", Foreground = Brushes.DarkMagenta });
             items.Add(new ListBoxItem() { Content = "#end def", Foreground = Brushes.DarkMagenta });
