@@ -1,0 +1,197 @@
+"Diseno de Placa Base con Pernos de Anclaje - AISC 360
+
+"1. Datos de entrada
+
+"1.1 Columna de acero
+'Perfil -'W = 250'mm (ancho del ala)
+'Peralte -'d_c = 300'mm
+'Carga axial ultima -'P_u = 600'kN
+'Momento ultimo -'M_u = 80'kN·m
+'Cortante ultimo -'V_u = 50'kN
+
+"1.2 Materiales
+'Acero de la placa (A36) -'F_y = 250'MPa
+'Acero de los pernos (A307) -'F_nt = 310'MPa
+'Concreto del pedestal -'f_c = 21'MPa
+
+"1.3 Factores LRFD
+'Factor de resistencia (flexion) -'φ_b = 0.90
+'Factor de resistencia (aplastamiento) -'φ_c = 0.65
+'Factor de resistencia (traccion pernos) -'φ_t = 0.75
+
+"2. Dimensionamiento de la placa base
+
+"2.1 Presion de aplastamiento
+'Presion maxima admisible del concreto (AISC J8):
+f_p = φ_c*0.85*f_c
+'Presion admisible -'f_p'MPa
+
+"2.2 Dimensiones de la placa
+'Margen fuera de la columna -'Δ = 75'mm
+'Ancho de la placa -'B_p = W + 2*Δ
+'Largo de la placa -'N_p = d_c + 2*Δ
+'Area de la placa -'A_p = B_p*N_p/10^6
+A_p'm²
+
+"2.3 Verificacion de excentricidad
+e = M_u/P_u*1000
+'Excentricidad -'e'mm
+'Limite del kern -'N_p/6'mm
+#if e > N_p/6
+	'e > N/6 → Distribucion parcial. Se necesitan pernos de anclaje a traccion.
+#else
+	'e < N/6 → Distribucion completa. Placa totalmente comprimida.
+#end if
+
+"2.4 Visualizacion
+#hide
+sc = 0.6
+ps = 30
+Bs = B_p*sc
+Ns = N_p*sc
+Ws = W*sc
+ds = d_c*sc
+sx = ps + (Bs - Ws)/2
+sy = ps + (Ns - ds)/2
+cx = ps + Bs/2
+cy = ps + Ns/2
+pb = 30
+#show
+#svg Bs+2*ps Ns+2*ps+30
+.text cx ps-5 "Placa_Base_-_Vista_en_Planta" 10 navy middle bold
+.rect ps ps Bs Ns lightgray 0.4 black 1.5
+.rect sx sy Ws ds lightyellow 0.6 gray 1
+.text cx cy "Columna" 10 black middle
+.line ps cy-Ns/2-5 ps+Bs cy-Ns/2-5 black 0.5
+.text cx cy-Ns/2-12 B_p 10 blue middle
+.line ps-8 ps ps-8 ps+Ns black 0.5
+.text ps-15 cy N_p 10 blue middle
+.circle ps+pb ps+pb 5 red 0.8 darkred 1.5
+.circle ps+Bs-pb ps+pb 5 red 0.8 darkred 1.5
+.circle ps+pb ps+Ns-pb 5 red 0.8 darkred 1.5
+.circle ps+Bs-pb ps+Ns-pb 5 red 0.8 darkred 1.5
+.text ps+pb+8 ps+pb "Perno" 7 red start
+.arrow cx cy-45 cx cy-5 green 1.5
+.text cx+5 cy-35 "P" 11 green start bold
+.arrow cx-20 cy+35 cx-20 cy+5 orange 1
+.arrow cx+20 cy+35 cx+20 cy+5 orange 1
+.text cx cy+42 "M" 10 orange middle
+.dashed ps+Bs/2 ps ps+Bs/2 ps+Ns gray 0.5 4
+.text cx+5 ps+3 "e" 9 purple start
+.line cx cy-Ns/2+ps cx+e*sc cy-Ns/2+ps purple 1
+#end svg
+
+"3. Diseno por presion de aplastamiento
+
+"3.1 Presiones en la base
+'Presion maxima (borde comprimido):
+q_max = P_u/(A_p*1000) + 6*M_u/(B_p*N_p^2*10^-6)
+q_max'MPa
+'Presion minima:
+q_min = P_u/(A_p*1000) - 6*M_u/(B_p*N_p^2*10^-6)
+q_min'MPa
+#if q_min < 0
+	'q_min < 0 → Hay traccion. Los pernos deben resistir la traccion.
+#else
+	'q_min > 0 → Toda la base esta en compresion. OK.
+#end if
+
+"3.2 Verificacion de aplastamiento
+'q_max ='q_max'MPa
+'f_p ='f_p'MPa
+#if q_max > f_p
+	'q_max > f_p → La placa necesita ser mas grande.
+	'Area requerida: A_req = P_u/(f_p*1000):
+	A_req = P_u/(f_p*1000)
+	A_req'm²
+#else
+	'q_max < f_p → Verificacion de aplastamiento OK.
+#end if
+
+"4. Espesor de la placa base
+
+"4.1 Voladizos criticos (AISC Design Guide 1)
+'Voladizo en direccion N -
+m_v = (N_p - 0.95*d_c)/2
+m_v'mm
+'Voladizo en direccion B -
+n_v = (B_p - 0.80*W)/2
+n_v'mm
+'Voladizo critico (maximo) -
+l_c = max(m_v; n_v)
+l_c'mm
+
+"4.2 Momento en la seccion critica
+'Presion de diseno (conservador, usar q_max) -
+M_pl = q_max*l_c^2/2
+M_pl'N·mm/mm
+
+"4.3 Espesor requerido
+'Espesor por flexion -
+t_req = sqr(4*M_pl/(φ_b*F_y))
+t_req'mm
+'Espesor adoptado (redondeado a multiplo de 5mm) -
+t_p = (floor(t_req/5) + 1)*5
+t_p'mm
+
+"5. Pernos de anclaje
+
+"5.1 Datos de los pernos
+'Diametro del perno -'d_b = 20'mm
+'Area del perno -'A_b = 3.14159*(d_b/2)^2
+A_b'mm²
+'Numero de pernos -'n_p = 4
+'Distancia del perno al borde de la placa -'e_p = 30'mm
+
+"5.2 Fuerzas en los pernos
+#if q_min < 0
+	'Traccion total en los pernos (lado traccionado):
+	'Brazo del par interno -
+	d_t = N_p - 2*e_p
+	d_t'mm
+	T_u = M_u*1000/d_t - P_u*1000/(2*n_p)
+	'Traccion total -'T_u'N
+	'Traccion por perno (2 pernos traccionados) -
+	T_pb = T_u/2
+	T_pb'N
+#else
+	T_pb = 0
+	'No hay traccion en los pernos (toda la base comprimida).
+#end if
+
+"5.3 Resistencia a traccion del perno
+'Resistencia nominal a traccion -
+R_nt = F_nt*A_b
+R_nt'N
+'Resistencia de diseno -
+φR_nt = φ_t*R_nt
+φR_nt'N
+#if T_pb > 0
+	'T_pb ='T_pb'N
+	'φR_nt ='φR_nt'N
+	#if T_pb > φR_nt
+		'T_pb > φR_nt → Pernos INSUFICIENTES. Aumentar diametro o numero.
+	#else
+		'T_pb < φR_nt → Pernos OK.
+	#end if
+#end if
+
+"5.4 Resistencia al corte
+'Corte por perno -
+V_pb = V_u*1000/n_p
+V_pb'N
+'Resistencia al corte (A307, hilo en plano de corte) -
+F_nv = 0.40*F_nt
+φR_nv = φ_t*F_nv*A_b
+φR_nv'N
+'V_pb ='V_pb'N < 'φR_nv'N → OK
+
+"6. Resumen
+
+"6.1 Placa base
+'Dimensiones: 'B_p' x 'N_p' x 't_p' mm
+'Presion maxima: 'q_max' MPa (admisible: 'f_p' MPa)
+
+"6.2 Pernos de anclaje
+'Cantidad: 'n_p' pernos de diametro 'd_b' mm
+'Material: A307 (F_nt = 'F_nt' MPa)

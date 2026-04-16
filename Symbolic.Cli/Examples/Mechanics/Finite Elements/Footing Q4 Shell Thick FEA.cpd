@@ -1,0 +1,457 @@
+"Zapata Aislada — Shell Thick Q4 (Mindlin-Reissner)
+"Carga axial P + Momentos Mx, My en el centroide
+"Integración Reducida Selectiva (SRI): 2×2 flexión, 1×1 cortante
+'<hr/>
+"1. Datos de entrada
+'Unidades: kN, m
+'Dimensiones de la zapata -'B_z = 2.5', 'L_z = 3.0
+'Espesor -'t = 0.5
+'Módulo de elasticidad (25 GPa) -'E = 25000000
+'Razón de Poisson -'ν = 0.2
+'Factor de corrección de cortante -'κ_s = 5/6
+'<p><b>Cargas en el centroide:</b></p>
+'Carga axial -'P = -500
+'Momento en X -'M_x = 80
+'Momento en Y -'M_y = 120
+'<p><b>Suelo:</b></p>
+'Módulo de balasto -'k_s = 20000
+G = E/(2*(1 + ν))
+D_0 = E*t^3/(12*(1 - ν^2))
+'<hr/>
+"2. Funciones de forma Q4
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+dN1_dξ(η) = -(1 - η)/4
+dN2_dξ(η) = (1 - η)/4
+dN3_dξ(η) = (1 + η)/4
+dN4_dξ(η) = -(1 + η)/4
+dN1_dη(ξ) = -(1 - ξ)/4
+dN2_dη(ξ) = -(1 + ξ)/4
+dN3_dη(ξ) = (1 + ξ)/4
+dN4_dη(ξ) = (1 - ξ)/4
+'<hr/>
+"3. Malla de elementos finitos
+'Losa cuadrada para simetría
+B_z_orig = B_z
+L_z_orig = L_z
+n_x = 20
+n_y = 20
+n_e = n_x*n_y
+n_j = (n_x + 1)*(n_y + 1)
+el_x = B_z/n_x
+el_y = L_z/n_y
+n_dn = 3
+n_dof = n_dn*n_j
+#hide
+n_1 = n_x + 1
+x_j = vector(n_j)
+y_j = vector(n_j)
+#for j = 0 : n_y
+	#for i = 0 : n_x
+		k = j*n_1 + i + 1
+		x_j.k = i*el_x
+		y_j.k = j*el_y
+	#loop
+#loop
+e_j = matrix(n_e; 4)
+#for j = 0 : n_y - 1
+	#for i = 0 : n_x - 1
+		e = j*n_x + i + 1
+		bl = j*n_1 + i + 1
+		e_j.(e; 1) = bl
+		e_j.(e; 2) = bl + 1
+		e_j.(e; 3) = bl + n_1 + 1
+		e_j.(e; 4) = bl + n_1
+	#loop
+#loop
+' Nodo central (centroide)
+i_c = n_x/2
+j_c = n_y/2
+n_center = j_c*n_1 + i_c + 1
+' Crear cargas para visualización
+F_loads = matrix(1; 3)
+F_loads.(1; 1) = n_center
+F_loads.(1; 2) = 0
+F_loads.(1; 3) = P/10
+#show
+'Malla: 'n_x' × 'n_y' = 'n_e' elementos, 'n_j' nodos, 'n_dof' DOFs
+'Nodo centroide: 'n_center
+$Fem2D{x_j; y_j; e_j @ w=450 & h=500 & title=Zapata aislada (malla) & loads=F_loads}
+'<hr/>
+"4. Matrices constitutivas
+D_b = D_0*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+D_s_mat = κ_s*G*t*[1; 0|0; 1]
+'<hr/>
+"5. Matriz de rigidez del elemento
+J_11 = el_x/2
+J_22 = el_y/2
+det_J = J_11*J_22
+g = 1/sqr(3)
+#hide
+n_k = 12
+K_e = symmetric(n_k)
+' === FLEXIÓN: 2×2 Gauss ===
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g','η_g = -g
+	#else if ig ≡ 2
+		ξ_g = g','η_g = -g
+	#else if ig ≡ 3
+		ξ_g = g','η_g = g
+	#else
+		ξ_g = -g','η_g = g
+	#end if
+	dNdx_1 = dN1_dξ(η_g)/J_11','dNdy_1 = dN1_dη(ξ_g)/J_22
+	dNdx_2 = dN2_dξ(η_g)/J_11','dNdy_2 = dN2_dη(ξ_g)/J_22
+	dNdx_3 = dN3_dξ(η_g)/J_11','dNdy_3 = dN3_dη(ξ_g)/J_22
+	dNdx_4 = dN4_dξ(η_g)/J_11','dNdy_4 = dN4_dη(ξ_g)/J_22
+	B_b = [0; dNdx_1; 0; 0; dNdx_2; 0; 0; dNdx_3; 0; 0; dNdx_4; 0 | _
+	       0; 0; dNdy_1; 0; 0; dNdy_2; 0; 0; dNdy_3; 0; 0; dNdy_4 | _
+	       0; dNdy_1; dNdx_1; 0; dNdy_2; dNdx_2; 0; dNdy_3; dNdx_3; 0; dNdy_4; dNdx_4]
+	K_bend = transp(B_b)*D_b*B_b*det_J
+	#for i = 1 : n_k
+		#for j = i : n_k
+			K_e.(i; j) = K_e.(i; j) + K_bend.(i; j)
+		#loop
+	#loop
+#loop
+' === CORTANTE: 2×2 Gauss (integración completa — evita hourglass con Winkler) ===
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g','η_g = -g
+	#else if ig ≡ 2
+		ξ_g = g','η_g = -g
+	#else if ig ≡ 3
+		ξ_g = g','η_g = g
+	#else
+		ξ_g = -g','η_g = g
+	#end if
+	dNdx_1 = dN1_dξ(η_g)/J_11','dNdy_1 = dN1_dη(ξ_g)/J_22
+	dNdx_2 = dN2_dξ(η_g)/J_11','dNdy_2 = dN2_dη(ξ_g)/J_22
+	dNdx_3 = dN3_dξ(η_g)/J_11','dNdy_3 = dN3_dη(ξ_g)/J_22
+	dNdx_4 = dN4_dξ(η_g)/J_11','dNdy_4 = dN4_dη(ξ_g)/J_22
+	NN_1 = N_1(ξ_g; η_g)
+	NN_2 = N_2(ξ_g; η_g)
+	NN_3 = N_3(ξ_g; η_g)
+	NN_4 = N_4(ξ_g; η_g)
+	B_s = [dNdx_1; -NN_1; 0; dNdx_2; -NN_2; 0; dNdx_3; -NN_3; 0; dNdx_4; -NN_4; 0 | _
+	       dNdy_1; 0; -NN_1; dNdy_2; 0; -NN_2; dNdy_3; 0; -NN_3; dNdy_4; 0; -NN_4]
+	K_shear = transp(B_s)*D_s_mat*B_s*det_J
+	#for i = 1 : n_k
+		#for j = i : n_k
+			K_e.(i; j) = K_e.(i; j) + K_shear.(i; j)
+		#loop
+	#loop
+#loop
+' === RESORTES DEL SUELO: Winkler ===
+' K_suelo = ks * ∫∫ N^T * N dA (integrado con 2×2 Gauss)
+K_soil = symmetric(n_k)
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g','η_g = -g
+	#else if ig ≡ 2
+		ξ_g = g','η_g = -g
+	#else if ig ≡ 3
+		ξ_g = g','η_g = g
+	#else
+		ξ_g = -g','η_g = g
+	#end if
+	NN_1 = N_1(ξ_g; η_g)
+	NN_2 = N_2(ξ_g; η_g)
+	NN_3 = N_3(ξ_g; η_g)
+	NN_4 = N_4(ξ_g; η_g)
+	' Vector N para DOF w (índices 1,4,7,10 en el elemento)
+	N_w = [NN_1; 0; 0; NN_2; 0; 0; NN_3; 0; 0; NN_4; 0; 0]
+	K_winkler = k_s*N_w*transp(N_w)*det_J
+	#for i = 1 : n_k
+		#for j = i : n_k
+			K_soil.(i; j) = K_soil.(i; j) + K_winkler.(i; j)
+		#loop
+	#loop
+#loop
+' Sumar rigidez de placa + suelo
+#for i = 1 : n_k
+	#for j = i : n_k
+		K_e.(i; j) = K_e.(i; j) + K_soil.(i; j)
+	#loop
+#loop
+#show
+'K_e (12×12) incluye flexión + cortante + resortes Winkler:
+Precision = 10^-1
+K_e
+'<hr/>
+"6. Ensamblaje global y cargas
+#hide
+K = symmetric(n_dof)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		#for j = i : 4
+			j_1 = e_j.(e; i)
+			j_2 = e_j.(e; j)
+			i_1 = n_dn*(j_1 - 1) + 1
+			i_2 = n_dn*(j_2 - 1) + 1
+			k_ij = submatrix(K_e; n_dn*(i - 1) + 1; n_dn*i; n_dn*(j - 1) + 1; n_dn*j)
+			#if j_1 > j_2
+				add(transp(k_ij); K; i_2; i_1)
+			#else
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+' Vector de cargas global
+F = vector(n_dof)
+' Carga puntual en nodo central
+F.(n_dn*(n_center - 1) + 1) = P
+F.(n_dn*(n_center - 1) + 2) = M_x
+F.(n_dn*(n_center - 1) + 3) = M_y
+#show
+'<p>Sistema: 'n_dof' × 'n_dof'</p>
+'Cargas en nodo central ('n_center'):
+'P = 'P' kN, Mx = 'M_x' kN·m, My = 'M_y' kN·m
+'Resolviendo...
+Z = clsolve(K; F)
+'<hr/>
+"7. Resultados
+#hide
+' Desplazamientos verticales
+w_disp = vector(n_j)
+#for i = 1 : n_j
+	w_disp.i = Z.(n_dn*(i - 1) + 1)*1000
+#loop
+' Presión de contacto q = ks * w
+q_contact = vector(n_j)
+#for i = 1 : n_j
+	q_contact.i = k_s*Z.(n_dn*(i - 1) + 1)
+#loop
+' Desplazamiento central
+w_c = Z.(n_dn*(n_center - 1) + 1)
+' Vector deformada para $Fem2D (interleaved u=0,v=w)
+Z_def = vector(2*n_j)
+#for i = 1 : n_j
+	Z_def.(2*i - 1) = 0
+	Z_def.(2*i) = Z.(n_dn*(i - 1) + 1)
+#loop
+' Matriz deformada para $Fem3D
+def_3d = matrix(n_j; 3)
+#for i = 1 : n_j
+	def_3d.(i; 1) = 0
+	def_3d.(i; 2) = 0
+	def_3d.(i; 3) = Z.(n_dn*(i - 1) + 1)
+#loop
+' Vector z=0 para $Fem3D
+z_j = vector(n_j)
+#show
+'<p><b>Desplazamiento vertical en el centroide:</b></p>
+'w (m):
+w_c
+'w (mm):
+w_c*1000
+'<p><b>Presión máxima de contacto:</b></p>
+#hide
+q_max = 0
+q_min = 0
+#for i = 1 : n_j
+	#if q_contact.i < q_min
+		q_min = q_contact.i
+	#end if
+	#if q_contact.i > q_max
+		q_max = q_contact.i
+	#end if
+#loop
+#show
+'q_max (kN/m²):
+q_max
+'q_min (kN/m²):
+q_min
+'<p><b>Verificación de equilibrio:</b></p>
+'Reacción total = Σ (ks × ∫∫ N_i·w dA) usando cuadratura consistente:
+#hide
+R_total = 0
+#for e = 1 : n_e
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξ_g = -g','η_g = -g
+		#else if ig ≡ 2
+			ξ_g = g','η_g = -g
+		#else if ig ≡ 3
+			ξ_g = g','η_g = g
+		#else
+			ξ_g = -g','η_g = g
+		#end if
+		NN_1 = N_1(ξ_g; η_g)
+		NN_2 = N_2(ξ_g; η_g)
+		NN_3 = N_3(ξ_g; η_g)
+		NN_4 = N_4(ξ_g; η_g)
+		w_gp = NN_1*Z.(n_dn*(e_j.(e; 1) - 1) + 1) + _
+		       NN_2*Z.(n_dn*(e_j.(e; 2) - 1) + 1) + _
+		       NN_3*Z.(n_dn*(e_j.(e; 3) - 1) + 1) + _
+		       NN_4*Z.(n_dn*(e_j.(e; 4) - 1) + 1)
+		R_total = R_total + k_s*w_gp*det_J
+	#loop
+#loop
+#show
+'Reacción total del suelo:
+R_total
+'Carga aplicada P:
+P
+'Ratio R/P (debe ser ≈ 1.0):
+R_total/P
+'<hr/>
+"8. Cortes laterales (Elevación)
+'<p><b>Elevación X:</b> w(x) en y = L/2</p>
+#hide
+j_mid = n_y/2
+n_corte = n_x + 1
+x_corte = vector(n_corte)
+w_corte = vector(n_corte)
+#for i = 0 : n_x
+	k = j_mid*n_1 + i + 1
+	x_corte.(i + 1) = x_j.k
+	w_corte.(i + 1) = Z.(n_dn*(k - 1) + 1)*1000
+#loop
+#show
+$Chart{x_corte; w_corte @ type=line & title=Elevacion X: w(x) en y=L/2 & xlabel=x (m) & ylabel=w (mm) & w=550 & label1=w}
+'<p><b>Elevación Y:</b> w(y) en x = B/2</p>
+#hide
+i_mid = n_x/2
+n_corte_y = n_y + 1
+y_corte = vector(n_corte_y)
+w_corte_y = vector(n_corte_y)
+#for j = 0 : n_y
+	k = j*n_1 + i_mid + 1
+	y_corte.(j + 1) = y_j.k
+	w_corte_y.(j + 1) = Z.(n_dn*(k - 1) + 1)*1000
+#loop
+#show
+$Chart{y_corte; w_corte_y @ type=line & title=Elevacion Y: w(y) en x=B/2 & xlabel=y (m) & ylabel=w (mm) & w=550 & label1=w}
+'<hr/>
+"9. Visualización en planta
+'<p><b>Desplazamientos w (mm) — 2D</b></p>
+$Fem2D{x_j; y_j; e_j; w_disp @ w=450 & h=520 & palette=jet & title=Desplazamiento w (mm)}
+'<p><b>Presión de contacto q (kN/m²) — 2D</b></p>
+$Fem2D{x_j; y_j; e_j; q_contact @ w=450 & h=520 & palette=jet & title=Presion de contacto q (kN/m2)}
+'<p><b>Deformada 3D</b></p>
+#hide
+' Escala automática: deformada máxima = 15% del tamaño
+w_abs_max = 0
+#for i = 1 : n_j
+	#if abs(Z.(n_dn*(i - 1) + 1)) > w_abs_max
+		w_abs_max = abs(Z.(n_dn*(i - 1) + 1))
+	#end if
+#loop
+auto_scale = 0.15*max(B_z; L_z)/w_abs_max
+#show
+'Escala de deformada:
+auto_scale
+$Fem3D{x_j; y_j; z_j; e_j; w_disp @ w=600 & h=450 & palette=jet & title=Zapata deformada 3D & deformed=def_3d & scale=15}
+'<hr/>
+"9. Esfuerzos internos (momentos y cortantes)
+'M = D_b × B_b × u_e (momentos por unidad de longitud)
+'V = D_s × B_s × u_e (cortantes por unidad de longitud)
+'Evaluados en el centro de cada elemento (ξ=0, η=0):
+#hide
+' Vectores de esfuerzos promediados por nodo
+Mx_nod = vector(n_j)
+My_nod = vector(n_j)
+Mxy_nod = vector(n_j)
+Vx_nod = vector(n_j)
+Vy_nod = vector(n_j)
+cnt_nod = vector(n_j)
+' Derivadas en el centro (ξ=0, η=0)
+dNdx_1 = dN1_dξ(0)/J_11','dNdy_1 = dN1_dη(0)/J_22
+dNdx_2 = dN2_dξ(0)/J_11','dNdy_2 = dN2_dη(0)/J_22
+dNdx_3 = dN3_dξ(0)/J_11','dNdy_3 = dN3_dη(0)/J_22
+dNdx_4 = dN4_dξ(0)/J_11','dNdy_4 = dN4_dη(0)/J_22
+NN_1 = N_1(0; 0)','NN_2 = N_2(0; 0)','NN_3 = N_3(0; 0)','NN_4 = N_4(0; 0)
+B_b_c = [0; dNdx_1; 0; 0; dNdx_2; 0; 0; dNdx_3; 0; 0; dNdx_4; 0 | _
+         0; 0; dNdy_1; 0; 0; dNdy_2; 0; 0; dNdy_3; 0; 0; dNdy_4 | _
+         0; dNdy_1; dNdx_1; 0; dNdy_2; dNdx_2; 0; dNdy_3; dNdx_3; 0; dNdy_4; dNdx_4]
+B_s_c = [dNdx_1; -NN_1; 0; dNdx_2; -NN_2; 0; dNdx_3; -NN_3; 0; dNdx_4; -NN_4; 0 | _
+         dNdy_1; 0; -NN_1; dNdy_2; 0; -NN_2; dNdy_3; 0; -NN_3; dNdy_4; 0; -NN_4]
+#for e = 1 : n_e
+	' Extraer vector de desplazamientos del elemento
+	u_e = vector(12)
+	#for i = 1 : 4
+		j = e_j.(e; i)
+		u_e.(3*(i - 1) + 1) = Z.(n_dn*(j - 1) + 1)
+		u_e.(3*(i - 1) + 2) = Z.(n_dn*(j - 1) + 2)
+		u_e.(3*(i - 1) + 3) = Z.(n_dn*(j - 1) + 3)
+	#loop
+	' Momentos M = D_b * B_b * u_e
+	M_e = D_b*B_b_c*u_e
+	' Cortantes V = D_s * B_s * u_e
+	V_e = D_s_mat*B_s_c*u_e
+	' Acumular en nodos (promediar después)
+	#for i = 1 : 4
+		j = e_j.(e; i)
+		cnt_nod.j = cnt_nod.j + 1
+		Mx_nod.j = Mx_nod.j + M_e.1
+		My_nod.j = My_nod.j + M_e.2
+		Mxy_nod.j = Mxy_nod.j + M_e.3
+		Vx_nod.j = Vx_nod.j + V_e.1
+		Vy_nod.j = Vy_nod.j + V_e.2
+	#loop
+#loop
+' Promediar
+#for i = 1 : n_j
+	#if cnt_nod.i > 0
+		Mx_nod.i = Mx_nod.i/cnt_nod.i
+		My_nod.i = My_nod.i/cnt_nod.i
+		Mxy_nod.i = Mxy_nod.i/cnt_nod.i
+		Vx_nod.i = Vx_nod.i/cnt_nod.i
+		Vy_nod.i = Vy_nod.i/cnt_nod.i
+	#end if
+#loop
+' Max/min
+Mx_max = 0','My_max = 0','Vx_max = 0','Vy_max = 0
+#for i = 1 : n_j
+	#if abs(Mx_nod.i) > abs(Mx_max)
+		Mx_max = Mx_nod.i
+	#end if
+	#if abs(My_nod.i) > abs(My_max)
+		My_max = My_nod.i
+	#end if
+	#if abs(Vx_nod.i) > abs(Vx_max)
+		Vx_max = Vx_nod.i
+	#end if
+	#if abs(Vy_nod.i) > abs(Vy_max)
+		Vy_max = Vy_nod.i
+	#end if
+#loop
+#show
+'<p><b>Momento flector Mx (kN·m/m):</b></p>
+'Mx_max:
+Mx_max
+$Fem2D{x_j; y_j; e_j; Mx_nod @ w=450 & h=520 & palette=jet & title=Momento Mx (kN·m/m)}
+'<p><b>Momento flector My (kN·m/m):</b></p>
+'My_max:
+My_max
+$Fem2D{x_j; y_j; e_j; My_nod @ w=450 & h=520 & palette=jet & title=Momento My (kN·m/m)}
+'<p><b>Cortante Vx (kN/m):</b></p>
+'Vx_max:
+Vx_max
+$Fem2D{x_j; y_j; e_j; Vx_nod @ w=450 & h=520 & palette=jet & title=Cortante Vx (kN/m)}
+'<p><b>Cortante Vy (kN/m):</b></p>
+'Vy_max:
+Vy_max
+$Fem2D{x_j; y_j; e_j; Vy_nod @ w=450 & h=520 & palette=jet & title=Cortante Vy (kN/m)}
+'<hr/>
+"10. Verificación analítica simplificada
+'Para zapata rígida sin momentos: q = P/(B×L)
+q_unif = P/(B_z*L_z)
+'q uniforme (kN/m²):
+q_unif
+'Para zapata con momentos (distribución lineal):
+'q = P/(B·L) ± Mx·y/Iy ± My·x/Ix
+I_x = B_z*L_z^3/12
+I_y = L_z*B_z^3/12
+'En la esquina (B/2, L/2):
+q_esquina = P/(B_z*L_z) + M_x*(L_z/2)/I_x + M_y*(B_z/2)/I_y
+'q esquina (kN/m²):
+q_esquina
+'q centroide (kN/m²):
+q_centro = P/(B_z*L_z)
+q_centro

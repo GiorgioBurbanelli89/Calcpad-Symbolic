@@ -1,0 +1,131 @@
+#margen 20
+"B transpuesta por B — Solo algebra lineal
+
+"Un vector fila
+B = [2; 3]
+
+"Su transpuesta (columna)
+Bt = transp(B)
+
+"Que pasa si multiplico columna por fila?
+'Bt es columna (2x1). B es fila (1x2).
+'Columna por fila: (2x1) * (1x2) = <b>2x2</b>
+'Cada termino se calcula multiplicando un elemento de la columna
+'por un elemento de la fila:
+
+"Termino (1,1): primer elemento de Bt por primer elemento de B
+r_11 = 2*2
+
+"Termino (1,2): primer elemento de Bt por segundo elemento de B
+r_12 = 2*3
+
+"Termino (2,1): segundo elemento de Bt por primer elemento de B
+r_21 = 3*2
+
+"Termino (2,2): segundo elemento de Bt por segundo elemento de B
+r_22 = 3*3
+
+"La matriz resultado
+R = [r_11; r_12|r_21; r_22]
+
+#pgb
+"Ahora con un numero en el medio: B^T * k * B
+
+'Si multiplicamos B^T * k * B, el numero k escala todos los terminos:
+k_v = 5
+
+m_11 = 2*k_v*2
+m_12 = 2*k_v*3
+m_21 = 3*k_v*2
+m_22 = 3*k_v*3
+
+M_r = [m_11; m_12|m_21; m_22]
+
+#pgb
+"Otro ejemplo con numeros negativos
+
+C = [-1; 1]
+Ct = transp(C)
+
+"Cada termino de C^T * C
+c_11 = (-1)*(-1)
+c_12 = (-1)*(1)
+c_21 = (1)*(-1)
+c_22 = (1)*(1)
+
+Mc = [c_11; c_12|c_21; c_22]
+
+"Con un factor k = 7
+k_c = 7
+d_11 = (-1)*k_c*(-1)
+d_12 = (-1)*k_c*(1)
+d_21 = (1)*k_c*(-1)
+d_22 = (1)*k_c*(1)
+
+Md = [d_11; d_12|d_21; d_22]
+
+#pgb
+"La regla general
+
+'Si B = [a; b] entonces:
+#noc
+B^T*k*B = [a*k*a; a*k*b|b*k*a; b*k*b]
+#equ
+
+"Verificacion simbolica
+#sym
+simplify(a*k*a)
+#end sym
+#sym
+simplify(a*k*b)
+#end sym
+#sym
+simplify(b*k*a)
+#end sym
+#sym
+simplify(b*k*b)
+#end sym
+
+'Cada termino es: <b>elemento_i * k * elemento_j</b>
+
+#pgb
+"Que tamano tiene el resultado?
+
+'Si B tiene n elementos:
+'B es fila (1 x n)
+'B^T es columna (n x 1)
+'B^T * B es (n x 1) * (1 x n) = <b>n x n</b>
+
+'Ejemplos:
+'B = [a; b] → B^T * B es 2x2
+'B = [a; b; c] → B^T * B es 3x3
+'B = [a; b; c; d] → B^T * B es 4x4
+
+"Con 3 elementos
+E = [-1; 0; 1]
+Et = transp(E)
+
+e_11 = (-1)*(-1)
+e_12 = (-1)*(0)
+e_13 = (-1)*(1)
+e_21 = (0)*(-1)
+e_22 = (0)*(0)
+e_23 = (0)*(1)
+e_31 = (1)*(-1)
+e_32 = (1)*(0)
+e_33 = (1)*(1)
+
+Me = [e_11; e_12; e_13|e_21; e_22; e_23|e_31; e_32; e_33]
+
+#pgb
+"Resumen
+
+'<b>B^T * B</b> es columna por fila.
+'El resultado es siempre una <b>matriz cuadrada</b>.
+'Cada termino es: elemento_i * elemento_j.
+'Si hay un factor k en el medio: elemento_i * k * elemento_j.
+'
+'Fila de 2 → matriz 2x2
+'Fila de 3 → matriz 3x3
+'Fila de n → matriz nxn
+#end margen

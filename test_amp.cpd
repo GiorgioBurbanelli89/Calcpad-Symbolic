@@ -1,0 +1,45 @@
+"Test del operador &
+
+"1. Escalar simple
+P = 600 kN
+P & N
+P & kN
+
+"2. Momento (unidad compuesta)
+M = 80 kN*m
+M & N*mm
+M & kN*m
+M & kN*cm
+
+"3. Presion
+E = 200000 MPa
+E & N/mm^2
+E & kN/m^2
+E & Pa
+
+"4. Rigidez Winkler
+k = 50000 kN/m^3
+k & N/mm^3
+
+"5. Vector con unidades mixtas via &
+v = [600 kN; 80 kN*m]
+v & [N; N*mm]
+
+"6. Rigidez de resorte
+k_s = 500 kN/m
+k_s & N/mm
+
+"7. F = k * u con &
+u = 20 mm
+F_r = k_s*u
+F_r
+F_r & kN
+F_r & N
+
+"8. Sistema K*u = F
+K_m = [1000; -500|-500; 1500] kN/m
+F_m = [10; -5] kN
+u_m = lsolve(K_m; F_m)
+u_m
+u_m & [mm; mm]
+u_m | [mm; mm]

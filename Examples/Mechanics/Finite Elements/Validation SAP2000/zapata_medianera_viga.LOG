@@ -1,0 +1,43 @@
+
+
+ SAP2000 v24.1.0 Ultimate 64-bit (Analysis Build 9917/64)
+ File: C:\Users\j-b-j\Document...ts\Validation SAP2000\zapata_medianera_viga.LOG
+
+
+
+
+ B E G I N   A N A L Y S I S                                2026/04/08  05:28:54
+
+
+ RUNNING ANALYSIS WITHIN THE GUI PROCESS
+ USING THE ADVANCED SOLVER (PROVIDES LIMITED INSTABILITY INFORMATION)
+
+ NUMBER OF JOINTS                          =         468
+    WITH RESTRAINTS                        =         148
+    WITH SPRINGS                           =         264
+ NUMBER OF SHELL ELEMENTS                  =         265
+ NUMBER OF LOAD PATTERNS                   =           2
+ NUMBER OF ACCELERATION LOADS              =           9
+ NUMBER OF LOAD CASES                      =           2
+ NUMBER OF MASS SOURCES                    =           1
+
+ UNITS (FORCE, LENGTH, TEMPERATURE, TIME)  = kN, m, °C, sec
+ GRAVITATIONAL ACCELERATION                =    9.806650
+
+ ADDRESSABLE PHYSICAL MEMORY (RAM)         =      15.715 GB
+
+ PARALLELIZATION OF ANALYSIS OPERATIONS:
+  (Env. variable SAPFIRE_NUM_THREADS not set)
+ NUMBER OF THREADS: STATE (AUTOMATIC)      =          16
+ NUMBER OF THREADS: STIFFNESS (AUTOMATIC)  =          16
+ NUMBER OF THREADS: EVENT (AUTOMATIC)      =          16
+ NUMBER OF THREADS: MOVE (AUTOMATIC)       =          16
+ NUMBER OF THREADS: RESPONSE (AUTOMATIC)   =          16
+ NUMBER OF THREADS: SOLVE (AUTOMATIC)      =          16
+ NUMBER OF THREADS: FORM (AUTOMATIC)       =          16
+
+ * * * E R R O R * * *   (WHILE RUNNING ANALYSIS)
+ INTERNAL PROGRAM ERROR DETECTED.  PLEASE RECORD THE FOLLOWING INFORMATION:
+ VALUES  =           0     .000000
+ MESSAGE = ShellPropLayerGroup_CreatePTRFCN: Invalid number of objects
+

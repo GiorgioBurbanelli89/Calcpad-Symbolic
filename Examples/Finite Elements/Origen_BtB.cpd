@@ -1,0 +1,114 @@
+#margen 20
+"B^T * B — Por que existe
+
+"Con numeros es facil
+a_n = 5
+a_cuad = a_n*a_n
+'5 por 5 = 25. Listo.
+
+"Con vectores no es tan facil
+'Un vector tiene varios numeros. Por ejemplo:
+v_1 = 3
+v_2 = 4
+
+'No puedo hacer [3, 4] * [3, 4] directamente.
+'No tiene sentido multiplicar una lista por otra lista asi nomas.
+
+"Entonces que hago?
+'En algebra lineal inventaron reglas para multiplicar vectores.
+'La regla dice: solo puedo multiplicar <b>fila por columna</b>.
+'No puedo multiplicar fila por fila ni columna por columna.
+
+#pgb
+"Fila por columna = un numero
+
+'Vector como fila:
+v_fila = [3; 4]
+
+'El mismo vector como columna:
+v_col = transp(v_fila)
+
+'Fila por columna: par a par y sumo todo.
+r_fc = v_1*v_1 + v_2*v_2
+
+'Paso 1: 3*3 = 9
+'Paso 2: 4*4 = 16
+'Paso 3: sumo: 9 + 16 = 25
+
+'Resultado: un solo numero.
+
+#pgb
+"Columna por fila = una matriz
+
+'Ahora al reves. Primero la columna, despues la fila:
+c_primero = transp([3; 4])
+f_despues = [3; 4]
+
+'Cada elemento de la columna se multiplica por CADA elemento de la fila:
+r_11 = 3*3
+r_12 = 3*4
+r_21 = 4*3
+r_22 = 4*4
+R_m = [r_11; r_12|r_21; r_22]
+
+'Salen 4 numeros organizados en una tabla: una <b>matriz 2x2</b>.
+
+#pgb
+"Por que importa el orden?
+'Fila por columna: [3, 4] * [3, 4] = <b>25</b> (un numero)
+'Columna por fila: [3, 4] * [3, 4] = <b>matriz 2x2</b> (4 numeros)
+
+'El resultado cambia segun como los pongo: fila primero o columna primero.
+'Cambiar de fila a columna se llama <b>transponer</b>.
+
+"Entonces B^T * B es:
+'B como columna (transpuesta) multiplicado por B como fila.
+'El resultado es una <b>matriz cuadrada</b>.
+
+#pgb
+"Ejemplo completo
+
+"B como fila
+B_f = [-1; 1]
+
+"B transpuesta (columna)
+B_c = transp(B_f)
+
+"B^T * B: cada elemento de la columna por cada elemento de la fila
+K_11 = (-1)*(-1)
+K_12 = (-1)*(1)
+K_21 = (1)*(-1)
+K_22 = (1)*(1)
+K_m = [K_11; K_12|K_21; K_22]
+
+'B = [-1, 1] da la matriz [1, -1; -1, 1].
+'Esta es exactamente la matriz de rigidez de la barra.
+
+#pgb
+"Por que se necesita una matriz?
+
+'Un numero solo no alcanza.
+'La barra tiene 2 nodos. Cada nodo tiene su fuerza.
+'Necesito saber como el desplazamiento de CADA nodo
+'afecta la fuerza en CADA nodo.
+
+'Nodo 1 afecta nodo 1: K_11
+'Nodo 1 afecta nodo 2: K_21
+'Nodo 2 afecta nodo 1: K_12
+'Nodo 2 afecta nodo 2: K_22
+
+'Son 4 relaciones. Por eso necesito una matriz 2x2, no un numero.
+'B^T * B genera exactamente esas 4 relaciones.
+
+#pgb
+"Resumen
+
+'<b>a * a = a^2</b> funciona para numeros.
+'Para vectores no se puede multiplicar directamente.
+'Se necesita poner uno como columna y otro como fila.
+'
+'<b>B^T * B</b> = columna por fila = <b>matriz cuadrada</b>.
+'
+'La matriz tiene todas las relaciones entre los nodos:
+'como cada nodo afecta a cada otro nodo.
+#end margen

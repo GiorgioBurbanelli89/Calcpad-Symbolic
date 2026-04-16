@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Created with Calcpad</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <script src="https://calcpad.local/file:///C:/Users/j-b-j/Documents/Hekatan Calc 1.0.0/CalcpadCE-main/Calcpad.Cli/bin/Debug/net10.0/doc/jquery-3.6.3.min.js"></script>
+    <script src="file:///C:/Users/j-b-j/Documents/Hekatan Calc 1.0.0/CalcpadCE-main/Calcpad.Cli/bin/Debug/net10.0/doc/calcpad-viz.umd.cjs"></script>
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-size: 11pt;
+            font-family: 'Segoe UI', 'Arial Nova', Helvetica, sans-serif;
+            margin-left: 5mm;
+            max-width: 190mm;
+        }
+
+        h1, h2, h3, h4, h5, h6, .errorHeader, .roundBox {
+            font-family: 'Arial Nova', Helvetica, sans-serif;
+            margin: 0.5em 0 0.5em 0;
+            padding: 0;
+            line-height: 150%;
+        }
+
+        h1 {font-size: 2.1em;}
+        h2 {font-size: 1.7em;}
+        h3 {font-size: 1.4em;}
+        h4 {font-size: 1.2em;}
+        h5 {font-size: 1.1em;}
+        h6 {font-size: 1em;}
+
+        p, li {
+            margin: 0.3em 0 0.3em 0;
+            padding: 0;
+            line-height: 150%;
+        }
+
+        select, kbd {
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        a:hover {
+            background-color: #e9f6ff;
+        }
+
+        .eq, input[type="text"], table.matrix {
+            font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+        }
+
+            .eq var {
+                color: #06d;
+                font-size: 105%;
+            }
+
+            .eq i {
+                color: #086;
+                font-style: normal;
+                font-size: 90%;
+            }
+
+            i.unit {
+                color: #043!important;
+                font-size: 90%!important;
+                vertical-align: -1pt;
+            }
+
+            sup.unit {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 70%!important;
+            }
+
+            .eq b {
+                font-weight: 600;
+            }
+
+            .eq sub {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 80%;
+                vertical-align: -18%;
+                margin-left: 1pt;
+            }
+
+            .eq sup {
+                display: inline-block;
+                margin-left: 1pt;
+                margin-top: -3pt;
+                font-size: 75%;
+            }
+
+            .eq small {
+                font-family: Calibri, Candara, Corbel, sans-serif;
+                font-size: 70%;
+            }
+
+                .eq small var {
+                    font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+                    font-size: 8.5pt;
+                }
+
+                .eq small i {
+                    font-family: 'Georgia Pro', 'Century Schoolbook', 'Times New Roman', Times, serif;
+                    font-size: 6pt;
+                }
+
+            .eq u, input, select {
+                background-color: LightYellow;
+            }
+
+                input[type="text"], select {
+                    font-size: 10pt;
+                    padding: 0.2em 0.4em;
+                    border: 0.5pt solid #CCC;
+                    border-radius: 0.35em;
+                    box-shadow: 0.06em 0.06em 0.5em #ddd;
+                    min-width: 3em;
+                }
+
+                input[type="text"] {
+                    text-align: right;
+                }
+
+                input[type="checkbox"],
+                input[type="radio"] {
+                    vertical-align: baseline;
+                    position: relative;
+                    bottom: -1pt;
+                    margin-right: 1pt;
+                }
+
+                    input[type="checkbox"].post:disabled:not(:checked),
+                    input[type="checkbox"].post:disabled:not(:checked) + label,
+                    input[type="radio"].post:disabled:not(:checked),
+                    input[type="radio"].post:disabled:not(:checked) + label {
+                        display: none;
+                    }
+
+                select:disabled {
+                    background: none;
+                    color: #444;
+                }
+
+                select.post:disabled {
+                    font-size: 12pt;
+                    border: none;
+                    box-shadow: none;
+                    color: red;
+                    background: none;
+                    appearance: none;
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                }
+
+                select.post:disabled::-ms-expand {
+                    display: none;
+                }
+
+                input[type="text"]:focus {
+                    box-shadow: 0.1em 0.1em 1em #ccc;
+                    color: black;
+                }
+
+        td, th {
+            padding: 2pt 4pt 2pt 4pt;
+            vertical-align: top;
+        }
+
+        small {
+            font-weight: normal;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+            table.bordered {
+                margin-top: 1em;
+            }
+
+                table.bordered th {
+                    background-color: #F0F0F0;
+                    border: solid 1pt #AAAAAA;
+                }
+
+                table.bordered td {
+                    border: solid 1pt #CCCCCC;
+                }
+
+            table.centered td, .matrix .td {
+                text-align: center;
+            }
+
+            table.data td {
+                text-align: right;
+            }
+
+                table.data td:first-child {
+                    text-align: left;
+                    padding-left: 0;
+                }
+
+        .matrix {
+            display: inline-table;
+        }
+
+            .matrix .tr {
+                display: table-row;
+            }
+
+            .matrix .td {
+                white-space: nowrap;
+                padding: 0 2pt 0 2pt;
+                min-width: 10pt;
+                display: table-cell;
+                font-size: 10pt;
+            }
+
+                .matrix .td:first-child,
+                .matrix .td:last-child {
+                    width: 0.75pt;
+                    min-width: 0.75pt;
+                    max-width: 0.75pt;
+                    padding: 0 1pt 0 1pt;
+                }
+
+                .matrix .td:first-child {
+                    border-left: solid 1pt black;
+                }
+
+                .matrix .td:last-child {
+                    border-right: solid 1pt black;
+                }
+
+            .matrix .tr:first-child .td:first-child,
+            .matrix .tr:first-child .td:last-child {
+                border-top: solid 1pt black;
+            }
+
+            .matrix .tr:last-child .td:first-child,
+            .matrix .tr:last-child .td:last-child {
+                border-bottom: solid 1pt black;
+            }
+
+        .block {
+            display: inline-block;
+            vertical-align: middle;
+            padding-left: 4pt;
+            margin-left: -1pt;
+            border-left: solid 1pt #80b0e8;
+            background: linear-gradient(to right, rgba(0, 192, 255, 0.06), rgba(0, 192, 255, 0.03));
+        }
+
+            .block .block {
+                background: linear-gradient(to right, rgba(0, 192, 255, 0.04), rgba(0, 192, 255, 0.02));
+            }
+
+        .dvcs:has(.block):not(.block *) {
+            display: inline-block;
+            border-left: solid 1pt #80b0e8;
+            padding-left: 0;
+            margin-left: 3pt;
+        }
+
+            .dvcs:has(.block):not(.block *)::before {
+                content: " 🞀";
+                font-size: 9pt;
+                color: #90c4f0;
+                margin-left: -4.5pt;
+            }
+
+        .arr {
+            color: #90c4f0;
+        }
+
+        .r0, .r1, .r2, .r3,
+        .o0, .o1, .o2, .o3,
+        .b1, .b2, .b3,
+        .c1, .c2, .c3, .c4,
+        .c5, .c6, .c7, .c8 {
+            display: inline-block;
+        }
+
+        .r0, .r1, .r2, .r3 {
+            margin-top: -1.5pt;
+            margin-right: 1.5pt;
+            vertical-align: top;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: right top;
+        }
+
+        .o0, .o1, .o2, .o3 {
+            border-top: solid 0.75pt;
+            line-height: 130%;
+            vertical-align: middle;
+            margin-top: 0.75pt;
+            padding-top: 1.25pt;
+            padding-left: 1pt;
+            padding-right: 1pt;
+        }
+
+        .r {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 150%;
+            display: inline-block;
+            vertical-align: top;
+            margin-left: -9.5pt;
+            position: relative;
+            top: 1pt;
+        }
+
+        .r0 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDEwIDIwIiBoZWlnaHQ9IjE1cHQiIHdpZHRoPSIxMHB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMCwxMyAyLDEyIDUsMTkgOSwwIiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MC42cHQ7IHN0cm9rZS1saW5lam9pbjpyb3VuZDsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IGZpbGw6bm9uZSIgLz4NCiAgPGxpbmUgeDE9IjIuMiIgeTE9IjEyLjMiIHgyPSI0LjYiIHkyPSIxOC43IiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MC44cHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 8pt;
+            height: 16pt;
+            margin-left: -8pt;
+        }
+
+        .r1 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDE1IDQwIiBoZWlnaHQ9IjMwcHQiIHdpZHRoPSIxNXB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMSwyNiAzLDI0IDgsMzggMTQsMCIgc3R5bGU9InN0cm9rZTpibGFjazsgc3Ryb2tlLXdpZHRoOjAuNnB0OyBzdHJva2UtbGluZWpvaW46cm91bmQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyBmaWxsOm5vbmUiIC8+DQogIDxsaW5lIHgxPSIzLjIiIHkxPSIyNC40IiB4Mj0iNy42IiB5Mj0iMzcuNiIgc3R5bGU9InN0cm9rZTpibGFjazsgc3Ryb2tlLXdpZHRoOjFwdDsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IiAvPg0KPC9zdmc+");
+            width: 12pt;
+            height: 32pt;
+            margin-left: -12pt;
+        }
+
+        .r2 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDIwIDYwIiBoZWlnaHQ9IjQ1cHQiIHdpZHRoPSIyMHB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMiwzNyA1LDM0IDExLDU1IDE5LDAiIHN0eWxlPSJzdHJva2U6YmxhY2s7IHN0cm9rZS13aWR0aDowLjZwdDsgc3Ryb2tlLWxpbmVqb2luOnJvdW5kOyBzdHJva2UtbGluZWNhcDpyb3VuZDsgZmlsbDpub25lIiAvPg0KICA8bGluZSB4MT0iNS4xIiB5MT0iMzQuNiIgeDI9IjEwLjYiIHkyPSI1NC40IiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MS4ycHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 16pt;
+            height: 48pt;
+            margin-left: -16pt;
+        }
+
+        .r3 {
+            content: "";
+            background-image: url("data: image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDI1IDgwIiBoZWlnaHQ9IjYwcHQiIHdpZHRoPSIyNXB4Ij4NCiAgPHBvbHlsaW5lIHBvaW50cz0iMyw1MCA3LDQ2IDE1LDc0IDI0LDAiIHN0eWxlPSJzdHJva2U6YmxhY2s7IHN0cm9rZS13aWR0aDowLjZwdDsgc3Ryb2tlLWxpbmVqb2luOnJvdW5kOyBzdHJva2UtbGluZWNhcDpyb3VuZDsgZmlsbDpub25lIiAvPg0KICA8bGluZSB4MT0iNy4xIiB5MT0iNDYuOCIgeDI9IjE0LjUiIHkyPSI3My4yIiBzdHlsZT0ic3Ryb2tlOmJsYWNrOyBzdHJva2Utd2lkdGg6MS4ycHQ7IHN0cm9rZS1saW5lY2FwOnJvdW5kOyIgLz4NCjwvc3ZnPg==");
+            width: 19pt;
+            height: 62pt;
+            margin-left: -19pt;
+        }
+
+        .nth {
+            position: relative;
+            bottom: 1pt;
+        }
+
+        .eq small.nth {font-size: 70%;}
+        .dvr small {font-size: 70%;}
+        .dvr small var {font-size: 105%;}
+        sup.raised {vertical-align: top;}
+        sup .r0, sup .r1, sup .r2, sup .r3 {
+            zoom: 0.7;
+            -moz-transform: scale(0.7);
+            -webkit-transform: scale(0.7);
+            transform: scale(0.7);
+            transform-origin: top right;
+            max-height: none;
+        }
+
+        sup .r0 { margin-left: -5pt; }
+        sup .r1 { margin-left: -11pt; }
+        sup .r2 { margin-left: -13pt; }
+        sup .r3 { margin-left: -16pt; }
+
+        .b1, .b2, .b3, .c1, .c2, .c3, .c4, .c5, .c6, .c7, .c8 {
+            vertical-align: middle;
+            font-weight: 100;
+            font-stretch: ultra-condensed;
+        }
+
+        .b2, .b3, .c2, .c3, .c4, .c5, .c6, .c7, .c8 {
+            font-family: 'Jost* Hairline', sans-serif;
+        }
+
+        .b0, .b1, .c1 {
+            font-family: 'Jost* Thin', sans-serif;
+        }
+
+        .b0 {
+            font-size: 120%;
+            font-weight: 600;
+            padding: 0 1pt 0 1pt;
+        }
+
+        .b1 {
+            font-size: 240%;
+            margin-top: -3pt;
+            margin-left: -1pt;
+            margin-right: -1pt;
+        }
+
+        .b2 {
+            font-size: 370%;
+            margin-top: -5pt;
+            margin-left: -3pt;
+            margin-right: -3pt;
+        }
+
+        .b3 {
+            font-size: 520%;
+            margin-top: -8pt;
+            margin-left: -5pt;
+            margin-right: -5pt;
+        }
+
+        .c1 {
+            font-size: 240%;
+            margin-top: -4pt;
+        }
+
+        .c2 {
+            font-size: 360%;
+            margin-top: -6pt;
+            margin-left: -2.5pt;
+            margin-right: -0.5pt;
+        }
+
+        .c3 {
+            font-size: 480%;
+            margin-top: -8pt;
+            margin-left: -3pt;
+            margin-right: -1pt;
+        }
+
+        .c4 {
+            font-size: 600%;
+            margin-top: -10pt;
+            margin-left: -4pt;
+            margin-right: -2pt;
+            transform: scaleX(0.9);
+        }
+
+        .c5 {
+            font-size: 710%;
+            margin-top: -11.5pt;
+            margin-left: -6pt;
+            margin-right: -4pt;
+            transform: scaleX(0.8);
+        }
+
+        .c6 {
+            font-size: 820%;
+            margin-top: -13pt;
+            margin-left: -7pt;
+            margin-right: -5pt;
+            transform: scaleX(0.7);
+        }
+
+        .c7 {
+            font-size: 930%;
+            margin-top: -14.5pt;
+            margin-left: -8pt;
+            margin-right: -6pt;
+            transform: scaleX(0.6);
+        }
+
+        .c8 {
+            font-size: 1040%;
+            margin-top: -16pt;
+            margin-left: -9pt;
+            margin-right: -7pt;
+            transform: scaleX(0.5);
+        }
+
+        .dvc, .dvr, .dvs {
+            display: inline-block;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .dvc {
+            padding-left: 2pt;
+            padding-right: 2pt;
+            text-align: center;
+            line-height: 110%;
+        }
+
+        .dvr {
+            text-align: center;
+            line-height: 110%;
+            position: relative;
+            top: -3pt;
+        }
+
+        .dvs {
+            text-align: left;
+            line-height: 110%;
+        }
+
+        .dvl {
+            display: block;
+            border-bottom: solid 1pt black;
+            margin-top: 1pt;
+            margin-bottom: 1pt;
+        }
+
+        .nary {
+            color: #C080F0;
+            font-size: 240%;
+            font-family: Georgia Pro Light, serif;
+            font-weight: 200;
+            line-height: 70%;
+            display: block;
+            margin: 0 1pt 2.5pt 1pt;
+        }
+
+            .nary em {
+                display: block;
+                transform: scaleX(0.7) rotate(7deg);
+            }
+
+        .dvc.down {
+            position: relative;
+            top: 0.5em;
+        }
+
+        .dvc.up {
+            position: relative;
+            bottom: 0.6em;
+        }
+
+        .low {
+            font-size: 70%;
+            display: inline-block;
+            position: relative;
+            top: 1.2em;
+        }
+
+        .cond {
+            color: #E000D0;
+        }
+
+        .err {
+            color: Crimson;
+            background-color: #FEE;
+        }
+
+        .ok {
+            color: Green;
+            background-color: #F0FFF0;
+        }
+
+        .ref {
+            float: right;
+            margin-left: 18pt;
+            color: Green;
+            background-color: #F8FFF0;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        .side {
+            float: right;
+            max-width: 50%;
+        }
+
+        .plot {
+            max-width: 100%
+        }
+
+        .indent {
+            border-left: 0.75pt solid #dddddd;
+            padding-left: 2em;
+        }
+
+        span.indent {
+            display: inline-block;
+        }
+
+        .fold {
+            height: 2.4em;
+            overflow: hidden;
+        }
+
+        .unfold {
+            height: auto;
+            overflow: auto;
+        }
+
+            .fold > :first-child, .unfold > :first-child {
+                cursor: pointer;
+            }
+
+                .fold > :first-child:hover, .unfold > :first-child:hover {
+                    color: #0066bb;
+                    text-decoration: underline;
+                }
+
+                .fold > :first-child::after {
+                    content: " ... ▼";
+                    font-size: 80%;
+                }
+
+                .unfold > :first-child::after {
+                    content: " ▲";
+                    font-size: 80%;
+                }
+
+        .vec {
+            font-family: 'Cambria Math', serif;
+            color: #8af;
+            font-style: normal;
+            display: inline-block;
+            vertical-align: 2pt;
+            margin-left: 3pt;
+            margin-right: -7pt;
+        }
+
+        small .vec, sup .vec {
+            margin-left: 2pt;
+            margin-right: -6pt;
+        }
+
+        #Units {
+            float: right;
+        }
+
+        @media screen {
+            .no-screen {
+                display: none;
+            }
+        }
+
+        @media print {
+            .side {
+                zoom: 0.8;
+                -moz-transform: scale(0.8);
+            }
+
+            body {
+                margin: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+
+        @page {
+            size: A4 portrait;
+            margin-left: 20mm;
+            margin-right: 10mm;
+            margin-top: 10mm;
+            margin-bottom: 10mm;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .value {
+            position: relative;
+            background-color: #f4fbff;
+            border-radius: 3pt;
+        }
+
+            .value:after {
+                content: "";
+                position: absolute;
+                left: 100%;
+                top: -100%;
+                transform: translateY(-50%);
+                margin-left: 2pt;
+                height: 16pt;
+                line-height: 16pt;
+                vertical-align: middle;
+                width: fit-content;
+                white-space: nowrap;
+                min-width: 10pt;
+                z-index: 1;
+                padding: 0 6pt 0 6pt;
+                border-radius: 6pt 6pt 6pt 0;
+                background: #000;
+                color: #fff;
+                font-family: 'Segoe UI', sans-serif;
+                font-style: normal;
+                font-size: 10pt;
+                text-align: center;
+                display: none;
+                opacity: 0;
+                transition: opacity 2s;
+                user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                -moz-user-select: none;
+            }
+
+            .value:hover:after {
+                content: attr(data-value);
+                display: block;
+                opacity: 1;
+            }
+
+        .errorHeader {
+            color: white;
+            background-color: crimson;
+            font-size: 10pt;
+            position: fixed;
+            top: 0;
+            left: 0;
+            margin-top: 0;
+            width: 100vw;
+            max-width: 100%;
+            height: 1.8em;
+            line-height: 1.2em;
+            padding-left: 6pt;
+            overflow-x: hidden;
+        }
+
+        .roundBox {
+            background-color: #fee;
+            color: crimson;
+            font-size: 9pt;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            display: inline-block;
+            border-radius: 4pt;
+            min-width: 1.1em;
+            padding-left: 2pt;
+            padding-right: 2pt;
+            margin-top: 2pt;
+        }
+
+            .roundBox:hover {
+                background-color: white;
+            }
+
+        .lineLink {
+            background: none;
+            color: #b0e0ff;
+            font-family: Calibri, sans-serif;
+            font-size: 10pt;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: left;
+            display: inline-block;
+            position: absolute;
+            left: 0;
+            width: 2em;
+            height: 4em;
+            z-index: 1;
+        }
+
+            .lineLink:hover {
+                background: none;
+                color: #09e;
+            }
+    </style>
+</head>
+<body>
+    <script>
+        var contextMenu = false;
+        function getVerticalPosition(line) { return document.querySelector("[data-text='" + line + "']").getBoundingClientRect().top; }
+        function isNumeric(s) { return s.match(/^-?\d+(?:\.\d+)?$/); }
+        if (window.jQuery) {
+            function getHtmlWithInput() {
+                $("input[type=text]").each(function () {
+                    $(this).attr("value", $(this).val());
+                });
+                $("input[type=hidden]").each(function () {
+                    $(this).attr("value", $(this).val());
+                });
+                $("textarea").each(function () {
+                    $(this).html($(this).val());
+                });
+                $("input[type=radio]").each(function () {
+                    if (this.checked)
+                        $(this).attr("checked", "checked");
+                    else
+                        $(this).removeAttr("checked");
+                });
+                $("input[type=checkbox]").each(function () {
+                    if (this.checked)
+                        $(this).attr("checked", "checked");
+                    else
+                        $(this).removeAttr("checked");
+                });
+                $("select option").each(function () {
+                    if (this.selected) {
+                        $(this).attr("selected", "true");
+                    }
+                    else
+                        $(this).removeAttr("selected");
+                });
+                return document.body.outerHTML;
+            }
+
+            function getTargetId(element) {
+                var id = $(element).attr("name");
+                if (id != null && id.length > 0)
+                    return id;
+
+                return $(element).data("target");
+            }
+
+            function getValue(id, source) {
+                var value = "";
+                var target = $("#" + id + " input");
+                var domObj = target.get(0);
+                if (domObj == null || domObj.Length == 0) {
+                    target = $("#" + id + " .eq u");
+                    target.each(function () {
+                        value += $(this).text() + ";";
+                    });
+                    $(source).prop('disabled', true);
+                }
+                else {
+                    target.each(function () {
+                        value += $(this).val() + ";";
+                    });
+                }
+                if (value.length > 1) {
+                    value = value.slice(0, -1);
+                }
+                return value;
+            }
+
+            $(document).ready(function () {
+
+                $(".dvcs:has(.block) > :first-child").html("&hairsp;");
+
+                $("#Units").change(function () { $(".Units").text($(this).val()); });
+
+                $(".fold > :first-child").click(function () {
+                    if ($(this).parent().hasClass("fold")) {
+                        $(this).parent().removeClass("fold").addClass("unfold");
+                    }
+                    else {
+                        $(this).parent().removeClass("unfold").addClass("fold");
+                    }
+                });
+
+                $("select").each(function (index) {
+                    if ($(this).prop("id") != "Units") {
+                        var id = getTargetId(this);
+                        if (id != null && id.length > 0) {
+                            var value = getValue(id, this);
+                            $(this).val(value);
+                        }
+                    }
+
+                });
+
+                $("select").change(function () {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var target = $("#" + id + " input");
+                        if (target != null) {
+                            var values = $(this).val().split(";");
+                            target.each(function (index) {
+                                $(this).val(values[index]);
+                            });
+                        }
+                    }
+                });
+
+                $("input:radio, input:checkbox").each(function (index) {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var value = getValue(id, this);
+                        $(this).prop("checked", $(this).val() == value);
+                    }
+                });
+
+                $("input:radio, input:checkbox").change(function () {
+                    var id = getTargetId(this);
+                    if (id != null && id.length > 0) {
+                        var target = $("#" + id + " input");
+                        if (target != null) {
+                            if ($(this).prop("checked")) {
+                                var values = $(this).val().split(";");
+                                target.each(function (index) {
+                                    $(this).val(values[index]);
+                                });
+                            }
+                            else if ($(this).prop("type") == "checkbox") {
+                                target.each(function () {
+                                    $(this).val("0");
+                                });
+                            }
+                        }
+                    }
+                });
+
+                $(".line:not(style, script)").each(function () {
+                    var line = $(this).prop("id").split("-")[1];
+                    var $lineLink = $('<a class="lineLink" href="#0" data-text="' + line + '" title="Code line ' + line + '">&larr;</a>');
+                    $(this).append($lineLink);
+                    $lineLink.hide();
+                    $(this).hover(function () {
+                        $(".lineLink").hide();
+                        $lineLink.show();
+                    });
+                    $(window).scroll(function () {
+                        $lineLink.hide();
+                    });
+                });
+
+                $("body").mouseleave(function () {
+                    $(".lineLink").hide();
+                });
+
+                $(".roundBox").click(function () {
+                    var line = $(this).data("line");
+                    var e = document.getElementById("line-" + line);
+                    if (e) {
+                        window.scrollTo(0, e.offsetTop - $(this).outerHeight() - 20);
+                    }
+                });
+                $(".money").each(function () { $(this).text(Number(($(this).text())).toFixed(2)); });
+
+                $("input").change(function() {
+                    var e = $(this);
+                    var s = e.val();
+                    if (isNumeric(s)) {
+                        e.css("color", "black");
+                        e.removeAttr("title");
+                    } else {
+                        e.css("color", "red");
+                        e.attr("title", "Invalid number");
+                    }
+                });
+
+                $("a").click(function () {
+                    chrome.webview.postMessage('clicked');
+                });
+
+                window.addEventListener('click', () => {
+                    chrome.webview.postMessage('focused');
+                });
+            });
+        }
+        document.oncontextmenu = function () { contextMenu = true; };
+        document.onmousedown = function () { contextMenu = false; };
+    </script><h3>Análisis Dinámico — Método de Newmark-β </h3>
+<h3>Basado en: Métodos Matriciales con MATLAB — Ejemplo 11.4 </h3>
+<hr/> 
+<h3>1. Funciones (#function) </h3>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<hr/> 
+<h3>2. Datos del modelo </h3>
+<h4>Material y sección</h4> 
+<p><span class="eq"><var>E</var><sub>m</sub> = 10<sup>7</sup> <i>psi</i> = 10000000 <i>psi</i></span></p>
+<p><span class="eq"><var>A</var><sub>s</sub> = 6 <i>in</i><sup class="unit">2</sup></span></p>
+<p><span class="eq"><var>I</var><sub>s</sub> = 100 <i>in</i><sup class="unit">4</sup></span></p>
+<p><span class="eq"><var>m</var><sub>b</sub> = 4.2 <span class="dvc"><i>lb</i><i> · </i><i>s</i><sup class="unit">2</sup><span class="dvl"></span><i>in</i><sup class="unit">2</sup></span></span></p>
+<p>&nbsp;</p>
+<h4>Nodos</h4> 
+<p><span class="eq"><var>x</var><sub>1</sub> = 0 <i>in</i></span></p>
+<p><span class="eq"><var>y</var><sub>1</sub> = 0 <i>in</i></span></p>
+<p><span class="eq"><var>x</var><sub>2</sub> = 70.71 <i>in</i></span></p>
+<p><span class="eq"><var>y</var><sub>2</sub> = 70.71 <i>in</i></span></p>
+<p><span class="eq"><var>x</var><sub>3</sub> = 170.71 <i>in</i></span></p>
+<p><span class="eq"><var>y</var><sub>3</sub> = 70.71 <i>in</i></span></p>
+<p>&nbsp;</p>
+<h4>Longitudes</h4> 
+<p><span class="eq"><var>L1</var> = &ensp;&hairsp;&hairsp;<span class="o0"><span class="r">√</span>&hairsp; ( <var>x</var><sub>2</sub> − <var>x</var><sub>1</sub> ) <sup>2</sup> +  ( <var>y</var><sub>2</sub> − <var>y</var><sub>1</sub> ) <sup>2</sup></span> = &ensp;&hairsp;&hairsp;<span class="o0"><span class="r">√</span>&hairsp; ( 70.71 <i>in</i> − 0 <i>in</i> ) <sup>2</sup> +  ( 70.71 <i>in</i> − 0 <i>in</i> ) <sup>2</sup></span> = 99.999041 <i>in</i></span></p>
+<p><span class="eq"><var>L2</var> = &ensp;&hairsp;&hairsp;<span class="o0"><span class="r">√</span>&hairsp; ( <var>x</var><sub>3</sub> − <var>x</var><sub>2</sub> ) <sup>2</sup> +  ( <var>y</var><sub>3</sub> − <var>y</var><sub>2</sub> ) <sup>2</sup></span> = &ensp;&hairsp;&hairsp;<span class="o0"><span class="r">√</span>&hairsp; ( 170.71 <i>in</i> − 70.71 <i>in</i> ) <sup>2</sup> +  ( 70.71 <i>in</i> − 70.71 <i>in</i> ) <sup>2</sup></span> = 100 <i>in</i></span></p>
+<p>&nbsp;</p>
+<hr/> 
+<h3>3. Matrices reducidas (3×3) </h3>
+<p>Unidades internas: lb, in, s. Matrices adimensionalizadas.</p> 
+<p>&nbsp;</p>
+<p><span class="eq"><b><var>K</var></b> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td"><b><var>Ke1</var></b><sub>4,4</sub> + <b><var>Ke2</var></b><sub>1,1</sub></span><span class="td"><b><var>Ke1</var></b><sub>4,5</sub> + <b><var>Ke2</var></b><sub>1,2</sub></span><span class="td"><b><var>Ke1</var></b><sub>4,6</sub> + <b><var>Ke2</var></b><sub>1,3</sub></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td"><b><var>Ke1</var></b><sub>5,4</sub> + <b><var>Ke2</var></b><sub>2,1</sub></span><span class="td"><b><var>Ke1</var></b><sub>5,5</sub> + <b><var>Ke2</var></b><sub>2,2</sub></span><span class="td"><b><var>Ke1</var></b><sub>5,6</sub> + <b><var>Ke2</var></b><sub>2,3</sub></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td"><b><var>Ke1</var></b><sub>6,4</sub> + <b><var>Ke2</var></b><sub>3,1</sub></span><span class="td"><b><var>Ke1</var></b><sub>6,5</sub> + <b><var>Ke2</var></b><sub>3,2</sub></span><span class="td"><b><var>Ke1</var></b><sub>6,6</sub> + <b><var>Ke2</var></b><sub>3,3</sub></span><span class="td"></span></span></span></span></p>
+<p>&nbsp;</p>
+<p><span class="eq"><b><var>M</var></b> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td"><b><var>Me1</var></b><sub>4,4</sub> + <b><var>Me2</var></b><sub>1,1</sub></span><span class="td"><b><var>Me1</var></b><sub>4,5</sub> + <b><var>Me2</var></b><sub>1,2</sub></span><span class="td"><b><var>Me1</var></b><sub>4,6</sub> + <b><var>Me2</var></b><sub>1,3</sub></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td"><b><var>Me1</var></b><sub>5,4</sub> + <b><var>Me2</var></b><sub>2,1</sub></span><span class="td"><b><var>Me1</var></b><sub>5,5</sub> + <b><var>Me2</var></b><sub>2,2</sub></span><span class="td"><b><var>Me1</var></b><sub>5,6</sub> + <b><var>Me2</var></b><sub>2,3</sub></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td"><b><var>Me1</var></b><sub>6,4</sub> + <b><var>Me2</var></b><sub>3,1</sub></span><span class="td"><b><var>Me1</var></b><sub>6,5</sub> + <b><var>Me2</var></b><sub>3,2</sub></span><span class="td"><b><var>Me1</var></b><sub>6,6</sub> + <b><var>Me2</var></b><sub>3,3</sub></span><span class="td"></span></span></span></span></p>
+<p>&nbsp;</p>
+<hr/> 
+<h3>4. Newmark-β </h3>
+<p><span class="eq"><var>beta</var> = <span class="dvc">1<span class="dvl"></span>4</span> = 0.25</span></p>
+<p><span class="eq"><var>gam</var> = <span class="dvc">1<span class="dvl"></span>2</span> = 0.5</span></p>
+<p><span class="eq"><var>dt</var> = 0.001</span></p>
+<p><span class="eq"><var>n</var><sub>steps</sub> = 5000</span></p>
+<p><span class="eq"><var>n</var><sub>plot</sub> = 500</span></p>
+<p><span class="eq"><var>n</var><sub>skip</sub> = 10</span></p>
+<p>&nbsp;</p>
+<p><span class="eq"><var>a0</var> = <span class="dvc">1<span class="dvl"></span><var>beta</var> · <var>dt</var><sup>2</sup></span> = <span class="dvc">1<span class="dvl"></span>0.25 · 0.001<sup>2</sup></span> = 4000000</span></p>
+<p><span class="eq"><var>a2</var> = <span class="dvc">1<span class="dvl"></span><var>beta</var> · <var>dt</var></span> = <span class="dvc">1<span class="dvl"></span>0.25 · 0.001</span> = 4000</span></p>
+<p><span class="eq"><var>a3</var> = <span class="dvc">1<span class="dvl"></span>2 · <var>beta</var></span> − 1 = <span class="dvc">1<span class="dvl"></span>2 · 0.25</span> − 1 = 1</span></p>
+<p><span class="eq"><b><var>K</var></b><sub>eff</sub> = <b><var>K</var></b> + <var>a0</var> · <b><var>M</var></b> = <b><var>K</var></b> + 4000000 · <b><var>M</var></b> = <span class="matrix">
+<span class="tr"><span class="td"></span><span class="td">1152900326</span><span class="td">-31705690.41</span><span class="td">6222844598</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">-31705690.41</span><span class="td">1216312326</span><span class="td">2577755402</span><span class="td"></span></span>
+<span class="tr"><span class="td"></span><span class="td">6222844598</span><span class="td">2577755402</span><span class="td">320075397206</span><span class="td"></span></span>
+</span>
+</span></p>
+<p>&nbsp;</p>
+<hr/> 
+<h3>5. Carga </h3>
+<p><span class="eq"><var>F</var><sub>ap</sub> = 100000 <i>lbf</i></span></p>
+<p>Carga escalón en DOF u₁, sin amortiguamiento</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>6. Integración (5000 pasos, dt = 0.001 s) </h3>
+<p>&nbsp;</p>
+<hr/> 
+<h3>7. Resultados </h3>
+<p>&nbsp;</p>
+<h4>Desplazamientos máximos</h4> 
+<p><span class="eq"><var>u</var><sub>1max</sub> = <var>u1</var><sub>max</sub> · <i>in</i> = 0.3150834 · <i>in</i> = 0.3150834 <i>in</i></span></p>
+<p>MATLAB: 0.3119 in</p> 
+<p><span class="eq"><var>u</var><sub>2max</sub> = <var>u2</var><sub>max</sub> · <i>in</i> = 0.3598148 · <i>in</i> = 0.3598148 <i>in</i></span></p>
+<p>MATLAB: 0.3590 in</p> 
+<p><span class="eq"><var>u</var><sub>3max</sub> = <var>u3</var><sub>max</sub> · <i>rad</i> = 0.00450619 · <i>rad</i> = 0.00450619 <i>rad</i></span></p>
+<p>MATLAB: 0.0045 rad</p> 
+<p>&nbsp;</p>
+<hr/> 
+<h3>8. Gráficas </h3>
+<p>&nbsp;</p>
+<div id="cviz_0" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_0",{series:[{x:[0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.18,0.19,0.2,0.21,0.22,0.23,0.24,0.25,0.26,0.27,0.28,0.29,0.3,0.31,0.32,0.33,0.34,0.35,0.36,0.37,0.38,0.39,0.4,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.5,0.51,0.52,0.53,0.54,0.55,0.56,0.57,0.58,0.59,0.6,0.61,0.62,0.63,0.64,0.65,0.66,0.67,0.68,0.69,0.7,0.71,0.72,0.73,0.74,0.75,0.76,0.77,0.78,0.79,0.8,0.81,0.82,0.83,0.84,0.85,0.86,0.87,0.88,0.89,0.9,0.91,0.92,0.93,0.94,0.95,0.96,0.97,0.98,0.99,1,1.01,1.02,1.03,1.04,1.05,1.06,1.07,1.08,1.09,1.1,1.11,1.12,1.13,1.14,1.15,1.16,1.17,1.18,1.19,1.2,1.21,1.22,1.23,1.24,1.25,1.26,1.27,1.28,1.29,1.3,1.31,1.32,1.33,1.34,1.35,1.36,1.37,1.38,1.39,1.4,1.41,1.42,1.43,1.44,1.45,1.46,1.47,1.48,1.49,1.5,1.51,1.52,1.53,1.54,1.55,1.56,1.57,1.58,1.59,1.6,1.61,1.62,1.63,1.64,1.65,1.66,1.67,1.68,1.69,1.7,1.71,1.72,1.73,1.74,1.75,1.76,1.77,1.78,1.79,1.8,1.81,1.82,1.83,1.84,1.85,1.86,1.87,1.88,1.89,1.9,1.91,1.92,1.93,1.94,1.95,1.96,1.97,1.98,1.99,2,2.01,2.02,2.03,2.04,2.05,2.06,2.07,2.08,2.09,2.1,2.11,2.12,2.13,2.14,2.15,2.16,2.17,2.18,2.19,2.2,2.21,2.22,2.23,2.24,2.25,2.26,2.27,2.28,2.29,2.3,2.31,2.32,2.33,2.34,2.35,2.36,2.37,2.38,2.39,2.4,2.41,2.42,2.43,2.44,2.45,2.46,2.47,2.48,2.49,2.5,2.51,2.52,2.53,2.54,2.55,2.56,2.57,2.58,2.59,2.6,2.61,2.62,2.63,2.64,2.65,2.66,2.67,2.68,2.69,2.7,2.71,2.72,2.73,2.74,2.75,2.76,2.77,2.78,2.79,2.8,2.81,2.82,2.83,2.84,2.85,2.86,2.87,2.88,2.89,2.9,2.91,2.92,2.93,2.94,2.95,2.96,2.97,2.98,2.99,3,3.01,3.02,3.03,3.04,3.05,3.06,3.07,3.08,3.09,3.1,3.11,3.12,3.13,3.14,3.15,3.16,3.17,3.18,3.19,3.2,3.21,3.22,3.23,3.24,3.25,3.26,3.27,3.28,3.29,3.3,3.31,3.32,3.33,3.34,3.35,3.36,3.37,3.38,3.39,3.4,3.41,3.42,3.43,3.44,3.45,3.46,3.47,3.48,3.49,3.5,3.51,3.52,3.53,3.54,3.55,3.56,3.57,3.58,3.59,3.6,3.61,3.62,3.63,3.64,3.65,3.66,3.67,3.68,3.69,3.7,3.71,3.72,3.73,3.74,3.75,3.76,3.77,3.78,3.79,3.8,3.81,3.82,3.83,3.84,3.85,3.86,3.87,3.88,3.89,3.9,3.91,3.92,3.93,3.94,3.95,3.96,3.97,3.98,3.99,4,4.01,4.02,4.03,4.04,4.05,4.06,4.07,4.08,4.09,4.1,4.11,4.12,4.13,4.14,4.15,4.16,4.17,4.18,4.19,4.2,4.21,4.22,4.23,4.24,4.25,4.26,4.27,4.28,4.29,4.3,4.31,4.32,4.33,4.34,4.35,4.36,4.37,4.38,4.39,4.4,4.41,4.42,4.43,4.44,4.45,4.46,4.47,4.48,4.49,4.5,4.51,4.52,4.53,4.54,4.55,4.56,4.57,4.58,4.59,4.6,4.61,4.62,4.63,4.64,4.65,4.66,4.67,4.68,4.69,4.7,4.71,4.72,4.73,4.74,4.75,4.76,4.77,4.78,4.79,4.8,4.81,4.82,4.83,4.84,4.85,4.86,4.87,4.88,4.89,4.9,4.91,4.92,4.93,4.94,4.95,4.96,4.97,4.98,4.99,5],y:[0.01714310925,0.0657775564,0.1286565227,0.1841418157,0.2148392086,0.2143316965,0.1893942157,0.1568156669,0.1361472814,0.1413517916,0.1747728713,0.2258982131,0.2754370454,0.3030675495,0.2957117228,0.2529738326,0.1875241368,0.1202570296,0.07217068934,0.05624346116,0.07258120202,0.1087801815,0.1453321496,0.1638523082,0.1547682276,0.1213322253,0.07831979594,0.04594244879,0.04145434461,0.07187529622,0.1308043823,0.2006404681,0.259331728,0.2889372123,0.2825467694,0.246770631,0.1988066328,0.1592916127,0.1438509876,0.1567834514,0.1894440566,0.2239740038,0.2408476941,0.2271521696,0.1822132249,0.1182586395,0.05582499847,0.01575131272,0.01099186659,0.0415577911,0.09463025499,0.1497922317,0.1872518262,0.1957204678,0.1767550545,0.1438148105,0.1164351302,0.1119075901,0.137870154,0.1888419144,0.248132713,0.2943714535,0.3100164288,0.2884008245,0.2364561936,0.1720068741,0.1167282825,0.08761824248,0.09042977446,0.1177128897,0.1522375713,0.1743824407,0.170462591,0.1385902893,0.08966793427,0.04309499246,0.01892391039,0.02964898072,0.07496770067,0.1416526947,0.2086015468,0.255032886,0.2685223221,0.2496390279,0.2113254502,0.1732973532,0.1537618419,0.1618364151,0.1937617085,0.2344527425,0.2637575165,0.2648722505,0.2314798746,0.170691567,0.1005721175,0.04322780029,0.01623744359,0.02588138149,0.06489507488,0.1156399842,0.1573887574,0.1747566669,0.1638526146,0.1336568028,0.102078438,0.08831436086,0.1046371688,0.1509763301,0.2145222993,0.2745422092,0.3104758177,0.3100435479,0.2740881042,0.2161918708,0.1572278911,0.1170535789,0.1067104053,0.1242811737,0.1560655186,0.1825700648,0.1868518058,0.1617973166,0.1133547866,0.05838390207,0.01798045964,0.008977321477,0.0370709909,0.0943694646,0.162367226,0.2191540774,0.2479491374,0.2435164346,0.213881231,0.1766758799,0.151624742,0.1522435054,0.1801431753,0.2242653511,0.2653657155,0.2839238813,0.2682592874,0.2195433118,0.1516538995,0.08591070426,0.04280634991,0.03406890421,0.05825657988,0.1016524559,0.1440768503,0.1672412956,0.1622406459,0.1331358141,0.0951740071,0.06837793015,0.06912228671,0.1031380564,0.1628081717,0.229876541,0.2824934285,0.3037574289,0.2883039584,0.2442804348,0.1899182572,0.1461018029,0.1279553831,0.1388622586,0.1693360083,0.2011879178,0.2152780312,0.1996783808,0.154907726,0.09408674947,0.03792776245,0.006574405799,0.01159063527,0.05134258073,0.1116440197,0.1714036632,0.2109863214,0.21990316,0.200723966,0.167643454,0.1403085189,0.1354401136,0.1596791158,0.2065862299,0.2590346242,0.2960380504,0.3012491722,0.2696777211,0.2098946873,0.1408163069,0.08435800385,0.05692164235,0.06314994653,0.09445881682,0.1329167479,0.1588695289,0.1591899118,0.1327827571,0.09109724531,0.0534331881,0.03895081392,0.05863983086,0.11052655,0.180087612,0.2457274024,0.2871211973,0.2930622823,0.2656515485,0.2191511021,0.1739868621,0.1483502246,0.1508176026,0.1769858452,0.2114826639,0.2345206205,0.2303114649,0.1938974163,0.1335965238,0.06804043244,0.01898103849,0.00276444238,0.02391644809,0.07343154737,0.1324527808,0.1798464926,0.2006004595,0.1916458782,0.1627560827,0.1321796725,0.1188081113,0.1340871512,0.1769849796,0.2340857584,0.2847909397,0.3095303503,0.2976561642,0.2518152352,0.1870195442,0.1247824504,0.08468767607,0.07679653284,0.09795508968,0.133476671,0.1634908774,0.1713556956,0.1506939099,0.1081781538,0.06092147422,0.02952793502,0.0296272672,0.06533953582,0.1273371667,0.1963084921,0.2504359893,0.273873615,0.2628027328,0.2266295675,0.1838593419,0.1543420491,0.1510548205,0.1747690421,0.2137726279,0.2487580397,0.2608820343,0.2397091865,0.1877940296,0.1200190607,0.05793450028,0.02137582991,0.02074191639,0.05305025036,0.1033545405,0.1509356095,0.177742412,0.1756515839,0.149599988,0.1153273871,0.09266160202,0.09709402482,0.1330912032,0.1918846409,0.2546616994,0.2998846981,0.3117852172,0.2865990118,0.2340197617,0.1732865318,0.12549379,0.1052412079,0.1150026747,0.1444838304,0.1752063966,0.188431154,0.1731737828,0.1310306665,0.07583021414,0.02823158514,0.007450831531,0.02346783803,0.07287889207,0.1400854177,0.2033479298,0.2432634008,0.2502443646,0.2279870245,0.1915469799,0.1608319963,0.1521813397,0.171474947,0.2115889323,0.2552416638,0.2820773833,0.2771053234,0.237054519,0.1720450944,0.1018746219,0.04840242827,0.0270982166,0.04116081399,0.08057032552,0.1264359572,0.1588550593,0.1650784391,0.1446594579,0.1094971436,0.07876518592,0.07080295849,0.09528436375,0.1488712799,0.2161447657,0.2754631829,0.3073931562,0.3023108484,0.2641036066,0.2084808065,0.1565865991,0.1265093409,0.1261303634,0.1502043561,0.1828390023,0.2043437003,0.1996394563,0.1647868087,0.1089540828,0.05100328723,0.01206166624,0.00708294898,0.03881861198,0.09664649159,0.1607367827,0.2098727885,0.2297640992,0.2184940758,0.1869109067,0.1538275951,0.1380055268,0.1502017441,0.1885313826,0.2390457382,0.2813023169,0.2966693172,0.2759900749,0.2234872082,0.1553086212,0.09328988486,0.05644743608,0.05363652779,0.08033345725,0.1208261296,0.1549012203,0.1662921659,0.1494408927,0.1118163551,0.07084389486,0.04669499368,0.05387475082,0.09503826093,0.1595660193,0.2274983633,0.2772537812,0.2940193319,0.2754276946,0.2322357386,0.1837469935,0.1498514051,0.1429246953,0.1628806277,0.1973821583,0.2271152782,0.2339668507,0.2087632841,0.1554020316,0.08967172782,0.03321462971,0.005060199819,0.01414854425,0.05586463002,0.1139801162,0.167208787,0.1977137417,0.1981181648,0.1741857357,0.1421015426,0.1214823338,0.1269827055,0.1619351434,0.2166344882,0.2719875957,0.3070647241,0.3074982546,0.2713235236,0.2098887716,0.1434575796,0.09327696659,0.07331454224,0.08499800408,0.1170673832,0.150571851,0.1669532483,0.1559068021,0.1198041694,0.07286625311,0.03541302344,0.02552498987,0.05150988929,0.1082478468,0.1789184192,0.2414309952,0.2769722394,0.2772255752,0.2473569176,0.203578929,0.1663050703,0.1516914291,0.1650131249,0.1985698141,0.2349675557,0.2544330897,0.2431721721,0.1993545351,0.1342689368,0.06815241925,0.02236175857,0.01104295016,0.03566175041,0.08460039744,0.1379728067,0.1756965031,0.1855428574,0.1679024142,0.1353426376,0.1071562352,0.1011373113,0.1259512488,0.1772236959,0.2389620621,0.2897539108,0.3112420317,0.295446167,0.247964428,0.1857555935,0.1303992936,0.09956273148,0.100126211,0.1257415938,0.1597936928,0.1825377196,0.1794889512,0.1476332607,0.09691519529,0.04638289476,0.01654491785,0.02103863936,0.06099539488,0.124397621,0.19070038,0.2388554545,0.2554975251,0.2399887296,0.2042956862,0.1677725603,0.1489919248,0.1579617566,0.1919059084,0.236332444,0.2709599823,0.278092297,0.2500306918,0.1924990843,0.1226720431,0.06258521136,0.03058136145,0.03424258167,0.06765592947,0.1141013571,0.1530512197,0.1686236869,0.1560474309],type:"line"}],options:{width:600,height:350,title:"u1 Desplazamiento x",xLabel:"Tiempo (s)",yLabel:"u1 (in)",}});</script><p>&nbsp;</p>
+<div id="cviz_1" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_1",{series:[{x:[0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.18,0.19,0.2,0.21,0.22,0.23,0.24,0.25,0.26,0.27,0.28,0.29,0.3,0.31,0.32,0.33,0.34,0.35,0.36,0.37,0.38,0.39,0.4,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.5,0.51,0.52,0.53,0.54,0.55,0.56,0.57,0.58,0.59,0.6,0.61,0.62,0.63,0.64,0.65,0.66,0.67,0.68,0.69,0.7,0.71,0.72,0.73,0.74,0.75,0.76,0.77,0.78,0.79,0.8,0.81,0.82,0.83,0.84,0.85,0.86,0.87,0.88,0.89,0.9,0.91,0.92,0.93,0.94,0.95,0.96,0.97,0.98,0.99,1,1.01,1.02,1.03,1.04,1.05,1.06,1.07,1.08,1.09,1.1,1.11,1.12,1.13,1.14,1.15,1.16,1.17,1.18,1.19,1.2,1.21,1.22,1.23,1.24,1.25,1.26,1.27,1.28,1.29,1.3,1.31,1.32,1.33,1.34,1.35,1.36,1.37,1.38,1.39,1.4,1.41,1.42,1.43,1.44,1.45,1.46,1.47,1.48,1.49,1.5,1.51,1.52,1.53,1.54,1.55,1.56,1.57,1.58,1.59,1.6,1.61,1.62,1.63,1.64,1.65,1.66,1.67,1.68,1.69,1.7,1.71,1.72,1.73,1.74,1.75,1.76,1.77,1.78,1.79,1.8,1.81,1.82,1.83,1.84,1.85,1.86,1.87,1.88,1.89,1.9,1.91,1.92,1.93,1.94,1.95,1.96,1.97,1.98,1.99,2,2.01,2.02,2.03,2.04,2.05,2.06,2.07,2.08,2.09,2.1,2.11,2.12,2.13,2.14,2.15,2.16,2.17,2.18,2.19,2.2,2.21,2.22,2.23,2.24,2.25,2.26,2.27,2.28,2.29,2.3,2.31,2.32,2.33,2.34,2.35,2.36,2.37,2.38,2.39,2.4,2.41,2.42,2.43,2.44,2.45,2.46,2.47,2.48,2.49,2.5,2.51,2.52,2.53,2.54,2.55,2.56,2.57,2.58,2.59,2.6,2.61,2.62,2.63,2.64,2.65,2.66,2.67,2.68,2.69,2.7,2.71,2.72,2.73,2.74,2.75,2.76,2.77,2.78,2.79,2.8,2.81,2.82,2.83,2.84,2.85,2.86,2.87,2.88,2.89,2.9,2.91,2.92,2.93,2.94,2.95,2.96,2.97,2.98,2.99,3,3.01,3.02,3.03,3.04,3.05,3.06,3.07,3.08,3.09,3.1,3.11,3.12,3.13,3.14,3.15,3.16,3.17,3.18,3.19,3.2,3.21,3.22,3.23,3.24,3.25,3.26,3.27,3.28,3.29,3.3,3.31,3.32,3.33,3.34,3.35,3.36,3.37,3.38,3.39,3.4,3.41,3.42,3.43,3.44,3.45,3.46,3.47,3.48,3.49,3.5,3.51,3.52,3.53,3.54,3.55,3.56,3.57,3.58,3.59,3.6,3.61,3.62,3.63,3.64,3.65,3.66,3.67,3.68,3.69,3.7,3.71,3.72,3.73,3.74,3.75,3.76,3.77,3.78,3.79,3.8,3.81,3.82,3.83,3.84,3.85,3.86,3.87,3.88,3.89,3.9,3.91,3.92,3.93,3.94,3.95,3.96,3.97,3.98,3.99,4,4.01,4.02,4.03,4.04,4.05,4.06,4.07,4.08,4.09,4.1,4.11,4.12,4.13,4.14,4.15,4.16,4.17,4.18,4.19,4.2,4.21,4.22,4.23,4.24,4.25,4.26,4.27,4.28,4.29,4.3,4.31,4.32,4.33,4.34,4.35,4.36,4.37,4.38,4.39,4.4,4.41,4.42,4.43,4.44,4.45,4.46,4.47,4.48,4.49,4.5,4.51,4.52,4.53,4.54,4.55,4.56,4.57,4.58,4.59,4.6,4.61,4.62,4.63,4.64,4.65,4.66,4.67,4.68,4.69,4.7,4.71,4.72,4.73,4.74,4.75,4.76,4.77,4.78,4.79,4.8,4.81,4.82,4.83,4.84,4.85,4.86,4.87,4.88,4.89,4.9,4.91,4.92,4.93,4.94,4.95,4.96,4.97,4.98,4.99,5],y:[0.00103216631,0.002122016134,-0.002697990299,-0.02043068178,-0.0556954163,-0.1081032361,-0.1715329883,-0.2356582186,-0.289165094,-0.3234156763,-0.3351271646,-0.3270310787,-0.306287331,-0.281327845,-0.2584280365,-0.2393995923,-0.2213268827,-0.1984244187,-0.1652182432,-0.1197061606,-0.06515355621,-0.009732920945,0.03590775091,0.06221618967,0.06404375861,0.04238262257,0.003849156036,-0.04186898651,-0.08557312161,-0.1216981092,-0.1498009772,-0.1738376457,-0.1995789181,-0.2312777081,-0.2690045246,-0.3077935309,-0.3389988331,-0.3533522432,-0.3445093371,-0.3116572548,-0.2601230029,-0.1997176144,-0.1414567329,-0.09394517433,-0.06083970436,-0.04035982574,-0.02698178355,-0.01456553882,0.0004121958199,0.01687967071,0.02928533931,0.02978031249,0.01158599899,-0.0278327409,-0.08510494425,-0.151517333,-0.2156269171,-0.2669201092,-0.2990948214,-0.3116951426,-0.3094934641,-0.2999222862,-0.2896392363,-0.2816473227,-0.2741514816,-0.2616109451,-0.2375390544,-0.1978777695,-0.1435285174,-0.08095474136,-0.02054954309,0.0266316299,0.052506477,0.05454675114,0.03630046261,0.005675078032,-0.02830351769,-0.05893794632,-0.08412594115,-0.1065548611,-0.131787235,-0.1650676304,-0.2082076069,-0.2578769332,-0.3060570386,-0.3425293983,-0.3584363989,-0.3495050858,-0.3176474396,-0.2702952883,-0.2177327249,-0.1694873516,-0.1312103466,-0.1032653112,-0.08154316158,-0.060111022,-0.03455690671,-0.004612194116,0.02506602516,0.04631304354,0.05052872628,0.03217090031,-0.008749515744,-0.06620090254,-0.1299107331,-0.1887120387,-0.2341491204,-0.2629363109,-0.2773324718,-0.2833397457,-0.2875142656,-0.293732134,-0.3012607908,-0.3049418487,-0.2974184846,-0.2724941993,-0.2282350219,-0.168517878,-0.1023479002,-0.04116569964,0.004822393785,0.02986199585,0.03416775541,0.02317556935,0.004875791213,-0.01365974643,-0.02913115117,-0.04308591398,-0.0607959345,-0.08842347568,-0.1296712259,-0.1833311148,-0.2427878302,-0.2977414387,-0.3375105634,-0.3546301635,-0.3473294733,-0.3199188404,-0.2809497364,-0.2399014996,-0.2037310651,-0.1746623033,-0.1500741947,-0.1244830269,-0.092754901,-0.0531805828,-0.009100303766,0.03164104598,0.05923888525,0.06548113897,0.04689204859,0.006202691335,-0.04845284917,-0.1063084409,-0.1576120926,-0.1967122861,-0.223386308,-0.2419326292,-0.2584598197,-0.2775351245,-0.2996099275,-0.3203140428,-0.3319388809,-0.326525476,-0.2993054084,-0.2510832217,-0.1885638353,-0.1224500723,-0.06403078979,-0.02158608225,0.001993114997,0.009466547088,0.007339157724,0.002612671864,-0.0004474923774,-0.002191834906,-0.007340125392,-0.02271562356,-0.05390321181,-0.102225773,-0.1633155511,-0.2279177932,-0.2846619573,-0.3237373743,-0.3400398178,-0.3345636609,-0.3135170379,-0.2855497755,-0.2582359511,-0.2352401235,-0.2153028644,-0.1934274143,-0.1637422941,-0.1228238374,-0.07206920194,-0.01809345866,0.0290716286,0.05930128735,0.06592088593,0.04806483663,0.01091492621,-0.03627180245,-0.08355294471,-0.1237546928,-0.1546236311,-0.1788503853,-0.2020119381,-0.2293296394,-0.2626218345,-0.2987477701,-0.3302266435,-0.3478217511,-0.3440685213,-0.316327162,-0.2681183736,-0.2081828325,-0.1476156869,-0.09619707902,-0.05935671108,-0.03694652706,-0.02425832356,-0.0148122645,-0.003727858016,0.009739078026,0.02155947117,0.02447424246,0.01109687627,-0.02269474788,-0.07547989437,-0.1400936554,-0.2056337184,-0.2609170278,-0.2980434766,-0.3146808175,-0.3142011697,-0.3036652869,-0.2905148128,-0.2793446508,-0.2700801476,-0.2582972457,-0.2375374248,-0.2026442348,-0.1527206841,-0.09245118418,-0.0311901044,0.01987583631,0.0513997565,0.05894504049,0.04425295708,0.01422672284,-0.02193530777,-0.0562883124,-0.08494146342,-0.1089993849,-0.1333026961,-0.1635309657,-0.2029044596,-0.249887982,-0.2978928083,-0.3371566866,-0.3580889663,-0.3547614065,-0.3271522725,-0.2812424651,-0.2269190733,-0.1745168708,-0.1313673107,-0.09970943091,-0.07675467778,-0.05681709358,-0.03457970819,-0.008108975873,0.01966197846,0.04162836909,0.04913617058,0.03548311304,-0.001123471858,-0.056368929,-0.1209104481,-0.1833377666,-0.2338658001,-0.2673190189,-0.2842581382,-0.2898534307,-0.2910195379,-0.2930243958,-0.2969868573,-0.2993024868,-0.2932381204,-0.2720387173,-0.2322602681,-0.1759369293,-0.1106528903,-0.04743260931,0.002755081246,0.03252093897,0.04023456911,0.03002552816,0.009647517762,-0.01289777162,-0.03259137069,-0.04917118856,-0.06674579446,-0.09143615526,-0.1280472869,-0.1771755154,-0.2339862476,-0.2892208382,-0.3320839498,-0.3538934468,-0.3510562721,-0.3261959331,-0.2869943883,-0.2432246204,-0.2031698091,-0.1708593483,-0.1452067197,-0.1213505451,-0.09359710386,-0.05870763071,-0.01813319404,0.02176898444,0.05167662829,0.06265286908,0.04957247956,0.01324484202,-0.03963134292,-0.09868096702,-0.1533659245,-0.196415741,-0.2258352442,-0.2447333548,-0.2591047,-0.2745259362,-0.293164199,-0.3123593385,-0.325390277,-0.3241343243,-0.3025437747,-0.2595163342,-0.1999671656,-0.1336276123,-0.07200837751,-0.02470295069,0.003528972266,0.01377541762,0.01173002152,0.004749609133,-0.001552748458,-0.005768059017,-0.01119372268,-0.02417790741,-0.05099852142,-0.09457915574,-0.1524228748,-0.2166592189,-0.2762469186,-0.3205007616,-0.342570818,-0.3415154529,-0.3221712591,-0.2929056037,-0.2621831145,-0.2353434765,-0.2128860256,-0.1909292361,-0.1636161929,-0.126435837,-0.07905043674,-0.02641696291,0.02231608329,0.05674629642,0.06884558778,0.05584296083,0.02121466384,-0.02661201924,-0.0773221987,-0.1223224508,-0.157466367,-0.1838381254,-0.2063332619,-0.2306757414,-0.2601466789,-0.2934140806,-0.3243986283,-0.3442728924,-0.3448114325,-0.3217453965,-0.2767575229,-0.2172900836,-0.1542122568,-0.09825051068,-0.05657837061,-0.03089082437,-0.01768288132,-0.01055771307,-0.003570542511,0.005797462846,0.01527880652,0.01864660839,0.008398548579,-0.02080278299,-0.0693561327,-0.1317800298,-0.1980355746,-0.2566335058,-0.2983246949,-0.3189364469,-0.3202604373,-0.3086824649,-0.2921512329,-0.2767452051,-0.2642451445,-0.2516957868,-0.2331165574,-0.2026338858,-0.1577179394,-0.101154866,-0.04089350457,0.0122329919,0.04804497617,0.06043066082,0.04929529504,0.02028693253,-0.0175700065,-0.05536730029,-0.08752348426,-0.1134336762,-0.1369272933,-0.1638037286,-0.1985046333,-0.2413362818,-0.2874321412,-0.327934966,-0.3529685336,-0.3552314024,-0.3327792293,-0.2898770645,-0.2355716406,-0.1805446858,-0.1334925243,-0.09845758152,-0.07414136836,-0.05541759468,-0.03636811957,-0.01354765843,0.01190397591,0.03420576737,0.04499156494,0.0366618269,0.005672528517,-0.04558755595,-0.1091214707,-0.1737595331,-0.228767653,-0.2672214764,-0.2878381942,-0.294584263,-0.2942767025,-0.2932028889,-0.2941713566,-0.2952172709,-0.2904985621,-0.2730125923,-0.2380078595,-0.1856685493,-0.1219331874,-0.05705783204,-0.002445350963,0.0330344994,0.04579985393,0.03832131041,0.01762977387,-0.007794935605,-0.03147423305,-0.05131753013,-0.06999152375,-0.09315264165,-0.1263045248,-0.1716113139,-0.2260222332,-0.2815330491,-0.3275405561,-0.3543906441,-0.3567267082,-0.3353143739,-0.2966233769,-0.2503431037,-0.2058318413,-0.1689176246,-0.1403119021,-0.1162306142,-0.09091225661,-0.05994733138,-0.0230034945,0.01522016569,0.04624939821,0.06083246369,0.05248926005,0.02018287397],type:"line"}],options:{width:600,height:350,title:"u2 Desplazamiento y",xLabel:"Tiempo (s)",yLabel:"u2 (in)",}});</script><p>&nbsp;</p>
+<div id="cviz_2" style="display:inline-block"></div><script>CalcpadViz.chart("cviz_2",{series:[{x:[0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.18,0.19,0.2,0.21,0.22,0.23,0.24,0.25,0.26,0.27,0.28,0.29,0.3,0.31,0.32,0.33,0.34,0.35,0.36,0.37,0.38,0.39,0.4,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.5,0.51,0.52,0.53,0.54,0.55,0.56,0.57,0.58,0.59,0.6,0.61,0.62,0.63,0.64,0.65,0.66,0.67,0.68,0.69,0.7,0.71,0.72,0.73,0.74,0.75,0.76,0.77,0.78,0.79,0.8,0.81,0.82,0.83,0.84,0.85,0.86,0.87,0.88,0.89,0.9,0.91,0.92,0.93,0.94,0.95,0.96,0.97,0.98,0.99,1,1.01,1.02,1.03,1.04,1.05,1.06,1.07,1.08,1.09,1.1,1.11,1.12,1.13,1.14,1.15,1.16,1.17,1.18,1.19,1.2,1.21,1.22,1.23,1.24,1.25,1.26,1.27,1.28,1.29,1.3,1.31,1.32,1.33,1.34,1.35,1.36,1.37,1.38,1.39,1.4,1.41,1.42,1.43,1.44,1.45,1.46,1.47,1.48,1.49,1.5,1.51,1.52,1.53,1.54,1.55,1.56,1.57,1.58,1.59,1.6,1.61,1.62,1.63,1.64,1.65,1.66,1.67,1.68,1.69,1.7,1.71,1.72,1.73,1.74,1.75,1.76,1.77,1.78,1.79,1.8,1.81,1.82,1.83,1.84,1.85,1.86,1.87,1.88,1.89,1.9,1.91,1.92,1.93,1.94,1.95,1.96,1.97,1.98,1.99,2,2.01,2.02,2.03,2.04,2.05,2.06,2.07,2.08,2.09,2.1,2.11,2.12,2.13,2.14,2.15,2.16,2.17,2.18,2.19,2.2,2.21,2.22,2.23,2.24,2.25,2.26,2.27,2.28,2.29,2.3,2.31,2.32,2.33,2.34,2.35,2.36,2.37,2.38,2.39,2.4,2.41,2.42,2.43,2.44,2.45,2.46,2.47,2.48,2.49,2.5,2.51,2.52,2.53,2.54,2.55,2.56,2.57,2.58,2.59,2.6,2.61,2.62,2.63,2.64,2.65,2.66,2.67,2.68,2.69,2.7,2.71,2.72,2.73,2.74,2.75,2.76,2.77,2.78,2.79,2.8,2.81,2.82,2.83,2.84,2.85,2.86,2.87,2.88,2.89,2.9,2.91,2.92,2.93,2.94,2.95,2.96,2.97,2.98,2.99,3,3.01,3.02,3.03,3.04,3.05,3.06,3.07,3.08,3.09,3.1,3.11,3.12,3.13,3.14,3.15,3.16,3.17,3.18,3.19,3.2,3.21,3.22,3.23,3.24,3.25,3.26,3.27,3.28,3.29,3.3,3.31,3.32,3.33,3.34,3.35,3.36,3.37,3.38,3.39,3.4,3.41,3.42,3.43,3.44,3.45,3.46,3.47,3.48,3.49,3.5,3.51,3.52,3.53,3.54,3.55,3.56,3.57,3.58,3.59,3.6,3.61,3.62,3.63,3.64,3.65,3.66,3.67,3.68,3.69,3.7,3.71,3.72,3.73,3.74,3.75,3.76,3.77,3.78,3.79,3.8,3.81,3.82,3.83,3.84,3.85,3.86,3.87,3.88,3.89,3.9,3.91,3.92,3.93,3.94,3.95,3.96,3.97,3.98,3.99,4,4.01,4.02,4.03,4.04,4.05,4.06,4.07,4.08,4.09,4.1,4.11,4.12,4.13,4.14,4.15,4.16,4.17,4.18,4.19,4.2,4.21,4.22,4.23,4.24,4.25,4.26,4.27,4.28,4.29,4.3,4.31,4.32,4.33,4.34,4.35,4.36,4.37,4.38,4.39,4.4,4.41,4.42,4.43,4.44,4.45,4.46,4.47,4.48,4.49,4.5,4.51,4.52,4.53,4.54,4.55,4.56,4.57,4.58,4.59,4.6,4.61,4.62,4.63,4.64,4.65,4.66,4.67,4.68,4.69,4.7,4.71,4.72,4.73,4.74,4.75,4.76,4.77,4.78,4.79,4.8,4.81,4.82,4.83,4.84,4.85,4.86,4.87,4.88,4.89,4.9,4.91,4.92,4.93,4.94,4.95,4.96,4.97,4.98,4.99,5],y:[-0.000339701778,-0.001263919302,-0.002325807972,-0.002977922237,-0.002807831874,-0.001719980898,9.537902771E-06,0.001829093166,0.003121015479,0.003440782854,0.002689848075,0.001152640193,-0.0006169996163,-0.002013999206,-0.002616867351,-0.002344798175,-0.001474605266,-0.0005121447508,2.797045557E-05,-0.0001565683696,-0.001024908589,-0.002206329145,-0.003152602741,-0.003367352676,-0.002618573957,-0.00104691904,0.0008756074973,0.002521296921,0.003346921479,0.003102305665,0.001923715088,0.0002749179202,-0.001239787568,-0.002114751632,-0.002137791937,-0.001462525033,-0.0005301655827,0.0001259039632,0.000111822287,-0.0006543912519,-0.001901032455,-0.003109271789,-0.00372515273,-0.003390775883,-0.002100144575,-0.0002153400107,0.001664876753,0.002932169774,0.003200731388,0.002451536695,0.001031347916,-0.0004922817435,-0.001560693602,-0.001845263106,-0.001370708257,-0.0004914544295,0.00026802474,0.0004425029822,-0.0001698007952,-0.001412559995,-0.00282590342,-0.003828901493,-0.00395625183,-0.003052933101,-0.001347194818,0.0006287424274,0.002239357524,0.002987843812,0.002702704127,0.001594588205,0.0001615226062,-0.001018071407,-0.001520024371,-0.00124142575,-0.0004326515827,0.0004176527651,0.0007966149103,0.0003917334839,-0.0007667953426,-0.002305338936,-0.003649236952,-0.004251405874,-0.003814727654,-0.00241785314,-0.0004928126191,0.001337396059,0.002496523185,0.002672992843,0.001931062666,0.0006715471927,-0.0005406612161,-0.0012112614,-0.001117554891,-0.0003941097813,0.0005312623713,0.001124297937,0.0009766892699,-1.180577412E-05,-0.001577116246,-0.003184829542,-0.004237490536,-0.004311953035,-0.003330867802,-0.001598672061,0.0003129843153,0.001784706716,0.002385784932,0.002032995233,0.001008821173,-0.0001667998693,-0.0009577880615,-0.001035394892,-0.000412491052,0.0005659635873,0.001371979215,0.001521698063,0.0007871367001,-0.000694991853,-0.00246316006,-0.003904924661,-0.004495504701,-0.004005095701,-0.002591258051,-0.0007389363687,0.0009279103389,0.001887370215,0.001916592197,0.001166159783,8.317232275E-05,-0.0007841891106,-0.00101986996,-0.0005151543906,0.0004859065864,0.00148943074,0.001960814381,0.00155423492,0.0002681064033,-0.001538122848,-0.003274220087,-0.004345073366,-0.004381811512,-0.003385266328,-0.001724107789,1.144217436E-05,0.001241219117,0.00161873747,0.001157136116,0.0002077116728,-0.0006986762892,-0.001081353051,-0.00071601902,0.0002674496584,0.001435973325,0.00223247735,0.002210208179,0.001226179372,-0.0004860068699,-0.002394977091,-0.003871577425,-0.004430320195,-0.003915557318,-0.00255780955,-0.0008780337418,0.0005210740394,0.001192231345,0.001013568528,0.0002235381592,-0.0006920347015,-0.001213312695,-0.001011979728,-9.592410112E-05,0.001186808309,0.002287090292,0.002680537008,0.00208805989,0.0006008114156,-0.001342364371,-0.003117216518,-0.004151720507,-0.004144057123,-0.003173767886,-0.001662034741,-0.0001979397001,0.0006984499564,0.000780145402,0.0001622369917,-0.0007392304646,-0.001392281092,-0.001381204961,-0.0005900297097,0.0007386906195,0.002094786242,0.002904883723,0.002767542759,0.001623368482,-0.0002096977358,-0.002151328841,-0.003578676619,-0.00406335924,-0.003530838451,-0.002278851163,-0.0008485545691,0.0001984965534,0.0005066188541,6.376353034E-05,-0.0008045470804,-0.001581584349,-0.001785243943,-0.001180046446,0.0001123914592,0.001650733907,0.002845130015,0.003193468907,0.002487022266,0.0009017614316,-0.00106238462,-0.002770692039,-0.003695718857,-0.003615468993,-0.002688690353,-0.001378155738,-0.0002542818876,0.0002403123831,-3.07100285E-05,-0.0008482676195,-0.001737429088,-0.002174209641,-0.001814231697,-0.0006488158578,0.0009764854067,0.002489895342,0.00331715111,0.003110896086,0.001892902612,5.123297777E-05,-0.00180708964,-0.003089040514,-0.003440853682,-0.002875576926,-0.001752661708,-0.0006193442308,2.051602958E-05,-8.463712452E-05,-0.0008326615849,-0.001814972616,-0.002492691392,-0.002429133351,-0.001482862448,0.0001186423168,0.001856208691,0.003117177754,0.003435295254,0.002675692235,0.001090227325,-0.0007793482027,-0.002311589802,-0.003044477539,-0.002847591912,-0.001958896203,-0.0008727500326,-0.0001261373765,-7.121747676E-05,-0.0007275115593,-0.001774241596,-0.002685907778,-0.002955510181,-0.002313776888,-0.0008540422144,0.0009894628391,0.002602657295,0.003428048907,0.003181762569,0.001963895825,0.0002178455358,-0.001444867996,-0.002483585698,-0.002635119151,-0.002005302235,-0.001009776435,-0.0001896397629,2.163813937E-05,-0.0005159520472,-0.001586826415,-0.002707127373,-0.003326043158,-0.003058871189,-0.001856231567,-3.942726193E-05,0.001813897819,0.003088914002,0.003370034582,0.002599850315,0.001096953626,-0.0005740568659,-0.001827519656,-0.002285636149,-0.001919238576,-0.001044437788,-0.0001779855004,0.0001883119994,-0.0001990431753,-0.001242103984,-0.00252551902,-0.003484476554,-0.003638393442,-0.002794991358,-0.001140988281,0.000818661026,0.002449751283,0.003230819547,0.002951339724,0.001786914912,0.0002219181223,-0.001148404516,-0.001855854458,-0.001740936232,-0.001005269698,-0.0001146635879,0.0004063137994,0.000203232452,-0.0007503634809,-0.002131651739,-0.003393438269,-0.003985129116,-0.003580115857,-0.002216829274,-0.0002953407307,0.001570291018,0.002785377391,0.003000409128,0.002239100116,0.0008779926998,-0.0005130467569,-0.001404002741,-0.001516655892,-0.0009295125126,-3.386996217E-05,0.0006399651334,0.0006542633229,-0.0001423940533,-0.001539488467,-0.00303913896,-0.004051639052,-0.004133161212,-0.003169230595,-0.001429116118,0.000531723958,0.002082652251,0.002758003796,0.002430359997,0.001348084542,2.324871103E-05,-0.0009834354708,-0.001292611235,-0.0008575414886,2.454083275E-05,0.000844868408,0.001104420993,0.0005327327528,-0.0007862331681,-0.002433835064,-0.003815494481,-0.004395030549,-0.003910075964,-0.002481284727,-0.0005707068779,0.001194473381,0.002262329994,0.002364441844,0.001608930976,0.0004220415966,-0.0006365996132,-0.001108861005,-0.0008269616879,2.069161579E-05,0.0009732108419,0.00149577213,0.001211236434,6.934831792E-05,-0.001616780706,-0.00328328375,-0.004332904402,-0.004369935335,-0.003358020081,-0.001636989556,0.0002083075409,0.001574553609,0.00207091393,0.001661926362,0.0006658120517,-0.0003895473588,-0.0009930215059,-0.0008658829144,-7.830422573E-05,0.0009809477065,0.001769133387,0.001820944886,0.000951616125,-0.0006521478899,-0.002491904372,-0.003945160149,-0.004506190224,-0.003983312488,-0.002573258209,-0.0007827607443,0.0007709255493,0.001600145412,0.001531072107,0.0007585387182,-0.000249277368,-0.0009560244311,-0.0009873902691,-0.0002916309715,0.0008356278466,0.001872760217,0.002290244167,0.001776285853,0.0003772751145,-0.001505330148,-0.003261948695,-0.004307510613,-0.004306716705,-0.003301603765,-0.001690424142,-6.681244257E-05,0.001015507058,0.001257442105,0.0007224331015,-0.0002049891589,-0.0009916328582,-0.00118743326,-0.0006209541132,0.0005220561367,0.001769833712,0.002556994157,0.002459910983,0.001378893135,-0.0004078334223,-0.002341578581,-0.00379398938,-0.00430711758,-0.003766687007,-0.00243939992,-0.0008600081946,0.0003855241148,0.0008927054339,0.0005930287027,-0.0002315166674,-0.001078538937,-0.001445582364,-0.001049613386,4.501039745E-05,0.001443339992,0.002575483109,0.002928326073,0.002259161715,0.0007039253624,-0.001264870545,-0.003014686707,-0.003993752527,-0.003939838891,-0.002973674347,-0.00154032023,-0.0002232518027,0.0004928208584,0.0004140129886,-0.0002933572921,-0.001183352569,-0.001726959063,-0.001543244021,-0.0005696351414,0.0008993660607,0.002322053761,0.003124276992,0.002932346452,0.001729492511,-0.0001281443031,-0.002043376236,-0.00340535073,-0.00382154208,-0.00326166057,-0.002056515767,-0.0007535978481,0.0001109747299,0.0002309382264,-0.0003500382612,-0.001265046499,-0.00198569177,-0.002051954838,-0.001275298236,0.0001690763412,0.001799820822,0.003014799599,0.003329890386,0.002574766184,0.0009661989345,-0.0009712962711,-0.002606077835,-0.003440952732,-0.003299014368],type:"line"}],options:{width:600,height:350,title:"u3 Rotacion",xLabel:"Tiempo (s)",yLabel:"u3 (rad)",}});</script> </body></html>

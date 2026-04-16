@@ -1,0 +1,42 @@
+"Maxima Computer Algebra System (#maxima)
+'Requires: Maxima installed (maxima.sourceforge.io)
+
+"Derivatives and Integrals
+#maxima
+diff(x^2 + 3*x + 1, x);
+integrate(sin(x), x);
+integrate(x^2, x, 0, 1);
+#end maxima
+
+"Solve Equations
+#maxima
+solve(x^2 - 4, x);
+solve([2*x + y = 5, x - y = 1], [x, y]);
+#end maxima
+
+"Laplace Transform
+#maxima
+laplace(sin(t), t, s);
+laplace(exp(-a*t)*sin(w*t), t, s);
+ilt(1/(s^2 + 1), s, t);
+#end maxima
+
+"ODE
+#maxima
+ode2('diff(y,x) + y = 0, y, x);
+ode2('diff(y,x,2) + 4*y = 0, y, x);
+#end maxima
+
+"Taylor Series
+#maxima
+taylor(sin(x), x, 0, 7);
+taylor(exp(x), x, 0, 5);
+#end maxima
+
+"Matrices
+#maxima
+A: matrix([a, b], [c, d]);
+determinant(A);
+invert(A);
+eigenvalues(A);
+#end maxima

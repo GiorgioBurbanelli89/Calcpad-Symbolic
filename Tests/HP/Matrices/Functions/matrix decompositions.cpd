@@ -1,0 +1,28 @@
+n = 250
+A = symmetric(n)
+v = transp(hp([10000; 500; 250; 200; 100; 50; 25; 20; 15; 10; 5; 3; 2; 1]))
+$Repeat{add(v; A; i; i) @ i = 1 : n}
+B = hp(A)
+
+
+λ_std = cholesky(A)
+λ_hp = cholesky(B)
+
+
+mnorm_e(λ_std - λ_hp)/(mnorm_e(λ_hp))'< 0.5%
+
+λ_std = lu(A)
+λ_hp = lu(B)
+
+mnorm_e(λ_std - λ_hp)/(mnorm_e(λ_hp))
+
+λ_std = qr(A)
+λ_hp = qr(B)
+
+mnorm_e(λ_std - λ_hp)/(mnorm_e(λ_hp))
+
+λ_std = svd(A)
+λ_hp = svd(B)
+
+mnorm_e(λ_std - λ_hp)/(mnorm_e(λ_hp))
+

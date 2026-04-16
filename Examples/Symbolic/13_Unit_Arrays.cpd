@@ -1,0 +1,23 @@
+"Unit Arrays — | Operator
+
+"| scalar conversion
+L = 6m
+L|cm
+L|mm
+
+"| vector conversion per element
+v = [5m; 3m; 0.02rad]
+v|[cm; mm; rad]
+
+"Matrix with units
+E = 200000MPa
+A = 100cm^2
+L_b = 3m
+k_a = E*A/L_b
+K = k_a*[1; -1 | -1; 1]
+K|[kN/m; kN/m | kN/m; kN/m]
+
+"Simple solve without units
+K_n = [4; -2 | -2; 4]
+F_n = [10; 0]
+u_n = lsolve(K_n; F_n)

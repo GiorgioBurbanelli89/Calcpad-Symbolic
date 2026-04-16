@@ -1,0 +1,85 @@
+"Bucles anidados y condicionales
+
+"1. #for con #if interno
+n = 10
+pares = vector(n)
+#hide
+#for i = 1 : n
+    resto = i - floor(i/2)*2
+    #if resto ≡ 0
+        pares.i = 1
+    #else
+        pares.i = 0
+    #end if
+#loop
+#show
+pares
+
+"2. Busqueda del maximo
+v = [3; 7; 2; 9; 1; 8; 4; 6; 5; 10]
+n = len(v)
+imax = 1
+vmax = v.1
+#hide
+#for i = 2 : n
+    #if v.i > vmax
+        vmax = v.i
+        imax = i
+    #end if
+#loop
+#show
+'Maximo = 'vmax' en posicion 'imax
+
+"3. Bucle con salida visible
+'Tabla de cuadrados y cubos:
+n = 5
+x2 = vector(n)
+x3 = vector(n)
+#hide
+#for i = 1 : n
+    x2.i = i^2
+    x3.i = i^3
+#loop
+#show
+$Table{x2; x3 @ "i^2"; "i^3" & fmt=0 & row=1}
+
+"4. Doble bucle: ensamblaje de conectividad
+'Ejemplo FEM: mapeo de GDL locales a globales
+Nb = 3','Nn = 4
+ini = [1; 2; 3]
+fin_n = [2; 3; 4]
+Ngl = Nn*2
+'GDL por nudo = 2
+K = matrix(Ngl; Ngl)
+#hide
+#for e = 1 : Nb
+    ni = ini.e
+    nj = fin_n.e
+    ri = (ni - 1)*2
+    rj = (nj - 1)*2
+    'Rigidez local simplificada (diagonal)
+    ke = 100/e
+    #for p = 1 : 2
+        K.(ri + p; ri + p) = K.(ri + p; ri + p) + ke
+        K.(rj + p; rj + p) = K.(rj + p; rj + p) + ke
+        K.(ri + p; rj + p) = K.(ri + p; rj + p) - ke
+        K.(rj + p; ri + p) = K.(rj + p; ri + p) - ke
+    #loop
+#loop
+#show
+K
+
+"5. While loop
+'Metodo de Newton para sqrt(2):
+x = 1
+tol = 10^(-10)
+err = 1
+#hide
+#while err > tol
+    xn = (x + 2/x)/2
+    err = abs(xn - x)
+    x = xn
+#loop
+#show
+'sqrt(2) por Newton = 'x
+'Error = 'err

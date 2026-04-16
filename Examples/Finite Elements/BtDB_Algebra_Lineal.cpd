@@ -1,0 +1,126 @@
+#margen 20
+"B transpuesta D B — Explicacion completa
+
+"Que queremos hacer?
+'Tenemos una barra con 2 nodos.
+'Conocemos los desplazamientos en los nodos.
+'Queremos encontrar las fuerzas en los nodos.
+'La relacion es:
+#deq F = K*u @@(fuerza = rigidez * desplazamiento)
+'Necesitamos encontrar K. Para eso hay 3 pasos.
+
+#pgb
+"PASO 1: De desplazamiento a deformacion
+
+'Los desplazamientos en los nodos son:
+u_vec = [3; 7]
+
+'La deformacion es la diferencia dividida por la longitud.
+'Pero con funciones de forma, la deformacion se calcula multiplicando
+'un <b>vector fila</b> B por el <b>vector columna</b> u:
+
+B_vec = [-1; 1]
+
+'B por u es fila por columna:
+ε_v = B_vec*[3|7]
+
+'El resultado es 1 numero: la deformacion.
+'B <b>transforma</b> 2 desplazamientos en 1 deformacion.
+
+#pgb
+"PASO 2: De deformacion a esfuerzo
+
+'La ley de Hooke dice que el esfuerzo es E por la deformacion:
+E_v = 100
+σ_v = E_v*ε_v
+
+'Hasta aqui tenemos 1 numero: el esfuerzo.
+
+#pgb
+"PASO 3: De esfuerzo a fuerzas en los nodos
+
+'Ahora necesitamos repartir el esfuerzo en los 2 nodos.
+'El esfuerzo es 1 numero, pero las fuerzas son 2 numeros.
+'Para eso usamos B <b>transpuesta</b>: una columna.
+
+B_t = [-1|1]
+
+'Multiplicamos columna por numero:
+F_vec = B_t*σ_v
+
+'El resultado son 2 fuerzas: una negativa y otra positiva.
+'El nodo 1 siente fuerza hacia atras, el nodo 2 hacia adelante.
+
+#pgb
+"Los 3 pasos juntos
+
+'Paso 1: ε = B * u
+'Paso 2: σ = E * ε = E * B * u
+'Paso 3: F = B^T * σ = B^T * E * B * u
+
+'Reemplazamos todo:
+#deq F = B^T * E * B * u @@(los 3 pasos)
+
+'Comparamos con F = K * u:
+#deq K = B^T * E * B @@(matriz de rigidez)
+
+#pgb
+"Verificacion numerica paso a paso
+
+"Datos
+B_fila = [-1; 1]
+B_columna = [-1|1]
+E_mat = 100
+
+"Paso 1: deformacion = B * u
+u_col = [3|7]
+ε_1 = B_fila*u_col
+
+"Paso 2: esfuerzo = E * deformacion
+σ_1 = E_mat*ε_1
+
+"Paso 3: fuerzas = B^T * esfuerzo
+F_result = B_columna*σ_1
+
+"Todo junto: K = B^T * E * B
+K_result = B_columna*E_mat*B_fila
+
+#pgb
+"Verificacion: F = K * u
+F_check = K_result*u_col
+
+'Comparamos:
+#blk
+F_result ; 'F calculado paso a paso
+F_check ; 'F calculado con K*u
+#end blk
+
+#pgb
+"Por que funciona?
+
+'B (fila) reduce 2 numeros a 1: desplazamientos a deformacion.
+'E (numero) convierte 1 a 1: deformacion a esfuerzo.
+'B^T (columna) expande 1 a 2: esfuerzo a fuerzas.
+
+'La cadena:
+'<b>u</b> (2 numeros) → B → <b>ε</b> (1 numero) → E → <b>σ</b> (1 numero) → B^T → <b>F</b> (2 numeros)
+
+'B^T * E * B combina los 3 pasos en una sola multiplicacion.
+'El resultado es una matriz de 2x2 que conecta directamente
+'desplazamientos con fuerzas.
+
+#pgb
+"En 2D es lo mismo pero mas grande
+
+'En 2D membrana:
+'B es 3x8 (3 deformaciones, 8 desplazamientos)
+'D es 3x3 (3 esfuerzos, 3 deformaciones)
+'B^T es 8x3
+
+'B^T * D * B es (8x3)(3x3)(3x8) = <b>8x8</b>
+
+'La cadena:
+'<b>u</b> (8) → B → <b>ε</b> (3) → D → <b>σ</b> (3) → B^T → <b>F</b> (8)
+
+'Siempre el mismo patron. Solo cambia el tamano.
+#end margen

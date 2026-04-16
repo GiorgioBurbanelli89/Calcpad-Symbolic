@@ -1,0 +1,266 @@
+#margen 20
+"Completitud Polinomial — Derivadas Constantes
+
+"Lo que ya sabemos
+'Las funciones de forma interpolan entre 2 nodos:
+L = 3
+#deq N_1 = 1 - x/L @@(funcion de forma 1)
+#deq N_2 = x/L @@(funcion de forma 2)
+#deq y = N_1*y_1 + N_2*y_2 @@(interpolacion)
+
+'Ahora vamos a ver que pasa con la <b>derivada</b>.
+
+"Por que importa la derivada?
+'En ingenieria estructural:
+'- El desplazamiento es '#deq u(x)'
+'- La deformacion es la derivada del desplazamiento:
+#deq ε = du/dx @@(deformacion)
+
+'Si conozco los desplazamientos en los nodos, necesito calcular
+'la deformacion entre ellos. Para eso necesito la derivada.
+
+#pgb
+"Derivada de la interpolacion
+
+'La interpolacion es:
+#deq u(x) = N_1*u_1 + N_2*u_2 = (1 - x/L)*u_1 + (x/L)*u_2 @@(desplazamiento)
+
+'Para derivar, derivamos cada termino por separado.
+
+"Termino 1
+'Derivamos '#deq (1 - x/L)*u_1':
+'Derivamos '#deq 1 - x/L' respecto a x:
+#sym
+diff(1; x)
+#end sym
+'La derivada de 1 es 0.
+#sym
+diff(x/L; x)
+#end sym
+'La derivada de x/L es 1/L.
+'Entonces la derivada de (1 - x/L) es:
+#sym
+diff(1 - x/L; x)
+#end sym
+'Como '#deq u_1' es constante, la derivada del termino 1 es:
+#deq d/dx((1 - x/L)*u_1) = (-1/L)*u_1 @@(termino 1)
+
+"Termino 2
+'Derivamos '#deq (x/L)*u_2':
+'Derivamos x/L respecto a x:
+#sym
+diff(x/L; x)
+#end sym
+'Como '#deq u_2' es constante, la derivada del termino 2 es:
+#deq d/dx((x/L)*u_2) = (1/L)*u_2 @@(termino 2)
+
+"Sumamos ambos terminos
+#deq du/dx = -u_1/L + u_2/L @@(suma)
+
+'Factorizamos 1/L:
+#deq du/dx = (u_2 - u_1)/L @@(derivada)
+
+'Esto se llama <b>deformacion unitaria</b> o <b>strain</b> (simbolo ε):
+#deq ε = du/dx = (u_2 - u_1)/L @@(deformacion unitaria)
+
+'Es el cambio de longitud dividido la longitud original.
+'Si u_2 > u_1, la barra se estira (ε positivo).
+'Si u_2 < u_1, la barra se comprime (ε negativo).
+
+"Derivadas sucesivas
+'Si la funcion de forma es de grado n, cada derivada baja un grado:
+
+"Grado 1: N = 1 - x/L (lineal)
+#sym
+diff(1 - x/L; x)
+#end sym
+'1era derivada: constante (-1/L). Ya no tiene x.
+#sym
+diff(diff(1 - x/L; x); x)
+#end sym
+'2da derivada: cero. No queda nada.
+
+"Grado 2: N = x^2/L^2 (cuadratica)
+#sym
+diff(x^2/L^2; x)
+#end sym
+'1era derivada: lineal (2x/L²). Todavia tiene x.
+#sym
+diff(diff(x^2/L^2; x); x)
+#end sym
+'2da derivada: constante (2/L²). Ya no tiene x.
+#sym
+diff(diff(diff(x^2/L^2; x); x); x)
+#end sym
+'3era derivada: cero.
+
+"Grado 3: N = x^3/L^3 (cubica)
+#sym
+diff(x^3/L^3; x)
+#end sym
+'1era derivada: cuadratica.
+#sym
+diff(diff(x^3/L^3; x); x)
+#end sym
+'2da derivada: lineal.
+#sym
+diff(diff(diff(x^3/L^3; x); x); x)
+#end sym
+'3era derivada: constante.
+
+"Patron
+'Grado 1 → 1era derivada constante → sirve para deformacion constante
+'Grado 2 → 2da derivada constante → sirve para curvatura constante (placas)
+'Grado 3 → 3era derivada constante → sirve para variacion lineal de curvatura
+
+'En elementos finitos:
+'- <b>Barras y membranas</b>: necesitan derivada 1era → funciones lineales (N = 1-x/L)
+'- <b>Vigas y placas</b>: necesitan derivada 2da → funciones cuadraticas o cubicas
+
+"Ejemplo numerico
+'Barra de longitud L = 3 m.
+'Nodo 1: desplazamiento u_1 = 0 mm. Nodo 2: desplazamiento u_2 = 0.6 mm.
+u_1 = 0
+u_2 = 0.6
+
+'Deformacion:
+ε = (u_2 - u_1)/L
+
+'La deformacion es <b>constante</b> en todo el elemento.
+'No importa donde mida, siempre da 'ε'.
+
+"Verificacion: la derivada es constante en cualquier punto
+ε_0 = -u_1/L + u_2/L
+ε_medio = -u_1/L + u_2/L
+ε_L = -u_1/L + u_2/L
+#blk
+ε_0 ; 'deformacion en x = 0
+ε_medio ; 'deformacion en x = L/2
+ε_L ; 'deformacion en x = L
+#end blk
+'Todas iguales. La derivada no depende de x.
+
+#pgb
+"Que significa completitud polinomial?
+
+'Significa que las funciones de forma pueden representar <b>exactamente</b>
+'un campo lineal (de primer grado).
+
+'Recordemos: f(x) = mx + b es un campo lineal.
+'Si el desplazamiento real es lineal, la interpolacion lo reproduce exacto.
+
+"Demostracion
+'Supongamos que el desplazamiento real es '#deq u(x) = 2 + 0.3*x'
+'Los valores en los nodos son:
+u_1r = 2 + 0.3*0
+u_2r = 2 + 0.3*L
+
+'La interpolacion con funciones de forma:
+u_interp(x) = (1 - x/L)*u_1r + (x/L)*u_2r
+
+'La funcion real:
+u_real(x) = 2 + 0.3*x
+
+'Comparamos en varios puntos:
+#blk
+u_interp(0) ; u_real(0) ; 'en x = 0
+u_interp(1) ; u_real(1) ; 'en x = 1
+u_interp(1.5) ; u_real(1.5) ; 'en x = 1.5
+u_interp(2) ; u_real(2) ; 'en x = 2
+u_interp(3) ; u_real(3) ; 'en x = 3
+#end blk
+'<b>Todos iguales.</b> La interpolacion reproduce el campo lineal exactamente.
+
+"Verificacion simbolica
+#sym
+simplify((1 - x/L)*(2 + 0.3*0) + (x/L)*(2 + 0.3*L))
+#end sym
+'Da 2 + 0.3*x. Es la misma funcion.
+
+#pgb
+"Que pasa si el campo NO es lineal?
+
+'Supongamos que el desplazamiento real es cuadratico: '#deq u(x) = x^2'
+u_1c = 0^2
+u_2c = L^2
+
+u_cuad(x) = (1 - x/L)*u_1c + (x/L)*u_2c
+u_real2(x) = x^2
+
+#blk
+u_cuad(0) ; u_real2(0) ; 'en x = 0
+u_cuad(0.75) ; u_real2(0.75) ; 'en x = 0.75
+u_cuad(1.5) ; u_real2(1.5) ; 'en x = 1.5
+u_cuad(2.25) ; u_real2(2.25) ; 'en x = 2.25
+u_cuad(3) ; u_real2(3) ; 'en x = 3
+#end blk
+'En los nodos coinciden, pero en los puntos intermedios <b>NO</b>.
+'Hay error porque las funciones de forma lineales no pueden
+'representar un campo cuadratico exactamente.
+
+"Grafica
+#hide
+n = 20
+xg = vector(n + 1)
+y_lin = vector(n + 1)
+y_cua = vector(n + 1)
+#for i = 1 : n + 1
+    xg.(i) = (i - 1)*L/n
+    y_lin.(i) = u_cuad(xg.(i))
+    y_cua.(i) = u_real2(xg.(i))
+#loop
+xp = [0|L]
+yp = [u_1c|u_2c]
+#show
+$Chart{xg; y_lin; xg; y_cua; xp; yp @ title=Lineal vs cuadratico : xlabel=x : ylabel=u : labels=Interpolacion lineal,Campo real cuadratico,Nodos}
+'La recta (roja) no sigue la parabola (verde).
+'Solucion: usar mas elementos o funciones de orden superior.
+
+#pgb
+"Convergencia: mas elementos = menos error
+
+'Si dividimos en 3 elementos de longitud 1:
+L_e = 1
+u_0 = 0^2
+u_1e = 1^2
+u_2e = 2^2
+u_3e = 3^2
+
+#hide
+xA = vector(n + 1)
+yA = vector(n + 1)
+xB = vector(n + 1)
+yB = vector(n + 1)
+xC = vector(n + 1)
+yC = vector(n + 1)
+#for i = 1 : n + 1
+    xA.(i) = (i - 1)*L_e/n
+    yA.(i) = (1 - xA.(i)/L_e)*u_0 + (xA.(i)/L_e)*u_1e
+    xB.(i) = L_e + (i - 1)*L_e/n
+    yB.(i) = (1 - (i - 1)/n)*u_1e + ((i - 1)/n)*u_2e
+    xC.(i) = 2*L_e + (i - 1)*L_e/n
+    yC.(i) = (1 - (i - 1)/n)*u_2e + ((i - 1)/n)*u_3e
+#loop
+#show
+$Chart{xA; yA; xB; yB; xC; yC; xg; y_cua @ title=3 elementos lineales vs campo cuadratico : xlabel=x : ylabel=u : labels=Elem 1,Elem 2,Elem 3,Real}
+'Con 3 elementos, la interpolacion se acerca mas a la parabola.
+'Con mas elementos, el error disminuye. Eso es <b>convergencia</b>.
+
+#pgb
+"Resumen
+
+'<b>Completitud</b> = las funciones de forma pueden representar exactamente
+'campos lineales (primer grado).
+
+'<b>Consecuencia</b>: la derivada es constante dentro del elemento.
+'En ingenieria, esto significa que la deformacion es constante por elemento.
+
+'<b>Si el campo real no es lineal</b>, hay error de interpolacion.
+'Se reduce usando mas elementos (convergencia) o funciones de orden superior.
+
+'Las 2 condiciones de las funciones de forma son:
+'1. <b>Kronecker</b> → continuidad entre elementos
+'2. <b>Completitud</b> → derivadas constantes, convergencia garantizada
+
+'Ref: Zienkiewicz & Taylor, Cap.6, p.151
+#end margen

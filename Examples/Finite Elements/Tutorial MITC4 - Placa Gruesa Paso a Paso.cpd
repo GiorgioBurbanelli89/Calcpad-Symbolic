@@ -1,0 +1,331 @@
+"Tutorial: Placa Gruesa MITC4 — Paso a Paso
+'Mindlin-Reissner + MITC4 (Bathe & Dvorkin 1985)
+'<hr/>
+'Elemento de 4 nudos, 3 GDL/nudo: w (deflexion), θx (rotacion en X), θy (rotacion en Y)
+'Incluye deformacion por cortante transversal (para placas gruesas: zapatas, losas).
+
+"PASO 1) Datos del elemento
+'Unidades consistentes: N, mm (para evitar conflictos en la matriz)
+'Coordenadas de los 4 nudos (mm):
+Xn = [0; 250; 250; 0]','Yn = [0; 0; 250; 250]
+'Material:
+Ep = 22000','νp = 0.2
+Gp = Ep/(2*(1 + νp))
+'Espesor:
+tp = 400
+'Factor de cortante:
+κ = 5/6
+
+"PASO 2) Funciones de forma Q4
+'Coordenadas naturales (ξ, η) ∈ [-1, +1]:
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+
+"PASO 3) Derivadas de funciones de forma
+'∂N/∂ξ:
+dN1x(η) = -(1 - η)/4','dN2x(η) = (1 - η)/4
+dN3x(η) = (1 + η)/4','dN4x(η) = -(1 + η)/4
+'∂N/∂η:
+dN1y(ξ) = -(1 - ξ)/4','dN2y(ξ) = -(1 + ξ)/4
+dN3y(ξ) = (1 + ξ)/4','dN4y(ξ) = (1 - ξ)/4
+
+"PASO 4) Jacobiano
+'Para un elemento rectangular de lados a x b:
+a = Xn.2 - Xn.1','b = Yn.4 - Yn.1
+J11 = a/2','J22 = b/2','detJ = J11*J22
+
+"PASO 5) Matriz constitutiva — Flexion (D_b)
+'Rigidez flexural D = Et³/12(1-ν²):
+D_b = Ep*tp^3/(12*(1 - νp^2))*[1; νp; 0|νp; 1; 0|0; 0; (1 - νp)/2]
+D_b
+
+"PASO 6) Matriz constitutiva — Cortante (D_s)
+'Rigidez al corte transversal:
+D_s = κ*Gp*tp*[1; 0|0; 1]
+D_s
+
+"PASO 7) Punto de Gauss y Matriz B_b (flexion)
+'Integracion 2x2 Gauss:
+gp = 1/sqr(3)
+'Evaluacion en punto de Gauss (ξ,η) = (-gp, -gp):
+ξg = -gp','ηg = -gp
+'Derivadas en coordenadas fisicas:
+dx1 = dN1x(ηg)/J11','dy1 = dN1y(ξg)/J22
+dx2 = dN2x(ηg)/J11','dy2 = dN2y(ξg)/J22
+dx3 = dN3x(ηg)/J11','dy3 = dN3y(ξg)/J22
+dx4 = dN4x(ηg)/J11','dy4 = dN4y(ξg)/J22
+'<b>Matriz B_b (3x12) — Flexion:</b>
+'κ_xx = -∂θx/∂x, κ_yy = ∂θy/∂y, κ_xy = ∂θx/∂y - ∂θy/∂x
+B_b = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+       0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+       0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+
+"PASO 8) Rigidez de flexion K_b
+'Para cada punto de Gauss: K_b += B_b^T * D_b * B_b * detJ
+'Con 4 puntos de Gauss (peso = 1 cada uno):
+K_b1 = transp(B_b)*D_b*B_b*detJ
+'K_b1 es la contribucion del primer punto de Gauss.
+'(Los otros 3 puntos dan contribuciones similares por simetria del elemento rectangular)
+'K_b1.(1;1) ='K_b1.(1; 1)
+
+"PASO 9) MITC4 — Cortante transversal
+'<b>Interpolacion tensorial mixta</b> (evita shear locking):
+'γ_xz y γ_yz se interpolan desde los puntos de tying, no directamente.
+'Puntos de tying: A=(0,-1), B=(0,+1), C=(-1,0), D=(+1,0)
+'<b>Matriz B_s (2x12) — Cortante:</b>
+B_s = matrix(2; 12)
+'Componente γ_xz (tying en η = ±1):
+#hide
+#for it = 1 : 2
+    #if it ≡ 1
+        ηt = -1
+    #else
+        ηt = 1
+    #end if
+    wt = (1 + ηt*ηg)/2
+    dt1 = dN1x(ηt)/J11','dt2 = dN2x(ηt)/J11
+    dt3 = dN3x(ηt)/J11','dt4 = dN4x(ηt)/J11
+    Nt1 = (1 - ξg)*(1 - ηt)/4','Nt2 = (1 + ξg)*(1 - ηt)/4
+    Nt3 = (1 + ξg)*(1 + ηt)/4','Nt4 = (1 - ξg)*(1 + ηt)/4
+    B_s.(1; 1) = B_s.(1; 1) + wt*dt1','B_s.(1; 3) = B_s.(1; 3) - wt*Nt1
+    B_s.(1; 4) = B_s.(1; 4) + wt*dt2','B_s.(1; 6) = B_s.(1; 6) - wt*Nt2
+    B_s.(1; 7) = B_s.(1; 7) + wt*dt3','B_s.(1; 9) = B_s.(1; 9) - wt*Nt3
+    B_s.(1; 10) = B_s.(1; 10) + wt*dt4','B_s.(1; 12) = B_s.(1; 12) - wt*Nt4
+#loop
+'Componente γ_yz (tying en ξ = ±1):
+#for it = 1 : 2
+    #if it ≡ 1
+        ξt = -1
+    #else
+        ξt = 1
+    #end if
+    wt = (1 + ξt*ξg)/2
+    dt1 = dN1y(ξt)/J22','dt2 = dN2y(ξt)/J22
+    dt3 = dN3y(ξt)/J22','dt4 = dN4y(ξt)/J22
+    Nt1 = (1 - ξt)*(1 - ηg)/4','Nt2 = (1 + ξt)*(1 - ηg)/4
+    Nt3 = (1 + ξt)*(1 + ηg)/4','Nt4 = (1 - ξt)*(1 + ηg)/4
+    B_s.(2; 1) = B_s.(2; 1) + wt*dt1','B_s.(2; 2) = B_s.(2; 2) + wt*Nt1
+    B_s.(2; 4) = B_s.(2; 4) + wt*dt2','B_s.(2; 5) = B_s.(2; 5) + wt*Nt2
+    B_s.(2; 7) = B_s.(2; 7) + wt*dt3','B_s.(2; 8) = B_s.(2; 8) + wt*Nt3
+    B_s.(2; 10) = B_s.(2; 10) + wt*dt4','B_s.(2; 11) = B_s.(2; 11) + wt*Nt4
+#loop
+#show
+B_s
+
+"PASO 10) Rigidez de cortante K_s
+K_s1 = transp(B_s)*D_s*B_s*detJ
+'K_s1.(1;1) ='K_s1.(1; 1)
+
+"PASO 11) Rigidez total del elemento
+'K_ele = Σ (K_b + K_s) sobre los 4 puntos de Gauss
+'Para un elemento rectangular, los 4 puntos dan la misma contribucion:
+K_ele = 4*(K_b1 + K_s1)
+'<b>K_ele (12x12):</b>
+K_ele
+'K(1,1) ='K_ele.(1; 1)
+
+"PASO 12) Resorte Winkler (Joint Spring)
+'Rigidez del suelo: k_s (N/mm³). Para cada nudo:
+k_s = 0.03
+'Area tributaria (elemento cuadrado):
+A_trib = a*b/4
+'Rigidez puntual del resorte:
+k_nodo = k_s*A_trib
+'Esto se suma al DOF w de cada nudo:
+'K_total.(w_i; w_i) += k_nodo
+k_nodo
+
+"PASO 13) Resorte Winkler (Area Spring)
+'Rigidez consistente: integra N^T * k_s * N sobre el area del elemento.
+'Para un cuad con funciones de forma Q4:
+'K_winkler = k_s * detJ * Σ(N^T * N) en Gauss 2x2
+#hide
+Kw = matrix(4; 4)
+#for ig = 1 : 4
+    #if ig ≡ 1
+        ξi = -gp','ηi = -gp
+    #else if ig ≡ 2
+        ξi = gp','ηi = -gp
+    #else if ig ≡ 3
+        ξi = gp','ηi = gp
+    #else
+        ξi = -gp','ηi = gp
+    #end if
+    Nv = [N_1(ξi; ηi); N_2(ξi; ηi); N_3(ξi; ηi); N_4(ξi; ηi)]
+    Kw = Kw + Nv*transp(Nv)*detJ
+#loop
+Kw = k_s*Kw
+#show
+'<b>K_winkler (4x4) — para DOF w de cada nudo:</b>
+Kw
+'Joint Spring: diagonal = ['k_nodo'; 'k_nodo'; 'k_nodo'; 'k_nodo']
+'Area Spring: incluye terminos fuera de la diagonal (acoplamiento).
+'La suma de cada fila = Joint Spring (consistencia).
+
+"PASO 14) Ejemplo completo — Zapata aislada 1.5x1.5m
+'Malla 6x6 elementos, carga centrada P = 20 tonf, Winkler Area Spring.
+#hide
+'Datos:
+Lzp = 1500','Bzp = 1500','tzp = tp','Ezp = Ep','nuzp = νp
+Gzp = Ezp/(2*(1 + nuzp))','kzp = 5/6
+ksp = k_s
+Pzp = 20*9806.65
+'Malla:
+ne1 = 6','dep = Lzp/ne1','nj1 = ne1 + 1
+njp = nj1^2','nep = ne1^2','ntp = 3*njp
+xjp = vector(njp)','yjp = vector(njp)
+#for j = 0 : ne1
+    #for i = 0 : ne1
+        k = j*nj1 + i + 1','xjp.k = i*dep','yjp.k = j*dep
+    #loop
+#loop
+ejp = matrix(nep; 4)
+#for j = 0 : ne1 - 1
+    #for i = 0 : ne1 - 1
+        e = j*ne1 + i + 1','bl = j*nj1 + i + 1
+        ejp.(e; 1) = bl','ejp.(e; 2) = bl + 1
+        ejp.(e; 3) = bl + nj1 + 1','ejp.(e; 4) = bl + nj1
+    #loop
+#loop
+'Matrices constitutivas:
+Dbp = Ezp*tzp^3/(12*(1 - nuzp^2))*[1; nuzp; 0|nuzp; 1; 0|0; 0; (1 - nuzp)/2]
+Dsp = kzp*Gzp*tzp*[1; 0|0; 1]
+nk = 12','gpp = 1/sqr(3)
+'Ensamblaje:
+Kp = symmetric(ntp)
+#for e = 1 : nep
+    i1 = ejp.(e; 1)','i3 = ejp.(e; 3)
+    dxe = xjp.i3 - xjp.i1','dye = yjp.i3 - yjp.i1
+    J11e = dxe/2','J22e = dye/2','detJe = J11e*J22e
+    Kep = symmetric(nk)
+    'Flexion 2x2 Gauss:
+    #for ig = 1 : 4
+        #if ig ≡ 1
+            ξg = -gpp','ηg = -gpp
+        #else if ig ≡ 2
+            ξg = gpp','ηg = -gpp
+        #else if ig ≡ 3
+            ξg = gpp','ηg = gpp
+        #else
+            ξg = -gpp','ηg = gpp
+        #end if
+        dx1 = dN1x(ηg)/J11e','dy1 = dN1y(ξg)/J22e
+        dx2 = dN2x(ηg)/J11e','dy2 = dN2y(ξg)/J22e
+        dx3 = dN3x(ηg)/J11e','dy3 = dN3y(ξg)/J22e
+        dx4 = dN4x(ηg)/J11e','dy4 = dN4y(ξg)/J22e
+        Bbp = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+               0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+               0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+        BtDBb = transp(Bbp)*Dbp*Bbp*detJe
+        #for ii = 1 : nk
+            #for jj = ii : nk
+                Kep.(ii; jj) = Kep.(ii; jj) + BtDBb.(ii; jj)
+            #loop
+        #loop
+    #loop
+    'Cortante MITC4 2x2:
+    #for ig = 1 : 4
+        #if ig ≡ 1
+            ξg = -gpp','ηg = -gpp
+        #else if ig ≡ 2
+            ξg = gpp','ηg = -gpp
+        #else if ig ≡ 3
+            ξg = gpp','ηg = gpp
+        #else
+            ξg = -gpp','ηg = gpp
+        #end if
+        Bsp = matrix(2; nk)
+        #for it = 1 : 2
+            #if it ≡ 1
+                ηt = -1
+            #else
+                ηt = 1
+            #end if
+            wt = (1 + ηt*ηg)/2
+            dt1 = dN1x(ηt)/J11e','dt2 = dN2x(ηt)/J11e
+            dt3 = dN3x(ηt)/J11e','dt4 = dN4x(ηt)/J11e
+            Nt1 = (1 - ξg)*(1 - ηt)/4','Nt2 = (1 + ξg)*(1 - ηt)/4
+            Nt3 = (1 + ξg)*(1 + ηt)/4','Nt4 = (1 - ξg)*(1 + ηt)/4
+            Bsp.(1; 1) = Bsp.(1; 1) + wt*dt1','Bsp.(1; 3) = Bsp.(1; 3) - wt*Nt1
+            Bsp.(1; 4) = Bsp.(1; 4) + wt*dt2','Bsp.(1; 6) = Bsp.(1; 6) - wt*Nt2
+            Bsp.(1; 7) = Bsp.(1; 7) + wt*dt3','Bsp.(1; 9) = Bsp.(1; 9) - wt*Nt3
+            Bsp.(1; 10) = Bsp.(1; 10) + wt*dt4','Bsp.(1; 12) = Bsp.(1; 12) - wt*Nt4
+        #loop
+        #for it = 1 : 2
+            #if it ≡ 1
+                ξt = -1
+            #else
+                ξt = 1
+            #end if
+            wt = (1 + ξt*ξg)/2
+            dt1 = dN1y(ξt)/J22e','dt2 = dN2y(ξt)/J22e
+            dt3 = dN3y(ξt)/J22e','dt4 = dN4y(ξt)/J22e
+            Nt1 = (1 - ξt)*(1 - ηg)/4','Nt2 = (1 + ξt)*(1 - ηg)/4
+            Nt3 = (1 + ξt)*(1 + ηg)/4','Nt4 = (1 - ξt)*(1 + ηg)/4
+            Bsp.(2; 1) = Bsp.(2; 1) + wt*dt1','Bsp.(2; 2) = Bsp.(2; 2) + wt*Nt1
+            Bsp.(2; 4) = Bsp.(2; 4) + wt*dt2','Bsp.(2; 5) = Bsp.(2; 5) + wt*Nt2
+            Bsp.(2; 7) = Bsp.(2; 7) + wt*dt3','Bsp.(2; 8) = Bsp.(2; 8) + wt*Nt3
+            Bsp.(2; 10) = Bsp.(2; 10) + wt*dt4','Bsp.(2; 11) = Bsp.(2; 11) + wt*Nt4
+        #loop
+        BtDBs = transp(Bsp)*Dsp*Bsp*detJe
+        #for ii = 1 : nk
+            #for jj = ii : nk
+                Kep.(ii; jj) = Kep.(ii; jj) + BtDBs.(ii; jj)
+            #loop
+        #loop
+    #loop
+    'Ensamblar + Winkler Area Spring:
+    #for ii = 1 : 4
+        #for jj = ii : 4
+            j1 = ejp.(e; ii)','j2 = ejp.(e; jj)
+            i1 = 3*(j1 - 1) + 1','i2 = 3*(j2 - 1) + 1
+            kij = submatrix(Kep; 3*(ii - 1) + 1; 3*ii; 3*(jj - 1) + 1; 3*jj)
+            #if j1 > j2
+                add(transp(kij); Kp; i2; i1)
+            #else
+                add(kij; Kp; i1; i2)
+            #end if
+        #loop
+    #loop
+    'Winkler area spring (solo en DOF w):
+    #for ii = 1 : 4
+        #for jj = ii : 4
+            j1 = ejp.(e; ii)','j2 = ejp.(e; jj)
+            dw1 = 3*(j1 - 1) + 1','dw2 = 3*(j2 - 1) + 1
+            #if j1 > j2
+                Kp.(dw2; dw1) = Kp.(dw2; dw1) + Kw.(ii; jj)
+            #else
+                Kp.(dw1; dw2) = Kp.(dw1; dw2) + Kw.(ii; jj)
+            #end if
+        #loop
+    #loop
+#loop
+'Vector de cargas:
+Fp = vector(ntp)
+kc = round(Bzp/2/dep)*nj1 + round(Lzp/2/dep) + 1
+Fp.(3*(kc - 1) + 1) = -Pzp
+'Resolver:
+Zp = clsolve(Kp; Fp)
+'Extraer deflexion:
+wnp = vector(njp)
+#for k = 1 : njp
+    wnp.k = re(Zp.(3*(k - 1) + 1))
+#loop
+PlotWidth = 500
+#show
+
+"<b>Deflexion w (mm):</b>
+$PlotMap{xjp; yjp; wnp; ejp}
+'w centro = 're(Zp.(3*(kc - 1) + 1))' mm
+
+"<b>Presion de contacto (tonf/m2):</b>
+#hide
+qnp = vector(njp)
+#for k = 1 : njp
+    qnp.k = ksp*wnp.k/9806.65*10^6
+#loop
+#show
+$PlotMap{xjp; yjp; qnp; ejp}
+'q max = 'round(min(qnp)*100)/100' tonf/m2 (compresion negativa)

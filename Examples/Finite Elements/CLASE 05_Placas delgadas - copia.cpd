@@ -1,0 +1,35 @@
+'Fuente: El método de los elementos finitos aplicado al análisis estructural (Vásquez & López)
+
+"Geometría del elemento:
+a = 0.25
+b = 0.5
+t = 0.01
+
+"Propiedades elásticas:
+E = 2*10^7
+ν = 0.3
+
+"Matriz constitutiva:
+D = E*t^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; 1 - ν/2]
+
+"Matriz C:
+C = [1; -a; -b; a^2; a*b; b^2; -a^3; -a^2*b; -a*b^2; -b^3; a^3*b; a*b^3|0; 1; 0; -2a; -b; 0; 3a^2; 2*a*b; b^2; 0; -3a^2*b; -b^3|0; 0; 1; 0; -a; -2*b; 0; a^2; 2*a*b; 3*b^2; -a^3; -3a*b^2|1; a; -b; a^2; -a*b; b^2; a^3; -a^2*b; a*b^2; -b^3; -a^3*b; -a*b^3|0; 1; 0; 2a; -b; 0; 3*a^2; -2*a*b; b^2; 0; -3a^2*b; -b^3|0; 0; 1; 0; a; -2*b; 0; a^2; -2*a*b; 3*b^2; a^3; 3a*b^2|1; a; b; a^2; a*b; b^2; a^3; a^2*b; a*b^2; b^3; a^3*b; a*b^3|0; 1; 0; 2a; b; 0; 3*a^2; 2*a*b; b^2; 0; 3a^2*b; b^3|0; 0; 1; 0; a; 2b; 0; a^2; 2*a*b; 3*b^2; a^3; 3a*b^2|1; -a; b; a^2; -a*b; b^2; -a^3; a^2*b; -a*b^2; b^3; -a^3*b; -a*b^3|0; 1; 0; -2a; b; 0; 3a^2; -2*a*b; b^2; 0; 3a^2*b; b^3|0; 0; 1; 0; -a; 2b; 0; a^2; -2*a*b; 3*b^2; -a^3; -3a*b^2]
+C
+
+"Matriz Q:
+Q(x; y) = [0; 0; 0; 2; 0; 0; 6x; 2y; 0; 0; 6x*y; 0|0; 0; 0; 0; 0; 2; 0; 0; 2x; 6y; 0; 6x*y|0; 0; 0; 0; 2; 0; 0; 4x; 4y; 0; 6*x^2; 6*y^2]
+
+"Matriz H:
+H'(x; y) = transp(Q(x; y))*D*Q(x; y)
+''H:
+#for i = 1 : 12
+    #for j = 1 : 12
+        '[function] = (H'(x; y)).i; j
+        v.i; j = integral(integral((u(x; y)); -b; b); -a; a)
+    #loop
+#loop
+H
+
+"Matriz de Rigidez:
+K_e = transp(C^(-1))*H*(C^(-1))
+K_e

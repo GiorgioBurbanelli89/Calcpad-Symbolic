@@ -1,0 +1,196 @@
+#margen 20
+"Coordenadas Naturales — Que es xi
+
+"El problema
+'Tenemos barras de diferentes longitudes:
+'- Barra A de 3 metros
+'- Barra B de 7 metros
+'- Barra C de 0.5 metros
+'
+'Las funciones de forma dependen de la longitud:
+'- Barra A: N_1 = 1 - x/3
+'- Barra B: N_1 = 1 - x/7
+'- Barra C: N_1 = 1 - x/0.5
+'
+'Cada barra tiene una formula diferente. Eso es incomodo.
+'Seria mejor tener <b>una sola formula</b> que funcione para todas.
+
+"La idea
+'En vez de medir la posicion en metros (x de 0 a L),
+'medimos la posicion como <b>fraccion del recorrido</b>.
+'
+'Ejemplo: si estoy en la mitad de la barra, no importa si la barra
+'mide 3 m, 7 m o 0.5 m. Estoy en la mitad. Punto.
+'
+'Eso es lo que hace xi: mide la posicion relativa, no la absoluta.
+
+"Ejemplo con porcentaje
+'Barra de 10 metros. Estoy en x = 4 metros.
+L_ej = 10
+x_ej = 4
+porcentaje = x_ej/L_ej
+'Estoy al 'porcentaje' = 40% del recorrido.
+
+'Barra de 20 metros. Estoy en x = 8 metros.
+L_ej2 = 20
+x_ej2 = 8
+porcentaje2 = x_ej2/L_ej2
+'Estoy al 'porcentaje2' = 40% del recorrido.
+
+'En ambos casos, la posicion relativa es la misma: 0.4 = 40%.
+
+#pgb
+"De porcentaje a xi
+'El porcentaje va de 0 a 1.
+'Pero en elementos finitos es mas conveniente que vaya de <b>-1 a 1</b>.
+'
+'Por que de -1 a 1? Porque la integracion de Gauss (que veremos despues)
+'usa puntos simetricos alrededor del centro, y -1 a 1 es simetrico.
+'
+'La conversion es simple:
+
+"De porcentaje (0 a 1) a xi (-1 a 1)
+'Si el porcentaje es p (de 0 a 1):
+#deq ξ = 2*p - 1 @@(conversion)
+
+"Verificamos
+p_inicio = 0
+ξ_inicio = 2*p_inicio - 1
+
+p_medio = 0.5
+ξ_medio = 2*p_medio - 1
+
+p_final = 1
+ξ_final = 2*p_final - 1
+
+#blk
+ξ_inicio ; 'inicio: p = 0 da xi = -1
+ξ_medio ; 'medio: p = 0.5 da xi = 0
+ξ_final ; 'final: p = 1 da xi = 1
+#end blk
+
+"Grafica
+#hide
+np = 20
+xp = vector(np + 1)
+yp = vector(np + 1)
+#for i = 1 : np + 1
+    xp.(i) = (i - 1)/np
+    yp.(i) = 2*xp.(i) - 1
+#loop
+#show
+$Chart{xp; yp @ title=De porcentaje a xi : xlabel=porcentaje (0 a 1) : ylabel=xi (-1 a 1)}
+
+#pgb
+"De x (metros) a xi
+'Como el porcentaje es p = x/L:
+#deq ξ = 2*x/L_e - 1 @@(x a xi)
+
+'Y al reves:
+#deq x = L_e/2*(1 + ξ) @@(xi a x)
+
+"Verificamos con una barra de 6 metros
+L_e = 6
+
+"Inicio de la barra, x = 0
+ξ_0 = 2*0/L_e - 1
+
+"Un cuarto, x = 1.5
+ξ_14 = 2*1.5/L_e - 1
+
+"Mitad, x = 3
+ξ_m = 2*3/L_e - 1
+
+"Tres cuartos, x = 4.5
+ξ_34 = 2*4.5/L_e - 1
+
+"Final, x = 6
+ξ_f = 2*6/L_e - 1
+
+#blk
+ξ_0 ; 'x = 0 → xi = -1
+ξ_14 ; 'x = 1.5 → xi = -0.5
+ξ_m ; 'x = 3 → xi = 0
+ξ_34 ; 'x = 4.5 → xi = 0.5
+ξ_f ; 'x = 6 → xi = 1
+#end blk
+
+#pgb
+"Funciones de forma con xi
+'Con x (de 0 a L):
+#deq N_1 = 1 - x/L_e @@(con x)
+#deq N_2 = x/L_e @@(con x)
+
+'Reemplazamos x por su expresion en xi:
+
+"N_1 con xi
+#sym
+simplify(1 - (Le/2*(1 + ξ))/Le)
+#end sym
+
+"N_2 con xi
+#sym
+simplify((Le/2*(1 + ξ))/Le)
+#end sym
+
+'Las funciones de forma con xi son:
+#deq N_1 = (1 - ξ)/2 @@(con xi)
+#deq N_2 = (1 + ξ)/2 @@(con xi)
+
+'Estas formulas son las mismas para CUALQUIER barra, sin importar su longitud.
+
+"Verificamos Kronecker
+
+"N_1 en nodo 1 (xi = -1)
+#sym
+simplify((1 - (-1))/2)
+#end sym
+
+"N_1 en nodo 2 (xi = 1)
+#sym
+simplify((1 - 1)/2)
+#end sym
+
+"N_2 en nodo 1 (xi = -1)
+#sym
+simplify((1 + (-1))/2)
+#end sym
+
+"N_2 en nodo 2 (xi = 1)
+#sym
+simplify((1 + 1)/2)
+#end sym
+
+"Grafica
+N_1(ξ) = (1 - ξ)/2
+N_2(ξ) = (1 + ξ)/2
+
+#hide
+xξ = vector(np + 1)
+y_n1 = vector(np + 1)
+y_n2 = vector(np + 1)
+#for i = 1 : np + 1
+    xξ.(i) = -1 + (i - 1)*2/np
+    y_n1.(i) = N_1(xξ.(i))
+    y_n2.(i) = N_2(xξ.(i))
+#loop
+#show
+$Chart{xξ; y_n1; xξ; y_n2 @ title=Funciones de forma con xi : xlabel=xi (-1 a 1) : ylabel=N : labels=N1,N2}
+
+#pgb
+"Resumen
+'
+'<b>x</b> = posicion real en metros (de 0 a L, diferente para cada barra)
+'<b>xi</b> = posicion normalizada (de -1 a 1, igual para todas las barras)
+'
+'Conversion:
+#deq ξ = 2*x/L_e - 1 @@(x a xi)
+#deq x = L_e/2*(1 + ξ) @@(xi a x)
+'
+'Funciones de forma con xi:
+#deq N_1 = (1 - ξ)/2 @@(nodo 1)
+#deq N_2 = (1 + ξ)/2 @@(nodo 2)
+'
+'En 2D se agrega otra coordenada: <b>eta</b> (de -1 a 1 tambien).
+'Las funciones de forma Q4 usan xi y eta.
+#end margen

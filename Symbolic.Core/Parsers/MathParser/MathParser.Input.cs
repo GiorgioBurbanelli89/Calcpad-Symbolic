@@ -1,0 +1,1114 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Runtime.CompilerServices;
+
+namespace Calcpad.Core
+{
+    public partial class MathParser
+    {
+        private sealed class Input
+        {
+            internal readonly HashSet<string> DefinedVariables = new(StringComparer.Ordinal);
+            private static readonly TokenTypes[] CharTypes = new TokenTypes[127];
+            private readonly MathParser _parser;
+            private readonly bool _isComplex;
+            private readonly Container<CustomFunction> _functions;
+            private readonly List<SolverBlock> _solveBlocks;
+            private readonly Dictionary<string, Variable> _variables;
+            private readonly Stack<Dictionary<string, Variable>> _localVariables = new();
+            private readonly Dictionary<string, Unit> _units;
+            private static readonly char[] UnitChars = Validator.UnitChars.ToCharArray();
+            static Input()
+            {
+                // This array is needed to quickly check the token type of a character during parsing
+                // Letters a-z are initially assumed to be variables unless the whole literal matches a function 
+
+                for (int i = 0; i < 127; ++i)
+                {
+                    var c = (char)i;
+                    if (Validator.IsDigit(c)) // 0-9 .
+                        CharTypes[i] = TokenTypes.Constant;
+                    else if (Validator.IsLetter(c))
+                        CharTypes[i] = TokenTypes.Unit;
+                    else if (Calculator.IsOperator(c))
+                        CharTypes[i] = TokenTypes.Operator;
+                    else
+                        CharTypes[i] = TokenTypes.Error;
+                }
+
+                CharTypes[DecimalSymbol] = TokenTypes.Constant;
+                CharTypes['\t'] = TokenTypes.None;
+                CharTypes[' '] = TokenTypes.None;
+                CharTypes['$'] = TokenTypes.Solver;
+                CharTypes['?'] = TokenTypes.Input;
+                CharTypes[';'] = TokenTypes.Divisor;
+                CharTypes['('] = TokenTypes.BracketLeft;
+                CharTypes[')'] = TokenTypes.BracketRight;
+                CharTypes['['] = TokenTypes.SquareBracketLeft;
+                CharTypes[']'] = TokenTypes.SquareBracketRight;
+                CharTypes['|'] = TokenTypes.RowDivisor;
+                CharTypes['_'] = TokenTypes.Unit;
+                CharTypes[','] = TokenTypes.Unit;
+                CharTypes['!'] = TokenTypes.Function;
+            }
+
+            internal Input(MathParser parser)
+            {
+                _parser = parser;
+                _functions = parser._functions;
+                _solveBlocks = parser._solveBlocks;
+                _variables = parser._variables;
+                _units = parser._units;
+                _isComplex = parser._settings.IsComplex;
+                _localVariables.Push(_variables); // Global variables will be always on the bottom of stack
+                DefineVariables();
+            }
+
+            internal void AddLocalVariables(Dictionary<string, Variable> variables) => _localVariables.Push(variables);
+            internal void RemoveLocalVariables() => _localVariables.Pop();
+
+            private void DefineVariables()
+            {
+                string[] keys = [.. _variables.Keys];
+                for (int i = 0, len = keys.Length; i < len; ++i)
+                    DefinedVariables.Add(keys[i]);
+            }
+
+            private TokenTypes GetCharType(char c) => c switch
+            {
+                <= '~' => CharTypes[c],
+                '≡' or '≠' or '←' or
+                '≤' or '≥' or
+                '÷' or '⦼' or
+                '∧' or '∨' or
+                '⊕' => TokenTypes.Operator,
+                '∠' when _isComplex => TokenTypes.Operator,
+                _ => Validator.IsLetter(c) ? TokenTypes.Unit :
+                TokenTypes.Error,
+            };
+
+            internal Queue<Token> GetInput(ReadOnlySpan<char> expression, bool allowAssignment)
+            {
+                var tokens = new Queue<Token>(expression.Length);
+                var pt = TokenTypes.None;
+                var st = SolverBlock.SolverTypes.None;
+                var isSolver = false;
+                var isInput = false;
+                var isSubscript = false;
+                var bracketCounter = 0;
+                var tokenLiteral = new TextSpan(expression);
+                var unitsLiteral = new TextSpan(expression);
+                var textSpan = new TextSpan(expression);
+                _parser._assignmentIndex = 0;
+                Token t = null;
+                var n = GetTargetUnits(expression);
+                for (int i = 0; i <= n; ++i)
+                {
+                    var c = (i == n) ? ' ' : expression[i];
+                    var tt = GetCharType(c); // Get the type from a predefined array
+                    if (pt == TokenTypes.Unit || pt == TokenTypes.Variable)
+                    {
+                        if (c == '_')
+                            isSubscript = true;
+                        else if (tt == TokenTypes.Error && isSubscript && char.IsLetter(c))
+                            tt = pt;
+                    }
+                    else
+                        isSubscript = false;
+
+                    if (!isInput && InputSolver(c, tt, ref textSpan, tokenLiteral, i))
+                        continue;
+
+                    if (InputInput(c, ref tt, ref tokenLiteral, i))
+                        continue;
+
+                    if (tt == TokenTypes.Error)
+                        throw Exceptions.InvalidSymbol(c);
+
+                    if (tt == TokenTypes.Constant &&
+                        unitsLiteral.IsEmpty ||
+                        tt == TokenTypes.Unit ||
+                        tt == TokenTypes.Variable)
+                    {
+                        if (pt == TokenTypes.Unit || pt == TokenTypes.Variable)
+                        {
+                            tt = tokenLiteral.StartsWithAny(UnitChars) ?
+                                TokenTypes.Unit :
+                                TokenTypes.Variable;
+
+                            if (c == '.' && tt == TokenTypes.Variable)
+                            {
+                                var s = tokenLiteral.ToString();
+                                t = MakeVectorOrMatrixToken(s);
+                                if (t is not null)
+                                {
+                                    if (_isComplex)
+                                        throw Exceptions.ComplexVectorsAndMatricesNotSupported();
+
+                                    tokens.Enqueue(t);
+                                    tokenLiteral.Reset(i);
+                                    tt = t.Type switch
+                                    {
+                                        TokenTypes.Vector => TokenTypes.VectorIndex,
+                                        TokenTypes.Matrix => TokenTypes.MatrixIndex,
+                                        _ => TokenTypes.ArrayIndex
+                                    };
+                                    tokens.Enqueue(new Token(s, tt));
+                                }
+                                else
+                                    tokenLiteral.Expand();
+                            }
+                            else
+                                tokenLiteral.Expand();
+                        }
+                        else if (c == 'i' &&
+                            _isComplex &&
+                            pt == TokenTypes.Constant
+                            && unitsLiteral.IsEmpty)
+                        {
+                            var j = i + 1;
+                            // If we have inches in complex mode
+                            if (j < n && expression[j] == 'n')
+                            {
+                                unitsLiteral.Reset(i);
+                                unitsLiteral.Expand();
+                                tt = TokenTypes.Constant;
+                            }
+                            else
+                            {
+                                t = MakeImaginaryValueToken(tokenLiteral.ToString());
+                                tokens.Enqueue(t);
+                                tokenLiteral.Reset(i);
+                            }
+                        }
+                        else if (pt == TokenTypes.Constant && tt == TokenTypes.Unit)
+                        {
+                            if (unitsLiteral.IsEmpty)
+                                unitsLiteral.Reset(i);
+
+                            unitsLiteral.Expand();
+                            tt = TokenTypes.Constant;
+                        }
+                        else
+                        {
+                            if (tt == TokenTypes.Unit && !Validator.IsVarStartingChar(c))
+                                throw Exceptions.InvalidCharacter(c);
+
+                            if (tt != pt)
+                                tokenLiteral.Reset(i);
+
+                            tokenLiteral.Expand();
+                        }
+                    }
+                    else
+                    {
+                        if (!(tokenLiteral.IsEmpty && unitsLiteral.IsEmpty))
+                        {
+                            if (pt == TokenTypes.Constant)
+                            {
+                                if (tokenLiteral.Equals(".") && !unitsLiteral.IsEmpty)
+                                {
+                                    var s = unitsLiteral.ToString();
+                                    t = MakeUnitToken(s, Unit.Exists(s) || tokens.Count > 0);
+                                    tokens.Enqueue(t);
+                                    tokenLiteral.Reset(i);
+                                    unitsLiteral.Reset(i);
+                                }
+                                else
+                                {
+                                    t = MakeRealValueToken(tokenLiteral.ToString());
+                                    tokens.Enqueue(t);
+                                    tokenLiteral.Reset(i);
+                                    if (!unitsLiteral.IsEmpty)
+                                    {
+                                        var s = unitsLiteral.ToString();
+                                        tokens.Enqueue(new Token("*", TokenTypes.Operator, Calculator.UnitMultOrder));
+                                        t = MakeUnitToken(s, true);
+                                        tokens.Enqueue(t);
+                                        unitsLiteral.Reset(i);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                var s = tokenLiteral.ToString();
+                                if (tt == TokenTypes.BracketLeft)
+                                {
+                                    t = MakeFunctionToken(s, _parser.IsCalculation && tokens.Count != 0);
+                                    if (_isComplex &&
+                                           (t.Type == TokenTypes.VectorFunction ||
+                                            t.Type == TokenTypes.VectorFunction2 ||
+                                            t.Type == TokenTypes.VectorFunction3 ||
+                                            t.Type == TokenTypes.VectorMultiFunction ||
+                                            t.Type == TokenTypes.MatrixFunction && !t.Content.EndsWith("units", StringComparison.OrdinalIgnoreCase) ||
+                                            t.Type == TokenTypes.MatrixFunction2 && !t.Content.EndsWith("units", StringComparison.OrdinalIgnoreCase) ||
+                                            t.Type == TokenTypes.MatrixFunction3 ||
+                                            t.Type == TokenTypes.MatrixFunction4 ||
+                                            t.Type == TokenTypes.MatrixFunction5 ||
+                                            t.Type == TokenTypes.MatrixOptionalFunction ||
+                                            t.Type == TokenTypes.MatrixIterativeFunction ||
+                                            t.Type == TokenTypes.MatrixMultiFunction ||
+                                            t.Type == TokenTypes.Array))
+                                        throw Exceptions.ComplexVectorsAndMatricesNotSupported();
+                                }
+                                else
+                                {
+                                    if (t is not null && (
+                                        t.Type == TokenTypes.Input ||
+                                        t.Type == TokenTypes.Constant
+                                        ))
+                                    {
+                                        tokens.Enqueue(new Token("*", TokenTypes.Operator, Calculator.UnitMultOrder));
+                                        if (!tokenLiteral.IsEmpty)
+                                            t = MakeUnitToken(s, true);
+                                    }
+                                    else if (UnitChars.Contains(s[0]))
+                                        t = MakeUnitToken(s, true);
+                                    else
+                                        t = new VariableToken(s, null);
+                                }
+                                tokens.Enqueue(t);
+                                if (t.Type == TokenTypes.Array)
+                                    tokens.Enqueue(new Token(t.Content, TokenTypes.ArrayIndex));
+
+                                tokenLiteral.Reset(i);
+                            }
+                        }
+                        if (tt != TokenTypes.None)
+                        {
+                            if (t is not null)
+                                pt = t.Type;
+
+                            if (c == '-' &&
+                                (
+                                    pt == TokenTypes.BracketLeft ||
+                                    pt == TokenTypes.SquareBracketLeft ||
+                                    pt == TokenTypes.RowDivisor ||
+                                    pt == TokenTypes.Divisor ||
+                                    pt == TokenTypes.Operator ||
+                                    pt == TokenTypes.None)
+                                )
+                                t = new Token(NegateChar.ToString(), TokenTypes.Operator)
+                                {
+                                    Index = Calculator.FunctionIndex[NegateString]
+                                };
+                            else if (c == '!')
+                            {
+                                if (pt == TokenTypes.Constant ||
+                                    pt == TokenTypes.BracketRight ||
+                                    pt == TokenTypes.SquareBracketRight ||
+                                    pt == TokenTypes.Variable)
+                                    t = new Token('!', TokenTypes.Function)
+                                    {
+                                        Index = Calculator.FunctionIndex["fact"]
+                                    };
+                                else
+                                    throw Exceptions.MissingOperand();
+
+                            }
+                            else if (tt == TokenTypes.Input)
+                            {
+                                _parser.HasInputFields = true;
+                                t = new ValueToken(RealValue.Zero)
+                                {
+                                    Index = _parser.Line,
+                                    Type = TokenTypes.Input,
+                                    Content = c.ToString()
+                                };
+                            }
+                            else
+                            {
+                                if (tt == TokenTypes.Operator)
+                                {
+                                    if (c == '=' || c == '←')
+                                    {
+                                        if (!allowAssignment || _parser._assignmentIndex > 0)
+                                            throw Exceptions.ImproperAssignment();
+
+                                        int count = tokens.Count;
+                                        if (count == 1)
+                                        {
+                                            var token = tokens.Peek();
+                                            if (token is VariableToken vt)
+                                            {
+                                                if (c == '←')
+                                                    GetVariable(vt, true);
+                                                else
+                                                    CreateVariable(vt);
+
+                                                if (vt.Variable.IsReadOnly)
+                                                    throw Exceptions.CannotModifyConstant(vt.Content);
+                                                
+                                                vt.Variable.IsReadOnly = _parser.IsConst;
+                                            }
+                                        }
+                                        _parser._assignmentIndex = count;
+                                    }
+                                }
+                                else if (tt == TokenTypes.SquareBracketLeft && _isComplex)
+                                    throw Exceptions.ComplexVectorsAndMatricesNotSupported();
+
+                                t = new Token(c.ToString(), tt);
+                            }
+                            tokens.Enqueue(t);
+                        }
+                    }
+                    if (pt != TokenTypes.Input || tt != TokenTypes.None)
+                        pt = tt;
+                }
+                GetVariables(tokens);
+                if (!isSolver)
+                    return tokens;
+
+                if (st == SolverBlock.SolverTypes.None)
+                    throw Exceptions.MissingLeftSolverBracket();
+
+                throw Exceptions.MissingRightSolverBracket();
+
+                bool InputSolver(char c, TokenTypes tt, ref TextSpan ts, TextSpan tokenLiteral, int i)
+                {
+                    if (tt == TokenTypes.Solver && !isSolver)
+                    {
+                        if (!tokenLiteral.IsEmpty)
+                            throw Exceptions.InvalidMacro(tokenLiteral.ToString());
+
+                        ts.Reset(i);
+                        isSolver = true;
+                    }
+                    if (isSolver)
+                    {
+                        switch (c)
+                        {
+                            case '{':
+                                if (bracketCounter == 0)
+                                {
+                                    var s = ts.Cut();
+                                    st = SolverBlock.GetSolverType(s);
+                                    if (st == SolverBlock.SolverTypes.Error)
+                                        throw Exceptions.InvalidSolver(s.ToString());
+
+                                    ts.Reset(i + 1);
+                                }
+                                else
+                                    ts.Expand();
+
+                                ++bracketCounter;
+                                break;
+                            case '}':
+                                --bracketCounter;
+                                if (bracketCounter == 0)
+                                {
+                                    t = new Token(string.Empty, TokenTypes.Solver)
+                                    {
+                                        Index = AddSolver(ts.ToString(), st)
+                                    };
+                                    tokens.Enqueue(t);
+                                    st = SolverBlock.SolverTypes.None;
+                                    isSolver = false;
+                                }
+                                else
+                                    ts.Expand();
+
+                                break;
+                            default:
+                                ts.Expand();
+                                break;
+                        }
+                        return true;
+                    }
+                    return false;
+                }
+
+                bool InputInput(char c, ref TokenTypes tt, ref TextSpan tokenLiteral, int i)
+                {
+                    if (c == '{' && pt == TokenTypes.Input)
+                    {
+                        tokenLiteral.Reset(i + 1);
+                        isInput = true;
+                        tt = TokenTypes.Constant;
+                        return true;
+                    }
+
+                    if (c == '}' && isInput)
+                    {
+                        if (!tokenLiteral.IsEmpty)
+                        {
+                            t.Content = tokenLiteral.ToString();
+                            if (_parser.IsEnabled)
+                                ((ValueToken)t).Value = new RealValue(double.Parse(t.Content, CultureInfo.InvariantCulture));
+
+                            tokenLiteral.Reset(i);
+                            isInput = false;
+                            tt = TokenTypes.Input;
+                        }
+                        return true;
+                    }
+                    if (isInput)
+                    {
+                        if (!_parser.IsEnabled)
+                            tokenLiteral.Expand();
+                        else if (c == '-' && pt == TokenTypes.Input ||
+                            (tt == TokenTypes.Constant || c == 'i' && _isComplex) &&
+                            (pt == TokenTypes.Input || pt == TokenTypes.Constant))
+                        {
+                            tokenLiteral.Expand();
+                            if (c == 'i')
+                                pt = TokenTypes.Unit;
+                        }
+                        else if (c != ' ' || !tokenLiteral.IsEmpty)
+                            throw Exceptions.InvalidSymbol(c);
+
+                        return true;
+                    }
+                    return false;
+                }
+            }
+
+            internal int GetTargetUnits(ReadOnlySpan<char> expression)
+            {
+                var len = expression.Length;
+                _parser._forceUnits = null; // Resetear force-units de expresión anterior
+
+                // Buscar operador & (force-unit) — ignora && (and lógico) y & dentro de []
+                _parser._forceUnitsArray = null;
+                _parser._forceUnitsRows = 0;
+                _parser._forceUnitsCols = 0;
+                var ampIdx = FindTopLevelAmpersand(expression);
+                if (ampIdx >= 0)
+                {
+                    var unit = expression[(ampIdx + 1)..].Trim();
+                    if (unit.Length > 0)
+                    {
+                        // Detectar & [unit1; unit2 | unit3; unit4] — vector o matriz de unidades
+                        if (unit[0] == '[' && unit.Contains(']'))
+                        {
+                            var closeIdx = unit.IndexOf(']');
+                            var inner = unit[1..closeIdx].ToString();
+                            // | separa filas, ; separa columnas
+                            var rows = inner.Split('|');
+                            if (rows.Length > 1)
+                            {
+                                // Modo matriz: [u1;u2 | u3;u4]
+                                var matUnits = new List<Unit[]>();
+                                foreach (var row in rows)
+                                {
+                                    var cols = row.Split(';');
+                                    var rowUnits = new Unit[cols.Length];
+                                    for (int j = 0; j < cols.Length; j++)
+                                    {
+                                        var p = cols[j].Trim();
+                                        rowUnits[j] = p.Length > 0 ? UnitsParser.Parse(p, _units) : null;
+                                    }
+                                    matUnits.Add(rowUnits);
+                                }
+                                // Aplanar a array lineal (fila por fila) para ForceApplyUnitsMatrix
+                                var flat = new List<Unit>();
+                                foreach (var row in matUnits)
+                                    flat.AddRange(row);
+                                _parser._forceUnitsArray = flat.ToArray();
+                                _parser._forceUnitsRows = rows.Length;
+                                _parser._forceUnitsCols = matUnits[0].Length;
+                                _parser._forceUnits = flat.Count > 0 ? flat[0] : null;
+                                _parser._targetUnits = null;
+                                return ampIdx;
+                            }
+                            else
+                            {
+                                // Modo vector: [u1; u2; u3]
+                                var parts = inner.Split(';');
+                                var unitArray = new Unit[parts.Length];
+                                for (int i = 0; i < parts.Length; i++)
+                                {
+                                    var p = parts[i].Trim();
+                                    unitArray[i] = p.Length > 0 ? UnitsParser.Parse(p, _units) : null;
+                                }
+                                _parser._forceUnitsArray = unitArray;
+                                _parser._forceUnitsRows = 0;
+                                _parser._forceUnitsCols = 0;
+                                _parser._forceUnits = unitArray.Length > 0 ? unitArray[0] : null;
+                                _parser._targetUnits = null;
+                                return ampIdx;
+                            }
+                        }
+                        // & escalar
+                        if (!unit.Contains(']'))
+                        {
+                            _parser._forceUnits = UnitsParser.Parse(unit, _units);
+                            _parser._targetUnits = null;
+                            return ampIdx;
+                        }
+                    }
+                }
+
+                _parser._targetUnitsArray = null;
+                var n = expression.LastIndexOf('|');
+                if (n >= 0)
+                {
+                    if (n < len)
+                    {
+                        var unit = expression[(n + 1)..];
+                        if (unit.Length > 0 && unit.TrimStart()[0] == '[' && unit.Contains(']'))
+                        {
+                            // | [u1; u2; u3] o | [u1;u2 | u3;u4] — vector/matriz de unidades
+                            var trimmed = unit.TrimStart();
+                            var closeIdx = trimmed.IndexOf(']');
+                            var inner = trimmed[1..closeIdx].ToString();
+                            // Buscar | dentro como separador de filas
+                            // Pero necesitamos distinguir | dentro de [] del | exterior
+                            // inner ya está dentro de [], así que | aquí es separador de fila
+                            var rows = inner.Split('|');
+                            var flat = new List<Unit>();
+                            foreach (var row in rows)
+                            {
+                                var cols = row.Split(';');
+                                foreach (var col in cols)
+                                {
+                                    var p = col.Trim();
+                                    flat.Add(p.Length > 0 ? UnitsParser.Parse(p, _units) : null);
+                                }
+                            }
+                            _parser._targetUnitsArray = flat.ToArray();
+                            _parser._targetUnits = null;
+                            // Encontrar el inicio real del | [
+                            n = expression.LastIndexOf('|');
+                            // Retroceder para encontrar el | que precede al [
+                            for (int k = n; k >= 0; k--)
+                            {
+                                if (expression[k] == '|')
+                                {
+                                    var after = expression[(k + 1)..].TrimStart();
+                                    if (after.Length > 0 && after[0] == '[')
+                                    {
+                                        n = k;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        else if (unit.Contains(']'))
+                        {
+                            n = len;
+                            _parser._targetUnits = null;
+                        }
+                        else
+                            _parser._targetUnits = UnitsParser.Parse(unit.Trim(), _units);
+                    }
+                }
+                else
+                {
+                    n = expression.LastIndexOf(':');
+                    if (n >= 0)
+                    {
+                        if (n < len)
+                        {
+                            var unit = expression[n..];
+                            if (unit.Contains('}'))
+                            {
+                                n = len;
+                                _parser._targetUnits = null;
+                            }
+                            else
+                            {
+                                var s = unit.ToString();
+                                if (Validator.IsValidFormatString(s[1..]))
+                                    _parser._targetUnits = Unit.GetFormattingUnit(s);
+                                else
+                                {
+                                    _parser._targetUnits = null;
+                                    throw Exceptions.InvalidFormatString(s[1..]);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        n = len;
+                        _parser._targetUnits = null;
+                    }
+                }
+                return n;
+            }
+
+            // Busca el último & que no sea && (and lógico) y no esté dentro de [] (vectores/matrices)
+            private static int FindTopLevelAmpersand(ReadOnlySpan<char> expression)
+            {
+                var bracketDepth = 0; // Profundidad de corchetes []
+                var parenDepth = 0;   // Profundidad de paréntesis ()
+                var lastAmp = -1;     // Posición del último & válido
+                for (int i = 0; i < expression.Length; i++)
+                {
+                    var c = expression[i];
+                    if (c == '[') bracketDepth++;
+                    else if (c == ']') bracketDepth--;
+                    else if (c == '(') parenDepth++;
+                    else if (c == ')') parenDepth--;
+                    else if (c == '&' && bracketDepth == 0 && parenDepth == 0)
+                    {
+                        // Ignorar && (and lógico): si el siguiente char es &, saltar ambos
+                        if (i + 1 < expression.Length && expression[i + 1] == '&')
+                        {
+                            i++; // Saltar el segundo &
+                            continue;
+                        }
+                        // Ignorar & que es AND lógico (∧) — si está rodeado de operandos
+                        // Solo consideramos & como force-unit si lo que sigue parece una unidad
+                        var rest = expression[(i + 1)..].Trim();
+                        // Aceptar letra (kN, tonf), / (/s^2), o dígito (1/s^2) como inicio de unidad
+                        if (rest.Length > 0 && (char.IsLetter(rest[0]) || rest[0] == '/' || char.IsDigit(rest[0]) || rest[0] == '['))
+                            lastAmp = i;
+                    }
+                }
+                return lastAmp;
+            }
+
+            private Token MakeFunctionToken(string s, bool mustExist)
+            {
+                if (Calculator.IsFunction(s))
+                    return new Token(s, TokenTypes.Function)
+                    {
+                        Index = Calculator.FunctionIndex[s]
+                    };
+                if (Calculator.IsFunction2(s))
+                    return new Token(s, TokenTypes.Function2)
+                    {
+                        Index = Calculator.Function2Index[s]
+                    };
+                if (Calculator.IsFunction3(s))
+                    return new Token(s, TokenTypes.Function3)
+                    {
+                        Index = Calculator.Function3Index[s]
+                    };
+                if (Calculator.IsMultiFunction(s))
+                    return new FunctionToken(s)
+                    {
+                        Index = Calculator.MultiFunctionIndex[s]
+                    };
+                if (Calculator.IsInterpolation(s))
+                    return new FunctionToken(s)
+                    {
+                        Index = Calculator.InterpolationIndex[s],
+                        Type = TokenTypes.Interpolation
+                    };
+                if (VectorCalculator.IsFunction(s))
+                    return new Token(s, TokenTypes.VectorFunction)
+                    {
+                        Index = VectorCalculator.FunctionIndex[s]
+                    };
+                if (VectorCalculator.IsFunction2(s))
+                    return new Token(s, TokenTypes.VectorFunction2)
+                    {
+                        Index = VectorCalculator.Function2Index[s]
+                    };
+                if (VectorCalculator.IsFunction3(s))
+                    return new Token(s, TokenTypes.VectorFunction3)
+                    {
+                        Index = VectorCalculator.Function3Index[s]
+                    };
+                if (VectorCalculator.IsMultiFunction(s))
+                    return new FunctionToken(s)
+                    {
+                        Index = VectorCalculator.MultiFunctionIndex[s],
+                        Type = TokenTypes.VectorMultiFunction
+                    };
+                if (MatrixCalculator.IsFunction(s))
+                    return new Token(s, TokenTypes.MatrixFunction)
+                    {
+                        Index = MatrixCalculator.FunctionIndex[s]
+                    };
+                if (MatrixCalculator.IsFunction2(s))
+                    return new Token(s, TokenTypes.MatrixFunction2)
+                    {
+                        Index = MatrixCalculator.Function2Index[s]
+                    };
+                if (MatrixCalculator.IsFunction3(s))
+                    return new Token(s, TokenTypes.MatrixFunction3)
+                    {
+                        Index = MatrixCalculator.Function3Index[s]
+                    };
+                if (MatrixCalculator.IsFunction4(s))
+                    return new Token(s, TokenTypes.MatrixFunction4)
+                    {
+                        Index = MatrixCalculator.Function4Index[s]
+                    };
+                if (MatrixCalculator.IsFunction5(s))
+                    return new Token(s, TokenTypes.MatrixFunction5)
+                    {
+                        Index = MatrixCalculator.Function5Index[s]
+                    };
+                if (MatrixCalculator.IsIterativeFunction(s))
+                    return new Token(s, TokenTypes.MatrixIterativeFunction)
+                    {
+                        Index = MatrixCalculator.IterativeFunctionIndex[s]
+                    };
+                if (MatrixCalculator.IsMultiFunction(s))
+                    return new FunctionToken(s)
+                    {
+                        Index = MatrixCalculator.MultiFunctionIndex[s],
+                        Type = TokenTypes.MatrixMultiFunction
+                    };
+                var index = _functions.IndexOf(s);
+                if (index < 0)
+                {
+                    if (mustExist)
+                    {
+                        if (s.EndsWith('.'))
+                            return new VariableToken(s[..^1], null)
+                            {
+                                Type = TokenTypes.Array
+                            };
+
+                        throw Exceptions.InvalidFunction(s);
+                    }
+
+                    if (!_parser.IsCalculation)
+                        return new FunctionToken(s)
+                        {
+                            Type = TokenTypes.CustomFunction
+                        };
+                }
+
+                return new Token(s, TokenTypes.CustomFunction)
+                {
+                    Index = index
+                };
+            }
+
+            private void CreateVariable(VariableToken vt)
+            {
+                var s = vt.Content;
+                var topLocalVariables = _localVariables.Peek();
+                if (!topLocalVariables.TryGetValue(s, out var v))
+                {
+                    v = new Variable();
+                    topLocalVariables.Add(s, v);
+                }
+                vt.Variable = v;
+                DefinedVariables.Add(s);
+            }
+
+            private void GetVariables(Queue<Token> tokens)
+            {
+                foreach (var token in tokens)
+                    if (token is VariableToken vt && vt.Variable is null)
+                        GetVariable(vt);
+            }
+
+            private void GetVariable(VariableToken vt, bool mustExist = false)
+            {
+                var s = vt.Content;
+                foreach (var variables in _localVariables)
+                    if (variables.TryGetValue(s, out var v))
+                    {
+                        vt.Variable = v;
+                        return;
+                    }
+                if (mustExist)
+                    throw Exceptions.VariableNotExist(vt.Content);
+
+                var topLocalVariables = _localVariables.Peek();
+                var newVar = new Variable();
+                topLocalVariables.Add(s, newVar);
+                vt.Variable = newVar;
+            }
+
+            private VariableToken MakeVectorOrMatrixToken(string s)
+            {
+                foreach (var variables in _localVariables)
+                    if (variables.TryGetValue(s, out var v))
+                    {
+                        ref var value = ref v.ValueByRef();
+                        if (value is Vector)
+                            return new VariableToken(s, v)
+                            {
+                                Type = TokenTypes.Vector
+                            };
+                        else if (value is Matrix)
+                            return new VariableToken(s, v)
+                            {
+                                Type = TokenTypes.Matrix
+                            };
+                        else if (value is null && (!_parser.IsEnabled || !ReferenceEquals(variables, _variables)))
+                            return new VariableToken(s, null)
+                            {
+                                Type = TokenTypes.Array
+                            };
+                        return null;
+                    }
+                return null;
+            }
+
+            private ValueToken MakeUnitToken(string s, bool force)
+            {
+                if (_units.TryGetValue(s, out var u) && u is not null)
+                {
+                    return new ValueToken(new RealValue(u))
+                    {
+                        Content = s,
+                        Type = TokenTypes.Unit
+                    };
+                }
+                else if (force)
+                    return MakeUnitValueToken(s);
+                else
+                {
+                    _units.Add(s, null);
+                    return new ValueToken(new RealValue())
+                    {
+                        Content = s,
+                        Type = TokenTypes.Unit
+                    };
+                }
+            }
+
+            private static ValueToken MakeUnitValueToken(string units)
+            {
+                try
+                {
+                    var unit = Unit.Get(units);
+                    var v = new RealValue(unit);
+                    return new ValueToken(v)
+                    {
+                        Content = $"<i>{units}</i>",
+                        Type = TokenTypes.Unit
+                    };
+                }
+                catch
+                {
+                    throw Exceptions.ErrorParsingUnits(units);
+                }
+            }
+
+            private static ValueToken MakeRealValueToken(string value)
+            {
+                var number = NumberParser.Parse(value);
+                return new ValueToken(new RealValue(number))
+                {
+                    Content = value,
+                    Type = TokenTypes.Constant
+                };
+            }
+
+            private static ValueToken MakeImaginaryValueToken(string value)
+            {
+                var number = NumberParser.Parse(value);
+                return new ValueToken(new ComplexValue(0d, number, null))
+                {
+                    Content = value,
+                    Type = TokenTypes.Constant
+                };
+            }
+
+            internal void OrderOperators(Queue<Token> input, bool isDefinition, int assignmentIndex)
+            {
+                var isUnit = false;
+                Token pt = null;
+                var i = 0;
+                foreach (var t in input)
+                {
+                    if (t.Type == TokenTypes.Operator )
+                    {
+                        if (t.Content == NegateString)
+                            t.Order = 1;
+                        else
+                        {
+                            t.Index = Calculator.OperatorIndex[t.Content[0]];
+                            if (t.Order < 0)
+                                t.Order = Calculator.OperatorOrder[t.Index];
+                        }
+                    }
+                    if (!isDefinition &&
+                        i >= assignmentIndex &&
+                        t.Type == TokenTypes.Variable &&
+                        !DefinedVariables.Contains(t.Content) &&
+                        Unit.TryGet(t.Content, out var u)
+                    )
+                    {
+                        t.Type = TokenTypes.Unit;
+                        var v = ((VariableToken)t).Variable;
+                        v.SetValue(u);
+                    }
+                    if (t.Type == TokenTypes.Unit)
+                    {
+                        if (isUnit)
+                        {
+                            var c = pt?.Content[0];
+                            if (c == '*' || c == '/' || c == '÷')
+                                pt.Order = (sbyte)(Calculator.UnitMultOrder - 1);
+                        }
+                        else
+                            isUnit = true;
+                    }
+                    else if (isUnit && (t.Type != TokenTypes.Constant || pt.Content[0] != '^'))
+                    {
+                        var c = t.Content[0];
+                        if (c != '*' && c != '/' && c != '÷' && c != '^')
+                            isUnit = false;
+                    }
+                    pt = t;
+                    ++i;
+                }
+            }
+
+            internal static Token[] GetRpn(Queue<Token> input)
+            {
+                var output = new Queue<Token>(input.Count);
+                var stackBuffer = new Stack<Token>(20);
+                Span<int> vectorStack = stackalloc int[10];
+                Span<int> matrixStack = stackalloc int[10];
+                Span<int> functionStack = stackalloc int[20];
+                int tovs = 0, tofs = 0;
+                foreach (var t in input)
+                    switch (t.Type)
+                    {
+                        case TokenTypes.Constant:
+                        case TokenTypes.Unit:
+                        case TokenTypes.Variable:
+                        case TokenTypes.Vector:
+                        case TokenTypes.Matrix:
+                        case TokenTypes.Solver:
+                        case TokenTypes.Input:
+                            output.Enqueue(t);
+                            break;
+                        case TokenTypes.VectorIndex:
+                        case TokenTypes.MatrixIndex:
+                        case TokenTypes.Operator:
+                            if (t.Content != NegateString)
+                                while (stackBuffer.Count != 0)
+                                {
+                                    var next = stackBuffer.Peek();
+                                    if (next.Type == TokenTypes.Operator &&
+                                       (next.Order > t.Order ||
+                                        next.Order == t.Order && t.Content == "^") ||
+                                        IsIndex(next) && IsIndex(t) ||
+                                        next.Type == TokenTypes.BracketLeft ||
+                                        next.Type == TokenTypes.SquareBracketLeft)
+                                        break;
+                                    stackBuffer.Pop();
+                                    output.Enqueue(next);
+                                }
+
+                            stackBuffer.Push(t);
+                            break;
+                        case TokenTypes.Function:
+                            if (t.Content == "!")
+                            {
+                                while (stackBuffer.Count != 0)
+                                {
+                                    var next = stackBuffer.Peek();
+                                    if (next.Type == TokenTypes.Operator || next.Type == TokenTypes.BracketLeft)
+                                        break;
+                                    stackBuffer.Pop();
+                                    output.Enqueue(next);
+                                }
+                                output.Enqueue(t);
+                            }
+                            else
+                                stackBuffer.Push(t);
+                            break;
+                        case TokenTypes.VectorFunction:
+                        case TokenTypes.MatrixFunction:
+                        case TokenTypes.Function2:
+                        case TokenTypes.Function3:
+                        case TokenTypes.MultiFunction:
+                        case TokenTypes.Interpolation:
+                        case TokenTypes.VectorFunction2:
+                        case TokenTypes.VectorFunction3:
+                        case TokenTypes.VectorMultiFunction:
+                        case TokenTypes.MatrixFunction2:
+                        case TokenTypes.MatrixFunction3:
+                        case TokenTypes.MatrixFunction4:
+                        case TokenTypes.MatrixFunction5:
+                        case TokenTypes.MatrixIterativeFunction:
+                        case TokenTypes.MatrixOptionalFunction:
+                        case TokenTypes.MatrixMultiFunction:
+                        case TokenTypes.CustomFunction:
+                            stackBuffer.Push(t);
+                            break;
+                        case TokenTypes.BracketLeft:
+                            functionStack[++tofs] = vectorStack[tovs];
+                            stackBuffer.Push(t);
+                            break;
+                        case TokenTypes.SquareBracketLeft:
+                            vectorStack[++tovs] = 1;
+                            matrixStack[tovs] = 1;
+                            stackBuffer.Push(t);
+                            break;
+                        case TokenTypes.BracketRight:
+                        case TokenTypes.SquareBracketRight:
+                        case TokenTypes.Divisor:
+                        case TokenTypes.RowDivisor:
+                            while (stackBuffer.Count != 0)
+                            {
+                                var next = stackBuffer.Peek();
+                                if (next.Type == TokenTypes.BracketLeft)
+                                {
+                                    if (t.Type == TokenTypes.BracketRight)
+                                        stackBuffer.Pop();
+
+                                    break;
+                                }
+                                else if (next.Type == TokenTypes.SquareBracketLeft)
+                                {
+                                    if (t.Type == TokenTypes.SquareBracketRight ||
+                                        t.Type == TokenTypes.RowDivisor)
+                                    {
+                                        var vt = new VectorToken(null, null)
+                                        {
+                                            Index = vectorStack[tovs]
+                                        };
+                                        output.Enqueue(vt);
+                                        if (t.Type == TokenTypes.SquareBracketRight)
+                                        {
+                                            stackBuffer.Pop();
+                                            if (matrixStack[tovs] > 1)
+                                            {
+                                                var mt = new MatrixToken(null, null)
+                                                {
+                                                    Index = matrixStack[tovs] * Vector.MaxLength
+                                                };
+                                                output.Enqueue(mt);
+                                                vt.Type = TokenTypes.RowDivisor;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            vt.Type = TokenTypes.RowDivisor;
+                                            vectorStack[tovs] = 1;
+                                            ++matrixStack[tovs];
+                                        }
+                                    }
+                                    break;
+                                }
+                                output.Enqueue(stackBuffer.Pop());
+                            }
+                            if (t.Type == TokenTypes.BracketRight)
+                                vectorStack[tovs] = functionStack[tofs--];
+                            else if (t.Type == TokenTypes.Divisor)
+                                ++vectorStack[tovs];
+                            break;
+
+                    }
+
+                while (stackBuffer.Count != 0)
+                    output.Enqueue(stackBuffer.Pop());
+
+                return [.. output];
+            }
+
+            private int AddSolver(string script, SolverBlock.SolverTypes st)
+            {
+                ++_parser._isSolver;
+                _solveBlocks.Add(new SolverBlock(script, st, _parser));
+                --_parser._isSolver;
+                return _solveBlocks.Count - 1;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static bool IsIndex(Token t) =>
+                t.Type == TokenTypes.VectorIndex ||
+                t.Type == TokenTypes.MatrixIndex;
+        }
+    }
+}

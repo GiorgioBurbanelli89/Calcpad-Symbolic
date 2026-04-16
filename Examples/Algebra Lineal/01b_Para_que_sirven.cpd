@@ -1,0 +1,96 @@
+#margen 20
+"Para que sirven estas operaciones?
+
+"PRODUCTO DE HADAMARD — elemento a elemento
+
+"Ejemplo 1: Factura del supermercado
+'Compras 3 productos. Sabes la cantidad y el precio de cada uno.
+cantidades = [2; 5; 3]
+precios = [1.50; 3.00; 2.50]
+
+'Cuanto gastas en cada producto?
+gastos = hprod(cantidades; precios)
+'2 unidades a 1.50 = 3.00
+'5 unidades a 3.00 = 15.00
+'3 unidades a 2.50 = 7.50
+
+"Ejemplo 2: Descuentos
+'Tienes precios y porcentajes de descuento:
+precios_orig = [100; 200; 50]
+descuentos = [0.10; 0.20; 0.15]
+
+'Cuanto te descuentan en cada producto?
+desc_cada = hprod(precios_orig; descuentos)
+
+"Ejemplo 3: Fuerza por area (esfuerzos)
+'En ingenieria: esfuerzo * area = fuerza en cada seccion
+esfuerzos = [150; 200; 100]
+areas = [0.04; 0.02; 0.06]
+fuerzas = hprod(esfuerzos; areas)
+
+'Hadamard sirve cuando tienes <b>pares de datos</b> y quieres
+'operar cada par por separado.
+
+#pgb
+"PRODUCTO PUNTO — elemento a elemento Y sumar
+
+"Ejemplo 1: Total de la factura
+'Misma factura del supermercado, pero ahora quiero el <b>total</b>:
+total = dot(cantidades; precios)
+'Es la suma de los gastos individuales: 3.00 + 15.00 + 7.50 = 25.50
+
+"Ejemplo 2: Trabajo mecanico
+'Una fuerza empuja un objeto en 3D.
+'La fuerza tiene componentes en x, y, z:
+fuerza = [10; 5; 3]
+'El objeto se mueve una distancia en cada direccion:
+distancia = [2; 4; 1]
+
+'El trabajo total es fuerza por distancia en cada direccion, sumado:
+trabajo = dot(fuerza; distancia)
+'10*2 + 5*4 + 3*1 = 20 + 20 + 3 = 43
+
+"Ejemplo 3: Nota final ponderada
+'4 examenes con diferentes pesos:
+notas_ex = [85; 90; 78; 95]
+pesos = [0.20; 0.30; 0.20; 0.30]
+
+nota_final = dot(notas_ex; pesos)
+'85*0.20 + 90*0.30 + 78*0.20 + 95*0.30 = nota ponderada
+
+"El producto punto sirve cuando quieres <b>combinar todo en un solo numero</b>.
+
+#pgb
+"NORMA — longitud del vector
+
+"Ejemplo 1: Distancia en el plano
+'Un punto esta en (3, 4). A que distancia esta del origen?
+pos = [3; 4]
+dist = norm(pos)
+'Es el triangulo 3-4-5. La distancia es 5.
+
+"Ejemplo 2: Velocidad total
+'Un avion vuela con velocidad 300 km/h al este y 400 km/h al norte.
+'Cual es su velocidad total?
+vel = [300; 400]
+vel_total = norm(vel)
+
+"Ejemplo 3: Error de un calculo
+'Calcule unos valores y los compare con los reales.
+'El error en cada punto es:
+errores = [0.5; -0.3; 0.8; -0.1]
+error_total = norm(errores)
+'La norma mide que tan grande es el error en total.
+
+"La norma sirve para medir <b>tamano</b> o <b>distancia</b>.
+
+#pgb
+"Resumen
+
+#blk
+'Operacion ; 'Que hace ; 'Para que sirve
+'Hadamard ; 'par a par sin sumar ; 'calcular cada producto por separado
+'Producto punto ; 'par a par y sumar ; 'combinar todo en un numero
+'Norma ; 'raiz de punto consigo mismo ; 'medir longitud o distancia
+#end blk
+#end margen

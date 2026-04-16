@@ -1,0 +1,211 @@
+"Tutorial FEM: De la ecuación diferencial a K·d = F
+"Viga simplemente apoyada con carga puntual
+'<hr/>
+"1. El problema
+'Una viga simplemente apoyada de longitud L con carga P en el centro.
+'<table><tr><td>
+'Longitud -'L_u = 6m
+'Módulo de elasticidad -'E_u = 200000MPa
+'Momento de inercia -'I_u = 0.0001m^4
+'Carga puntual al centro -'P_u = -100kN
+'</td></tr></table>
+'<p><b>Solución analítica (exacta):</b></p>
+#noc
+w_max = P*L^3/(48*E*I)
+#equ
+w_exacto = P_u*L_u^3/(48*E_u*I_u) | mm
+'<p>Valores numéricos para cálculo matricial (kN, m):</p>
+#hide
+L = 6
+E = 200000000
+I = 0.0001
+P = -100
+#show
+'<hr/>
+"2. Discretización
+'Dividimos la viga en 2 elementos de igual longitud:
+n_elem = 2
+L_e = L/n_elem
+'3 nodos, 2 DOFs/nodo (w, θ), total 6 DOFs
+'<hr/>
+"3. Funciones de forma (Hermite cúbicas)
+'<p>Dentro de cada elemento, asumimos:</p>
+'<p class="eq"><var>w</var>(ξ) = <var>N</var><sub>1</sub>·<var>w</var><sub>1</sub> + <var>N</var><sub>2</sub>·θ<sub>1</sub> + <var>N</var><sub>3</sub>·<var>w</var><sub>2</sub> + <var>N</var><sub>4</sub>·θ<sub>2</sub></p>
+'<p>Donde ξ = x/L_e ∈ [0, 1]. Definimos las funciones de forma y sus derivadas:</p>
+#def NF$(x$; l$)
+'<table><tr><td>Funciones de forma
+N_1l$(x$) = 1 - x$^2*(3 - 2*x$)
+N_2l$(x$) = x$*l$*(1 - x$)^2
+N_3l$(x$) = x$^2*(3 - 2*x$)
+N_4l$(x$) = x$^2*l$*(x$ - 1)
+'</td><td>Primera derivada (pendiente)
+N′_1l$(x$) = -6*(x$/l$)*(1 - x$)
+N′_2l$(x$) = 1 - x$*(4 - 3*x$)
+N′_3l$(x$) = 6*(x$/l$)*(1 - x$)
+N′_4l$(x$) = -x$*(2 - 3*x$)
+'</td><td>Segunda derivada (curvatura)
+N″_1l$(x$) = -(6/l$^2)*(1 - 2*x$)
+N″_2l$(x$) = -(2/l$)*(2 - 3*x$)
+N″_3l$(x$) = (6/l$^2)*(1 - 2*x$)
+N″_4l$(x$) = -(2/l$)*(1 - 3*x$)
+'</td></tr></table>
+#end def
+NF$(ξ; L_e)
+'<p><b>Verificación: N vale 1 en su nodo, 0 en los demás</b></p>
+'N₁(0) = 'N_1L_e(0)', N₁(1) = 'N_1L_e(1)
+'N₃(0) = 'N_3L_e(0)', N₃(1) = 'N_3L_e(1)
+'<p><b>Gráfica de las 4 funciones de forma:</b></p>
+#hide
+n_pts = 40
+x_plot = vector(n_pts)
+y_N1 = vector(n_pts)
+y_N2 = vector(n_pts)
+y_N3 = vector(n_pts)
+y_N4 = vector(n_pts)
+#for i = 1 : n_pts
+	ξ_i = (i - 1)/(n_pts - 1)
+	x_plot.i = ξ_i
+	y_N1.i = N_1L_e(ξ_i)
+	y_N2.i = N_2L_e(ξ_i)
+	y_N3.i = N_3L_e(ξ_i)
+	y_N4.i = N_4L_e(ξ_i)
+#loop
+#show
+$Chart{x_plot; y_N1; x_plot; y_N3 @ type=line & title=N1 (desplaz.) y N3 (desplaz.) & xlabel=xi & ylabel=N & w=550 & label1=N1 & label2=N3}
+$Chart{x_plot; y_N2; x_plot; y_N4 @ type=line & title=N2 (rotacion) y N4 (rotacion) & xlabel=xi & ylabel=N & w=550 & label1=N2 & label2=N4}
+'<hr/>
+"4. De las funciones de forma a la rigidez K
+'<p>La curvatura es: κ = d²w/dx² = <b>B</b>·<b>d</b></p>
+'<p>Donde <b>B</b> = [N″₁, N″₂, N″₃, N″₄] es el vector de segundas derivadas.</p>
+'<p>El momento flector: <b>M</b> = E·I·κ = E·I·<b>B</b>·<b>d</b></p>
+'<p>La energía de deformación (Principio de Trabajo Virtual):</p>
+'<p class="eq">U = ½·<b>d</b><sup>T</sup>·(∫ E·I·<b>B</b><sup>T</sup>·<b>B</b> dx)·<b>d</b> = ½·<b>d</b><sup>T</sup>·<b>K</b>·<b>d</b></p>
+'<p><b>Entonces K = ∫₀ᴸ E·I·Bᵀ·B dx</b></p>
+'<p><b>Ejemplo: K₂₂ = ∫ E·I·(N″₂)² dx</b></p>
+'N″₂(ξ) = -(2/L_e)·(2 - 3ξ)
+'[N″₂]² = (4/L_e²)·(2 - 3ξ)² = (4/L_e²)·(4 - 12ξ + 9ξ²)
+'∫₀¹ [N″₂]² dξ = (4/L_e²)·[4ξ - 6ξ² + 3ξ³]₀¹ = (4/L_e²)·(4 - 6 + 3) = 4/L_e²
+'K₂₂ = E·I·L_e·(4/L_e²) = <b>4·E·I/L_e</b>
+K_22 = 4*E*I/L_e
+'<hr/>
+"5. Matriz K_e completa (integración numérica)
+'<p>Cuadratura de Gauss 2 puntos (exacta para polinomios ≤ grado 5):</p>
+g = 1/sqr(3)
+'Puntos: ξ₁ = '(1 - g)/2', ξ₂ = '(1 + g)/2', pesos = 1
+#hide
+K_e = symmetric(4)
+ξ_1 = (1 - g)/2
+ξ_2 = (1 + g)/2
+' Gauss punto 1
+Bv1 = [N″_1L_e(ξ_1); N″_2L_e(ξ_1); N″_3L_e(ξ_1); N″_4L_e(ξ_1)]
+Kb1 = E*I*Bv1*transp(Bv1)*L_e/2
+' Gauss punto 2
+Bv2 = [N″_1L_e(ξ_2); N″_2L_e(ξ_2); N″_3L_e(ξ_2); N″_4L_e(ξ_2)]
+Kb2 = E*I*Bv2*transp(Bv2)*L_e/2
+#for i = 1 : 4
+	#for j = i : 4
+		K_e.(i; j) = Kb1.(i; j) + Kb2.(i; j)
+	#loop
+#loop
+#show
+'K_e (4×4):
+K_e
+'<p><b>Verificación con fórmulas conocidas:</b></p>
+'<table><tr><td>
+'K₁₁ = 12EI/L³ = 'K_e.(1; 1)
+'K₁₂ = 6EI/L² = 'K_e.(1; 2)
+'K₂₂ = 4EI/L = 'K_e.(2; 2)
+'</td><td>
+'12EI/L³ = '12*E*I/L_e^3
+'6EI/L² = '6*E*I/L_e^2
+'4EI/L = '4*E*I/L_e
+'</td></tr></table>
+'<hr/>
+"6. Ensamblaje global
+'<p>2 elementos → K global 6×6. El nodo 2 es compartido.</p>
+'<p class="eq"><b>K</b><sub>global</sub> = <b>K</b><sub>e1</sub> + <b>K</b><sub>e2</sub></p>
+#hide
+K = symmetric(6)
+' Elemento 1: nodos 1-2, DOFs 1-4
+#for i = 1 : 4
+	#for j = i : 4
+		K.(i; j) = K.(i; j) + K_e.(i; j)
+	#loop
+#loop
+' Elemento 2: nodos 2-3, DOFs 3-6
+#for i = 1 : 4
+	#for j = i : 4
+		K.(i + 2; j + 2) = K.(i + 2; j + 2) + K_e.(i; j)
+	#loop
+#loop
+#show
+'K global (6×6):
+K
+'<hr/>
+"7. Condiciones de contorno y carga
+'Simplemente apoyada: w₁ = 0 (DOF 1), w₃ = 0 (DOF 5)
+'Penalización: K(i,i) += 10²⁰
+#hide
+k_pen = 10^20
+K.(1; 1) = K.(1; 1) + k_pen
+K.(5; 5) = K.(5; 5) + k_pen
+F = vector(6)
+F.3 = P
+#show
+'Carga P en nodo 2 (DOF 3):
+F
+'<hr/>
+"8. Solución
+'<p class="eq"><b>K</b>·<b>d</b> = <b>F</b> → <b>d</b> = <b>K</b><sup>−1</sup>·<b>F</b></p>
+d = clsolve(K; F)
+'<p><b>Resultados:</b></p>
+'<table><tr><td><b>DOF</b></td><td><b>Valor</b></td><td><b>Significado</b></td></tr>
+'<tr><td>w₁</td><td>'d.1'</td><td>Apoyo izq. (≈0)</td></tr>
+'<tr><td>θ₁</td><td>'d.2'</td><td>Rotación izquierda</td></tr>
+'<tr><td>w₂</td><td>'d.3'</td><td>Deflexión centro</td></tr>
+'<tr><td>θ₂</td><td>'d.4'</td><td>Rotación centro (≈0)</td></tr>
+'<tr><td>w₃</td><td>'d.5'</td><td>Apoyo der. (≈0)</td></tr>
+'<tr><td>θ₃</td><td>'d.6'</td><td>Rotación derecha</td></tr></table>
+'<hr/>
+"9. Comparación
+'<table><tr><td><b>Método</b></td><td><b>w centro (mm)</b></td></tr>
+'<tr><td>FEM (2 elementos)</td><td>'d.3*1000'</td></tr>
+'<tr><td>Exacto PL³/48EI</td><td>'w_exacto*1000'</td></tr></table>
+error = abs(d.3*1000 - w_exacto/1mm)/abs(w_exacto/1mm)*100
+'<p><b>Error ≈ 0%</b> — Las funciones Hermite cúbicas son la solución exacta de EI·w⁴=0</p>
+'<hr/>
+"10. Deformada y momentos
+#hide
+n_pts_def = 50
+x_def = vector(n_pts_def)
+w_def = vector(n_pts_def)
+M_def = vector(n_pts_def)
+#for i = 1 : n_pts_def
+	x_i = (i - 1)*L/(n_pts_def - 1)
+	x_def.i = x_i
+	#if x_i < L_e + 0.0001
+		ξ_i = x_i/L_e
+		w_def.i = (N_1L_e(ξ_i)*d.1 + N_2L_e(ξ_i)*d.2 + N_3L_e(ξ_i)*d.3 + N_4L_e(ξ_i)*d.4)*1000
+		M_def.i = E*I*(N″_1L_e(ξ_i)*d.1 + N″_2L_e(ξ_i)*d.2 + N″_3L_e(ξ_i)*d.3 + N″_4L_e(ξ_i)*d.4)
+	#else
+		ξ_i = (x_i - L_e)/L_e
+		w_def.i = (N_1L_e(ξ_i)*d.3 + N_2L_e(ξ_i)*d.4 + N_3L_e(ξ_i)*d.5 + N_4L_e(ξ_i)*d.6)*1000
+		M_def.i = E*I*(N″_1L_e(ξ_i)*d.3 + N″_2L_e(ξ_i)*d.4 + N″_3L_e(ξ_i)*d.5 + N″_4L_e(ξ_i)*d.6)
+	#end if
+#loop
+#show
+$Chart{x_def; w_def @ type=line & title=Deformada w(x) & xlabel=x (m) & ylabel=w (mm) & w=600 & label1=FEM}
+$Chart{x_def; M_def @ type=line & title=Momento flector M(x) & xlabel=x (m) & ylabel=M (kN·m) & w=600 & label1=M}
+'Momento máximo en el centro:
+M_max = E*I*(N″_1L_e(1)*d.1 + N″_2L_e(1)*d.2 + N″_3L_e(1)*d.3 + N″_4L_e(1)*d.4)
+'Exacto PL/4:
+M_exacto = P*L/4
+'<hr/>
+"11. Resumen
+'<p>1. <b>Discretizar</b> → dividir en elementos</p>
+'<p>2. <b>Funciones de forma N(ξ)</b> → aproximar w(x) como polinomio</p>
+'<p>3. <b>Derivar B = d²N/dx²</b> → curvatura</p>
+'<p>4. <b>Integrar K = ∫ EI·BᵀB dx</b> → rigidez (Trabajo Virtual)</p>
+'<p>5. <b>Ensamblar</b> → sumar elementos en K global</p>
+'<p>6. <b>Resolver K·d = F</b> → desplazamientos</p>
+'<p>7. <b>Post-proceso M = EI·B·d</b> → esfuerzos</p>

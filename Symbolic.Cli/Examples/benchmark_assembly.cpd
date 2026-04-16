@@ -1,0 +1,14 @@
+"Benchmark: Solo Ensamblaje (sin solve)
+'Simular ensamblaje: llenar matriz 500x500 con loops
+#hide
+n = 500
+K = symmetric(n)
+#for i = 1 : n
+	K.(i; i) = 4*n
+	#if i < n
+		K.(i; i + 1) = -1
+	#end if
+#loop
+#show
+'Dimensión: 'n' × 'n
+'Ensamblaje listo. K(1,1) = 'K.(1; 1)

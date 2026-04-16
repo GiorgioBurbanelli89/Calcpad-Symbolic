@@ -1,0 +1,70 @@
+#margen 20
+"Vector y Grafica — como se relacionan
+
+"Vector de 1 elemento
+v1 = [3]
+$Draw{line,-1,0,6,0,#333,1 : arrow,0,0,3,0,#e74c3c,3 : circle,0,0,0.1,#333,#333 : text,3,-0.5,3,14,#e74c3c,middle,bold : text,-0.3,-0.5,0,11,#333,middle @ w=500 : h=80 : title=1 elemento = 1 eje}
+
+#pgb
+"Vector de 2 elementos — coordenadas x e y
+v2 = [3; 4]
+'El primer numero [3] va en el eje x.
+'El segundo numero [4] va en el eje y.
+$Draw{line,-1,0,5,0,#333,1 : line,0,-1,0,5.5,#333,1 : arrow,0,0,3,4,#e74c3c,3 : circle,3,4,0.12,#e74c3c,#e74c3c : line,3,0,3,4,#999,1 : line,0,4,3,4,#999,1 : text,3,-0.5,x = 3,12,#333,middle : text,-0.8,4,y = 4,12,#333,middle : text,5.3,0,x,12,#333,middle,bold : text,0,5.8,y,12,#333,middle,bold @ w=400 : h=400 : title=2 elementos = 2 ejes}
+
+#pgb
+"Otro vector de 2 elementos
+v3 = [5; 1]
+$Draw{line,-1,0,6.5,0,#333,1 : line,0,-1,0,3,#333,1 : arrow,0,0,5,1,#2980b9,3 : circle,5,1,0.12,#2980b9,#2980b9 : line,5,0,5,1,#999,1 : line,0,1,5,1,#999,1 : text,5,-0.5,x = 5,12,#333,middle : text,-0.8,1,y = 1,12,#333,middle @ w=500 : h=250 : title=Otro vector [5; 1]}
+
+#pgb
+"Los 2 vectores juntos
+v2
+v3
+$Draw{line,-1,0,6.5,0,#333,1 : line,0,-1,0,5.5,#333,1 : arrow,0,0,3,4,#e74c3c,2.5 : arrow,0,0,5,1,#2980b9,2.5 : circle,3,4,0.1,#e74c3c,#e74c3c : circle,5,1,0.1,#2980b9,#2980b9 : text,3.3,4.3,[3; 4],11,#e74c3c,start,bold : text,5.3,1.3,[5; 1],11,#2980b9,start,bold : text,6.7,0,x,12,#333,middle,bold : text,0,5.8,y,12,#333,middle,bold @ w=500 : h=400 : title=2 vectores en el mismo plano}
+
+#pgb
+"Vector negativo
+v4 = [-2; 3]
+'El primer numero [-2] va a la <b>izquierda</b> en x.
+'El segundo [3] va <b>arriba</b> en y.
+$Draw{line,-3.5,0,2,0,#333,1 : line,0,-1,0,4.5,#333,1 : arrow,0,0,-2,3,#27ae60,3 : circle,-2,3,0.12,#27ae60,#27ae60 : line,-2,0,-2,3,#999,1 : line,0,3,-2,3,#999,1 : text,-2,-0.5,x = -2,12,#333,middle : text,0.5,3,y = 3,12,#333,middle @ w=400 : h=350 : title=Vector con numero negativo [-2; 3]}
+
+#pgb
+"Vector fila y columna — mismo dibujo
+'Fila y columna son solo formas de escribir el vector.
+'El dibujo es el mismo.
+v_fila = [3; 4]
+v_col = transp(v_fila)
+
+$Draw{line,-1,0,5,0,#333,1 : line,0,-1,0,5.5,#333,1 : arrow,0,0,3,4,#e74c3c,3 : text,1,2.5,misma flecha,12,#e74c3c,middle,bold @ w=400 : h=400 : title=Fila o columna = misma flecha}
+
+'El vector es la lista de numeros.
+'Fila o columna es solo como lo escribes.
+
+#pgb
+"Norma = longitud de la flecha
+'La norma mide cuanto mide la flecha en el dibujo.
+v_nor = [3; 4]
+norma_r = norm(v_nor)
+
+$Draw{arrow,0,0,3,4,#e74c3c,3 : line,0,0,3,0,#999,1.5 : line,3,0,3,4,#999,1.5 : text,1.5,-0.5,3,14,#333,middle,bold : text,3.5,2,4,14,#333,middle,bold : text,0.8,2.5,5,16,#e74c3c,middle,bold @ w=400 : h=350 : title=Norma = 5}
+
+"Producto punto = cuanto van en la misma direccion
+v_p1 = [3; 0]
+v_p2 = [5; 0]
+dp_r = dot(v_p1; v_p2)
+
+$Draw{arrow,0,0.2,3,0.2,#e74c3c,2.5 : arrow,0,-0.2,5,-0.2,#2980b9,2.5 : text,1.5,0.7,[3; 0],11,#e74c3c,middle : text,2.5,-0.7,[5; 0],11,#2980b9,middle @ w=450 : h=130 : title=Misma direccion: dot = 15}
+
+v_p3 = [3; 0]
+v_p4 = [0; 4]
+dp_r2 = dot(v_p3; v_p4)
+
+$Draw{arrow,0,0,3,0,#e74c3c,2.5 : arrow,0,0,0,4,#2980b9,2.5 : text,1.5,-0.5,[3; 0],11,#e74c3c,middle : text,-1,2,[0; 4],11,#2980b9,middle @ w=350 : h=350 : title=Perpendiculares: dot = 0}
+
+#blk
+dp_r ; 'misma direccion
+dp_r2 ; 'perpendiculares
+#end blk
+#end margen

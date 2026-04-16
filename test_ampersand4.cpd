@@ -1,0 +1,59 @@
+"Test & — casos de ingeniería
+'<hr/>
+"1. Esfuerzo y cocientes
+
+fy = 4200*kgf/cm^2
+'14/fy con |:
+14/fy|cm^2/kgf
+'14/fy con &:
+14/fy & cm^2/kgf
+'Solo número (adimensional):
+14/(fy/(kgf/cm^2))
+
+'<hr/>
+"2. Espesor de placa
+
+q = 1.5*tonf/m^2
+sigma_adm = 1500*kgf/cm^2
+'Relación q/sigma:
+q/sigma_adm|cm
+q/sigma_adm & cm
+
+'<hr/>
+"3. Rigidez — expresión directa
+
+E = 2100000*kgf/cm^2
+A = 100*cm^2
+L = 300*cm
+'EA/L:
+k = E*A/L
+k|kgf/cm
+k|tonf/m
+k & kgf/cm
+k & tonf/m
+
+'<hr/>
+"4. Vector — todo en misma unidad
+
+F1 = 10*tonf
+F2 = -5*tonf
+M1 = 20*tonf*m
+'Vector fuerzas (solo tonf):
+Fv = [F1; F2]
+Fv
+'Momento aparte:
+M1
+
+'<hr/>
+"5. Matriz simple con unidades
+
+k1 = 500*tonf/m
+k2 = 300*tonf/m
+Ks = [k1 + k2; -k2 | -k2; k2]
+Ks
+'Resolver:
+Fs = [10*tonf; -5*tonf]
+us = lsolve(Ks; Fs)
+us
+us|cm
+us|mm

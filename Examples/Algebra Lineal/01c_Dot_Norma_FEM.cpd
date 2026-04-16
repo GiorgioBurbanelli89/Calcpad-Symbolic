@@ -1,0 +1,114 @@
+#margen 20
+"Producto punto y Norma en Elementos Finitos
+
+"PRODUCTO PUNTO en FEM
+
+"Ejemplo 1: Calcular la deformacion
+'Tenemos una barra con 2 nodos.
+'B son las derivadas de las funciones de forma:
+B_v = [-1; 1]
+
+'u son los desplazamientos de los nodos (en metros):
+u_v = [0.002; 0.005]
+
+'La deformacion es el producto punto de B y u:
+ε = dot(B_v; u_v)
+
+'Es decir: (-1)*0.002 + (1)*0.005 = -0.002 + 0.005 = 0.003
+'La barra se estiro 0.003 m/m = 0.3%
+
+"Ejemplo 2: Fuerza en un nodo
+'Si tengo las funciones de forma N y una carga distribuida q:
+N_v = [0.75; 0.25]
+q_v = [10; 10]
+
+'La fuerza equivalente en el nodo es:
+F_eq = dot(N_v; q_v)
+'0.75*10 + 0.25*10 = 7.5 + 2.5 = 10
+
+"Ejemplo 3: Energia de deformacion
+'La energia es: U = (1/2) * esfuerzo * deformacion * Area * Longitud
+'Con vectores de esfuerzos y deformaciones en 2D:
+σ_v = [150; 200; 50]
+ε_v = [0.001; 0.0015; 0.0008]
+
+'La energia es proporcional al producto punto:
+U_prop = dot(σ_v; ε_v)
+'150*0.001 + 200*0.0015 + 50*0.0008 = 0.15 + 0.30 + 0.04 = 0.49
+
+'<b>El producto punto en FEM combina multiples componentes en un solo resultado.</b>
+
+#pgb
+"NORMA en FEM
+
+"Ejemplo 1: Error de la solucion
+'Resolvemos un problema con FEM y comparamos con la solucion exacta.
+'El error en cada nodo es:
+error_nodos = [0.02; -0.05; 0.03; -0.01; 0.04]
+
+'La norma mide el error total:
+error_total = norm(error_nodos)
+
+'Si refinamos la malla, el error debe disminuir.
+
+"Ejemplo 2: Desplazamiento total
+'Un nodo se mueve en x, y, z:
+desp_x = 0.003
+desp_y = 0.004
+desp_z = 0.000
+
+'El desplazamiento total es la norma del vector:
+desp_v = [desp_x; desp_y; desp_z]
+desp_total = norm(desp_v)
+
+'En 2D es como el triangulo 3-4-5 (escalado).
+
+"Ejemplo 3: Convergencia
+'Resolvemos con mallas de 4, 8, 16 y 32 elementos.
+'El desplazamiento maximo en cada caso:
+u_4 = 0.0045
+u_8 = 0.0048
+u_16 = 0.00495
+u_32 = 0.00499
+u_exacto = 0.005
+
+'Los errores:
+e_4 = abs(u_4 - u_exacto)
+e_8 = abs(u_8 - u_exacto)
+e_16 = abs(u_16 - u_exacto)
+e_32 = abs(u_32 - u_exacto)
+
+#blk
+e_4 ; '4 elementos
+e_8 ; '8 elementos
+e_16 ; '16 elementos
+e_32 ; '32 elementos
+#end blk
+'El error disminuye al refinar. Eso es <b>convergencia</b>.
+
+#hide
+np = 4
+xc = vector(np)
+yc = vector(np)
+xc.(1) = 4
+xc.(2) = 8
+xc.(3) = 16
+xc.(4) = 32
+yc.(1) = e_4
+yc.(2) = e_8
+yc.(3) = e_16
+yc.(4) = e_32
+#show
+$Chart{xc; yc @ title=Convergencia : xlabel=numero de elementos : ylabel=error}
+
+'<b>La norma del error mide que tan buena es la solucion FEM.</b>
+
+#pgb
+"Resumen
+
+#blk
+'Operacion ; 'En FEM sirve para
+'Producto punto ; 'calcular deformacion (B*u), energia, fuerzas equivalentes
+'Norma ; 'medir error, desplazamiento total, verificar convergencia
+#end blk
+#end margen

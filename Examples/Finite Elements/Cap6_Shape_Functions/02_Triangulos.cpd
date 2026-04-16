@@ -1,0 +1,133 @@
+"6.2.1 Funciones de Forma para Triangulos (T3, T6, T10)
+'Ref: Zienkiewicz & Taylor, Cap.6, Sec. 6.2.1, p.151-155
+
+"6.2.1.1 Triangulo lineal con 3 nodos (T3)
+'Ref: Zienkiewicz, Sec. 6.2.1.1, p.151
+
+'Dado un triangulo con nodos (x_a, y_a), a = 1,2,3:
+#deq N_a(x; y) = (1/(2*Δ))*(a_a + b_a*x + c_a*y) @@(Eq. 6.1)
+
+'Donde los coeficientes son:
+#blk
+a_1 = x_2*y_3 - x_3*y_2 ; b_1 = y_2 - y_3 ; c_1 = x_3 - x_2
+a_2 = x_3*y_1 - x_1*y_3 ; b_2 = y_3 - y_1 ; c_2 = x_1 - x_3
+a_3 = x_1*y_2 - x_2*y_1 ; b_3 = y_1 - y_2 ; c_3 = x_2 - x_1
+#end blk
+
+'Y Δ es el area del triangulo:
+#deq Δ = (x_1*b_1 + x_2*b_2 + x_3*b_3)/2 @@(Eq. 6.1)
+
+"6.2.1.1 Coordenadas baricentricas (de area)
+'Ref: Zienkiewicz, Sec. 6.2.1.1, p.152
+'
+'Las coordenadas baricentricas L_1, L_2, L_3 se definen como:
+#deq L_a = Δ_a/Δ @@(Eq. 6.3)
+
+'Donde Δ_a es el area del subtriangulo formado por el punto P y
+'los otros dos nodos. La restriccion fundamental es:
+#deq L_1 + L_2 + L_3 = 1 @@(Eq. 6.4)
+
+'Las funciones de forma del T3 en coordenadas baricentricas:
+#deq N_a = L_a @@(Eq. 6.5)
+
+"Ejemplo numerico — Triangulo T3
+'Nodos del triangulo:
+x_1 = 0
+y_1 = 0
+x_2 = 4
+y_2 = 0
+x_3 = 2
+y_3 = 3
+
+"Coeficientes
+a_1 = x_2*y_3 - x_3*y_2
+b_1 = y_2 - y_3
+c_1 = x_3 - x_2
+a_2 = x_3*y_1 - x_1*y_3
+b_2 = y_3 - y_1
+c_2 = x_1 - x_3
+a_3 = x_1*y_2 - x_2*y_1
+b_3 = y_1 - y_2
+c_3 = x_2 - x_1
+
+"Area del triangulo
+Δ = (x_1*b_1 + x_2*b_2 + x_3*b_3)/2
+
+"Funciones de forma evaluadas en el centroide (x=2, y=1)
+x_p = 2
+y_p = 1
+N_1 = (a_1 + b_1*x_p + c_1*y_p)/(2*Δ)
+N_2 = (a_2 + b_2*x_p + c_2*y_p)/(2*Δ)
+N_3 = (a_3 + b_3*x_p + c_3*y_p)/(2*Δ)
+
+"Verificacion: N_1 + N_2 + N_3 = 1
+N_sum = N_1 + N_2 + N_3
+
+"Grafica de N_1 a lo largo de y=0 (de x=0 a x=4)
+f_N1(x) = (a_1 + b_1*x + c_1*0)/(2*Δ)
+f_N2(x) = (a_2 + b_2*x + c_2*0)/(2*Δ)
+f_N3(x) = (a_3 + b_3*x + c_3*0)/(2*Δ)
+$Plot{f_N1(x) | f_N2(x) | f_N3(x) @ x = 0 : 4}
+
+"6.2.1.2 Triangulo cuadratico T6
+'Ref: Zienkiewicz, Sec. 6.2.1.3, p.154
+'6 nodos: 3 en esquinas + 3 en puntos medios de aristas
+
+'Nodos de esquina (a = 1, 2, 3):
+#deq N_a = (2*L_a - 1)*L_a @@(Eq. 6.7a)
+
+'Nodos de punto medio:
+#deq
+N_4 = 4*L_1*L_2
+N_5 = 4*L_2*L_3
+N_6 = 4*L_3*L_1
+#end deq
+
+"Ejemplo T6 — Evaluacion en el centroide
+'En el centroide: L_1 = L_2 = L_3 = 1/3
+L_1c = 1/3
+L_2c = 1/3
+L_3c = 1/3
+
+'Funciones de forma en esquinas:
+N_1c = (2*L_1c - 1)*L_1c
+N_2c = (2*L_2c - 1)*L_2c
+N_3c = (2*L_3c - 1)*L_3c
+
+'Funciones de forma en puntos medios:
+N_4c = 4*L_1c*L_2c
+N_5c = 4*L_2c*L_3c
+N_6c = 4*L_3c*L_1c
+
+'Verificacion:
+N_sum6 = N_1c + N_2c + N_3c + N_4c + N_5c + N_6c
+
+"6.2.1.3 Triangulo cubico T10
+'Ref: Zienkiewicz, Sec. 6.2.1.4, p.154
+'10 nodos: 3 esquinas + 6 en aristas + 1 interno (burbuja)
+
+'Nodos de esquina (a = 1, 2, 3):
+#deq N_a = (1/2)*(3*L_a - 1)*(3*L_a - 2)*L_a @@(Eq. 6.7b)
+
+'Nodos de arista (ejemplo N_4, N_5):
+#deq
+N_4 = (9/2)*L_1*L_2*(3*L_1 - 1)
+N_5 = (9/2)*L_1*L_2*(3*L_2 - 1)
+#end deq
+
+'Nodo interno (funcion burbuja):
+#deq N_10 = 27*L_1*L_2*L_3 @@(Eq. 6.7c)
+'La funcion burbuja es cero en todos los bordes — util para formas mixtas (Cap. 10).
+
+"Formula general — Triangulo de orden M
+'Ref: Zienkiewicz, Eq. 6.7, p.154 (Argyris et al.)
+'Nodo a con coordenadas (I, J, K) donde I + J + K = M:
+#deq N_a = l^I_I(L_1)*l^J_J(L_2)*l^K_K(L_3) @@(Eq. 6.7)
+'Donde l^I_I son interpolaciones de Lagrange de orden I.
+
+"Referencias
+'[1] Mobius, A.F. (1827). <i>Der baryzentrische Calcul</i>.
+'[2] Silvester, P. (1969). High-order polynomial triangular finite elements. <i>Int. J. Eng. Sci.</i>
+'[3] Argyris, J.H. et al. (1968). <i>Proc. 2nd Conf. Matrix Meth. Struct. Mech.</i>, AFFDL-TR-68-150.
+'[6] de Veubeke, B.F. (1965). <i>Stress Analysis</i>, Ch.9, ed. Zienkiewicz & Holister, Wiley.
+'[7] Argyris, J.H. (1966). Triangular elements with linearly varying strain. <i>J. Royal Aero. Soc.</i>, 46.

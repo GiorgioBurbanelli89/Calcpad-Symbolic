@@ -1,0 +1,16 @@
+"Debug $PlotMap con spline
+#hide
+M = matrix(5; 5)
+#for j = 1 : 5
+	#for i = 1 : 5
+		M.(i; j) = -10 - 5*sqr((i - 3)^2 + (j - 3)^2)
+	#loop
+#loop
+f(x; y) = spline(1 + x*4/100; 1 + y*4/100; M)
+PlotWidth = 300','PlotStep = 5
+#show
+"$Map (referencia)
+$Map{f(x; y) @ x = 0 : 100 & y = 0 : 100}
+
+"$PlotMap con spline
+$PlotMap{f(u; v) @ u = 0 : 100 & v = 0 : 100}

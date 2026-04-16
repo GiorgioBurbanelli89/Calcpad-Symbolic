@@ -1,0 +1,43 @@
+"Test & en operaciones matriciales
+
+"1. B^T * D * B con unidades
+
+'Datos con unidades:
+E_u = 200000 MPa
+t_u = 0.2 m
+L_u = 1 m
+
+'D constitutiva (tiene E*t = MPa*m = kN/m):
+D_u = E_u*t_u*[1; 0.2|0.2; 1]
+D_u
+
+'B deformacion (tiene 1/L = 1/m):
+B_u = [1/L_u; 0; -1/L_u; 0|0; 1/L_u; 0; -1/L_u]
+B_u
+
+'Multiplicacion directa:
+BtDB_u = transp(B_u)*D_u*B_u
+BtDB_u
+
+"2. Misma operacion con & al final
+BtDB_a = transp(B_u)*D_u*B_u & [kN/m; kN/m; kN/m; kN/m|kN/m; kN/m; kN/m; kN/m|kN/m; kN/m; kN/m; kN/m|kN/m; kN/m; kN/m; kN/m]
+BtDB_a
+
+"3. Misma operacion adimensional (N y mm)
+E_n = E_u & MPa
+t_n = t_u & mm
+L_n = L_u & mm
+D_n = E_n*t_n*[1; 0.2|0.2; 1]
+B_n = [1/L_n; 0; -1/L_n; 0|0; 1/L_n; 0; -1/L_n]
+BtDB_n = transp(B_n)*D_n*B_n
+BtDB_n
+
+"4. Sistema K*u = F con & en clsolve
+K_u = [200 kN/m; -100 kN/m|-100 kN/m; 300 kN/m]
+F_u = [10 kN; -5 kN]
+'Con & en clsolve:
+u_a = clsolve(K_u; F_u) & [mm; mm]
+u_a
+'Sin & (directo):
+u_d = clsolve(K_u; F_u)
+u_d

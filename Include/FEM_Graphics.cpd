@@ -1,0 +1,108 @@
+"FEM Graphics Library for Calcpad
+'Library of macros for finite element mesh visualization
+'<hr/>
+
+'<style>
+'.fem-joint{fill:orangeRed;}
+'.fem-support{stroke:red; stroke-width:1.5; fill:lightpink;}
+'.fem-element{stroke:seaGreen; stroke-width:1; fill:lime; fill-opacity:0.1; stroke-opacity:0.5}
+'.fem-label{font-family:Segoe UI; font-size:9px; fill:#333; text-anchor:middle}
+'.fem-node-label{font-family:Segoe UI; font-size:8px; fill:#666; text-anchor:start}
+'.fem-dim{stroke:#999; stroke-width:0.5; fill:none}
+'.fem-load{stroke:blue; stroke-width:1.5; fill:blue; fill-opacity:0.3}
+'.fem-moment{stroke:purple; stroke-width:1; fill:none}
+'.fem-deformed{stroke:red; stroke-width:1.5; fill:none; stroke-dasharray:4,2}
+'.fem-bc-fixed{stroke:brown; stroke-width:2; fill:none}
+'.fem-bc-pin{fill:white; stroke:brown; stroke-width:1.5}
+'.fem-bc-roller{fill:white; stroke:brown; stroke-width:1.5}
+'</style>
+
+'── Mesh element (rectangle) ──
+#def fem_rect$(x$; y$; w$; h$)
+	'<rect x="'x$'" y="'y$'" width="'w$'" height="'h$'" class="fem-element"/>
+#end def
+
+'── Joint (filled circle) ──
+#def fem_joint$(cx$; cy$; r$)
+	'<circle cx="'cx$'" cy="'cy$'" r="'r$'" class="fem-joint"/>
+#end def
+
+'── Node label ──
+#def fem_nlabel$(x$; y$; r$; text$)
+	'<text x="'x$ + 1.5*r$'" y="'y$ - 0.8*r$'" class="fem-node-label">'text$'</text>
+#end def
+
+'── Element label (centered) ──
+#def fem_elabel$(x$; y$; text$)
+	'<text x="'x$'" y="'y$'" class="fem-label">'text$'</text>
+#end def
+
+'── Simply supported (triangle) ──
+#def fem_pin$(cx$; cy$; sz$)
+	'<polygon points="'cx$','cy$' 'cx$ - sz$','cy$ + 1.5*sz$' 'cx$ + sz$','cy$ + 1.5*sz$'" class="fem-bc-pin"/>
+	'<line x1="'cx$ - 1.2*sz$'" y1="'cy$ + 1.5*sz$'" x2="'cx$ + 1.2*sz$'" y2="'cy$ + 1.5*sz$'" class="fem-bc-fixed"/>
+#end def
+
+'── Fixed support (hatched line) ──
+#def fem_fixed_h$(x$; y$; len$)
+	'<line x1="'x$'" y1="'y$'" x2="'x$ + len$'" y2="'y$'" class="fem-bc-fixed"/>
+	'<line x1="'x$'" y1="'y$'" x2="'x$ + 0.15*len$'" y2="'y$ + 0.1*len$'" class="fem-bc-fixed"/>
+	'<line x1="'x$ + 0.3*len$'" y1="'y$'" x2="'x$ + 0.45*len$'" y2="'y$ + 0.1*len$'" class="fem-bc-fixed"/>
+	'<line x1="'x$ + 0.6*len$'" y1="'y$'" x2="'x$ + 0.75*len$'" y2="'y$ + 0.1*len$'" class="fem-bc-fixed"/>
+	'<line x1="'x$ + 0.9*len$'" y1="'y$'" x2="'x$ + len$'" y2="'y$ + 0.1*len$'" class="fem-bc-fixed"/>
+#end def
+
+'── Fixed support vertical ──
+#def fem_fixed_v$(x$; y$; len$)
+	'<line x1="'x$'" y1="'y$'" x2="'x$'" y2="'y$ + len$'" class="fem-bc-fixed"/>
+	'<line x1="'x$'" y1="'y$'" x2="'x$ - 0.1*len$'" y2="'y$ + 0.15*len$'" class="fem-bc-fixed"/>
+	'<line x1="'x$'" y1="'y$ + 0.3*len$'" x2="'x$ - 0.1*len$'" y2="'y$ + 0.45*len$'" class="fem-bc-fixed"/>
+	'<line x1="'x$'" y1="'y$ + 0.6*len$'" x2="'x$ - 0.1*len$'" y2="'y$ + 0.75*len$'" class="fem-bc-fixed"/>
+	'<line x1="'x$'" y1="'y$ + 0.9*len$'" x2="'x$ - 0.1*len$'" y2="'y$ + len$'" class="fem-bc-fixed"/>
+#end def
+
+'── Roller support (triangle + circle) ──
+#def fem_roller$(cx$; cy$; sz$)
+	'<polygon points="'cx$','cy$' 'cx$ - sz$','cy$ + 1.5*sz$' 'cx$ + sz$','cy$ + 1.5*sz$'" class="fem-bc-pin"/>
+	'<circle cx="'cx$'" cy="'cy$ + 1.8*sz$'" r="'0.3*sz$'" class="fem-bc-roller"/>
+#end def
+
+'── Distributed load (arrows) ──
+#def fem_qload$(x1$; y1$; x2$; y2$; h$; n_arr$)
+	'<rect x="'x1$'" y="'y1$ - h$'" width="'x2$ - x1$'" height="'h$'" class="fem-load"/>
+#end def
+
+'── Concentrated force arrow ──
+#def fem_force$(x$; y$; len$; dir$)
+	'<line x1="'x$'" y1="'y$'" x2="'x$'" y2="'y$ - dir$*len$'" style="stroke:blue;stroke-width:2"/>
+	'<polygon points="'x$','y$' 'x$ - 3','y$ - dir$*8' 'x$ + 3','y$ - dir$*8'" style="fill:blue"/>
+#end def
+
+'── Line between two points ──
+#def fem_line$(x1$; y1$; x2$; y2$; cls$)
+	'<line x1="'x1$'" y1="'y1$'" x2="'x2$'" y2="'y2$'" class="'cls$'"/>
+#end def
+
+'── SVG container start ──
+#def fem_svg_start$(w$; h$; pad$)
+	'<svg viewbox="'-pad$' '-pad$' 'w$ + 2*pad$' 'h$ + 2*pad$'" xmlns="http://www.w3.org/2000/svg" style="font-family:Segoe UI; font-size:10px; width:'w$'pt; height:'h$'pt">
+#end def
+
+'── SVG container end ──
+#def fem_svg_end$()
+	'</svg>
+#end def
+
+'── Color interpolation for result maps ──
+'Maps value v (0 to 1) to RGB hex color (blue→green→yellow→red)
+#def fem_color$(v$)
+	#if v$ < 0.25
+		'rgb('0','round(v$*4*255)','255')
+	#else if v$ < 0.5
+		'rgb('0','255','round((0.5-v$)*4*255)')
+	#else if v$ < 0.75
+		'rgb('round((v$-0.5)*4*255)','255','0')
+	#else
+		'rgb('255','round((1-v$)*4*255)','0')
+	#end if
+#end def

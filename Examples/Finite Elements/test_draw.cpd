@@ -1,0 +1,21 @@
+"Test de $Draw interactivo
+'<p>Pan: arrastra con mouse. Zoom: scroll. Doble-click: resetear vista.</p>
+
+"Ejemplo 1: Diagrama de viga simple
+
+L = 6
+h = 0.4
+P = 10
+
+$Draw{fillrect,0,0,L,h,#d4e6f1,black,1 : line,0,h/2,L,h/2,green,1 : arrow,L/2,h+1.5,L/2,h,red,2 : text,L/2,h+1.8,P=10kN,12,red,middle,bold : dim,0,-0.3,L,-0.3,-0.5,L=6m : circle,0,0,0.08,black,#ddd : circle,L,0,0.08,black,#ddd @ w=600 : h=300 : title=Viga simplemente apoyada : grid=true}
+
+"Ejemplo 2: Seccion transversal
+
+b = 0.3
+d = 0.5
+
+$Draw{fillrect,0,0,b,d,#e8e8e8,black,1.5 : hatch,0,0,b,d,gray : line,0,d/2,b,d/2,green,2 : text,b/2,d+0.05,b=30cm,10,black,middle : text,b+0.05,d/2,h=50cm,10,black,start : circle,0.05,0.05,0.008,black,black : circle,0.25,0.05,0.008,black,black : circle,0.15,0.05,0.008,black,black : circle,0.05,0.45,0.008,black,black : circle,0.25,0.45,0.008,black,black @ w=400 : h=400 : title=Seccion de hormigon : bg=#fafafa}
+
+"Ejemplo 3: Triangulo de esfuerzos
+
+$Draw{line,0,0,0,-10,#cc0000,2 : line,0,0,0,10,#0000cc,2 : line,0,-10,3,-10,#cc0000,1 : line,0,10,3,10,#0000cc,1 : line,3,-10,3,10,gray,0.5 : dashed,0,-10,0,10,gray,0.5,3 : text,1.5,-11,Compresion,9,#cc0000,middle : text,1.5,11,Tension,9,#0000cc,middle : arrow,3,-10,3,10,gray,1 : text,3.5,0,h,11,black,start,bold @ w=500 : h=350 : title=Distribucion de esfuerzos}

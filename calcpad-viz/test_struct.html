@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head><title>Struct Draw Test</title>
+<script src="dist/calcpad-viz.umd.cjs"></script>
+</head>
+<body style="margin:20px;background:#f5f5f5;font-family:sans-serif;">
+
+<h3>1. Un resorte simple</h3>
+<div id="s1"></div>
+<script>
+CalcpadViz.structDraw("s1", {
+  elements: [
+    {type:"support", x:0, y:0, supportType:"fixed"},
+    {type:"spring", x1:0, y1:0, x2:4, y2:0, text:"k = 500"},
+    {type:"node", x:0, y:0, text:"1"},
+    {type:"node", x:4, y:0, text:"2"},
+    {type:"force", x:4, y:0, dir:"right", value:25, text:"F = 25"},
+    {type:"dim", x1:0, y1:0, x2:4, y2:0, text:"x = F/k = 0.05"},
+  ],
+  options: {width:500, height:180, title:"Paso 1: Resorte F = k·x"}
+});
+</script>
+
+<h3>2. Una barra de acero</h3>
+<div id="s2"></div>
+<script>
+CalcpadViz.structDraw("s2", {
+  elements: [
+    {type:"support", x:0, y:0, supportType:"fixed"},
+    {type:"bar", x1:0, y1:0, x2:5, y2:0, text:"E=200000, A=0.001, L=2"},
+    {type:"node", x:0, y:0, text:"1 (fijo)"},
+    {type:"node", x:5, y:0, text:"2"},
+    {type:"force", x:5, y:0, dir:"right", value:50, text:"P = 50 kN"},
+    {type:"dim", x1:0, y1:0, x2:5, y2:0, text:"L = 2 m"},
+  ],
+  options: {width:500, height:180, title:"Paso 2: Barra k = EA/L"}
+});
+</script>
+
+<h3>3. Viga en voladizo</h3>
+<div id="s3"></div>
+<script>
+CalcpadViz.structDraw("s3", {
+  elements: [
+    {type:"support", x:0, y:0, supportType:"fixed"},
+    {type:"beam", x1:0, y1:0, x2:6, y2:0, text:"EI"},
+    {type:"node", x:0, y:0, text:"1"},
+    {type:"node", x:6, y:0, text:"2"},
+    {type:"force", x:6, y:0, dir:"down", value:10, text:"P = 10 kN"},
+    {type:"dim", x1:0, y1:0, x2:6, y2:0, text:"L = 3 m"},
+  ],
+  options: {width:500, height:220, title:"Paso 3: Viga en voladizo"}
+});
+</script>
+
+<h3>4. Viga simplemente apoyada</h3>
+<div id="s4"></div>
+<script>
+CalcpadViz.structDraw("s4", {
+  elements: [
+    {type:"support", x:0, y:0, supportType:"pin"},
+    {type:"support", x:6, y:0, supportType:"roller"},
+    {type:"beam", x1:0, y1:0, x2:6, y2:0, text:"EI"},
+    {type:"node", x:0, y:0, text:"1"},
+    {type:"node", x:3, y:0, text:"2"},
+    {type:"node", x:6, y:0, text:"3"},
+    {type:"force", x:3, y:0, dir:"down", value:20, text:"P = 20 kN"},
+    {type:"dim", x1:0, y1:0, x2:6, y2:0, text:"L = 6 m"},
+  ],
+  options: {width:550, height:220, title:"Paso 4: Viga simplemente apoyada"}
+});
+</script>
+
+<h3>5. Portico</h3>
+<div id="s5"></div>
+<script>
+CalcpadViz.structDraw("s5", {
+  elements: [
+    {type:"support", x:0, y:0, supportType:"fixed"},
+    {type:"support", x:6, y:0, supportType:"fixed"},
+    {type:"beam", x1:0, y1:0, x2:0, y2:4, text:"Col 1"},
+    {type:"beam", x1:6, y1:0, x2:6, y2:4, text:"Col 2"},
+    {type:"beam", x1:0, y1:4, x2:6, y2:4, text:"Beam"},
+    {type:"node", x:0, y:0, text:"1"},
+    {type:"node", x:6, y:0, text:"2"},
+    {type:"node", x:0, y:4, text:"3"},
+    {type:"node", x:6, y:4, text:"4"},
+    {type:"force", x:0, y:4, dir:"right", value:10, text:"F = 10 kN"},
+  ],
+  options: {width:550, height:350, title:"Paso 5: Portico plano"}
+});
+</script>
+
+</body>
+</html>

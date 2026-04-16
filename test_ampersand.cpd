@@ -1,0 +1,12 @@
+"Test & operator
+L_m = 6*m
+'Con unidad m:
+L_m
+'Convertido a cm (|):
+L_m|cm
+'& m (convierte a m + reasigna):
+L_m & m
+'& cm (convierte a cm + reasigna):
+L_m & cm
+'Adimensional (& m/m):
+L_m & m/m

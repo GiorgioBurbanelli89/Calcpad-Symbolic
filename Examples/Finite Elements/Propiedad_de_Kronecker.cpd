@@ -1,0 +1,325 @@
+#margen 20
+"Propiedad de Kronecker — Funciones de Forma
+
+"La ecuacion de la recta
+
+'Empecemos con algo que todos conocemos: una recta en un grafico.
+'Un grafico tiene dos ejes:
+'- Eje horizontal: la posicion <b>x</b>
+'- Eje vertical: el valor <b>y</b>
+
+'Cada punto del grafico tiene una coordenada (x, y).
+'Una recta es un conjunto de puntos alineados.
+
+"Que define una recta?
+'Una recta necesita solo 2 cosas:
+'<b>1. Donde empieza</b> (un punto de partida)
+'<b>2. Cuanto sube</b> (la inclinacion o pendiente)
+
+"La pendiente
+'La <b>pendiente</b> nos dice cuanto sube y cuando x avanza 1.
+'Por ejemplo, si la pendiente es 2, cada vez que x sube 1, y sube 2.
+'Si la pendiente es -1, cada vez que x sube 1, y baja 1.
+'Si la pendiente es 0, y no cambia. Es una recta horizontal.
+
+'Veamos 3 rectas con diferente pendiente:
+#hide
+n_r = 20
+x_r1 = vector(n_r + 1)
+y_r1 = vector(n_r + 1)
+y_r2 = vector(n_r + 1)
+y_r3 = vector(n_r + 1)
+#for i = 1 : n_r + 1
+    x_r1.(i) = (i - 1)*4/n_r
+    y_r1.(i) = 2*x_r1.(i)
+    y_r2.(i) = 0.5*x_r1.(i)
+    y_r3.(i) = -1*x_r1.(i)
+#loop
+#show
+$Chart{x_r1; y_r1; x_r1; y_r2; x_r1; y_r3 @ title=Tres pendientes diferentes : xlabel=x : ylabel=y : labels=m=2 (sube rapido),m=0.5 (sube lento),m=-1 (baja)}
+
+"La ecuacion
+'Si conozco la pendiente <b>m</b> y el punto donde cruza el eje vertical <b>b</b>:
+#deq y = m*x + b @@(ecuacion de la recta)
+
+'Ejemplo con m = 2 y b = 1:
+m_ej = 2
+b_ej = 1
+y_ej(x) = m_ej*x + b_ej
+
+'Calculemos y para varios valores de x:
+#blk
+y_ej(0) ; 'cuando x = 0, y = b = 1
+y_ej(1) ; 'cuando x = 1, y = 1 + 2 = 3
+y_ej(2) ; 'cuando x = 2, y = 1 + 4 = 5
+y_ej(3) ; 'cuando x = 3, y = 1 + 6 = 7
+#end blk
+
+$Plot{y_ej(x) @ x = 0 : 4}
+'Observa: cada vez que x sube 1, y sube 2. Eso es la pendiente.
+'Cuando x = 0, y = 1. Eso es b, el punto de partida en el eje vertical.
+
+#pgb
+"Ahora el problema: tenemos 2 puntos, no m y b
+
+'En la practica no nos dan m y b.
+'Nos dan <b>2 puntos</b> y necesitamos encontrar la recta.
+
+'Punto 1:
+x_1 = 1
+y_1 = 2
+
+'Punto 2:
+x_2 = 4
+y_2 = 8
+
+"Como encontrar la pendiente?
+'La pendiente es: cuanto sube y dividido cuanto avanza x.
+'Entre los 2 puntos:
+'La distancia horizontal entre los 2 puntos es:
+Δ_x = x_2 - x_1
+
+'La distancia vertical entre los 2 puntos es:
+Δ_y = y_2 - y_1
+
+'La pendiente es la division de ambas:
+m = Δ_y/Δ_x
+
+'Esto significa que por cada unidad que x avanza, y sube 'm'.
+
+"Grafica mostrando la pendiente
+#hide
+n_g = 20
+x_r = vector(n_g + 1)
+y_r = vector(n_g + 1)
+#for i = 1 : n_g + 1
+    x_r.(i) = x_1 + (i - 1)*(x_2 - x_1)/n_g
+    y_r.(i) = y_1 + m*(x_r.(i) - x_1)
+#loop
+x_pts = [x_1|x_2]
+y_pts = [y_1|y_2]
+#show
+$Chart{x_r; y_r; x_pts; y_pts @ title=Recta por 2 puntos : xlabel=x : ylabel=y : labels=Recta,Puntos}
+
+#pgb
+"La ecuacion punto-pendiente
+
+'Ya tenemos la pendiente '#deq m'. Ahora necesitamos la ecuacion.
+'Partimos del punto 1 y nos movemos.
+
+'Imagina que estas parado en el punto 1, a una altura '#deq y_1 = 2'.
+'Quieres saber la altura en otra posicion x.
+
+'<b>Paso A:</b> Calculo cuanto me movi horizontalmente:
+#deq distancia = x - x_1 @@(cuanto avance)
+
+'<b>Paso B:</b> Calculo cuanto subi. La pendiente me dice cuanto sube y por cada unidad de x:
+#deq subida = m*(x - x_1) @@(pendiente por distancia)
+
+'<b>Paso C:</b> Mi nueva altura es donde estaba MAS lo que subi:
+#deq y(x) = y_1 + m*(x - x_1) @@(punto-pendiente)
+
+'<b>Por que sumo '#deq y_1'?</b>
+'Porque '#deq y_1' es mi punto de partida. Si no lo sumo, estaria
+'diciendo que empiezo desde y = 0, no desde el punto 1.
+
+"Ejemplo numerico paso a paso
+'Estoy en el punto 1: x = 'x_1', y = 'y_1'.
+'Quiero saber y cuando x = 3.
+
+'Paso A: cuanto me movi:
+d_ej = 3 - x_1
+
+'Paso B: cuanto subi:
+s_ej = m*d_ej
+
+'Paso C: mi nueva altura = donde estaba + lo que subi:
+y_ej2 = y_1 + s_ej
+
+'Si NO sumara '#deq y_1':
+y_sin = m*d_ej
+'Da 'y_sin' que es solo la subida, no la altura real.
+
+'Si SI sumo '#deq y_1':
+y_con = y_1 + m*d_ej
+'Da 'y_con' que es la altura correcta.
+
+#hide
+n_ej2 = 20
+x_ej2 = vector(n_ej2 + 1)
+y_correcta = vector(n_ej2 + 1)
+y_incorrecta = vector(n_ej2 + 1)
+#for i = 1 : n_ej2 + 1
+    x_ej2.(i) = x_1 + (i - 1)*(x_2 - x_1)/n_ej2
+    y_correcta.(i) = y_1 + m*(x_ej2.(i) - x_1)
+    y_incorrecta.(i) = m*(x_ej2.(i) - x_1)
+#loop
+x_pt1 = [x_1|x_2]
+y_pt1 = [y_1|y_2]
+#show
+$Chart{x_ej2; y_correcta; x_ej2; y_incorrecta; x_pt1; y_pt1 @ title=Con y1 vs sin y1 : xlabel=x : ylabel=y : labels=y1 + m(x-x1) CORRECTO,m(x-x1) INCORRECTO,Puntos}
+'La recta azul (sin '#deq y_1') no pasa por los puntos.
+'La recta roja (con '#deq y_1') si pasa. Por eso se suma '#deq y_1'.
+
+y(x) = y_1 + m*(x - x_1)
+
+"Verificacion
+'En el punto 1, x = 'x_1':
+y(x_1)
+'Da 'y_1' porque no nos movimos.
+
+'En el punto 2 (x = 'x_2'):
+y(x_2)
+'Da 'y_2' porque la recta pasa por ambos puntos.
+
+'En un punto intermedio (x = 2.5):
+y(2.5)
+
+#pgb
+"Sustituimos m por su formula
+
+'Reemplazamos '#deq m' por '#deq Δy/Δx':
+#deq y(x) = y_1 + (y_2 - y_1)/(x_2 - x_1)*(x - x_1) @@(recta por 2 puntos)
+
+'Esta es la ecuacion completa de la recta que pasa por 2 puntos.
+'Solo depende de x. Los valores '#deq x_1', '#deq y_1', '#deq x_2', '#deq y_2' son datos fijos.
+
+"Resumen hasta aqui
+'- '#deq x_1', '#deq y_1' = coordenadas del punto 1 (datos fijos)
+'- '#deq x_2', '#deq y_2' = coordenadas del punto 2 (datos fijos)
+'- '#deq x' = posicion donde quiero saber y (variable)
+'- '#deq y(x)' = valor interpolado en x (resultado)
+'- '#deq m' = pendiente = '#deq (y_2 - y_1)/(x_2 - x_1)' (dato fijo calculado)
+
+#pgb
+"De la recta a las funciones de forma
+
+"Que buscamos?
+'Tenemos la ecuacion de la recta que depende de '#deq y_1' y '#deq y_2'.
+'Queremos <b>separar</b> la influencia de cada nodo.
+'Es decir, escribir la ecuacion en esta forma:
+#deq y(x) = N_1(x)*y_1 + N_2(x)*y_2 @@(objetivo)
+'Donde '#deq N_1(x)' y '#deq N_2(x)' son funciones que solo dependen de x, no de los valores nodales.
+'Esas funciones se llaman <b>funciones de forma</b>.
+'Si lo logramos, podemos cambiar los valores en los nodos
+'sin cambiar la formula. Solo cambian los datos, no la estructura.
+
+"Reescribimos agrupando
+'La ecuacion original es:
+#deq y(x) = y_1 + (y_2 - y_1)/(x_2 - x_1)*(x - x_1) @@(original)
+
+'Separamos la fraccion en dos partes:
+#deq y(x) = y_1 + y_2*(x - x_1)/(x_2 - x_1) - y_1*(x - x_1)/(x_2 - x_1) @@(separado)
+
+'Ahora juntamos todo lo que multiplica a '#deq y_1':
+#deq y(x) = y_1*(1 - (x - x_1)/(x_2 - x_1)) + y_2*((x - x_1)/(x_2 - x_1)) @@(agrupado)
+
+"Simplificamos cada grupo
+'El grupo que multiplica a '#deq y_1':
+#sym
+simplify(1 - (x - x_1)/(x_2 - x_1))
+#end sym
+'Esto es '#deq N_1(x)'.
+
+'El grupo que multiplica a '#deq y_2':
+#sym
+simplify((x - x_1)/(x_2 - x_1))
+#end sym
+'Esto es '#deq N_2(x)'.
+
+"Las funciones de forma
+#deq N_1(x) = (x_2 - x)/(x_2 - x_1) @@(funcion de forma 1)
+#deq N_2(x) = (x - x_1)/(x_2 - x_1) @@(funcion de forma 2)
+
+'La ecuacion de la recta ahora se escribe como:
+#deq y(x) = N_1(x)*y_1 + N_2(x)*y_2 @@(forma de interpolacion)
+'Las funciones '#deq N_1' y '#deq N_2' se llaman <b>funciones de forma</b>.
+'No las inventamos. Aparecen al reorganizar la ecuacion de la recta.
+
+N_1(x) = (x_2 - x)/(x_2 - x_1)
+N_2(x) = (x - x_1)/(x_2 - x_1)
+
+"Verificacion
+y_interp(x) = N_1(x)*y_1 + N_2(x)*y_2
+y_interp(x_1)
+y_interp(x_2)
+y_interp(2.5)
+
+"Grafica de las funciones de forma
+#hide
+n_nf = 20
+x_nf = vector(n_nf + 1)
+y_nf1 = vector(n_nf + 1)
+y_nf2 = vector(n_nf + 1)
+#for i = 1 : n_nf + 1
+    x_nf.(i) = x_1 + (i - 1)*(x_2 - x_1)/n_nf
+    y_nf1.(i) = N_1(x_nf.(i))
+    y_nf2.(i) = N_2(x_nf.(i))
+#loop
+#show
+$Chart{x_nf; y_nf1; x_nf; y_nf2 @ title=Funciones de forma : xlabel=x : ylabel=N : labels=N1 (nodo 1),N2 (nodo 2)}
+'N1 controla la influencia del nodo 1. Baja de 1 a 0.
+'N2 controla la influencia del nodo 2. Sube de 0 a 1.
+
+#pgb
+"La pendiente y la derivada de las funciones de forma
+
+'Recordemos que la pendiente de la recta fue 'm'.
+'La pendiente nos dice <b>cuanto cambia y por cada unidad de x</b>.
+'Eso es exactamente la <b>derivada</b>.
+
+'Las funciones de forma tambien tienen pendiente.
+'Derivamos simbolicamente:
+#sym
+diff((x_2 - x)/(x_2 - x_1); x)
+#end sym
+#sym
+diff((x - x_1)/(x_2 - x_1); x)
+#end sym
+
+'La derivada de '#deq N_1' es negativa: su influencia <b>disminuye</b> con x.
+'La derivada de '#deq N_2' es positiva: su influencia <b>aumenta</b> con x.
+'Ambas derivadas son <b>constantes</b> dentro del elemento.
+
+"Para que sirve en ingenieria?
+'Si '#deq y' es el desplazamiento '#deq u', la derivada es la <b>deformacion</b>:
+#deq ε = du/dx @@(deformacion)
+'Con funciones de forma:
+#deq ε = dN_1/dx*u_1 + dN_2/dx*u_2 @@(deformacion con funciones de forma)
+'Como las derivadas de N son constantes, la deformacion es constante
+'dentro del elemento.
+
+#pgb
+"Propiedad de Kronecker
+'Evaluemos las funciones de forma en los nodos:
+N_1(x_1)
+N_1(x_2)
+N_2(x_1)
+N_2(x_2)
+
+#blk
+N_1(x_1) ; N_1(x_2) ; 'fila de 'N_1'
+N_2(x_1) ; N_2(x_2) ; 'fila de 'N_2'
+#end blk
+
+'Cada funcion de forma vale <b>1 en su nodo</b> y <b>0 en el otro</b>.
+'Esto se llama <b>propiedad de Kronecker</b>:
+#deq N_a(x_b) = δ_ab @@(Kronecker)
+
+"Verificacion simbolica
+'La suma de las funciones de forma:
+#sym
+simplify((x_2 - x)/(x_2 - x_1) + (x - x_1)/(x_2 - x_1))
+#end sym
+'Siempre da 1 en cualquier punto.
+
+"Grafica
+#hide
+y_k1 = [N_1(x_1)|N_1(x_2)]
+y_k2 = [N_2(x_1)|N_2(x_2)]
+x_k = [x_1|x_2]
+#show
+$Chart{x_k; y_k1; x_k; y_k2 @ title=Kronecker en los nodos : xlabel=x : ylabel=valor : labels=N1,N2}
+
+'Ref: Zienkiewicz & Taylor, Cap.6, p.151
+#end margen

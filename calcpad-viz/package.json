@@ -1,0 +1,20 @@
+{
+  "name": "calcpad-viz",
+  "version": "1.0.0",
+  "description": "Interactive 2D/3D visualization for CalcpadCE",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "plotly.js-dist-min": "^3.5.0",
+    "three": "^0.170.0",
+    "tweakpane": "^4.0.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  }
+}

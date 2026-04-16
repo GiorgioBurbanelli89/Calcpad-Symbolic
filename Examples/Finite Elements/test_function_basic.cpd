@@ -1,0 +1,54 @@
+"Test #function basico
+'<hr/>
+
+"1. Funcion que retorna un escalar
+#function Area(b; h)
+    Area = b*h
+#end function
+
+A1 = Area(0.3; 0.5)
+A2 = Area(0.4; 0.6)
+
+"2. Funcion con variables internas (deben ser locales)
+#function Inercia(b; h)
+    vol = b*h
+    Inercia = b*h^3/12
+#end function
+
+I1 = Inercia(0.3; 0.5)
+I2 = Inercia(0.4; 0.6)
+
+'<p>vol no debe existir aqui (es local a la funcion):</p>
+
+"3. Funcion que retorna una matriz 2x2
+#function Ke_bar(EA; L)
+    k = EA/L
+    Ke_bar = [k; -k | -k; k]
+#end function
+
+K1 = Ke_bar(200000*0.001; 3)
+K2 = Ke_bar(200000*0.002; 4)
+
+"4. Funcion de rigidez de viga 4x4
+#function Ke_beam(EI; L)
+    a = EI/L^3
+    k11 = 12*a
+    k12 = 6*a*L
+    k22 = 4*a*L^2
+    k21 = 2*a*L^2
+    Ke_beam = [k11; k12; -k11; k12 | k12; k22; -k12; k21 | -k11; -k12; k11; -k12 | k12; k21; -k12; k22]
+#end function
+
+EI_test = 200000*8.333*10^(-6)
+K_viga = Ke_beam(EI_test; 3)
+
+"5. Usar la funcion en un calculo
+P = 10
+L = 3
+EI = 200000*8.333*10^(-6)
+cv = EI/L^3
+Kr = [cv*12; -cv*6*L | -cv*6*L; cv*4*L^2]
+Fv = [-P; 0]
+uv = lsolve(Kr; Fv)
+v_tip = uv.(1)
+theta_tip = uv.(2)

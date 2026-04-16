@@ -1,0 +1,99 @@
+"Pórtico Plano — Análisis con #function
+"Basado en: Métodos Matriciales — J.C. Herrera
+'<hr/>
+"1. Funciones de rigidez reutilizables
+
+'<h4>Matriz de rigidez local 6×6 (viga-columna)</h4>
+#function FrameKe(E; A; I; L)
+    a1 = E*A/L
+    a2 = 12*E*I/L^3
+    a3 = 6*E*I/L^2
+    a4 = 4*E*I/L
+    a5 = 2*E*I/L
+    FrameKe = [a1; 0; 0; -a1; 0; 0 | 0; a2; a3; 0; -a2; a3 | 0; a3; a4; 0; -a3; a5 | -a1; 0; 0; a1; 0; 0 | 0; -a2; -a3; 0; a2; -a3 | 0; a3; a5; 0; -a3; a4]
+#end function
+
+'<hr/>
+"2. Datos del pórtico
+'<p>Pórtico simple: 2 columnas empotradas + 1 viga</p>
+'<p>Nodo 1 (0,0) empotrado — Nodo 2 (6,0) empotrado — Nodo 3 (0,4) libre — Nodo 4 (6,4) libre</p>
+
+'<h4>Propiedades</h4>
+E = 200000
+'Columnas 300×300 mm:
+A_c = 0.09
+I_c = 6.75*10^(-4)
+L_c = 4
+'Viga 300×500 mm:
+A_v = 0.15
+I_v = 3.125*10^(-3)
+L_v = 6
+
+'<hr/>
+"3. Matrices de rigidez local
+
+'<h4>Columna (E1 y E2): misma sección</h4>
+Ke_c = FrameKe(E; A_c; I_c; L_c)
+
+'<h4>Viga (E3)</h4>
+Ke_v = FrameKe(E; A_v; I_v; L_v)
+
+'<hr/>
+"4. Transformación a coordenadas globales
+'<p>Columnas verticales: eje local x → global y</p>
+'<p>Para columna vertical (cx=0, cy=1), Ke global se obtiene intercambiando ejes:</p>
+'<p>DOF local: (u,v,θ) → DOF global: (-v,u,θ) para cada nodo</p>
+
+'<h4>Ke global columna (reordenada)</h4>
+'Para columna vertical: Kg = Permutación de Ke_c
+'Fila/col permutación: axial↔cortante
+'K_global_col(1,1) = Ke_local(2,2), K_global_col(2,2) = Ke_local(1,1)
+
+'Componentes de la columna:
+EA_L = E*A_c/L_c
+k2 = 12*E*I_c/L_c^3
+k3 = 6*E*I_c/L_c^2
+k4 = 4*E*I_c/L_c
+k5 = 2*E*I_c/L_c
+
+'Ke global columna vertical (6×6):
+Kg_c = [k2; 0; -k3; -k2; 0; -k3 | 0; EA_L; 0; 0; -EA_L; 0 | -k3; 0; k4; k3; 0; k5 | -k2; 0; k3; k2; 0; k3 | 0; -EA_L; 0; 0; EA_L; 0 | -k3; 0; k5; k3; 0; k4]
+
+'Ke global viga horizontal (ya está en ejes globales):
+Kg_v = Ke_v
+
+'<hr/>
+"5. Ensamblaje K_ff (solo DOFs libres)
+'<p>DOFs libres: nodo 3 (u₃,v₃,θ₃) y nodo 4 (u₄,v₄,θ₄) = 6 DOFs</p>
+'<p>E1 (col izq, nodos 1→3): aporta Kg_c[4:6,4:6] en posiciones (1:3,1:3)</p>
+'<p>E2 (col der, nodos 2→4): aporta Kg_c[4:6,4:6] en posiciones (4:6,4:6)</p>
+'<p>E3 (viga, nodos 3→4): aporta Kg_v completa en posiciones (1:6,1:6)</p>
+
+'<h4>Sub-bloque inferior derecho de columna (nodo j)</h4>
+'Kg_c44 = [k2,0,k3 | 0,EA/L,0 | k3,0,k4]
+
+'<h4>K_ff ensamblada:</h4>
+K_ff = [Kg_c.(4;4)+Kg_v.(1;1); Kg_c.(4;5)+Kg_v.(1;2); Kg_c.(4;6)+Kg_v.(1;3); Kg_v.(1;4); Kg_v.(1;5); Kg_v.(1;6) | Kg_c.(5;4)+Kg_v.(2;1); Kg_c.(5;5)+Kg_v.(2;2); Kg_c.(5;6)+Kg_v.(2;3); Kg_v.(2;4); Kg_v.(2;5); Kg_v.(2;6) | Kg_c.(6;4)+Kg_v.(3;1); Kg_c.(6;5)+Kg_v.(3;2); Kg_c.(6;6)+Kg_v.(3;3); Kg_v.(3;4); Kg_v.(3;5); Kg_v.(3;6) | Kg_v.(4;1); Kg_v.(4;2); Kg_v.(4;3); Kg_c.(4;4)+Kg_v.(4;4); Kg_c.(4;5)+Kg_v.(4;5); Kg_c.(4;6)+Kg_v.(4;6) | Kg_v.(5;1); Kg_v.(5;2); Kg_v.(5;3); Kg_c.(5;4)+Kg_v.(5;4); Kg_c.(5;5)+Kg_v.(5;5); Kg_c.(5;6)+Kg_v.(5;6) | Kg_v.(6;1); Kg_v.(6;2); Kg_v.(6;3); Kg_c.(6;4)+Kg_v.(6;4); Kg_c.(6;5)+Kg_v.(6;5); Kg_c.(6;6)+Kg_v.(6;6)]
+
+'<hr/>
+"6. Cargas y solución
+'Carga horizontal 10 kN en nodo 3 (DOF u₃):
+F_f = [10; 0; 0; 0; 0; 0]
+
+'<h4>Desplazamientos</h4>
+u = lsolve(K_ff; F_f)
+
+'<h4>Reacciones</h4>
+'K_sf: filas = DOFs empotrados (nodos 1,2), cols = DOFs libres (nodos 3,4)
+'E1 aporta Kg_c[1:3,4:6], E2 aporta Kg_c[1:3,4:6]
+K_sf = [Kg_c.(1;4); Kg_c.(1;5); Kg_c.(1;6); 0; 0; 0 | Kg_c.(2;4); Kg_c.(2;5); Kg_c.(2;6); 0; 0; 0 | Kg_c.(3;4); Kg_c.(3;5); Kg_c.(3;6); 0; 0; 0 | 0; 0; 0; Kg_c.(1;4); Kg_c.(1;5); Kg_c.(1;6) | 0; 0; 0; Kg_c.(2;4); Kg_c.(2;5); Kg_c.(2;6) | 0; 0; 0; Kg_c.(3;4); Kg_c.(3;5); Kg_c.(3;6)]
+
+R = K_sf*u
+
+'<h4>Verificación de equilibrio</h4>
+'Suma Rx:
+R_x = R.(1) + R.(4)
+'<p>Debe ser = -10 kN (equilibra la carga horizontal)</p>
+'Suma Ry:
+R_y = R.(2) + R.(5)
+'<p>Debe ser = 0 (sin carga vertical)</p>

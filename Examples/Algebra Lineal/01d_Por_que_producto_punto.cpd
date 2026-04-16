@@ -1,0 +1,132 @@
+#margen 20
+"Por que existe el producto punto y la norma?
+
+"Todo empieza con Pitagoras
+'Tienes un triangulo rectangulo con lados 3 y 4.
+'Cuanto mide la hipotenusa?
+
+$Draw{line,0,0,3,0,#2c3e50,2 : line,3,0,3,4,#2c3e50,2 : line,0,0,3,4,#e74c3c,3 : text,1.5,-0.4,3,12,#2c3e50,middle,bold : text,3.4,2,4,12,#2c3e50,middle,bold : text,1,2.3,c = ?,12,#e74c3c,middle,bold : fillrect,2.7,0,3,0.3,#2c3e50,,0 @ w=400 : h=300 : title=Triangulo rectangulo}
+
+a_p = 3
+b_p = 4
+c_p = sqrt(a_p^2 + b_p^2)
+
+'Pitagoras: a^2 + b^2 = c^2
+
+#pgb
+"Un punto en el plano
+'El punto esta en (3, 4). La distancia al origen es la hipotenusa.
+
+$Draw{line,0,0,3,0,#bbb,1 : line,3,0,3,4,#bbb,1 : arrow,0,0,3,4,#e74c3c,2.5 : circle,3,4,0.1,#e74c3c,#e74c3c : circle,0,0,0.1,#2c3e50,#2c3e50 : text,3.3,4.2,(3; 4),11,#e74c3c,start,bold : text,-0.3,-0.3,(0; 0),11,#2c3e50,end : text,1,2.5,distancia = 5,11,#e74c3c,middle,bold @ w=400 : h=350 : title=Distancia al origen}
+
+dist = sqrt(3^2 + 4^2)
+
+'Eso es la <b>NORMA</b>: la distancia del punto al origen.
+'Es Pitagoras.
+
+#pgb
+"Norma = Pitagoras generalizado
+'Con 2 numeros: raiz de (a^2 + b^2)
+'Con 3 numeros: raiz de (a^2 + b^2 + c^2)
+vn2 = [3; 4]
+norma2 = norm(vn2)
+
+vn3 = [1; 2; 3]
+norma3 = norm(vn3)
+
+norma3_manual = sqrt(1^2 + 2^2 + 3^2)
+
+#pgb
+"Que hay dentro de la raiz?
+'Miremos: 3^2 + 4^2 = 3*3 + 4*4
+'Eso es multiplicar cada numero por si mismo y sumar.
+'Eso ya es un <b>producto punto</b> sin saberlo:
+dp_self = dot(vn2; vn2)
+
+'dot([3,4], [3,4]) = 3*3 + 4*4 = 25
+'norma = raiz de 25 = 5
+
+'<b>La norma es la raiz del producto punto consigo mismo.</b>
+
+#pgb
+"Que pasa si hago producto punto con OTRO vector?
+
+"Caso 1: misma direccion
+$Draw{arrow,0,0,3,0,#e74c3c,2.5 : arrow,0,0.3,5,0.3,#2980b9,2.5 : text,1.5,-0.4,a,12,#e74c3c,middle,bold : text,2.5,0.7,b,12,#2980b9,middle,bold @ w=500 : h=150 : title=Misma direccion}
+
+va1 = [3; 0]
+vb1 = [5; 0]
+dp1 = dot(va1; vb1)
+'Resultado <b>positivo</b>: van al mismo lado.
+
+"Caso 2: perpendiculares
+$Draw{arrow,0,0,3,0,#e74c3c,2.5 : arrow,0,0,0,4,#2980b9,2.5 : text,1.5,-0.4,a,12,#e74c3c,middle,bold : text,-0.4,2,b,12,#2980b9,middle,bold @ w=400 : h=350 : title=Perpendiculares}
+
+va2 = [3; 0]
+vb2 = [0; 4]
+dp2 = dot(va2; vb2)
+'Resultado <b>cero</b>: no tienen nada que ver.
+
+"Caso 3: direcciones opuestas
+$Draw{arrow,0,0,3,0,#e74c3c,2.5 : arrow,0,0.3,-5,0.3,#2980b9,2.5 : text,1.5,-0.4,a,12,#e74c3c,middle,bold : text,-2.5,0.7,b,12,#2980b9,middle,bold @ w=500 : h=150 : title=Direcciones opuestas}
+
+va3 = [3; 0]
+vb3 = [-5; 0]
+dp3 = dot(va3; vb3)
+'Resultado <b>negativo</b>: van al lado contrario.
+
+#blk
+dp1 ; 'misma direccion = positivo
+dp2 ; 'perpendiculares = cero
+dp3 ; 'opuestas = negativo
+#end blk
+
+#pgb
+"El producto punto mide el angulo
+
+'La formula es:
+#deq dot(a; b) = norma(a)*norma(b)*cos(θ) @@(relacion con el angulo)
+
+"Grafica del coseno
+#hide
+np = 36
+xd = vector(np + 1)
+yd = vector(np + 1)
+#for i = 1 : np + 1
+    xd.(i) = (i - 1)*360/np
+    yd.(i) = cos(xd.(i))
+#loop
+#show
+$Chart{xd; yd @ title=Coseno del angulo : xlabel=angulo (grados) : ylabel=cos}
+'cos(0) = 1 (misma direccion)
+'cos(90) = 0 (perpendiculares)
+'cos(180) = -1 (opuestas)
+
+#pgb
+"Ejemplo con angulo de 45 grados
+
+$Draw{arrow,0,0,4,0,#e74c3c,2.5 : arrow,0,0,3,3,#2980b9,2.5 : text,2,-0.4,a,12,#e74c3c,middle,bold : text,1.2,1.8,b,12,#2980b9,middle,bold : text,1.2,0.3,45°,11,#27ae60,middle @ w=400 : h=300 : title=Angulo de 45 grados}
+
+va4 = [4; 0]
+vb4 = [3; 3]
+dp4 = dot(va4; vb4)
+na4 = norm(va4)
+nb4 = norm(vb4)
+cos_ang = dp4/(na4*nb4)
+ang_grad = acos(cos_ang)
+
+#pgb
+"Resumen
+
+'1. <b>Pitagoras</b>: a^2 + b^2 = c^2 mide la distancia.
+
+'2. La <b>norma</b> es Pitagoras generalizado.
+
+'3. Dentro de Pitagoras ya esta el <b>producto punto</b>: a*a + b*b.
+
+'4. Si haces producto punto con <b>otro</b> vector, mide el <b>angulo</b>.
+
+'5. Positivo = misma direccion, cero = perpendiculares, negativo = opuestas.
+
+'<b>La norma mide longitud. El producto punto mide angulo.</b>
+#end margen

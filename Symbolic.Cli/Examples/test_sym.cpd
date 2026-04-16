@@ -1,0 +1,41 @@
+"Test #sym — AngouriMath Symbolic Math
+'<hr/>
+"1. Derivadas
+#sym diff(x^2 + 3*x + 1; x)
+#sym diff(sin(x)*cos(x); x)
+#sym diff(x^3 + 2*x^2 - x + 5; x; 2)
+
+'<hr/>
+"2. Integrales
+#sym integrate(x^2; x)
+#sym integrate(sin(x); x)
+#sym integrate(x^2; x; 0; 1)
+
+'<hr/>
+"3. Simplificación
+#sym simplify((x^2 - 1)/(x - 1))
+#sym expand((a + b)^3)
+#sym factor(x^2 - 5*x + 6)
+
+'<hr/>
+"4. Resolver ecuaciones
+#sym solve(x^2 - 4; x)
+#sym solve(x^2 + 2*x - 3; x)
+
+'<hr/>
+"5. Límites
+#sym limit(sin(x)/x; x; 0)
+#sym limit((1 + 1/n)^n; n; infinity)
+
+'<hr/>
+"6. Series de Taylor
+#sym series(sin(x); x; 5)
+#sym series(e^x; x; 4)
+
+'<hr/>
+"7. Sustitución
+#sym subs(x^2 + 2*x + 1; x; 3)
+
+'<hr/>
+"8. Expresiones directas
+#sym x^2 + 2*x + 1

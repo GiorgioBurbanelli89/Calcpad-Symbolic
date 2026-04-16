@@ -1,0 +1,15 @@
+"Test adimensionalizar con &
+
+E = 200000 MPa
+
+'& MPa (re-estampa con unidad):
+E & MPa
+
+'& m/m (adimensional?):
+E & m/m
+
+'& 1 (adimensional?):
+E & 1
+
+'clrunits:
+clrunits(E)

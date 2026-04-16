@@ -1,0 +1,211 @@
+#margen 20
+"2 DOF — Elemento Membrana Q4
+
+"PARTE 1: TEORIA CON OPERACIONES SIMBOLICAS
+
+"De 1 DOF a 2 DOF
+'En la barra (1 DOF) cada nodo solo se mueve en una direccion.
+'En la membrana (2 DOF) cada nodo se mueve en <b>dos</b> direcciones.
+'El desplazamiento horizontal se llama <b>u</b> y el vertical se llama <b>v</b>.
+'Esto duplica todo: mas funciones de forma, mas deformaciones, matriz K mas grande.
+
+"De 1D a 2D
+'En 1D usamos una coordenada natural '#deq ξ'' que va de -1 a 1.
+'En 2D necesitamos <b>dos</b> coordenadas naturales:
+'- '#deq ξ'' va de -1 a 1 en la direccion horizontal
+'- '#deq η'' va de -1 a 1 en la direccion vertical
+
+"Funciones de forma del Q4
+'El elemento Q4 tiene 4 nodos. Cada nodo tiene 2 DOF (u, v).
+'Total: 4 nodos x 2 DOF = 8 DOF.
+'
+'En 1D las funciones de forma eran:
+#deq N_1 = (1 - ξ)/2 @@(1D, nodo 1)
+#deq N_2 = (1 + ξ)/2 @@(1D, nodo 2)
+
+'En 2D, cada funcion de forma es el <b>producto</b> de dos funciones 1D:
+
+"N_1 en 2D: producto de (1-xi)/2 por (1-eta)/2
+#sym
+simplify((1 - xi)/2*(1 - eta)/2)
+#end sym
+
+"N_2 en 2D: producto de (1+xi)/2 por (1-eta)/2
+#sym
+simplify((1 + xi)/2*(1 - eta)/2)
+#end sym
+
+"N_3 en 2D: producto de (1+xi)/2 por (1+eta)/2
+#sym
+simplify((1 + xi)/2*(1 + eta)/2)
+#end sym
+
+"N_4 en 2D: producto de (1-xi)/2 por (1+eta)/2
+#sym
+simplify((1 - xi)/2*(1 + eta)/2)
+#end sym
+
+'Las funciones de forma del Q4 son:
+#deq N_1 = (1 - ξ)*(1 - η)/4 @@(nodo 1)
+#deq N_2 = (1 + ξ)*(1 - η)/4 @@(nodo 2)
+#deq N_3 = (1 + ξ)*(1 + η)/4 @@(nodo 3)
+#deq N_4 = (1 - ξ)*(1 + η)/4 @@(nodo 4)
+
+#pgb
+"Verificacion de la suma
+#sym
+simplify((1 - xi)*(1 - eta)/4 + (1 + xi)*(1 - eta)/4 + (1 + xi)*(1 + eta)/4 + (1 - xi)*(1 + eta)/4)
+#end sym
+'La suma siempre da 1.
+
+"Verificacion de Kronecker en el nodo 1
+'En el nodo 1: xi = -1, eta = -1
+
+"N_1 en nodo 1
+#sym
+simplify((1 - (-1))*(1 - (-1))/4)
+#end sym
+
+"N_2 en nodo 1
+#sym
+simplify((1 + (-1))*(1 - (-1))/4)
+#end sym
+
+"N_3 en nodo 1
+#sym
+simplify((1 + (-1))*(1 + (-1))/4)
+#end sym
+
+"N_4 en nodo 1
+#sym
+simplify((1 - (-1))*(1 + (-1))/4)
+#end sym
+'Solo N_1 da 1, las demas dan 0. Kronecker se cumple.
+
+#pgb
+"Derivadas de las funciones de forma
+
+'En 2D necesitamos derivadas en ambas direcciones.
+
+"Derivadas respecto a xi
+#sym
+diff((1 - xi)*(1 - eta)/4; xi)
+#end sym
+#sym
+diff((1 + xi)*(1 - eta)/4; xi)
+#end sym
+#sym
+diff((1 + xi)*(1 + eta)/4; xi)
+#end sym
+#sym
+diff((1 - xi)*(1 + eta)/4; xi)
+#end sym
+
+"Derivadas respecto a eta
+#sym
+diff((1 - xi)*(1 - eta)/4; eta)
+#end sym
+#sym
+diff((1 + xi)*(1 - eta)/4; eta)
+#end sym
+#sym
+diff((1 + xi)*(1 + eta)/4; eta)
+#end sym
+#sym
+diff((1 - xi)*(1 + eta)/4; eta)
+#end sym
+
+'Las derivadas ya no son constantes como en 1D.
+'Dependen de xi y eta. Por eso se necesita <b>integracion de Gauss</b>.
+
+#pgb
+"Deformaciones en 2D
+'En 1D habia 1 deformacion. En 2D hay 3:
+#deq ε_x = du/dx @@(normal en x)
+#deq ε_y = dv/dy @@(normal en y)
+#deq γ_xy = du/dy + dv/dx @@(corte)
+
+"Ley constitutiva — Plane Stress
+'En 1D: esfuerzo = E * deformacion (un solo numero).
+'En 2D: 3 esfuerzos = matriz D * 3 deformaciones:
+#noc
+[σ_x|σ_y|τ_xy] = D_m*[ε_x|ε_y|γ_xy]
+#equ
+
+'La matriz constitutiva D para estado plano de esfuerzos:
+#noc
+D_m = E_m/(1 - ν^2)*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+#equ
+
+"Operacion simbolica: verificar simetria de D
+#sym
+simplify(Em/(1 - nu^2)*1)
+#end sym
+#sym
+simplify(Em/(1 - nu^2)*nu)
+#end sym
+#sym
+simplify(Em/(1 - nu^2)*(1 - nu)/2)
+#end sym
+
+#pgb
+"Matriz de rigidez
+'En 1D la matriz K era de 2x2 (2 nodos, 1 DOF cada uno).
+'En 2D con Q4: 4 nodos, 2 DOF cada uno = 8 DOF.
+'La matriz K es de <b>8x8</b>.
+'
+'La formula es la misma idea:
+#deq K_e = B^T*D_m*B*t_e*A_e @@(rigidez Q4)
+'
+'Pero B ahora es una matriz de 3x8 (3 deformaciones, 8 DOF).
+'Y la integracion ya no es simplemente multiplicar por L
+'porque las derivadas dependen de xi y eta.
+
+#pgb
+"PARTE 2: EJEMPLO NUMERICO
+
+E_m = 30000
+ν = 0.3
+t_e = 0.2
+
+"Funciones de forma evaluadas en el centro (xi=0, eta=0)
+N_1c = (1 - 0)*(1 - 0)/4
+N_2c = (1 + 0)*(1 - 0)/4
+N_3c = (1 + 0)*(1 + 0)/4
+N_4c = (1 - 0)*(1 + 0)/4
+
+#blk
+N_1c ; N_2c ; N_3c ; N_4c
+#end blk
+'Todas valen 0.25 en el centro.
+
+"Matriz constitutiva
+D_11 = E_m/(1 - ν^2)*1
+D_12 = E_m/(1 - ν^2)*ν
+D_33 = E_m/(1 - ν^2)*(1 - ν)/2
+
+#blk
+D_11 ; D_12 ; 0 ; 'fila 1
+D_12 ; D_11 ; 0 ; 'fila 2
+0 ; 0 ; D_33 ; 'fila 3
+#end blk
+
+"Grafica de N_1
+N_1q(x; y) = (1 - x)*(1 - y)/4
+$Map{N_1q(x; y) @ x = -1 : 1 & y = -1 : 1}
+'N_1 vale 1 en la esquina inferior izquierda (xi=-1, eta=-1)
+'y baja a 0 en las esquinas opuestas.
+
+#pgb
+"PARTE 3: COMPARACION
+
+#blk
+'1 DOF (barra) ; '2 DOF (membrana)
+'1 desplazamiento: u ; '2 desplazamientos: u, v
+'1 deformacion ; '3 deformaciones
+'1 coordenada: xi ; '2 coordenadas: xi, eta
+'2 nodos ; '4 nodos (Q4)
+'K de 2x2 ; 'K de 8x8
+'Ley: sigma = E*epsilon ; 'Ley: matriz D (3x3)
+#end blk
+#end margen

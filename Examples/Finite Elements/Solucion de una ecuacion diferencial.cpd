@@ -1,0 +1,26 @@
+'6. Tópicos Adicionales
+'Ejemplo 19: Solución de una ecuación diferencial:
+'Después de realizar la condensación estática del pórtico se obtuvo la rigidez lateral:
+'Rigidez lateral:
+K = 1766.568tonf/m
+'Masa del sistema:
+M = 3.877tonf*s^2/m
+'Condiciones iniciales:
+t_0 = 0s
+x_0 = 5cm
+v_0 = 0m/s
+'Contador:
+t' = 0s; 0.01s : 2s
+'VIBRACION LIBRE NO AMORTIGUADA:
+'Modelo Dinámico:
+'Ecuación de Movimiento:
+M*'apply(t) + K*x_a(t) = 0
+x_a(t_0) = x_0
+'apply(t_0) = v_0
+x_a = odesolve(x_a(t); 2s)
+X.1 = t'
+Y.1 = x_a(t')/mm
+X.2 = t'
+Y.2 = 'apply(t')/(cm/s^2)
+X.3 = t'
+Y.3 = 'apply(t')/(m/s)

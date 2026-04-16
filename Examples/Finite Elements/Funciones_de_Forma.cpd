@@ -1,0 +1,204 @@
+#margen 20
+"Funciones de Forma — De la recta a N_1 y N_2
+
+"Lo que ya tenemos
+'De la ecuacion de la recta por 2 puntos:
+x_1 = 1
+y_1 = 8
+x_2 = 4
+y_2 = 17
+
+m = (y_2 - y_1)/(x_2 - x_1)
+
+'La ecuacion punto-pendiente:
+#deq y = y_1 + m*(x - x_1) @@(ecuacion de la recta)
+
+"Ahora vamos a reordenarla
+
+"Paso 1: sustituimos m
+'Reemplazamos m por su formula:
+#noc
+y = y_1 + (y_2 - y_1)/(x_2 - x_1)*(x - x_1)
+#equ
+
+"Paso 2: distribuimos la fraccion
+'El termino '#deq (y_2 - y_1)' se puede separar en dos:
+#noc
+y = y_1 + y_2*(x - x_1)/(x_2 - x_1) - y_1*(x - x_1)/(x_2 - x_1)
+#equ
+'Esto es porque '#deq (y_2 - y_1) = y_2 - y_1'
+
+"Paso 3: agrupamos por y_1 y por y_2
+'Juntamos todo lo que tiene '#deq y_1':
+#noc
+y = y_1*(1 - (x - x_1)/(x_2 - x_1)) + y_2*((x - x_1)/(x_2 - x_1))
+#equ
+
+"Paso 4: simplificamos lo que multiplica a y_1
+'Tenemos:
+#noc
+1 - (x - x_1)/(x_2 - x_1)
+#equ
+
+'Para restar, necesitamos el mismo denominador.
+'Escribimos 1 como una fraccion con denominador (x_2 - x_1):
+#noc
+(x_2 - x_1)/(x_2 - x_1) - (x - x_1)/(x_2 - x_1)
+#equ
+
+'Ahora restamos los numeradores:
+#noc
+((x_2 - x_1) - (x - x_1))/(x_2 - x_1)
+#equ
+
+'Simplificamos el numerador: x_1 se cancela:
+#sym
+simplify((x_2 - x_1) - (x - x_1))
+#end sym
+
+'Queda:
+#noc
+(x_2 - x)/(x_2 - x_1)
+#equ
+
+"Paso 5: lo que multiplica a y_2 ya esta simplificado
+#noc
+(x - x_1)/(x_2 - x_1)
+#equ
+
+"Paso 6: les ponemos nombre
+'A lo que multiplica a '#deq y_1' lo llamamos '#deq N_1':
+#deq N_1(x) = (x_2 - x)/(x_2 - x_1) @@(funcion de forma 1)
+
+'A lo que multiplica a '#deq y_2' lo llamamos '#deq N_2':
+#deq N_2(x) = (x - x_1)/(x_2 - x_1) @@(funcion de forma 2)
+
+'Entonces la ecuacion de la recta se escribe:
+#deq y = N_1(x)*y_1 + N_2(x)*y_2 @@(interpolacion)
+
+'<b>Eso es todo.</b> Las funciones de forma son simplemente los pedazos
+'de la ecuacion de la recta que multiplican a cada valor nodal.
+
+#pgb
+"Verificacion numerica
+N_1(x) = (x_2 - x)/(x_2 - x_1)
+N_2(x) = (x - x_1)/(x_2 - x_1)
+y_int(x) = N_1(x)*y_1 + N_2(x)*y_2
+
+"Debe dar lo mismo que la recta original
+y_orig(x) = y_1 + m*(x - x_1)
+
+#blk
+y_int(1) ; y_orig(1) ; 'en x = 1
+y_int(2.5) ; y_orig(2.5) ; 'en x = 2.5
+y_int(4) ; y_orig(4) ; 'en x = 4
+#end blk
+'Todos iguales.
+
+"De donde sale la forma con L?
+
+'Teniamos las funciones de forma:
+#deq N_1(x) = (x_2 - x)/(x_2 - x_1) @@(forma general)
+#deq N_2(x) = (x - x_1)/(x_2 - x_1) @@(forma general)
+
+'El denominador '#deq x_2 - x_1' es la longitud del elemento:
+L = x_2 - x_1
+
+'Si ademas medimos x desde el nodo 1, entonces '#deq x_1 = 0' y '#deq x_2 = L'.
+'Reemplazamos en N_1:
+#noc
+N_1 = (x_2 - x)/(x_2 - x_1) = (L - x)/L = L/L - x/L = 1 - x/L
+#equ
+
+'Reemplazamos en N_2:
+#noc
+N_2 = (x - x_1)/(x_2 - x_1) = (x - 0)/L = x/L
+#equ
+
+'Entonces:
+#deq N_1 = 1 - x/L @@(baja de 1 a 0)
+#deq N_2 = x/L @@(sube de 0 a 1)
+
+'Donde x va de 0 a L dentro del elemento.
+'Es la misma formula, solo mas simple.
+
+"Evaluemos en el nodo 1, x = 0
+N_1_nodo1 = 1 - 0/L
+N_2_nodo1 = 0/L
+
+"Evaluemos en el nodo 2, x = L
+N_1_nodo2 = 1 - L/L
+N_2_nodo2 = L/L
+
+"Evaluemos en el punto medio, x = L/2
+N_1_medio = 1 - (L/2)/L
+N_2_medio = (L/2)/L
+
+"Tabla resumen
+#blk
+N_1_nodo1 ; N_1_medio ; N_1_nodo2 ; 'N_1 en nodo 1, medio, nodo 2
+N_2_nodo1 ; N_2_medio ; N_2_nodo2 ; 'N_2 en nodo 1, medio, nodo 2
+#end blk
+
+'Cada funcion de forma da <b>1 en su propio nodo</b> y <b>0 en el otro</b>.
+'En el punto medio ambas valen 0.5 — cada nodo influye igual.
+
+"Grafica de las funciones de forma
+#hide
+n = 20
+xf = vector(n + 1)
+yf1 = vector(n + 1)
+yf2 = vector(n + 1)
+#for i = 1 : n + 1
+    xf.(i) = x_1 + (i - 1)*(x_2 - x_1)/n
+    yf1.(i) = N_1(xf.(i))
+    yf2.(i) = N_2(xf.(i))
+#loop
+#show
+$Chart{xf; yf1; xf; yf2 @ title=Funciones de forma N1 y N2 : xlabel=x : ylabel=N : labels=N1,N2}
+'N1 baja de 1 a 0: la influencia del nodo 1 disminuye al alejarse.
+'N2 sube de 0 a 1: la influencia del nodo 2 aumenta al acercarse.
+
+"Grafica de la interpolacion
+#hide
+yi = vector(n + 1)
+#for i = 1 : n + 1
+    yi.(i) = y_int(xf.(i))
+#loop
+xp = [x_1|x_2]
+yp = [y_1|y_2]
+#show
+$Chart{xf; yi; xp; yp @ title=Interpolacion con funciones de forma : xlabel=x : ylabel=y : labels=N1*y1 + N2*y2,Puntos}
+
+#pgb
+"Para que sirven las funciones de forma?
+'Ahora podemos cambiar los valores '#deq y_1' y '#deq y_2' sin cambiar la formula.
+'La formula siempre es '#deq y = N_1*y_1 + N_2*y_2'.
+'Solo cambian los datos.
+
+"Ejemplo: otros valores
+y_1b = 3
+y_2b = 10
+y_b(x) = N_1(x)*y_1b + N_2(x)*y_2b
+y_b(x_1)
+y_b(x_2)
+y_b(2.5)
+
+#hide
+yb = vector(n + 1)
+#for i = 1 : n + 1
+    yb.(i) = y_b(xf.(i))
+#loop
+xp2 = [x_1|x_2]
+yp2 = [y_1b|y_2b]
+#show
+$Chart{xf; yb; xp2; yp2 @ title=Mismas N1 y N2 con otros valores : xlabel=x : ylabel=y : labels=N1*3 + N2*10,Puntos}
+'Mismas funciones de forma, diferentes valores. La recta cambia pero la formula no.
+
+"Resumen
+'1. La ecuacion de la recta se puede reordenar agrupando por '#deq y_1' y '#deq y_2'
+'2. Lo que multiplica a cada valor nodal se llama <b>funcion de forma</b>
+'3. '#deq N_1' y '#deq N_2' solo dependen de x, no de los valores nodales
+'4. '#deq N_1' vale 1 en su nodo y 0 en el otro (propiedad de Kronecker)
+'5. La formula '#deq y = N_1*y_1 + N_2*y_2' funciona para cualquier par de valores
+#end margen

@@ -1,0 +1,149 @@
+#margen 20
+"Propiedad de Kronecker y Continuidad
+
+"Lo que ya sabemos
+'Las funciones de forma son:
+L = 3
+#deq N_1 = 1 - x/L @@(funcion de forma 1)
+#deq N_2 = x/L @@(funcion de forma 2)
+
+'Y la interpolacion es:
+#deq y = N_1*y_1 + N_2*y_2 @@(interpolacion)
+
+"Ya vimos que en los nodos
+'En x = 0: N_1 = 1, N_2 = 0
+'En x = L: N_1 = 0, N_2 = 1
+
+'Esto tiene un nombre: <b>propiedad de Kronecker</b>.
+
+#pgb
+"Para que sirve Kronecker?
+
+'Sirve para que la interpolacion pase exactamente por los valores nodales.
+'Veamos con numeros:
+
+y_1 = 5
+y_2 = 11
+
+"En el nodo 1, x = 0
+y_nodo1 = (1 - 0/L)*y_1 + (0/L)*y_2
+
+"En el nodo 2, x = L
+y_nodo2 = (1 - L/L)*y_1 + (L/L)*y_2
+
+"En el punto medio, x = L/2
+y_medio = (1 - (L/2)/L)*y_1 + ((L/2)/L)*y_2
+
+'En el nodo 1 da exactamente '#deq y_1 = 5'.
+'En el nodo 2 da exactamente '#deq y_2 = 11'.
+'En el medio da el promedio: 8.
+
+'<b>Kronecker garantiza que la interpolacion pasa por los valores nodales.</b>
+
+"Grafica
+#hide
+n = 20
+xg = vector(n + 1)
+yg = vector(n + 1)
+#for i = 1 : n + 1
+    xg.(i) = (i - 1)*L/n
+    yg.(i) = (1 - xg.(i)/L)*y_1 + (xg.(i)/L)*y_2
+#loop
+xp = [0|L]
+yp = [y_1|y_2]
+#show
+$Chart{xg; yg; xp; yp @ title=La interpolacion pasa por los nodos : xlabel=x : ylabel=y : labels=Interpolacion,Valores nodales}
+
+#pgb
+"Ahora la continuidad — 2 elementos
+
+'Dividimos una barra en 2 elementos:
+'Elemento A: de x = 0 a x = 3 (nodos 1 y 2)
+'Elemento B: de x = 3 a x = 6 (nodos 2 y 3)
+'El nodo 2 esta en x = 3. Es compartido.
+
+L_A = 3
+L_B = 3
+y_1 = 5
+y_2 = 11
+y_3 = 8
+
+"Elemento A (x de 0 a 3)
+'Usa sus propias funciones de forma:
+#deq y_A = (1 - x/L_A)*y_1 + (x/L_A)*y_2 @@(elemento A)
+
+"Elemento B (x de 0 a 3, medido desde el nodo 2)
+'Tambien usa funciones de forma, pero medido desde su propio nodo 1:
+#deq y_B = (1 - x/L_B)*y_2 + (x/L_B)*y_3 @@(elemento B)
+
+"Que pasa en el nodo compartido?
+
+"Elemento A en su extremo derecho, x = L_A
+y_A_derecho = (1 - L_A/L_A)*y_1 + (L_A/L_A)*y_2
+
+"Elemento B en su extremo izquierdo, x = 0
+y_B_izquierdo = (1 - 0/L_B)*y_2 + (0/L_B)*y_3
+
+'<b>Ambos dan 'y_2'!</b>
+'Elemento A: N_1 = 0, N_2 = 1, entonces y = 0*'y_1' + 1*'y_2' = 'y_2'
+'Elemento B: N_1 = 1, N_2 = 0, entonces y = 1*'y_2' + 0*'y_3' = 'y_2'
+'No hay salto. <b>Esto es continuidad.</b>
+
+"Grafica de los 2 elementos
+#hide
+xA = vector(n + 1)
+yA = vector(n + 1)
+xB = vector(n + 1)
+yB = vector(n + 1)
+#for i = 1 : n + 1
+    xA.(i) = (i - 1)*L_A/n
+    yA.(i) = (1 - xA.(i)/L_A)*y_1 + (xA.(i)/L_A)*y_2
+    xB.(i) = L_A + (i - 1)*L_B/n
+    yB.(i) = (1 - (i - 1)/n)*y_2 + ((i - 1)/n)*y_3
+#loop
+xnodos = [0|L_A|L_A + L_B]
+ynodos = [y_1|y_2|y_3]
+#show
+$Chart{xA; yA; xB; yB; xnodos; ynodos @ title=Dos elementos continuos : xlabel=x : ylabel=y : labels=Elemento A,Elemento B,Nodos}
+
+'Los 2 elementos se unen en x = 'L_A' con el valor '#deq y_2 = 11'.
+'No hay salto. La curva es continua.
+
+#pgb
+"Que pasaria SIN Kronecker?
+'Si las funciones de forma NO cumplieran Kronecker, cada elemento
+'daria un valor diferente en el nodo compartido.
+'Habria un <b>salto</b> — la barra se "rompe" en ese punto.
+
+'Ejemplo: funciones de forma incorrectas que NO cumplen Kronecker:
+#hide
+xA2 = vector(n + 1)
+yA2 = vector(n + 1)
+xB2 = vector(n + 1)
+yB2 = vector(n + 1)
+#for i = 1 : n + 1
+    xA2.(i) = (i - 1)*L_A/n
+    yA2.(i) = (1 - (xA2.(i)/L_A)^2)*y_1 + (xA2.(i)/L_A)^2*y_2
+    xB2.(i) = L_A + (i - 1)*L_B/n
+    yB2.(i) = (1 - ((i - 1)/n)^2)*y_2 + ((i - 1)/n)^2*y_3
+#loop
+#show
+$Chart{xA2; yA2; xB2; yB2; xnodos; ynodos @ title=SIN Kronecker habria salto : xlabel=x : ylabel=y : labels=Elemento A (malo),Elemento B (malo),Nodos}
+'Con funciones cuadraticas que no cumplen Kronecker,
+'la curva no pasa por los nodos y hay discontinuidad.
+
+#pgb
+"Resumen
+
+'<b>Kronecker</b> = cada funcion de forma vale 1 en su nodo y 0 en los demas.
+
+'<b>Consecuencia 1</b>: la interpolacion pasa exactamente por los valores nodales.
+
+'<b>Consecuencia 2</b>: en el nodo compartido entre 2 elementos, ambos dan
+'el mismo valor. No hay salto. Esto es <b>continuidad</b>.
+
+'<b>Sin Kronecker</b>: la interpolacion no pasa por los nodos y hay saltos
+'entre elementos. La estructura se "rompe".
+
+'Ref: Zienkiewicz & Taylor, Cap.6, p.151
+#end margen

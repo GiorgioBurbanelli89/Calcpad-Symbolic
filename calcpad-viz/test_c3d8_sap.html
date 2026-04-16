@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Test C3D8 - SAP2000 Style Color Map</title>
+<style>
+  body { font-family: sans-serif; background: #eee; padding: 20px; }
+  h2 { color: #333; }
+  .container { background: #fff; padding: 20px; margin: 15px 0; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  p { color: #555; }
+</style>
+</head>
+<body>
+<h1>Tutorial C3D8 — Validación Visual Colormap estilo SAP2000</h1>
+<p>Cubo 1000×1000×1000 mm, E=22000 MPa, ν=0.2, P=100 kN compresión</p>
+
+<div class="container">
+<h2>1) Desplazamiento UZ (mm) — gradiente vertical</h2>
+<p>Base UZ=0, Top UZ=-0.004545 mm. Debería verse: azul(min=-0.004545) abajo→rojo(max=0) arriba usando colormap SAP2000 invertido.</p>
+<div id="c3d8_uz"></div>
+</div>
+
+<div class="container">
+<h2>2) σ_zz (MPa) — esfuerzo vertical</h2>
+<p>Compresión uniforme σ=-0.1 MPa. Nudos base=0, nudos top=-0.1 MPa.</p>
+<div id="c3d8_sigma"></div>
+</div>
+
+<div class="container">
+<h2>3) Gradiente X simulado (estilo Ux del SAP2000 screenshot)</h2>
+<p>Imitación del contorno Ux del SAP2000. El cubo debe mostrar gradiente diagonal magenta→rojo→amarillo→verde→azul.</p>
+<div id="c3d8_gradx"></div>
+</div>
+
+<script src="./dist/calcpad-viz.umd.cjs"></script>
+<script>
+// 8 nudos del cubo C3D8 (coordenadas en mm, Z-arriba)
+const Lx = 1000, Ly = 1000, Lz = 1000;
+const nodes = [
+  [0,   0,   0],    // 1: 0
+  [Lx,  0,   0],    // 2: 1
+  [Lx,  Ly,  0],    // 3: 2
+  [0,   Ly,  0],    // 4: 3
+  [0,   0,   Lz],   // 5: 4
+  [Lx,  0,   Lz],   // 6: 5
+  [Lx,  Ly,  Lz],   // 7: 6
+  [0,   Ly,  Lz],   // 8: 7
+];
+
+// 1 elemento hex8 con los 8 nudos (indices 0-based)
+const elements = [[0, 1, 2, 3, 4, 5, 6, 7]];
+
+// --- Test 1: UZ (desplazamiento vertical) ---
+// Base UZ=0, top UZ=-0.004545 mm
+const uz = [0, 0, 0, 0, -0.004545, -0.004545, -0.004545, -0.004545];
+CalcpadViz.fem3d("c3d8_uz", {
+  nodes: nodes,
+  elements: elements,
+  values: uz,
+  options: { width: 700, height: 500, title: "UZ (mm)" }
+});
+
+// --- Test 2: sigma_zz ---
+// base = 0, top = -0.1 MPa
+const sigma = [0, 0, 0, 0, -0.1, -0.1, -0.1, -0.1];
+CalcpadViz.fem3d("c3d8_sigma", {
+  nodes: nodes,
+  elements: elements,
+  values: sigma,
+  options: { width: 700, height: 500, title: "sigma_zz (MPa)" }
+});
+
+// --- Test 3: Gradiente X (imitacion Ux de SAP2000) ---
+// x=0 → valor mínimo (magenta), x=Lx → valor máximo (azul)
+// Valores como en el screenshot: 65 a 910 E-9
+const gradX = nodes.map(n => 65e-9 + (n[0]/Lx) * (910e-9 - 65e-9));
+CalcpadViz.fem3d("c3d8_gradx", {
+  nodes: nodes,
+  elements: elements,
+  values: gradX,
+  options: { width: 700, height: 500, title: "Ux (m) E-9" }
+});
+</script>
+</body>
+</html>

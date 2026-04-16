@@ -1,0 +1,79 @@
+#margen 20
+"Norma y Producto Punto — Solo ejemplos
+
+"NORMA = medir la flecha
+
+"Ejemplo 1
+$Draw{arrow,0,0,3,4,#e74c3c,3 : line,0,0,3,0,#999,1.5 : line,3,0,3,4,#999,1.5 : text,1.5,-0.5,3,14,#333,middle,bold : text,3.5,2,4,14,#333,middle,bold @ w=350 : h=350 : title=Cuanto mide?}
+
+norma_1 = sqrt(3^2 + 4^2)
+
+"Ejemplo 2
+$Draw{arrow,0,0,5,2,#2980b9,3 : line,0,0,5,0,#999,1.5 : line,5,0,5,2,#999,1.5 : text,2.5,-0.5,5,14,#333,middle,bold : text,5.5,1,2,14,#333,middle,bold @ w=450 : h=250 : title=Cuanto mide?}
+
+norma_2 = sqrt(5^2 + 2^2)
+
+"Ejemplo 3
+$Draw{arrow,0,0,1,6,#27ae60,3 : line,0,0,1,0,#999,1.5 : line,1,0,1,6,#999,1.5 : text,0.5,-0.5,1,14,#333,middle,bold : text,1.5,3,6,14,#333,middle,bold @ w=250 : h=450 : title=Cuanto mide?}
+
+norma_3 = sqrt(1^2 + 6^2)
+
+"Comparacion
+#hide
+np = 3
+xn = vector(np)
+yn = vector(np)
+xn.(1) = 1
+xn.(2) = 2
+xn.(3) = 3
+yn.(1) = norma_1
+yn.(2) = norma_2
+yn.(3) = norma_3
+#show
+$Chart{xn; yn @ title=Longitud de cada flecha : xlabel=ejemplo : ylabel=norma}
+
+#pgb
+"PRODUCTO PUNTO = cuanto empuja en la misma direccion
+
+"Ejemplo 1: empujo a la derecha, caja va a la derecha
+$Draw{fillrect,2.5,-.3,3.5,.3,#ddd,#333,1.5 : arrow,0,0,2.5,0,#e74c3c,2.5 : arrow,3.5,0,6,0,#2980b9,2.5 : text,1.2,0.5,fuerza,11,#e74c3c,middle : text,5,0.5,movimiento,11,#2980b9,middle @ w=500 : h=130 : title=Misma direccion}
+
+dp_1 = 10*3 + 0*0
+
+"Ejemplo 2: empujo a la derecha, caja va arriba
+$Draw{fillrect,-.3,1.5,.3,2.5,#ddd,#333,1.5 : arrow,-2,2,-.3,2,#e74c3c,2.5 : arrow,0,2.5,0,5,#2980b9,2.5 : text,-1.5,1.3,fuerza,11,#e74c3c,middle : text,0.5,4,movimiento,11,#2980b9,middle @ w=400 : h=350 : title=Perpendiculares}
+
+dp_2 = 10*0 + 0*3
+
+"Ejemplo 3: empujo a la derecha, caja va en diagonal
+$Draw{fillrect,1.5,0.5,2.5,1.5,#ddd,#333,1.5 : arrow,-1,1,1.5,1,#e74c3c,2.5 : arrow,2.5,1.5,5,4,#2980b9,2.5 : text,-0.2,0.3,fuerza,11,#e74c3c,middle : text,4.5,3,movimiento,11,#2980b9,middle @ w=450 : h=350 : title=Diagonal}
+
+dp_3 = 10*2 + 0*2
+
+"Ejemplo 4: empujo a la derecha, caja va a la izquierda
+$Draw{fillrect,2.5,-.3,3.5,.3,#ddd,#333,1.5 : arrow,5,0,3.5,0,#e74c3c,2.5 : arrow,2.5,0,0,0,#2980b9,2.5 : text,4.5,0.5,fuerza,11,#e74c3c,middle : text,1,0.5,movimiento,11,#2980b9,middle @ w=500 : h=130 : title=Opuestas}
+
+dp_4 = 10*(-3) + 0*0
+
+"Resultados
+#hide
+xd = vector(4)
+yd = vector(4)
+xd.(1) = 1
+xd.(2) = 2
+xd.(3) = 3
+xd.(4) = 4
+yd.(1) = dp_1
+yd.(2) = dp_2
+yd.(3) = dp_3
+yd.(4) = dp_4
+#show
+$Chart{xd; yd @ title=Producto punto en cada caso : xlabel=ejemplo : ylabel=resultado}
+
+#blk
+dp_1 ; 'misma direccion = positivo grande
+dp_2 ; 'perpendiculares = cero
+dp_3 ; 'diagonal = positivo mediano
+dp_4 ; 'opuestas = negativo
+#end blk
+#end margen

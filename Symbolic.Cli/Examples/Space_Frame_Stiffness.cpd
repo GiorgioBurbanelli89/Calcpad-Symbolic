@@ -1,0 +1,66 @@
+"Matriz de Rigidez — Elemento de Pórtico Espacial 12×12
+'<hr/>
+"1. Propiedades del elemento
+
+E = 200000*MPa
+A = 100*cm^2
+I_y = 8000*cm^4
+I_z = 3000*cm^4
+G = 80000*MPa
+J = 5000*cm^4
+L = 5*m
+
+'<hr/>
+"2. Matriz de rigidez K (12×12)
+'<p>Evaluación simbólica → numérica (doble igualdad)</p>
+
+K = [E*A/L; 0; 0; 0; 0; 0; -E*A/L; 0; 0; 0; 0; 0 | 0; 12*E*I_z/L^3; 0; 0; 0; 6*E*I_z/L^2; 0; -12*E*I_z/L^3; 0; 0; 0; 6*E*I_z/L^2 | 0; 0; 12*E*I_y/L^3; 0; -6*E*I_y/L^2; 0; 0; 0; -12*E*I_y/L^3; 0; -6*E*I_y/L^2; 0 | 0; 0; 0; G*J/L; 0; 0; 0; 0; 0; -G*J/L; 0; 0 | 0; 0; -6*E*I_y/L^2; 0; 4*E*I_y/L; 0; 0; 0; 6*E*I_y/L^2; 0; 2*E*I_y/L; 0 | 0; 6*E*I_z/L^2; 0; 0; 0; 4*E*I_z/L; 0; -6*E*I_z/L^2; 0; 0; 0; 2*E*I_z/L | -E*A/L; 0; 0; 0; 0; 0; E*A/L; 0; 0; 0; 0; 0 | 0; -12*E*I_z/L^3; 0; 0; 0; -6*E*I_z/L^2; 0; 12*E*I_z/L^3; 0; 0; 0; -6*E*I_z/L^2 | 0; 0; -12*E*I_y/L^3; 0; 6*E*I_y/L^2; 0; 0; 0; 12*E*I_y/L^3; 0; 6*E*I_y/L^2; 0 | 0; 0; 0; -G*J/L; 0; 0; 0; 0; 0; G*J/L; 0; 0 | 0; 0; -6*E*I_y/L^2; 0; 2*E*I_y/L; 0; 0; 0; 6*E*I_y/L^2; 0; 4*E*I_y/L; 0 | 0; 6*E*I_z/L^2; 0; 0; 0; 2*E*I_z/L; 0; -6*E*I_z/L^2; 0; 0; 0; 4*E*I_z/L]
+
+'<hr/>
+"3. Función de rigidez espacial (#function)
+
+#function SpaceFrameKe(E; A; Iy; Iz; G; J; L)
+    a1 = E*A/L
+    a2 = 12*E*Iz/L^3
+    a3 = 12*E*Iy/L^3
+    a4 = G*J/L
+    a5 = 6*E*Iy/L^2
+    a6 = 6*E*Iz/L^2
+    a7 = 4*E*Iy/L
+    a8 = 4*E*Iz/L
+    a9 = 2*E*Iy/L
+    a10 = 2*E*Iz/L
+    SpaceFrameKe = symmetric(12)
+#end function
+
+'<hr/>
+"4. Componentes numéricos
+
+a1 = E*A/L
+a2 = 12*E*I_z/L^3
+a3 = 12*E*I_y/L^3
+a4 = G*J/L
+a5 = 6*E*I_y/L^2
+a6 = 6*E*I_z/L^2
+a7 = 4*E*I_y/L
+a8 = 4*E*I_z/L
+
+'<hr/>
+"5. Matriz K numérica (12×12) con &
+
+'<h4>Construir K directamente</h4>
+#hide
+a1v = E*A/L & kN/m
+a2v = 12*E*I_z/L^3 & kN/m
+a3v = 12*E*I_y/L^3 & kN/m
+a4v = G*J/L & kN*m
+a5v = 6*E*I_y/L^2 & kN
+a6v = 6*E*I_z/L^2 & kN
+a7v = 4*E*I_y/L & kN*m
+a8v = 4*E*I_z/L & kN*m
+a9v = 2*E*I_y/L & kN*m
+a10v = 2*E*I_z/L & kN*m
+#show
+
+'<h4>K (12×12)</h4>
+K = [a1v;0;0;0;0;0;-a1v;0;0;0;0;0 | 0;a2v;0;0;0;a6v;0;-a2v;0;0;0;a6v | 0;0;a3v;0;-a5v;0;0;0;-a3v;0;-a5v;0 | 0;0;0;a4v;0;0;0;0;0;-a4v;0;0 | 0;0;-a5v;0;a7v;0;0;0;a5v;0;a9v;0 | 0;a6v;0;0;0;a8v;0;-a6v;0;0;0;a10v | -a1v;0;0;0;0;0;a1v;0;0;0;0;0 | 0;-a2v;0;0;0;-a6v;0;a2v;0;0;0;-a6v | 0;0;-a3v;0;a5v;0;0;0;a3v;0;a5v;0 | 0;0;0;-a4v;0;0;0;0;0;a4v;0;0 | 0;0;-a5v;0;a9v;0;0;0;a5v;0;a7v;0 | 0;a6v;0;0;0;a10v;0;-a6v;0;0;0;a8v]

@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Calcpad.Cli": {
+      "commandName": "Project",
+      "commandLineArgs": "\r\n"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    }
+  }
+}

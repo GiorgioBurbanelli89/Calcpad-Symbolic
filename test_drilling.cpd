@@ -1,0 +1,152 @@
+"Drilling DOF (θz) - Que es y por que se necesita
+
+"1. El problema
+
+'Un shell combina membrana (u, v) + placa (w, θx, θy) = 5 DOFs/nodo.
+'Pero un portico 3D necesita 6 DOFs/nodo: u, v, w, θx, θy, θz.
+'El θz (rotacion alrededor del eje perpendicular al plano) NO tiene
+'rigidez fisica en membrana ni en placa → la matriz K es SINGULAR.
+
+"1.1 Visualizacion del problema
+#svg 400 250
+.text 200 15 "Por_que_se_necesita_drilling_θz?" 11 navy middle bold
+.rect 50 40 140 160 lightblue 0.3 steelBlue 1.5
+.text 120 120 "Shell_A" 10 steelBlue middle bold
+.text 120 140 "5_DOF" 8 steelBlue middle
+.rect 210 40 140 160 lightcoral 0.3 crimson 1.5
+.text 280 120 "Shell_B" 10 crimson middle bold
+.text 280 140 "5_DOF" 8 crimson middle
+.line 190 40 210 40 black 2
+.line 190 200 210 200 black 2
+.circle 200 40 4 black
+.circle 200 200 4 black
+.text 200 30 "Nodo_compartido" 8 black middle
+.text 200 215 "Nodo_compartido" 8 black middle
+.text 200 235 "Sin_θz:_la_conexion_no_transfiere_momento_en_el_plano" 9 red middle
+#end svg
+
+"1.2 Cuando es necesario?
+'Shell PLANO (un solo plano): θz no se necesita. Se puede restringir.
+'Shells en ANGULO (placa doblada, caja, muro+losa): θz es ESENCIAL.
+'Sin θz, la rotacion en el plano de un shell no se conecta
+'con el shell adyacente → la estructura es inestable.
+
+"2. Que es el drilling?
+'Es una rigidez FICTICIA que se agrega al DOF θz de cada nodo.
+'No viene de la teoria de membranas ni de placas.
+'Se calcula como:
+#noc
+K_drill = α*G*t*A_e
+#equ
+'Donde:
+'α = factor de drilling (tipicamente 0.5, usado por ETABS/SAP)
+'G = modulo de corte
+'t = espesor del elemento
+'Ae = area del elemento
+'La rigidez de drilling es DIAGONAL (no acopla con otros DOFs).
+
+"3. Ejemplo numerico - DOF por DOF
+
+"3.1 Datos
+'Modulo de elasticidad -'E = 25000000'kN/m²
+'Relacion de Poisson -'ν = 0.2
+'Espesor -'t = 0.2'm
+'Modulo de corte -'G = E/(2*(1 + ν))
+'Elemento 1m x 1m -'L = 1'm
+'Area del elemento -'A_e = L^2
+'Factor de drilling -'α = 0.5
+
+"3.2 Rigidez de drilling por nodo
+'Para un elemento Q4 con 4 nodos, la rigidez de drilling se reparte:
+K_drill_total = α*G*t*A_e
+'Total por elemento -'K_drill_total'kN·m/rad
+'Por nodo (1/4 del total) -
+K_drill_node = K_drill_total/4
+K_drill_node'kN·m/rad
+
+"3.3 Comparacion con rigidez de membrana y placa
+'Rigidez de membrana (tipica, diagonal K_uu):
+K_mem_aprox = E*t/L
+K_mem_aprox'kN/m
+'Rigidez de flexion (tipica):
+K_flex_aprox = E*t^3/(12*L)
+K_flex_aprox'kN·m
+
+"3.4 Visualizacion de los 6 DOFs de un nodo shell
+#svg 450 280
+.text 225 15 "6_DOFs_de_un_nodo_shell" 11 navy middle bold
+.circle 225 140 50 lightyellow 0.3 black 1.5
+.text 225 140 "Nodo" 12 black middle bold
+.arrow 225 140 330 140 blue 2
+.text 335 140 "u" 14 blue start bold
+.arrow 225 140 225 45 green 2
+.text 230 40 "v" 14 green start bold
+.arrow 225 140 225 230 red 2
+.text 230 235 "w" 14 red start bold
+.circle 330 60 15 none 0 blue 1.5
+.arrow 340 45 320 45 blue 1
+.text 350 60 "θx" 12 blue start
+.circle 140 45 15 none 0 green 1.5
+.arrow 130 30 150 30 green 1
+.text 100 45 "θy" 12 green end
+.circle 310 200 15 none 0 orange 1.5
+.arrow 320 185 300 185 orange 1
+.text 330 200 "θz" 12 orange start bold
+.text 330 215 "DRILLING" 8 orange start bold
+.text 60 260 "Azul:_membrana_(u,v)" 9 blue start
+.text 200 260 "Rojo:_placa_(w)" 9 red start
+.text 310 260 "Verde:_placa_(θx,θy)" 9 green start
+#end svg
+
+"4. Ejemplo - Placa doblada (donde drilling es esencial)
+'Dos placas en L: una horizontal (losa) y una vertical (muro).
+'Sin drilling, la conexion no transfiere momento.
+
+"4.1 Geometria
+'Longitud -'L_p = 2'm
+'Altura del muro -'H_p = 1.5'm
+'Ancho de la losa -'B_p = 1.5'm
+'Espesor -'t_p = 0.15'm
+'Carga vertical en la losa -'q = 10'kN/m²
+
+"4.2 Efecto del factor α en la respuesta
+'El factor α controla cuanta rigidez tiene θz:
+'α = 0 → sin drilling → singular si shells en angulo
+'α = 0.01 → drilling minimo → casi singular
+'α = 0.5 → drilling standard (ETABS/SAP) → estable
+'α = 1.0 → drilling alto → puede ser demasiado rigido
+'Valores tipicos en software comercial:
+'ETABS: α = 0.5
+'SAP2000: α = 0.5
+'ANSYS: α = 0.01 (minimo para estabilidad)
+'ABAQUS: formulacion mixta (no usa α)
+
+"4.3 Diagrama de la placa doblada
+#svg 400 250
+.text 200 15 "Placa_doblada_en_L_-_drilling_esencial" 10 navy middle bold
+.rect 50 40 200 10 steelBlue 0.5 steelBlue 1
+.text 150 35 "Losa_(horizontal)" 9 steelBlue middle
+.rect 250 40 10 150 crimson 0.5 crimson 1
+.text 290 115 "Muro_(vertical)" 9 crimson middle
+.circle 250 45 4 black
+.text 255 30 "Conexion" 8 black start
+.text 255 55 "θz_transfiere" 7 orange start
+.text 255 65 "momento_aqui" 7 orange start
+#for i = 0 : 4
+	x = 80 + i*40
+	.arrow x 25 x 38 red 1
+#loop
+.text 150 20 "q" 10 red middle bold
+.rect 40 190 30 8 gray 0.8
+.rect 40 198 30 12 lightgray 0.5 gray 0.5
+.line 55 210 55 250 gray 0.5
+.text 55 218 "Apoyo" 7 gray middle
+#end svg
+
+"5. Resumen
+'Drilling NO es una teoria fisica. Es una correccion numerica para:
+'1. Completar los 6 DOFs necesarios en 3D
+'2. Evitar matrices singulares en shells no coplanares
+'3. Transferir momento en el plano entre shells en angulo
+'Sin drilling: solo funciona para shells planos (losas, muros aislados)
+'Con drilling: funciona para CUALQUIER geometria 3D

@@ -1,0 +1,1 @@
+[CLSOLVE] MatrixType=SymmetricMatrix, n=1764, VectorType=LargeVector

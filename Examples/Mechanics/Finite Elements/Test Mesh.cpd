@@ -1,0 +1,26 @@
+"Test $Mesh function — Cantilever Wall Q4
+'<hr/>
+'<h4>Mesh generation</h4>
+'Cantilever wall: 4m wide, 3m tall, 2x2 mesh
+a = 4'm
+b = 3'm
+n_a = 2
+n_b = 2
+n_j = (n_a + 1)*(n_b + 1)
+n_e = n_a*n_b
+
+'Joint coordinates
+x_j = [0; 0; 0; 2; 2; 2; 4; 4; 4]
+y_j = [0; 1.5; 3; 0; 1.5; 3; 0; 1.5; 3]
+
+'Element connectivity (4 elements, 4 nodes each)
+e_j = [1; 4; 5; 2 | 2; 5; 6; 3 | 4; 7; 8; 5 | 5; 8; 9; 6]
+
+'Supported joints (base: 1, 4, 7)
+s_j = [1; 4; 7]
+
+'Loaded joints (lateral at top: negative = lateral arrow)
+f_j = [-3; -6; -9]
+
+'<h4>Mesh visualization</h4>
+$Mesh{x_j; y_j; e_j; s_j; f_j @ w = 300}

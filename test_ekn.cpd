@@ -1,0 +1,7 @@
+"Test E_kn
+E = 35000
+E_kn = E*1000
+E_kn
+D_test = E_kn*0.1^3/(12*(1-0.15^2))
+D_test
+

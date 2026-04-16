@@ -1,0 +1,204 @@
+#margen 20
+"1 DOF — Elemento Barra Axial
+
+"Funciones de forma
+'Una barra tiene 2 nodos con 1 grado de libertad cada uno: el desplazamiento <b>u</b>.
+'La interpolacion del desplazamiento es:
+#deq u(x) = N_1*u_1 + N_2*u_2 @@(interpolacion)
+
+'Las funciones de forma con coordenadas naturales son:
+#deq N_1 = (1 - ξ)/2 @@(nodo 1)
+#deq N_2 = (1 + ξ)/2 @@(nodo 2)
+
+"Verificamos que la suma da 1
+#sym
+simplify((1 - ξ)/2 + (1 + ξ)/2)
+#end sym
+
+"Derivada de la primera funcion de forma
+#sym
+diff((1 - ξ)/2; ξ)
+#end sym
+
+"Derivada de la segunda funcion de forma
+#sym
+diff((1 + ξ)/2; ξ)
+#end sym
+
+'Las derivadas son constantes: -1/2 y 1/2.
+
+#pgb
+"Deformacion
+'La deformacion unitaria es la derivada del desplazamiento.
+'Derivamos la interpolacion:
+
+#sym
+diff((1 - ξ)/2*ua + (1 + ξ)/2*ub; ξ)
+#end sym
+
+'Simplificamos:
+#sym
+simplify(-ua/2 + ub/2)
+#end sym
+
+'La deformacion es constante. No depende de xi.
+
+#pgb
+"Esfuerzo — Ley de Hooke
+'El esfuerzo es el modulo de elasticidad por la deformacion:
+#deq σ = E_m*ε @@(Ley de Hooke)
+
+"Calculamos el esfuerzo
+#sym
+simplify(Em*(ub - ua)/2)
+#end sym
+
+"Fuerza interna
+'La fuerza es el esfuerzo por el area:
+#deq F_int = σ*A_s @@(fuerza)
+
+#sym
+simplify(Em*As*(ub - ua)/2)
+#end sym
+
+"Expandimos para ver la fuerza de cada nodo
+#sym
+expand(Em*As*(ub - ua)/2)
+#end sym
+
+#pgb
+"Fuerzas en los nodos
+'La barra tiene 2 nodos. Las fuerzas son iguales y opuestas.
+
+"Fuerza en el nodo 2
+#sym
+expand(Em*As/2*(ub - ua))
+#end sym
+
+"Fuerza en el nodo 1 (opuesta)
+#sym
+expand(-Em*As/2*(ub - ua))
+#end sym
+
+"Matriz de rigidez
+'Las fuerzas se organizan como matriz por vector:
+#noc
+[F_1|F_2] = [k_e; -k_e|-k_e; k_e]*[u_1|u_2]
+#equ
+
+'La rigidez del elemento es:
+#deq k_e = E_m*A_s/L_e @@(rigidez)
+
+'La matriz de rigidez es:
+#noc
+K_e = (E_m*A_s/L_e)*[1; -1|-1; 1]
+#equ
+
+#pgb
+"Matriz de rigidez desde las funciones de forma
+'Cada termino se calcula como la derivada de N_i por E por la derivada de N_j,
+'multiplicado por el area y la longitud.
+
+"Termino (1,1)
+#sym
+simplify((-1/2)*Em*(-1/2)*As*2)
+#end sym
+
+"Termino (1,2)
+#sym
+simplify((-1/2)*Em*(1/2)*As*2)
+#end sym
+
+"Termino (2,1)
+#sym
+simplify((1/2)*Em*(-1/2)*As*2)
+#end sym
+
+"Termino (2,2)
+#sym
+simplify((1/2)*Em*(1/2)*As*2)
+#end sym
+
+'Los 4 terminos forman la misma matriz de rigidez.
+
+#pgb
+"EJEMPLO NUMERICO
+
+E_m = 210000
+A_s = 0.01
+L_e = 3
+
+"Funciones de forma
+N_1(x) = 1 - x/L_e
+N_2(x) = x/L_e
+
+N_1(0)
+N_1(L_e/2)
+N_1(L_e)
+N_2(0)
+N_2(L_e/2)
+N_2(L_e)
+
+"Grafica
+#hide
+np = 20
+xg = vector(np + 1)
+yg1 = vector(np + 1)
+yg2 = vector(np + 1)
+#for i = 1 : np + 1
+    xg.(i) = (i - 1)*L_e/np
+    yg1.(i) = N_1(xg.(i))
+    yg2.(i) = N_2(xg.(i))
+#loop
+#show
+$Chart{xg; yg1; xg; yg2 @ title=Funciones de forma : xlabel=x (m) : ylabel=valor : labels=N1,N2}
+
+"Matriz B
+B_1 = -1/L_e
+B_2 = 1/L_e
+
+"Rigidez
+k_e = E_m*A_s/L_e
+
+"Matriz de rigidez
+Ke_11 = B_1*E_m*B_1*A_s*L_e
+Ke_12 = B_1*E_m*B_2*A_s*L_e
+Ke_21 = B_2*E_m*B_1*A_s*L_e
+Ke_22 = B_2*E_m*B_2*A_s*L_e
+
+#blk
+Ke_11 ; Ke_12 ; 'fila 1
+Ke_21 ; Ke_22 ; 'fila 2
+#end blk
+
+#pgb
+"EJEMPLO RESUELTO
+
+'Barra empotrada en nodo 1. Fuerza de 50 kN en nodo 2.
+F_ext = 50
+
+u_2sol = F_ext/Ke_22
+ε_sol = u_2sol/L_e
+σ_sol = E_m*ε_sol
+R_1 = Ke_12*u_2sol
+
+#blk
+u_2sol ; 'desplazamiento nodo 2 (m)
+ε_sol ; 'deformacion
+σ_sol ; 'esfuerzo (kN/m2)
+R_1 ; 'reaccion nodo 1 (kN)
+#end blk
+
+"Grafica del desplazamiento
+#hide
+xu = vector(np + 1)
+yu = vector(np + 1)
+#for i = 1 : np + 1
+    xu.(i) = (i - 1)*L_e/np
+    yu.(i) = (xu.(i)/L_e)*u_2sol
+#loop
+xn = [0|L_e]
+yn = [0|u_2sol]
+#show
+$Chart{xu; yu; xn; yn @ title=Desplazamiento : xlabel=x (m) : ylabel=u (m) : labels=u(x),Nodos}
+#end margen

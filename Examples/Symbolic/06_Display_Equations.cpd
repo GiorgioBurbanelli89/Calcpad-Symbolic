@@ -1,0 +1,19 @@
+"Display Equations (#deq)
+'Show reference formulas without computation
+
+"Stiffness Matrices
+#deq K_axial = E*A/L*[1; -1 | -1; 1]
+#deq K_flex = E*I/L^3*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2 | -12; -6*L; 12; -6*L | 6*L; 2*L^2; -6*L; 4*L^2]
+#deq K_corte = G*A_s/L*[1; -1 | -1; 1]
+#deq K_torsion = G*J/L*[1; -1 | -1; 1]
+
+"Shape Functions
+#deq N_1 = (1 - ξ)*(1 - η)/4
+#deq N_2 = (1 + ξ)*(1 - η)/4
+#deq N_3 = (1 + ξ)*(1 + η)/4
+#deq N_4 = (1 - ξ)*(1 + η)/4
+
+"Navier-Stokes
+#deq ε = du/dx
+#deq σ = E*ε
+#deq M = E*I*κ

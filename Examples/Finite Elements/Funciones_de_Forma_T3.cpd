@@ -1,0 +1,174 @@
+#margen 20
+"Funciones de Forma 2D — Triangulo T3
+'Ref: Zienkiewicz & Taylor, Cap.6, Sec. 6.2.1, p.151
+
+"De 1D a 2D
+'En 1D teniamos una barra con 2 nodos y 2 funciones de forma:
+#deq N_1 = 1 - x/L @@(1D, nodo 1)
+#deq N_2 = x/L @@(1D, nodo 2)
+
+'En 2D tenemos un <b>triangulo</b> con 3 nodos y 3 funciones de forma.
+'En vez de interpolar sobre una linea, interpolamos sobre un area.
+
+"El triangulo T3
+'3 nodos con coordenadas (x, y):
+x_1 = 0
+y_1 = 0
+x_2 = 4
+y_2 = 0
+x_3 = 2
+y_3 = 3
+
+"Area del triangulo
+'El area se calcula con la formula del determinante:
+#deq A = (1/2)*|x_1*(y_2 - y_3) + x_2*(y_3 - y_1) + x_3*(y_1 - y_2)| @@(area)
+A = abs(x_1*(y_2 - y_3) + x_2*(y_3 - y_1) + x_3*(y_1 - y_2))/2
+
+#pgb
+"Coordenadas de area (baricentricas)
+'En 1D usamos x/L para medir la posicion relativa.
+'En 2D usamos <b>areas</b> para medir la posicion relativa.
+
+'Dado un punto P dentro del triangulo, se forman 3 subtriangulos:
+'- Subtriangulo 1: formado por P, nodo 2, nodo 3 → area '#deq A_1'
+'- Subtriangulo 2: formado por P, nodo 3, nodo 1 → area '#deq A_2'
+'- Subtriangulo 3: formado por P, nodo 1, nodo 2 → area '#deq A_3'
+
+'Las coordenadas de area son:
+#deq L_1 = A_1/A @@(Eq. 6.3)
+#deq L_2 = A_2/A @@(Eq. 6.3)
+#deq L_3 = A_3/A @@(Eq. 6.3)
+
+'Siempre se cumple:
+#deq L_1 + L_2 + L_3 = 1 @@(Eq. 6.4)
+
+"Analogia con 1D
+'En 1D: '#deq N_1 = 1 - x/L' mide "que tan lejos estoy del nodo 2"
+'En 2D: '#deq L_1 = A_1/A' mide "que tan lejos estoy del lado opuesto al nodo 1"
+'Si estoy en el nodo 1: '#deq A_1' es toda el area → '#deq L_1 = 1'
+'Si estoy en el lado opuesto: '#deq A_1 = 0' → '#deq L_1 = 0'
+
+#pgb
+"Las funciones de forma del T3
+'Son simplemente las coordenadas de area:
+#deq N_1 = L_1 = A_1/A @@(Eq. 6.5)
+#deq N_2 = L_2 = A_2/A @@(Eq. 6.5)
+#deq N_3 = L_3 = A_3/A @@(Eq. 6.5)
+
+'En forma explicita:
+#deq N_a(x; y) = (1/(2*A))*(a_a + b_a*x + c_a*y) @@(Eq. 6.1)
+
+'Donde los coeficientes son:
+a_1 = x_2*y_3 - x_3*y_2
+b_1 = y_2 - y_3
+c_1 = x_3 - x_2
+a_2 = x_3*y_1 - x_1*y_3
+b_2 = y_3 - y_1
+c_2 = x_1 - x_3
+a_3 = x_1*y_2 - x_2*y_1
+b_3 = y_1 - y_2
+c_3 = x_2 - x_1
+
+"Definimos las funciones de forma
+N_1(x; y) = (a_1 + b_1*x + c_1*y)/(2*A)
+N_2(x; y) = (a_2 + b_2*x + c_2*y)/(2*A)
+N_3(x; y) = (a_3 + b_3*x + c_3*y)/(2*A)
+
+#pgb
+"Verificacion de Kronecker
+
+"N_1 en cada nodo
+N_1(x_1; y_1)
+N_1(x_2; y_2)
+N_1(x_3; y_3)
+
+"N_2 en cada nodo
+N_2(x_1; y_1)
+N_2(x_2; y_2)
+N_2(x_3; y_3)
+
+"N_3 en cada nodo
+N_3(x_1; y_1)
+N_3(x_2; y_2)
+N_3(x_3; y_3)
+
+'Cada funcion de forma vale 1 en su nodo y 0 en los otros. Kronecker se cumple.
+
+"Verificacion: la suma siempre da 1
+'En el centroide (x = 2, y = 1):
+S_c = N_1(2; 1) + N_2(2; 1) + N_3(2; 1)
+'En un punto cualquiera (x = 1, y = 0.5):
+S_p = N_1(1; 0.5) + N_2(1; 0.5) + N_3(1; 0.5)
+
+#pgb
+"Grafica de las funciones de forma
+'N_1 como superficie sobre el triangulo:
+$Map{N_1(x; y) @ x = -0.5 : 4.5 & y = -0.5 : 3.5}
+'N_1 vale 1 en el nodo 1 (0,0) y baja a 0 en el lado opuesto.
+
+$Map{N_2(x; y) @ x = -0.5 : 4.5 & y = -0.5 : 3.5}
+'N_2 vale 1 en el nodo 2 (4,0) y baja a 0 en el lado opuesto.
+
+$Map{N_3(x; y) @ x = -0.5 : 4.5 & y = -0.5 : 3.5}
+'N_3 vale 1 en el nodo 3 (2,3) y baja a 0 en el lado opuesto.
+
+#pgb
+"Interpolacion 2D
+'Igual que en 1D, la interpolacion es:
+#deq φ(x; y) = N_1*φ_1 + N_2*φ_2 + N_3*φ_3 @@(interpolacion 2D)
+
+"Ejemplo: temperatura en un triangulo
+'Nodo 1: T = 100. Nodo 2: T = 200. Nodo 3: T = 150.
+T_1 = 100
+T_2 = 200
+T_3 = 150
+T(x; y) = N_1(x; y)*T_1 + N_2(x; y)*T_2 + N_3(x; y)*T_3
+
+'Temperatura en los nodos:
+T(x_1; y_1)
+T(x_2; y_2)
+T(x_3; y_3)
+
+'Temperatura en el centroide:
+T(2; 1)
+
+'Mapa de temperatura:
+$Map{T(x; y) @ x = -0.5 : 4.5 & y = -0.5 : 3.5}
+
+#pgb
+"Derivadas — deformacion en 2D
+'En 2D hay 3 deformaciones:
+#deq ε_x = du/dx @@(deformacion en x)
+#deq ε_y = dv/dy @@(deformacion en y)
+#deq γ_xy = du/dy + dv/dx @@(deformacion de corte)
+
+'Las derivadas de las funciones de forma son:
+#sym
+diff((a_1 + b_1*x + c_1*y)/(2*A); x)
+#end sym
+#sym
+diff((a_1 + b_1*x + c_1*y)/(2*A); y)
+#end sym
+
+'Las derivadas son <b>constantes</b>:
+dN1_dx = b_1/(2*A)
+dN1_dy = c_1/(2*A)
+dN2_dx = b_2/(2*A)
+dN2_dy = c_2/(2*A)
+dN3_dx = b_3/(2*A)
+dN3_dy = c_3/(2*A)
+
+'Igual que en 1D, las derivadas no dependen de x ni y.
+'La deformacion es constante dentro del triangulo.
+
+"Resumen
+'El triangulo T3 es la extension del elemento lineal 1D a 2D:
+#blk
+'1D: 2 nodos, N = 1-x/L ; '2D: 3 nodos, N = (a + bx + cy)/(2A)
+'1D: interpola sobre una linea ; '2D: interpola sobre un area
+'1D: derivada constante ; '2D: derivadas constantes
+'1D: deformacion constante ; '2D: deformaciones constantes
+#end blk
+
+'Ref: Zienkiewicz & Taylor, Cap.6, Sec. 6.2.1, p.151-152
+#end margen

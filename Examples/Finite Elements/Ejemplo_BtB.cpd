@@ -1,0 +1,19 @@
+#margen 20
+"Ejemplo: Fila por Columna y Columna por Fila
+
+"Vector fila
+vf = [3; 4]
+
+"Vector columna (transpuesta)
+vc = transp(vf)
+
+"Fila por columna = un numero
+r = dot(vf; vf)
+
+"Columna por fila = una matriz
+m_11 = 3*3
+m_12 = 3*4
+m_21 = 4*3
+m_22 = 4*4
+M_r = [m_11; m_12|m_21; m_22]
+#end margen

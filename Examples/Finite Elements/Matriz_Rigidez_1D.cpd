@@ -1,0 +1,221 @@
+#margen 20
+"Matriz de Rigidez 1D — Paso a Paso
+
+"Que es la rigidez?
+'Todos conocemos un resorte. Si lo estiras, hace fuerza.
+'Cuanto mas rigido el resorte, mas fuerza hace para la misma deformacion.
+#deq F = k*Δ @@(resorte)
+'Donde:
+'- F = fuerza
+'- k = rigidez del resorte (constante)
+'- Δ = cuanto se estiro
+
+"Ejemplo: un resorte
+k_res = 100
+Δ_1 = 0.5
+F_1r = k_res*Δ_1
+Δ_2 = 1.0
+F_2r = k_res*Δ_2
+Δ_3 = 2.0
+F_3r = k_res*Δ_3
+
+#blk
+F_1r ; 'estiro 0.5 m
+F_2r ; 'estiro 1.0 m
+F_3r ; 'estiro 2.0 m
+#end blk
+
+#hide
+n = 20
+xr = vector(n + 1)
+yr = vector(n + 1)
+#for i = 1 : n + 1
+    xr.(i) = (i - 1)*2/n
+    yr.(i) = k_res*xr.(i)
+#loop
+#show
+$Chart{xr; yr @ title=Fuerza vs deformacion (resorte) : xlabel=deformacion (m) : ylabel=fuerza (N)}
+'Es una recta. La pendiente es la rigidez k.
+
+#pgb
+"Una barra es un resorte
+'Una barra de acero tambien se comporta como un resorte.
+'Si la estiro, hace fuerza. La rigidez depende de:
+'- '#deq E' = modulo de elasticidad (propiedad del material)
+'- '#deq A' = area de la seccion transversal
+'- '#deq L' = longitud de la barra
+
+'La rigidez de la barra es:
+#deq k = E*A/L @@(rigidez de una barra)
+
+'Ejemplo: barra de acero
+E = 210000'kN/m²
+A_s = 0.01'm²
+L = 3'm
+k = E*A_s/L
+'La rigidez es 'k' kN/m.
+
+'Si estiro la barra 1 mm = 0.001 m:
+Δ = 0.001
+F_barra = k*Δ
+
+#pgb
+"Ahora con funciones de forma
+
+'La barra tiene 2 nodos. Cada nodo tiene un desplazamiento:
+'- Nodo 1: desplazamiento '#deq u_1'
+'- Nodo 2: desplazamiento '#deq u_2'
+
+'La deformacion de la barra es:
+#deq Δ = u_2 - u_1 @@(estiramiento)
+
+'Si '#deq u_2 > u_1', la barra se estira.
+'Si '#deq u_2 < u_1', la barra se comprime.
+
+'Ya vimos que la deformacion unitaria es:
+#deq ε = Δ/L = (u_2 - u_1)/L @@(deformacion unitaria)
+
+'Y que esto viene de derivar las funciones de forma:
+#deq ε = dN_1/dx*u_1 + dN_2/dx*u_2 = (-1/L)*u_1 + (1/L)*u_2 @@(con funciones de forma)
+
+#pgb
+"Del esfuerzo a la fuerza
+
+"Paso 1: Ley de Hooke
+'El material relaciona esfuerzo con deformacion:
+#deq σ = E*ε @@(Ley de Hooke)
+'Reemplazamos ε:
+#deq σ = E*(u_2 - u_1)/L @@(esfuerzo)
+
+"Paso 2: Fuerza interna
+'El esfuerzo actua sobre el area de la seccion:
+#deq F = σ*A = E*A*(u_2 - u_1)/L @@(fuerza interna)
+
+"Paso 3: Ejemplo numerico
+u_1 = 0
+u_2 = 0.001
+ε_v = (u_2 - u_1)/L
+σ_v = E*ε_v
+F_v = σ_v*A_s
+
+#blk
+ε_v ; 'deformacion unitaria
+σ_v ; 'esfuerzo (kN/m²)
+F_v ; 'fuerza (kN)
+#end blk
+
+#pgb
+"La fuerza en cada nodo
+
+'La barra tiene 2 nodos. En cada nodo hay una fuerza.
+'Por equilibrio (la barra no se mueve), las fuerzas son iguales y opuestas:
+
+"Fuerza en el nodo 2 (positiva si tira hacia la derecha)
+#deq F_2 = E*A/L*(u_2 - u_1) = k*u_2 - k*u_1 @@(nodo 2)
+
+"Fuerza en el nodo 1 (opuesta)
+#deq F_1 = -F_2 = -k*u_2 + k*u_1 = k*u_1 - k*u_2 @@(nodo 1)
+
+"Verificacion: la suma de fuerzas es cero
+'Si la barra esta en equilibrio:
+#deq F_1 + F_2 = (k*u_1 - k*u_2) + (k*u_2 - k*u_1) = 0 @@(equilibrio)
+
+#pgb
+"La matriz de rigidez
+
+'Organizamos las 2 ecuaciones:
+#noc
+F_1 = k*u_1 + (-k)*u_2
+F_2 = (-k)*u_1 + k*u_2
+#equ
+
+'Esto se puede escribir como una multiplicacion de matrices:
+#noc
+[F_1|F_2] = [k; -k|-k; k]*[u_1|u_2]
+#equ
+
+'La matriz es la <b>matriz de rigidez K</b>:
+#noc
+K = [k; -k|-k; k]
+#equ
+
+'O con la formula de la barra:
+#noc
+K = (E*A/L)*[1; -1|-1; 1]
+#equ
+
+"Numericamente
+K_11 = k
+K_12 = -k
+K_21 = -k
+K_22 = k
+
+#blk
+K_11 ; K_12 ; 'fila 1 de K
+K_21 ; K_22 ; 'fila 2 de K
+#end blk
+
+#pgb
+"De donde sale K? De las funciones de forma!
+
+'La formula general es:
+#deq K = B^T*E*B*A*L @@(formula general)
+'Donde '#deq B' es la derivada de las funciones de forma.
+
+"Paso 1: La matriz B
+'B contiene las derivadas de N_1 y N_2:
+#sym
+diff(1 - x/L; x)
+#end sym
+#sym
+diff(x/L; x)
+#end sym
+#deq B = [-1/L; 1/L] @@(matriz B)
+
+"Paso 2: B transpuesta
+#deq B^T = [-1/L|1/L] @@(columna)
+
+"Paso 3: B transpuesta * E * B
+'Multiplicamos fila por columna:
+B_1 = -1/L
+B_2 = 1/L
+BtEB_11 = B_1*E*B_1
+BtEB_12 = B_1*E*B_2
+BtEB_21 = B_2*E*B_1
+BtEB_22 = B_2*E*B_2
+
+#blk
+BtEB_11 ; BtEB_12 ; 'fila 1 de B^T*E*B
+BtEB_21 ; BtEB_22 ; 'fila 2 de B^T*E*B
+#end blk
+
+"Paso 4: Multiplicamos por A y por L
+'Como B es constante, la integral sobre L es simplemente multiplicar por L:
+K_f11 = BtEB_11*A_s*L
+K_f12 = BtEB_12*A_s*L
+K_f21 = BtEB_21*A_s*L
+K_f22 = BtEB_22*A_s*L
+
+#blk
+K_f11 ; K_f12 ; 'fila 1 de K final
+K_f21 ; K_f22 ; 'fila 2 de K final
+#end blk
+
+'Comparamos con K directa:
+#blk
+K_11 ; K_12 ; 'K directa fila 1
+K_21 ; K_22 ; 'K directa fila 2
+#end blk
+'<b>Son iguales.</b> La matriz de rigidez sale de las funciones de forma.
+
+#pgb
+"Resumen — El camino completo
+
+'<b>1.</b> Funciones de forma: '#deq N_1 = 1 - x/L', '#deq N_2 = x/L'
+'<b>2.</b> Derivar N → matriz B: '#deq B = [-1/L; 1/L]'
+'<b>3.</b> Ley de Hooke: '#deq σ = E*ε'
+'<b>4.</b> Matriz de rigidez: '#deq K = B^T*E*B*A*L'
+
+'Las funciones de forma son la base de todo.
+'Sin ellas no hay B, sin B no hay K, sin K no se resuelve nada.
+#end margen

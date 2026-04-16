@@ -1,0 +1,9 @@
+"Test resultado con unidad real
+E = 35000 MPa
+E_a = E & kN/m^2
+E_a
+w_num = 0.006849
+w_con_unidad = w_num*(1 m)
+w_con_unidad
+w_con_unidad | mm
+

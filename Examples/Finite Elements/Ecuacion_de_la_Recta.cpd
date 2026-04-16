@@ -1,0 +1,138 @@
+#margen 20
+"La Ecuacion de la Recta — Como te la ensenaron
+
+"Lo que ya sabes
+'La ecuacion de la recta es:
+#deq f(x) = y = m*x + b @@(ecuacion de la recta)
+
+'Ejemplo:
+f(x) = 3*x + 5
+f(0)
+f(1)
+f(2)
+f(3)
+
+#hide
+n = 20
+xv = vector(n + 1)
+yv = vector(n + 1)
+#for i = 1 : n + 1
+    xv.(i) = (i - 1)*3/n
+    yv.(i) = f(xv.(i))
+#loop
+#show
+$Chart{xv; yv @ title=f(x) = 3x + 5 : xlabel=x : ylabel=y}
+
+#pgb
+"Como te ensenaron a encontrar la ecuacion con 2 puntos
+
+'Te dan 2 puntos:
+x_1 = 1
+y_1 = 8
+x_2 = 4
+y_2 = 17
+
+'Te ensenaron a calcular la pendiente con los 2 puntos conocidos:
+#deq m_1 = (y_2 - y_1)/(x_2 - x_1) @@(pendiente con puntos conocidos)
+
+'Pero tambien hay un punto desconocido (x, y) que esta en la misma recta.
+'La pendiente desde el punto 1 hasta ese punto desconocido es:
+#deq m_2 = (y - y_1)/(x - x_1) @@(pendiente con punto desconocido)
+
+'Como los 3 puntos estan en la <b>misma recta</b>, las dos pendientes son iguales:
+#deq m_1 = m_2 @@(igualdad de pendientes)
+#deq (y_2 - y_1)/(x_2 - x_1) = (y - y_1)/(x - x_1) @@(la igualdad)
+
+'<b>Esto es lo que te ensenaron. Ahora vamos a despejar y.</b>
+
+#pgb
+"Despejamos y paso a paso
+
+'Partimos de la igualdad:
+#deq (y_2 - y_1)/(x_2 - x_1) = (y - y_1)/(x - x_1) @@(igualdad)
+
+"Paso 1: multiplicamos ambos lados por (x - x_1)
+'Para quitar el denominador del lado derecho:
+#noc
+(y_2 - y_1)/(x_2 - x_1)*(x - x_1) = y - y_1
+#equ
+
+"Paso 2: el lado izquierdo es m*(x - x_1)
+'Porque '#deq m = (y_2 - y_1)/(x_2 - x_1)':
+#noc
+m*(x - x_1) = y - y_1
+#equ
+
+"Paso 3: sumamos y_1 a ambos lados
+#noc
+y = y_1 + m*(x - x_1)
+#equ
+
+'<b>Eso es todo.</b> La formula punto-pendiente sale de despejar y
+'en la igualdad de pendientes que ya conocias.
+
+"Verificacion numerica
+m = (y_2 - y_1)/(x_2 - x_1)
+
+'Con la igualdad de pendientes en x = 2.5:
+m_izq = (y_2 - y_1)/(x_2 - x_1)
+m_der = (11 - y_1)/(2.5 - x_1)
+#blk
+m_izq ; 'pendiente izquierda
+m_der ; 'pendiente derecha, y = 11 en x = 2.5
+#end blk
+'Son iguales. El punto (2.5, 11) esta en la recta.
+
+'Con la formula despejada:
+y_desp(x) = y_1 + m*(x - x_1)
+y_desp(2.5)
+'Da 11. Lo mismo.
+
+"Verificacion simbolica
+'Expandimos y_1 + m*(x - x_1):
+#sym
+expand(y_1 + (y_2 - y_1)/(x_2 - x_1)*(x - x_1))
+#end sym
+
+#pgb
+"Es lo mismo que f(x) = mx + b?
+
+'Expandimos la punto-pendiente con los numeros:
+#sym
+expand(8 + 3*(x - 1))
+#end sym
+'Da 3*x + 5.
+
+'Entonces:
+#blk
+'f(x) = 3*x + 5 ; 'como te la ensenaron (mx + b)
+'f(x) = 8 + 3*(x - 1) ; 'punto-pendiente (y_1 + m*(x - x_1))
+#end blk
+'<b>Son la misma ecuacion.</b>
+'La punto-pendiente es solo la igualdad de pendientes despejada.
+
+"Grafica
+#hide
+xf = vector(n + 1)
+yf = vector(n + 1)
+#for i = 1 : n + 1
+    xf.(i) = 0 + (i - 1)*5/n
+    yf.(i) = y_desp(xf.(i))
+#loop
+xp = [x_1|x_2]
+yp = [y_1|y_2]
+#show
+$Chart{xf; yf; xp; yp @ title=Recta por 2 puntos : xlabel=x : ylabel=y : labels=Recta,Puntos}
+
+"Resumen
+'<b>Lo que te ensenaron:</b>
+#deq (y_2 - y_1)/(x_2 - x_1) = (y - y_1)/(x - x_1) @@(igualdad de pendientes)
+
+'<b>Despejando y:</b>
+#deq y = y_1 + m*(x - x_1) @@(punto-pendiente)
+
+'<b>Que es lo mismo que:</b>
+#deq y = m*x + b @@(forma clasica)
+
+'Donde '#deq b = y_1 - m*x_1'
+#end margen

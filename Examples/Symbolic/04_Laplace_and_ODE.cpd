@@ -1,0 +1,28 @@
+"Laplace Transform and ODE Solver (#sym)
+
+"Laplace Transform
+#sym laplace(1; t; s)
+#sym laplace(t; t; s)
+#sym laplace(sin(t); t; s)
+#sym laplace(cos(w*t); t; s)
+#sym laplace(exp(-a*t); t; s)
+#sym laplace(exp(-a*t)*sin(w*t); t; s)
+#sym laplace(t*sin(w*t); t; s)
+
+"Inverse Laplace
+#sym ilaplace(1/s; s; t)
+#sym ilaplace(1/s^2; s; t)
+
+"ODE 1st Order: y' + ay = 0
+#sym ode1(2)
+#sym ode1(-1)
+
+"ODE 2nd Order: y'' + ay' + by = 0
+'Real distinct roots:
+#sym ode2(5; 6)
+'Repeated roots:
+#sym ode2(4; 4)
+'Pure oscillation:
+#sym ode2(0; 4)
+'Underdamped:
+#sym ode2(2; 5)

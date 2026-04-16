@@ -1,0 +1,12 @@
+"Test & adimensional
+E = 25000 MPa
+"Con & escalar (debe dar numero puro):
+E & kN/m^2
+E & MPa
+E & Pa
+E & 1
+"Con & array (debe dar con unidad):
+v = [5; 3]
+v & [m; m]
+v & [mm; mm]
+

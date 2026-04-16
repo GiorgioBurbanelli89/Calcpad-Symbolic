@@ -1,0 +1,130 @@
+#margen 20
+"Algebra Lineal Basica para Elementos Finitos
+
+"Que es un vector?
+'Un vector es una lista de numeros.
+'Ejemplo: las coordenadas de un punto en 2D son un vector de 2 numeros.
+'Los desplazamientos de 2 nodos son un vector de 2 numeros.
+
+"Vector fila (horizontal)
+va = [3; 7]
+
+"Vector columna (vertical)
+vb = [3|7]
+
+'El mismo vector se puede escribir como fila o como columna.
+'Cambiar de fila a columna se llama <b>transponer</b>.
+
+#pgb
+"Producto punto (dot product)
+'Dos vectores del mismo tamano se pueden multiplicar numero a numero y sumar:
+a1 = 2
+a2 = 5
+b1 = 3
+b2 = 4
+producto = a1*b1 + a2*b2
+
+'Esto se llama <b>producto punto</b>. Es fila por columna.
+'Se multiplica cada par y se suma todo.
+
+"Con vectores
+va2 = [2; 5]
+vb2 = [3; 4]
+dp = dot(va2; vb2)
+
+#pgb
+"Que es una matriz?
+'Una matriz es una tabla de numeros con filas y columnas.
+M1 = [1; 2|3; 4]
+
+'Esta tiene 2 filas y 2 columnas. Se llama matriz 2x2.
+
+"Otra matriz
+M2 = [1; 2; 3|4; 5; 6]
+'Esta tiene 2 filas y 3 columnas. Es 2x3.
+
+#pgb
+"Multiplicacion de matrices
+'Se multiplica cada fila de la primera por cada columna de la segunda.
+'La regla es: las columnas de la primera deben ser igual a las filas de la segunda.
+'(2x3) * (3x2) = 2x2
+'(1x2) * (2x1) = 1x1 (un numero)
+'(2x1) * (1x2) = 2x2 (una matriz)
+
+"Ejemplo: (2x2) * (2x1)
+Ma = [1; 2|3; 4]
+vx = [5|6]
+resultado = Ma*vx
+
+"Ejemplo: (2x2) * (2x2)
+Mb = [5; 6|7; 8]
+Mc = Ma*Mb
+
+#pgb
+"Transpuesta de una matriz
+'Transponer = las filas se vuelven columnas y las columnas se vuelven filas.
+
+"Original
+M_orig = [1; 2; 3|4; 5; 6]
+
+"Transpuesta
+M_transp = transp(M_orig)
+
+'La original era 2x3. La transpuesta es 3x2.
+
+#pgb
+"Transpuesta de un vector
+'Un vector fila transpuesto es un vector columna y viceversa.
+
+"Vector fila
+v_fila = [2; 5; 8]
+
+"Su transpuesta (columna)
+v_col = [2|5|8]
+
+'En algebra lineal se escribe:
+#deq v^T @@(transpuesta del vector)
+
+#pgb
+"Multiplicacion clave: v^T * numero * v
+
+'Si v es un vector fila de 2 elementos:
+vf = [2; 3]
+
+'v transpuesta es columna:
+vc = [2|3]
+
+'La multiplicacion v^T * k * v da una <b>matriz 2x2</b>.
+'Esto es (2x1) * (1x1) * (1x2) = <b>2x2</b>.
+'Cada termino de la matriz es: v_i * k * v_j.
+k_val = 5
+
+"Verificamos cada termino
+K_11v = 2*k_val*2
+K_12v = 2*k_val*3
+K_21v = 3*k_val*2
+K_22v = 3*k_val*3
+
+#blk
+K_11v ; K_12v ; 'fila 1
+K_21v ; K_22v ; 'fila 2
+#end blk
+
+#pgb
+"Esto es exactamente B^T * E * B
+
+'En elementos finitos:
+'- v se llama <b>B</b> (derivadas de funciones de forma)
+'- k se llama <b>E</b> (modulo de elasticidad) o <b>D</b> (matriz constitutiva)
+'- La multiplicacion B^T * E * B da la <b>matriz de rigidez K</b>
+
+'La cadena:
+'<b>u</b> (desplazamientos) → B → <b>ε</b> (deformacion) → E → <b>σ</b> (esfuerzo) → B^T → <b>F</b> (fuerzas)
+
+'B reduce: 2 desplazamientos → 1 deformacion (fila por columna = numero)
+'E convierte: 1 deformacion → 1 esfuerzo (numero por numero)
+'B^T expande: 1 esfuerzo → 2 fuerzas (columna por numero = columna)
+
+'Los 3 pasos combinados:
+#deq K = B^T*E*B @@(matriz de rigidez)
+#end margen

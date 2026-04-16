@@ -1,0 +1,257 @@
+"6.1 Introduccion — Funciones de Forma, Derivadas e Integracion
+'Ref: Zienkiewicz & Taylor, "The Finite Element Method", 7th Ed., Cap.6, p.151
+
+'En el capitulo anterior encontramos que la ecuacion cuasi-armonica genera una
+'forma debil que contiene derivadas de la variable dependiente hasta primer orden.
+'De hecho, existe una gran clase de problemas cuyas ecuaciones no tienen mas que
+'derivadas de segundo orden de las variables dependientes, y por tanto su forma
+'debil no contendra mas que derivadas de primer orden de la variable dependiente
+'y la funcion arbitraria.
+'
+'Todas estas formas requieren el uso de funciones de forma <b>C<sub>0</sub></b> para la solucion
+'aproximada por el metodo de elementos finitos. En este capitulo presentamos el
+'desarrollo de funciones de forma para algunas familias generales de interpolaciones
+'C<sub>0</sub>. Se consideran formas tanto bidimensionales como tridimensionales.
+'
+'Con las familias generales disponibles, podemos considerar su uso para resolver
+'problemas de <b>elasticidad</b>, <b>placas</b> y <b>cascarones</b>. Para ello, estas funciones
+'deben satisfacer las siguientes condiciones:
+'
+'<b>1.</b> Ser tales que se logre <b>continuidad</b> en cada punto de la interfaz entre
+'~~~~elementos adyacentes.
+'
+'<b>2.</b> Incluir <b>polinomios lineales completos</b> de tal forma que se puedan obtener
+'~~~~derivadas constantes en cada elemento.
+'
+'Estas dos condiciones son bastante faciles de lograr para elementos bidimensionales
+'con forma triangular o cuadrilatera, y para elementos tridimensionales con formas
+'tetraedricas, de cuna o hexaedricas.
+'
+'Las funciones de forma presentadas a continuacion se describen mediante <b>nodos
+'locales</b>, donde cada nodo local se asocia a un nodo global especifico durante el
+'proceso de ensamblaje, como se describio en capitulos anteriores.
+
+#pgb
+"Condicion 1 — Continuidad C<sub>0</sub>
+'Ref: Zienkiewicz, p.151
+
+"Que es una funcion de forma?
+'En el MEF, el campo desconocido φ se aproxima dentro de cada elemento como:
+#cen
+#deq φ(x) = N_1(x)*φ_1 + N_2(x)*φ_2 + ... + N_n(x)*φ_n @@(general)
+#end cen
+'Donde N_a son las funciones de forma y φ_a son los valores nodales.
+
+"Propiedad de Kronecker
+'Las funciones de forma deben cumplir la propiedad delta de Kronecker:
+#cen
+#deq N_a(x_b) = δ_ab @@(fundamental)
+#end cen
+'Es decir: N_a = 1 en su propio nodo, N_a = 0 en todos los demas.
+
+"Ejemplo 1D — Dos elementos lineales compartiendo un nodo
+'Consideremos dos elementos en una dimension:
+'Elemento A: de x = 0 a x = 1 (nodos 1, 2)
+'Elemento B: de x = 1 a x = 2 (nodos 2, 3)
+'El nodo 2 es compartido.
+
+'Funciones de forma lineales 1D:
+#cen
+N_A1(x) = 1 - x
+N_A2(x) = x
+N_B2(x) = 2 - x
+N_B3(x) = x - 1
+#end cen
+
+'<b>Grafica de las funciones de forma:</b>
+'Elemento A (x de 0 a 1):
+#cen
+$Plot{N_A1(x) | N_A2(x) @ x = 0 : 1}
+#end cen
+'Elemento B (x de 1 a 2):
+#cen
+$Plot{N_B2(x) | N_B3(x) @ x = 1 : 2}
+#end cen
+
+"Verificacion de Kronecker
+#cen
+#blk
+N_A1(0) ; N_A1(1) ; 'N_A1: vale 1 en nodo 1, 0 en nodo 2
+N_A2(0) ; N_A2(1) ; 'N_A2: vale 0 en nodo 1, 1 en nodo 2
+N_B2(1) ; N_B2(2) ; 'N_B2: vale 1 en nodo 2, 0 en nodo 3
+N_B3(1) ; N_B3(2) ; 'N_B3: vale 0 en nodo 2, 1 en nodo 3
+#end blk
+#end cen
+
+"Continuidad en el nodo compartido
+'En x = 1 (nodo 2), ambos elementos dan el mismo valor φ_2:
+'Elemento A: φ(1) = N_A1(1)·φ_1 + N_A2(1)·φ_2 = 0·φ_1 + 1·φ_2 = φ_2
+'Elemento B: φ(1) = N_B2(1)·φ_2 + N_B3(1)·φ_3 = 1·φ_2 + 0·φ_3 = φ_2
+'<b>Ambos dan φ_2 → continuidad garantizada.</b>
+
+"Ejemplo numerico: campo φ con φ_1=2, φ_2=5, φ_3=3
+#cen
+φ_1 = 2
+φ_2 = 5
+φ_3 = 3
+φ_A(x) = N_A1(x)*φ_1 + N_A2(x)*φ_2
+φ_B(x) = N_B2(x)*φ_2 + N_B3(x)*φ_3
+#end cen
+
+'<b>Grafica del campo interpolado:</b>
+#cen
+$Plot{φ_A(x) @ x = 0 : 1}
+$Plot{φ_B(x) @ x = 1 : 2}
+#end cen
+
+'Valor en la interfaz (x = 1):
+#cen
+φ_A_interfaz = φ_A(1)
+φ_B_interfaz = φ_B(1)
+#inl φ_A_interfaz ; φ_B_interfaz ; 'Ambos = φ_2 = 5 ✓
+#end cen
+
+"Que pasa con la derivada?
+'Derivada simbolica de las funciones de forma:
+#cen
+#sym
+diff(1 - x; x)
+#end sym
+#sym
+diff(x; x)
+#end sym
+#sym
+diff(2 - x; x)
+#end sym
+#sym
+diff(x - 1; x)
+#end sym
+#end cen
+'dN_A1/dx = -1, dN_A2/dx = 1, dN_B2/dx = -1, dN_B3/dx = 1
+
+'Derivada del campo en cada elemento:
+#cen
+dφ_A = $Slope{φ_A(x) @ x = 0.5}
+dφ_B = $Slope{φ_B(x) @ x = 1.5}
+#inl dφ_A ; dφ_B ; 'Derivadas DIFERENTES → salto en la interfaz
+#end cen
+'<b>C<sub>0</sub>: el valor es continuo, la derivada puede saltar.</b>
+'Esto es aceptable para la forma debil con derivadas de primer orden.
+
+#pgb
+"Condicion 2 — Polinomios lineales completos
+'Ref: Zienkiewicz, p.151
+
+"Que significa completitud polinomial?
+'Si las funciones de forma pueden representar exactamente un campo lineal:
+#cen
+#deq φ(x) = α + β*x @@(1D)
+#deq φ(x; y) = α + β*x + γ*y @@(2D)
+#end cen
+'entonces las derivadas son constantes en cada elemento:
+#cen
+#deq dφ/dx = β = constante @@(1D)
+#deq dφ/dx = β; dφ/dy = γ @@(2D)
+#end cen
+'Esto es necesario para representar <b>estados de deformacion constante</b>
+'(condicion de convergencia del MEF).
+
+"Demostracion simbolica 1D
+'Funciones de forma lineales: N_1 = 1-x, N_2 = x (en [0,1])
+'Si el campo es φ(x) = a + b·x:
+#cen
+#sym
+simplify((1 - x)*(a + b*0) + x*(a + b*1))
+#end sym
+#end cen
+'Resultado: a + b·x → reproduce el campo lineal exactamente.
+
+'Derivada:
+#cen
+#sym
+diff((1 - x)*(a) + x*(a + b); x)
+#end sym
+#end cen
+'Resultado: b → constante ✓
+
+"Demostracion numerica 1D
+'Campo: φ(x) = 3 + 7x
+'Valores nodales: φ(0) = 3, φ(1) = 10
+#cen
+φ_n1 = 3
+φ_n2 = 10
+φ_interp(x) = N_A1(x)*φ_n1 + N_A2(x)*φ_n2
+φ_exacta(x) = 3 + 7*x
+#end cen
+
+'<b>Grafica — interpolacion vs exacta:</b>
+#cen
+$Plot{φ_interp(x) | φ_exacta(x) @ x = 0 : 1}
+#end cen
+'Las dos curvas se superponen exactamente.
+
+'Verificacion en puntos arbitrarios:
+#cen
+#blk
+φ_interp(0.25) ; φ_exacta(0.25) ; 'x = 0.25
+φ_interp(0.5) ; φ_exacta(0.5) ; 'x = 0.50
+φ_interp(0.73) ; φ_exacta(0.73) ; 'x = 0.73
+#end blk
+#end cen
+'Todos iguales → las funciones de forma lineales reproducen campos lineales ✓
+
+"Derivada constante
+#cen
+dφ_num = $Slope{φ_interp(x) @ x = 0.5}
+#end cen
+'dφ/dx = 7 (constante) ✓
+
+"Que pasa con campos no lineales?
+'Si el campo es cuadratico: φ(x) = x², las funciones de forma lineales
+'NO lo reproducen exactamente:
+#cen
+φ_q1 = 0^2
+φ_q2 = 1^2
+φ_q_interp(x) = N_A1(x)*φ_q1 + N_A2(x)*φ_q2
+φ_q_exacta(x) = x^2
+#end cen
+
+#cen
+$Plot{φ_q_interp(x) | φ_q_exacta(x) @ x = 0 : 1}
+#end cen
+'Rojo: interpolacion lineal, Verde: campo cuadratico real
+'Hay error → se necesita refinar la malla o usar funciones de orden superior.
+
+"Error de interpolacion
+#cen
+e(x) = φ_q_exacta(x) - φ_q_interp(x)
+$Plot{e(x) @ x = 0 : 1}
+e_max = $Sup{abs(e(x)) @ x = 0 : 1}
+#end cen
+
+#pgb
+"Resumen de las condiciones
+'
+'<b>Condicion 1 — Continuidad C<sub>0</sub>:</b>
+'Las funciones de forma garantizan que el campo φ sea continuo
+'entre elementos. La derivada puede ser discontinua (salto).
+'Esto es suficiente para la forma debil de ecuaciones de 2do orden.
+'
+'<b>Condicion 2 — Completitud:</b>
+'Las funciones de forma deben poder representar exactamente campos
+'lineales (en 1D: α + βx, en 2D: α + βx + γy).
+'Esto garantiza derivadas constantes en cada elemento, lo cual es
+'necesario para representar estados de deformacion constante.
+'
+'Estas dos condiciones juntas garantizan la <b>convergencia</b> del MEF:
+'al refinar la malla, la solucion converge a la solucion exacta.
+
+"Contenido del Capitulo 6
+'6.2.1 Triangulos (T3, T6, T10)
+'6.2.2 Cuadrilateros (Q4, Q8, Q9) — Lagrangiana y Serendipity
+'6.3 Elementos tridimensionales (Tetraedros, Hexaedros)
+'6.5 Mapeo isoparametrico y Jacobiano
+'6.6 Integracion numerica — Cuadratura de Gauss
+
+"Referencias
+'[1] Zienkiewicz, O.C. & Taylor, R.L. (2013). <i>The Finite Element Method</i>, 7th Ed., Cap.6, Elsevier.

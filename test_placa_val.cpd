@@ -1,0 +1,145 @@
+"Placa Base - Mindlin Q4 (Validacion SAP2000 Shell-Thin)
+
+"1. Datos
+'Placa -'B_p = 500 mm', 'N_p = 600 mm
+'Espesor -'t_p = 50 mm
+'Acero A36 -'E = 200000 MPa
+'Poisson -'ν = 0.3
+'Carga -'P = 1480 kN
+'Winkler -'k_w = 50000 kN/m^3
+'Pernos 1" -'d_b = 25.4 mm', 'L_emb = 500 mm
+
+"2. Adimensionalizar
+E_a = E & MPa
+B_a = B_p & mm
+N_a = N_p & mm
+t_a = t_p & mm
+P_a = P & kN
+k_wa = k_w & kN/m^3
+G_a = E_a/(2*(1 + ν))
+d_ba = d_b & mm
+L_ea = L_emb & mm
+k_bolt = E_a*3.14159*(d_ba/2)^2/L_ea
+n_dof = 3
+#hide
+x_ax = [0; 50; 100; 175; 250; 325; 400; 450; 500]
+y_ax = [0; 50; 112; 174; 300; 426; 488; 550; 600]
+n_j = 81','n_e = 64','n_total = n_dof*n_j','n_1 = 9
+x_j = vector(n_j)','y_j = vector(n_j)
+k = 0
+#for j = 1 : 9
+	#for i = 1 : 9
+		k = k + 1','x_j.k = x_ax.i','y_j.k = y_ax.j
+	#loop
+#loop
+e_j = matrix(n_e; 4)
+#for j = 0 : 7
+	#for i = 0 : 7
+		e = j*8 + i + 1','bl = j*9 + i + 1
+		e_j.(e; 1) = bl','e_j.(e; 2) = bl + 1
+		e_j.(e; 3) = bl + 10','e_j.(e; 4) = bl + 9
+	#loop
+#loop
+
+"3. Elemento Mindlin Q4
+D_b = E_a*t_a^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+'Corte minimo (pseudo-Kirchhoff para Shell-Thin)
+D_s = 5/6*G_a*t_a*[1; 0|0; 1]
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+dN_1ξ(η) = -(1 - η)/4','dN_2ξ(η) = (1 - η)/4
+dN_3ξ(η) = (1 + η)/4','dN_4ξ(η) = -(1 + η)/4
+dN_1η(ξ) = -(1 - ξ)/4','dN_2η(ξ) = -(1 + ξ)/4
+dN_3η(ξ) = (1 + ξ)/4','dN_4η(ξ) = (1 - ξ)/4
+g = 1/sqr(3)','n_k = 12
+K = symmetric(n_total)
+#for e = 1 : n_e
+	i1 = e_j.(e; 1)','i3 = e_j.(e; 3)
+	dx = x_j.i3 - x_j.i1','dy = y_j.i3 - y_j.i1
+	J1 = dx/2','J2 = dy/2','dJ = J1*J2
+	K_e = symmetric(n_k)
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξ = -g','η = -g
+		#else if ig ≡ 2
+			ξ = g','η = -g
+		#else if ig ≡ 3
+			ξ = g','η = g
+		#else
+			ξ = -g','η = g
+		#end if
+		a1 = dN_1ξ(η)/J1','b1 = dN_1η(ξ)/J2
+		a2 = dN_2ξ(η)/J1','b2 = dN_2η(ξ)/J2
+		a3 = dN_3ξ(η)/J1','b3 = dN_3η(ξ)/J2
+		a4 = dN_4ξ(η)/J1','b4 = dN_4η(ξ)/J2
+		Bb = [0; 0; -a1; 0; 0; -a2; 0; 0; -a3; 0; 0; -a4 | _
+		      0; b1; 0; 0; b2; 0; 0; b3; 0; 0; b4; 0 | _
+		      0; a1; -b1; 0; a2; -b2; 0; a3; -b3; 0; a4; -b4]
+		BtDB = transp(Bb)*D_b*Bb*dJ
+		#for i = 1 : n_k
+			#for j = i : n_k
+				K_e.(i; j) = K_e.(i; j) + BtDB.(i; j)
+			#loop
+		#loop
+	#loop
+	ξ = 0','η = 0
+	a1 = dN_1ξ(η)/J1','b1 = dN_1η(ξ)/J2
+	a2 = dN_2ξ(η)/J1','b2 = dN_2η(ξ)/J2
+	a3 = dN_3ξ(η)/J1','b3 = dN_3η(ξ)/J2
+	a4 = dN_4ξ(η)/J1','b4 = dN_4η(ξ)/J2
+	n1 = N_1(ξ; η)','n2 = N_2(ξ; η)','n3 = N_3(ξ; η)','n4 = N_4(ξ; η)
+	Bs = [a1; 0; -n1; a2; 0; -n2; a3; 0; -n3; a4; 0; -n4 | _
+	      b1; n1; 0; b2; n2; 0; b3; n3; 0; b4; n4; 0]
+	BsDB = transp(Bs)*D_s*Bs*dJ*4
+	#for i = 1 : n_k
+		#for j = i : n_k
+			K_e.(i; j) = K_e.(i; j) + BsDB.(i; j)
+		#loop
+	#loop
+	#for i = 1 : 4
+		#for j = i : 4
+			j1 = e_j.(e; i)','j2 = e_j.(e; j)
+			i1 = n_dof*(j1 - 1) + 1','i2 = n_dof*(j2 - 1) + 1
+			kij = submatrix(K_e; n_dof*(i - 1) + 1; n_dof*i; n_dof*(j - 1) + 1; n_dof*j)
+			#if j1 > j2
+				add(transp(kij); K; i2; i1)
+			#else
+				add(kij; K; i1; i2)
+			#end if
+		#loop
+	#loop
+#loop
+
+"4. Condiciones de borde
+#for j = 1 : 9
+	#for i = 1 : 9
+		k = (j - 1)*9 + i
+		x0 = x_ax.(max(i - 1; 1))','x1 = x_ax.i','x2 = x_ax.(min(i + 1; 9))
+		y0 = y_ax.(max(j - 1; 1))','y1 = y_ax.j','y2 = y_ax.(min(j + 1; 9))
+		tx = (x1 - x0)/2 + (x2 - x1)/2','ty = (y1 - y0)/2 + (y2 - y1)/2
+		kn = k_wa*tx*ty/10^6
+		K.(n_dof*(k - 1) + 1; n_dof*(k - 1) + 1) = K.(n_dof*(k - 1) + 1; n_dof*(k - 1) + 1) + kn
+	#loop
+#loop
+bi = [2; 3; 8; 9]','bj = [2; 3; 8; 9]
+#for p = 1 : 4
+	#for q = 1 : 4
+		k = (bj.q - 1)*9 + bi.p
+		K.(n_dof*(k - 1) + 1; n_dof*(k - 1) + 1) = K.(n_dof*(k - 1) + 1; n_dof*(k - 1) + 1) + k_bolt
+	#loop
+#loop
+F = vector(n_total)
+jc = (5 - 1)*9 + 5
+F.(n_dof*(jc - 1) + 1) = -P_a*1000
+#show
+Z = clsolve(K; F)
+
+"5. Resultados
+w_c = Z.(n_dof*(jc - 1) + 1)*(1 mm)
+w_c
+w_c | mm
+'SAP2000 Shell-Thin: -3.1034 mm
+'Ratio:
+w_c/(-3.1034 mm)

@@ -1,0 +1,187 @@
+#margen 20
+"Condiciones que deben cumplir las Funciones de Forma
+'Ref: Zienkiewicz & Taylor, "The Finite Element Method", 7th Ed., Cap.6, p.151
+
+'En el metodo de elementos finitos, las funciones de forma '#deq N_a(x)' son las
+'funciones que interpolan el campo desconocido '#deq φ' a partir de valores nodales.
+'Para que el MEF converja a la solucion exacta, deben cumplir 2 condiciones:
+'
+'<b>Condicion 1:</b> Continuidad en la interfaz entre elementos (C<sub>0</sub>)
+'<b>Condicion 2:</b> Polinomios lineales completos (derivadas constantes)
+
+#pgb
+"CONDICION 1 — Continuidad C<sub>0</sub>
+
+"Definicion
+'El campo interpolado '#deq φ(x)' debe ser <b>continuo</b> al pasar de un elemento al
+'siguiente. No puede haber saltos ni huecos en el campo.
+'
+'Matematicamente, si dos elementos A y B comparten una interfaz en '#deq x = c':
+#deq φ_A(c) = φ_B(c) @@(continuidad)
+'Esto se logra si las funciones de forma cumplen la <b>propiedad de Kronecker</b>:
+#deq N_a(x_b) = δ_ab @@(Kronecker)
+'Es decir: '#deq N_a' vale 1 en su nodo, 0 en todos los demas.
+
+"Por que es necesaria?
+'La forma debil del MEF requiere integrar por partes. Si '#deq φ' no es continuo,
+'la integral no converge. La discontinuidad generaria fuerzas infinitas
+'en la interfaz (como una grieta).
+
+"Ejemplo 1D — Dos barras compartiendo un nodo
+'Barra A: de '#deq x = 0' a '#deq x = 1', nodos 1 y 2
+'Barra B: de '#deq x = 1' a '#deq x = 2', nodos 2 y 3
+'Funciones de forma lineales:
+N_A1(x) = 1 - x
+N_A2(x) = x
+N_B2(x) = 2 - x
+N_B3(x) = x - 1
+
+"Grafica de '#deq N_A1' y '#deq N_A2' (Elemento A)
+$Plot{N_A1(x) | N_A2(x) @ x = 0 : 1}
+
+"Grafica de '#deq N_B2' y '#deq N_B3' (Elemento B)
+$Plot{N_B2(x) | N_B3(x) @ x = 1 : 2}
+
+"Verificacion de Kronecker
+#blk
+N_A1(0) ; N_A1(1) ; '#deq N_A1' en nodo 1 y nodo 2
+N_A2(0) ; N_A2(1) ; '#deq N_A2' en nodo 1 y nodo 2
+N_B2(1) ; N_B2(2) ; '#deq N_B2' en nodo 2 y nodo 3
+N_B3(1) ; N_B3(2) ; '#deq N_B3' en nodo 2 y nodo 3
+#end blk
+'Diagonal = 1, fuera de diagonal = 0 ✓
+
+"Demostracion de continuidad
+'Valores nodales: '#deq φ_1 = 2', '#deq φ_2 = 5', '#deq φ_3 = 3'
+φ_1 = 2
+φ_2 = 5
+φ_3 = 3
+φ_A(x) = N_A1(x)*φ_1 + N_A2(x)*φ_2
+φ_B(x) = N_B2(x)*φ_2 + N_B3(x)*φ_3
+
+'En la interfaz '#deq x = 1':
+φ_A_1 = φ_A(1)
+φ_B_1 = φ_B(1)
+#inl φ_A_1 ; φ_B_1 ; 'Ambos iguales a '#deq φ_2''
+
+"Grafica del campo continuo
+$Plot{φ_A(x) @ x = 0 : 1}
+$Plot{φ_B(x) @ x = 1 : 2}
+'El campo es continuo en '#deq x = 1' ✓
+
+"Que pasa con la derivada?
+'Derivadas simbolicas:
+#sym
+diff(2*(1 - x) + 5*x; x)
+#end sym
+#sym
+diff(5*(2 - x) + 3*(x - 1); x)
+#end sym
+'Las derivadas son '#deq dφ_A/dx = 3' y '#deq dφ_B/dx = -2'', son DIFERENTES.
+'Hay un <b>salto</b> en la derivada en '#deq x = 1''.
+'Esto es aceptable en C<sub>0</sub>: el valor es continuo, la derivada no.
+
+#pgb
+"CONDICION 2 — Polinomios lineales completos (Completitud)
+
+"Definicion
+'Las funciones de forma deben ser capaces de representar <b>exactamente</b>
+'cualquier campo lineal dentro del elemento:
+#deq φ(x) = a + b*x @@(1D lineal)
+#deq φ(x; y) = a + b*x + c*y @@(2D lineal)
+'Si esto se cumple, las derivadas son constantes:
+#deq dφ/dx = b = constante @@(1D)
+#deq dφ/dx = b; dφ/dy = c @@(2D)
+
+"Por que es necesaria?
+'En mecanica de solidos, la deformacion es la derivada del desplazamiento:
+#deq ε = du/dx @@(deformacion)
+'Para que el elemento pueda representar un <b>estado de deformacion constante</b>
+'(el caso mas simple), las funciones de forma deben poder generar derivadas
+'constantes. Esto solo es posible si representan campos lineales completos.
+'
+'Sin esta condicion, el MEF no converge al refinar la malla.
+
+"Demostracion simbolica 1D
+'Funciones de forma lineales en [0, 1]: '#deq N_1 = 1 - x', '#deq N_2 = x'
+'Campo lineal: '#deq φ(x) = a + b*x' → '#deq φ(0) = a', '#deq φ(1) = a + b'
+'Interpolacion:
+#sym
+simplify((1 - x)*a + x*(a + b))
+#end sym
+'Resultado: '#deq a + b*x' → <b>reproduce el campo lineal exactamente</b> ✓
+
+'Derivada de la interpolacion:
+#sym
+diff((1 - x)*a + x*(a + b); x)
+#end sym
+'Resultado: '#deq b' → <b>derivada constante</b> ✓
+
+"Demostracion numerica 1D
+'Campo: '#deq φ(x) = 3 + 7*x'
+φ_n1 = 3 + 7*0
+φ_n2 = 3 + 7*1
+φ_interp(x) = N_A1(x)*φ_n1 + N_A2(x)*φ_n2
+φ_exacta(x) = 3 + 7*x
+
+'Grafica — interpolacion vs exacta (deben superponerse):
+$Plot{φ_interp(x) | φ_exacta(x) @ x = 0 : 1}
+
+'Verificacion en puntos:
+#blk
+φ_interp(0.25) ; φ_exacta(0.25) ; '#deq x = 0.25'
+φ_interp(0.5) ; φ_exacta(0.5) ; '#deq x = 0.50'
+φ_interp(0.73) ; φ_exacta(0.73) ; '#deq x = 0.73'
+#end blk
+'Todos iguales ✓
+
+"Derivada constante
+dφ_num = $Slope{φ_interp(x) @ x = 0.5}
+'La derivada '#deq dφ/dx = 7' es constante, igual al coeficiente de '#deq x''
+
+"Que pasa si el campo NO es lineal?
+'Campo cuadratico: '#deq φ(x) = x^2'
+'Las funciones lineales NO lo reproducen:
+φ_q_interp(x) = N_A1(x)*0 + N_A2(x)*1
+φ_q_exacta(x) = x^2
+
+$Plot{φ_q_interp(x) | φ_q_exacta(x) @ x = 0 : 1}
+'Rojo: interpolacion lineal (recta), Verde: campo real (parabola)
+'Hay <b>error de interpolacion</b>.
+
+"Error de interpolacion
+e(x) = φ_q_exacta(x) - φ_q_interp(x)
+$Plot{e(x) @ x = 0 : 1}
+e_max = $Sup{abs(e(x)) @ x = 0 : 1}
+'Error maximo en el centro del elemento.
+
+'<b>Solucion:</b> refinar la malla (mas elementos) o usar funciones de orden superior.
+
+"Convergencia con refinamiento de malla
+'Dividimos [0, 1] en 2 elementos: [0, 0.5] y [0.5, 1]
+φ_2e_A(x) = (1 - 2*x)*0 + 2*x*0.25
+φ_2e_B(x) = (2 - 2*x)*0.25 + (2*x - 1)*1
+$Plot{φ_2e_A(x) | φ_q_exacta(x) @ x = 0 : 0.5}
+$Plot{φ_2e_B(x) | φ_q_exacta(x) @ x = 0.5 : 1}
+'Con 2 elementos, el error se reduce significativamente.
+'Al seguir refinando, la solucion converge a la exacta.
+
+#pgb
+"RESUMEN
+'
+'<b>Condicion 1 — Continuidad C<sub>0</sub>:</b>
+'- El campo '#deq φ' es continuo entre elementos
+'- Se logra con la propiedad de Kronecker: '#deq N_a(x_b) = δ_ab'
+'- La derivada PUEDE ser discontinua (salto en la interfaz)
+'- Necesaria para que la integral de la forma debil converja
+'
+'<b>Condicion 2 — Completitud polinomial:</b>
+'- Las funciones de forma reproducen exactamente campos lineales
+'- Las derivadas son constantes dentro del elemento
+'- Necesaria para representar estados de deformacion constante
+'- Sin ella, el MEF no converge al refinar la malla
+'
+'Ambas condiciones juntas garantizan la <b>convergencia</b> del MEF.
+'
+'Ref: Zienkiewicz & Taylor, Cap.6, p.151
+#end margen

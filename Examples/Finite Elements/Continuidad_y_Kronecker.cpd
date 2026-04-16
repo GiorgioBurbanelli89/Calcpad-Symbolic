@@ -1,0 +1,213 @@
+#margen 20
+"Continuidad y Propiedad de Kronecker
+'Explicacion desde cero para entender las funciones de forma en elementos finitos.
+
+"Que es continuidad?
+
+'Imagina que tienes una cuerda estirada entre dos postes.
+'La cuerda forma una curva suave, no tiene cortes ni saltos.
+'Eso es <b>continuidad</b>: la funcion no se rompe en ningun punto.
+
+'Ahora imagina que cortas la cuerda en el medio y pegas dos pedazos
+'de diferente inclinacion. Si los pedazos se tocan en el corte,
+'la cuerda sigue siendo <b>continua</b>, aunque tenga un quiebre.
+'Si hay un hueco, ya NO es continua.
+
+"Ejemplo visual
+'Funcion continua, dos rectas que se tocan:
+#hide
+n_c = 20
+x_c1 = vector(n_c + 1)
+y_c1 = vector(n_c + 1)
+x_c2 = vector(n_c + 1)
+y_c2 = vector(n_c + 1)
+#for i = 1 : n_c + 1
+    x_c1.(i) = (i - 1)*1/n_c
+    y_c1.(i) = 2*x_c1.(i)
+    x_c2.(i) = 1 + (i - 1)*1/n_c
+    y_c2.(i) = 2 - 0.5*(x_c2.(i) - 1)
+#loop
+#show
+$Chart{x_c1; y_c1; x_c2; y_c2 @ title=Funcion CONTINUA : xlabel=x : ylabel=f(x) : labels=Tramo A,Tramo B}
+'Los dos tramos se tocan en el punto medio. No hay salto. Esto es continuo.
+
+'Funcion discontinua, hay un salto:
+#hide
+x_d1 = vector(n_c + 1)
+y_d1 = vector(n_c + 1)
+x_d2 = vector(n_c + 1)
+y_d2 = vector(n_c + 1)
+#for i = 1 : n_c + 1
+    x_d1.(i) = (i - 1)*1/n_c
+    y_d1.(i) = 2*x_d1.(i)
+    x_d2.(i) = 1 + (i - 1)*1/n_c
+    y_d2.(i) = 1 - 0.5*(x_d2.(i) - 1)
+#loop
+#show
+$Chart{x_d1; y_d1; x_d2; y_d2 @ title=Funcion DISCONTINUA : xlabel=x : ylabel=f(x) : labels=Tramo A,Tramo B}
+'En esta grafica hay un salto. El tramo A llega a 2 pero el tramo B empieza en 1.
+'Eso es una <b>discontinuidad</b>.
+
+#pgb
+"Por que importa en ingenieria?
+
+'Si modelamos una viga y el desplazamiento tiene un salto entre dos elementos,
+'eso significaria que la viga se <b>rompio</b> en ese punto. Hay una grieta.
+'Por eso necesitamos que el campo sea <b>continuo</b> entre elementos.
+
+"Que es una funcion de forma?
+
+'En el metodo de elementos finitos, dividimos la estructura en pedazos
+'llamados <b>elementos</b>. Dentro de cada elemento, aproximamos el campo
+'desconocido usando funciones de forma:
+#deq φ(x) = N_1(x)*φ_1 + N_2(x)*φ_2 @@(interpolacion)
+'Donde '#deq φ_1' y '#deq φ_2' son los valores en los nodos,
+'y '#deq N_1(x)' y '#deq N_2(x)' son las funciones de forma.
+
+"Ejemplo: funciones de forma lineales
+'El caso mas simple: dos nodos, funciones lineales.
+'Elemento de x = 0 a x = 1.
+N_1(x) = 1 - x
+N_2(x) = x
+
+$Plot{N_1(x) | N_2(x) @ x = 0 : 1}
+'Roja: '#deq N_1' baja de 1 a 0. Verde: '#deq N_2' sube de 0 a 1.
+
+#pgb
+"Propiedad de Kronecker
+
+'Antes de la formula, veamos con numeros que hace cada funcion de forma.
+'Tenemos las funciones '#deq N_1(x) = 1 - x' y '#deq N_2(x) = x''
+'Con dos nodos:
+'- Nodo 1 esta en x = 0
+'- Nodo 2 esta en x = 1
+
+"Evaluemos '#deq N_1' en cada nodo
+'En el nodo 1, que es SU nodo:
+N_1(0)
+'Da 1. La funcion de forma "reconoce" su propio nodo.
+
+'En el nodo 2, que NO es su nodo:
+N_1(1)
+'Da 0. La funcion de forma "ignora" los demas nodos.
+
+"Evaluemos '#deq N_2' en cada nodo
+'En el nodo 1, que NO es su nodo:
+N_2(0)
+'Da 0.
+
+'En el nodo 2, que es SU nodo:
+N_2(1)
+'Da 1.
+
+"Patron
+'Cada funcion de forma da <b>1 en su propio nodo</b> y <b>0 en todos los demas</b>.
+'Esto tiene un nombre en matematicas: <b>propiedad de Kronecker</b>.
+'Se escribe asi:
+#deq N_a(x_b) = δ_ab @@(Kronecker)
+
+'El simbolo '#deq δ_ab' se llama <b>delta de Kronecker</b>.
+'Es simplemente un interruptor:
+#blk
+'Si a = b ; '#deq δ_ab = 1' ; 'Estoy en mi nodo
+'Si a diferente de b ; '#deq δ_ab = 0' ; 'Estoy en otro nodo
+#end blk
+
+"Por que es importante?
+'Porque cuando evaluamos la interpolacion en un nodo, recuperamos
+'exactamente el valor de ese nodo. Veamos:
+
+'Supongamos que los valores nodales son 7 y 3.
+φ_v1 = 7
+φ_v2 = 3
+φ_test(x) = N_1(x)*φ_v1 + N_2(x)*φ_v2
+
+'Evaluamos en el nodo 1, x = 0:
+φ_en_nodo1 = φ_test(0)
+'Da 7, que es exactamente el valor del nodo 1.
+
+'Evaluamos en el nodo 2, x = 1:
+φ_en_nodo2 = φ_test(1)
+'Da 3, que es exactamente el valor del nodo 2.
+
+'<b>Kronecker garantiza que la interpolacion pasa exactamente por los valores nodales.</b>
+
+"Grafica de la interpolacion
+#hide
+n_t = 20
+x_t = vector(n_t + 1)
+y_t = vector(n_t + 1)
+#for i = 1 : n_t + 1
+    x_t.(i) = (i - 1)*1/n_t
+    y_t.(i) = φ_test(x_t.(i))
+#loop
+x_nodos = [0|1]
+y_nodos = [φ_v1|φ_v2]
+#show
+$Chart{x_t; y_t; x_nodos; y_nodos @ title=Interpolacion pasa por los nodos : xlabel=x : ylabel=φ(x) : labels=Interpolacion,Nodos}
+
+#pgb
+"Como Kronecker garantiza la continuidad?
+
+'Consideremos dos elementos que comparten el nodo 2:
+'Elemento A: de x = 0 a x = 1, con nodos 1 y 2.
+'Elemento B: de x = 1 a x = 2, con nodos 2 y 3.
+
+'Funciones de forma de cada elemento:
+N_A1(x) = 1 - x
+N_A2(x) = x
+N_B2(x) = 2 - x
+N_B3(x) = x - 1
+
+'Valores en los nodos:
+φ_1 = 1
+φ_2 = 3
+φ_3 = 2
+
+'Campo en cada elemento:
+φ_A(x) = N_A1(x)*φ_1 + N_A2(x)*φ_2
+φ_B(x) = N_B2(x)*φ_2 + N_B3(x)*φ_3
+
+"En la interfaz, x = 1
+'Elemento A en x = 1:
+φ_A_1 = φ_A(1)
+'Elemento B en x = 1:
+φ_B_1 = φ_B(1)
+
+'<b>Ambos dan el mismo valor 3.</b>
+'Porque Kronecker hace que en x = 1:
+'- Elemento A: '#deq N_A1' = 0, '#deq N_A2' = 1. Solo queda '#deq φ_2''.
+'- Elemento B: '#deq N_B2' = 1, '#deq N_B3' = 0. Solo queda '#deq φ_2''.
+'<b>Ambos elementos dan el mismo valor. No hay salto. Continuidad.</b>
+
+"Grafica del campo continuo
+#hide
+n_p = 20
+x_pA = vector(n_p + 1)
+y_pA = vector(n_p + 1)
+x_pB = vector(n_p + 1)
+y_pB = vector(n_p + 1)
+#for i = 1 : n_p + 1
+    x_pA.(i) = (i - 1)*1/n_p
+    y_pA.(i) = φ_A(x_pA.(i))
+    x_pB.(i) = 1 + (i - 1)*1/n_p
+    y_pB.(i) = φ_B(x_pB.(i))
+#loop
+#show
+$Chart{x_pA; y_pA; x_pB; y_pB @ title=Campo continuo entre dos elementos : xlabel=x : ylabel=φ(x) : labels=Elemento A,Elemento B}
+'Los dos tramos se unen en x = 1 con valor '#deq φ_2 = 3''.
+'Esto es <b>continuidad</b>.
+
+#pgb
+"Resumen
+
+'<b>Continuidad</b> = que no haya saltos ni huecos en el campo.
+
+'<b>Kronecker</b> = cada funcion de forma vale 1 en su nodo, 0 en los demas.
+
+'<b>Kronecker garantiza continuidad</b> porque en la interfaz entre dos
+'elementos, ambos dan el mismo valor del nodo compartido.
+'No importa que las pendientes sean diferentes. El valor es el mismo.
+
+'Ref: Zienkiewicz & Taylor, Cap.6, p.151
+#end margen

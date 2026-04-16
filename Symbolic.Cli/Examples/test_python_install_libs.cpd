@@ -1,0 +1,181 @@
+"Instalar librerías de Python desde Calcpad Symbolic
+"=============================================
+'Calcpad Symbolic permite instalar cualquier librería de Python
+'directamente con el comando #pip. Solo necesitas tener Python
+'instalado en tu sistema. La primera vez descarga el paquete,
+'las siguientes veces es instantáneo.
+
+"1. Instalar pint — Unidades físicas
+'pint convierte entre unidades automáticamente (kN, MPa, psi, etc.)
+#pip install pint
+
+#python
+import pint
+u = pint.UnitRegistry()
+
+# Definir cargas y dimensiones con unidades
+P = 50 * u.kN
+b = 300 * u.mm
+h = 500 * u.mm
+fc = 28 * u.MPa
+
+# Área y esfuerzo
+A = b * h
+sigma = P / A
+print(f"P = {P}")
+print(f"A = {A.to(u.cm**2):.1f}")
+print(f"sigma = {sigma.to(u.MPa):.2f}")
+
+# Convertir a sistema imperial
+print(f"sigma = {sigma.to(u.psi):.1f}")
+print(f"b = {b.to(u.inch):.2f}")
+
+# Exportar a Calcpad (sin unidades)
+print(f"CALCPAD:sigma_MPa={sigma.to(u.MPa).magnitude:.10e}")
+#end python
+
+'Esfuerzo axial:
+sigma_MPa
+
+"2. Instalar tabulate — Tablas profesionales
+'tabulate genera tablas formateadas en múltiples estilos
+#pip install tabulate
+
+#python
+from tabulate import tabulate
+
+# Datos de sección de viga
+w = 15  # kN/m
+L = 6   # m
+M_max = w * L**2 / 8
+V_max = w * L / 2
+delta = 5 * w * L**4 / (384 * 200000 * 0.0001)
+
+data = [
+    ["Carga w", f"{w:.1f}", "kN/m"],
+    ["Luz L", f"{L:.1f}", "m"],
+    ["M_max = wL²/8", f"{M_max:.2f}", "kN·m"],
+    ["V_max = wL/2", f"{V_max:.2f}", "kN"],
+    ["δ_max", f"{delta:.4f}", "m"],
+]
+print(tabulate(data, headers=["Parámetro", "Valor", "Unidad"], tablefmt="grid"))
+
+print(f"CALCPAD:M_max={M_max:.10e}")
+print(f"CALCPAD:V_max={V_max:.10e}")
+#end python
+
+'Momento máximo:
+M_max
+'Corte máximo:
+V_max
+
+"3. Instalar sectionproperties — Propiedades de secciones
+'Calcula A, Ix, Iy, Sx, Zx de cualquier sección geométrica
+#pip install sectionproperties
+
+#python
+from sectionproperties.pre.geometry import Geometry
+from sectionproperties.pre.library import i_section
+from sectionproperties.analysis import Section
+
+# Crear perfil I (IPE 300)
+d = 300    # altura total mm
+b = 150    # ancho ala mm
+tf = 10.7  # espesor ala mm
+tw = 7.1   # espesor alma mm
+r = 15     # radio mm
+
+geom = i_section(d=d, b=b, t_f=tf, t_w=tw, r=r, n_r=16)
+geom.create_mesh(mesh_sizes=[5])
+sec = Section(geometry=geom)
+sec.calculate_geometric_properties()
+sec.calculate_warping_properties()
+
+A = sec.get_area()
+Ixx = sec.get_ic()[0]
+Iyy = sec.get_ic()[1]
+
+print(f"IPE 300:")
+print(f"  A   = {A:.0f} mm2")
+print(f"  Ixx = {Ixx:.0f} mm4")
+print(f"  Iyy = {Iyy:.0f} mm4")
+print(f"CALCPAD:A_ipe={A:.10e}")
+print(f"CALCPAD:Ixx_ipe={Ixx:.10e}")
+#end python
+
+'Propiedades IPE 300:
+A_ipe
+Ixx_ipe
+
+"4. Instalar shapely — Geometría computacional
+'Útil para áreas tributarias, intersecciones, buffers
+#pip install shapely
+
+#python
+from shapely.geometry import Polygon, Point
+
+# Definir losa irregular (coordenadas en metros)
+losa = Polygon([(0,0), (8,0), (8,5), (3,5), (0,3)])
+col = Point(4, 2.5)
+
+print(f"Losa irregular:")
+print(f"  Area = {losa.area:.2f} m2")
+print(f"  Perimetro = {losa.length:.2f} m")
+print(f"  Centroide = ({losa.centroid.x:.2f}, {losa.centroid.y:.2f})")
+
+# Area tributaria con Voronoi (buffer circular)
+trib = col.buffer(2.5).intersection(losa)
+print(f"  Area tributaria (r=2.5m) = {trib.area:.2f} m2")
+
+print(f"CALCPAD:A_losa={losa.area:.10e}")
+#end python
+
+'Área de losa:
+A_losa
+
+"5. Instalar prettytable — Tablas en texto
+'Genera tablas formateadas para el output
+#pip install prettytable
+
+#python
+from prettytable import PrettyTable
+
+t = PrettyTable()
+t.field_names = ["Piso", "V (kN)", "M (kN·m)", "Drift (%)"]
+t.add_row(["1", "245.3", "612.5", "0.32"])
+t.add_row(["2", "198.7", "489.2", "0.45"])
+t.add_row(["3", "142.1", "301.8", "0.51"])
+t.add_row(["4", "85.6", "156.3", "0.38"])
+t.align = "r"
+t.align["Piso"] = "c"
+print(t)
+#end python
+
+"6. Instalar CoolProp — Propiedades termodinámicas
+'Para ingeniería mecánica: vapor, gases, refrigerantes
+#pip install CoolProp
+
+#python
+from CoolProp.CoolProp import PropsSI
+
+# Propiedades del agua a 100°C y 1 atm
+T = 373.15  # K
+P = 101325  # Pa
+
+rho = PropsSI('D', 'T', T, 'P', P, 'Water')
+cp = PropsSI('C', 'T', T, 'P', P, 'Water')
+mu = PropsSI('V', 'T', T, 'P', P, 'Water')
+
+print(f"Agua a 100°C, 1 atm:")
+print(f"  Densidad    = {rho:.2f} kg/m3")
+print(f"  Cp          = {cp:.1f} J/(kg·K)")
+print(f"  Viscosidad  = {mu:.6e} Pa·s")
+
+# Punto de ebullición a 1 atm
+T_sat = PropsSI('T', 'P', P, 'Q', 0, 'Water') - 273.15
+print(f"  T_ebullición = {T_sat:.2f} °C")
+print(f"CALCPAD:rho_agua={rho:.10e}")
+#end python
+
+'Densidad del agua a 100°C:
+rho_agua

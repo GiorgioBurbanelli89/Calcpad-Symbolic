@@ -1,0 +1,238 @@
+"Que es la CURVATURA? κ = 1/R
+"Quien lo invento, bajo que hipotesis, como lo formulo
+'<hr/>
+
+"HISTORIA: Quien invento la curvatura?
+
+'<p>La formula κ = 1/R no la invento UNA sola persona.</p>
+'<p>Fue un proceso de 80 anos con 3 protagonistas:</p>
+
+'<h4>1673 — Christiaan Huygens (holandes, 44 anos)</h4>
+'<p>Huygens queria hacer un RELOJ DE PENDULO perfecto.</p>
+'<p>El problema: un pendulo circular NO marca el tiempo exacto.</p>
+'<p>Para resolverlo invento el CIRCULO OSCULADOR:</p>
+'<p>"En cada punto de una curva, hay un circulo unico que la BESA."</p>
+
+'<h4>1666 — Isaac Newton (ingles, 23 anos)</h4>
+'<p>Newton calculo la formula del radio de curvatura:</p>
+#deq R = (1 + (dy/dx)^2)^(3/2)/(d^2y/dx^2)
+'<p>Pero no la publico hasta 1736 (70 anos despues!).</p>
+
+'<h4>1684 — Gottfried Leibniz (aleman, 38 anos)</h4>
+'<p>Publico la misma formula con notacion dy/dx. Definio κ = 1/R.</p>
+
+'<hr/>
+"PARTE 1: Maneja un carro por una carretera
+
+'<p>Imagina que manejas un carro. El VOLANTE controla la curvatura.</p>
+
+'<h4>Caso 1: Volante recto → vas derecho</h4>
+#svg 400 70
+.line 30 35 370 35 black 2
+.rect 180 20 40 30 yellow 0.8 black 1
+.text 200 40 carro 8 black middle
+.text 200 62 Curvatura_=_CERO 10 gray middle
+#end svg
+
+'<h4>Caso 2: Volante girado poco → curva suave</h4>
+#svg 400 100
+.line 30 70 100 45 green 2
+.line 100 45 200 25 green 2
+.line 200 25 300 45 green 2
+.line 300 45 370 70 green 2
+.rect 180 10 40 30 yellow 0.8 black 1
+.text 200 30 carro 8 black middle
+.text 200 90 Curvatura_PEQUENA 10 green middle
+#end svg
+
+'<h4>Caso 3: Volante girado mucho → curva cerrada</h4>
+#svg 300 100
+.line 40 70 80 40 red 2
+.line 80 40 130 22 red 2
+.line 130 22 175 22 red 2
+.line 175 22 220 40 red 2
+.line 220 40 260 70 red 2
+.rect 128 7 40 30 yellow 0.8 black 1
+.text 148 27 carro 8 black middle
+.text 150 90 Curvatura_GRANDE 10 red middle
+#end svg
+
+'<p>Mas giro de volante = mas curvatura = curva mas cerrada.</p>
+
+'<hr/>
+"PARTE 2: El circulo y el radio
+
+'<p>Un circulo tiene la MISMA curvatura en todos lados.</p>
+'<p>Circulo grande → poco giro → curvatura pequena.</p>
+'<p>Circulo pequeno → mucho giro → curvatura grande.</p>
+
+#svg 400 170
+.circle 100 85 65 none 0 green 1.5
+.circle 100 85 3 green 1
+.line 100 85 165 85 green 1
+.text 133 80 R=65 9 green middle
+.text 100 160 Poco_giro 10 green middle
+.circle 300 85 30 none 0 red 1.5
+.circle 300 85 3 red 1
+.line 300 85 330 85 red 1
+.text 315 80 R=30 8 red middle
+.text 300 160 Mucho_giro 10 red middle
+#end svg
+
+'<p>R grande → κ pequena. R pequeno → κ grande. Son OPUESTOS:</p>
+#deq κ = 1/R
+
+'<h4>Verificacion numerica:</h4>
+R_grande = 65
+κ_grande = 1/R_grande
+R_pequeno = 30
+κ_pequeno = 1/R_pequeno
+
+'<hr/>
+"PARTE 3: Que es un radian?
+
+'<p>Para entender POR QUE κ = 1/R, necesitas saber que es un radian.</p>
+'<p>Es una forma de medir angulos: cuando el ARCO mide lo mismo que el RADIO.</p>
+
+#svg 350 230
+.radian 140 120 90
+.text 175 215 Arco_rojo_=_R_→_angulo_=_1_radian 10 black middle
+#end svg
+
+'<p>Formula del arco:</p>
+#deq arco = R*θ
+
+'<p>Si R = 100m y caminas 100m por el circulo → giraste 1 radian.</p>
+'<p>Si R = 100m y caminas 200m → giraste 2 radianes.</p>
+
+R_ej = 100
+arco_1 = 100
+θ_1 = arco_1/R_ej
+arco_2 = 200
+θ_2 = arco_2/R_ej
+
+'<hr/>
+"PARTE 4: De donde sale κ = 1/R
+
+'<p>La curvatura se DEFINE como cuanto giras por metro que caminas:</p>
+#deq κ = Δθ/Δs
+
+'<p>Usamos la formula del arco: Δs = R*Δθ</p>
+'<p>Despejamos: Δθ = Δs/R</p>
+'<p>Sustituimos:</p>
+#deq κ = Δθ/Δs = (Δs/R)/Δs = 1/R
+
+'<p>Los Δs se cancelan y queda κ = 1/R.</p>
+
+#svg 400 100
+.fillrect 10 10 380 80 #fffff0 1
+.rect 10 10 380 80 none 1 gray 0.5
+.text 200 35 curvatura_=_giro/distancia 11 blue middle
+.text 200 55 arco_=_radio_x_angulo 11 green middle
+.text 200 75 combinar_→_κ_=_1/R 12 red middle bold
+#end svg
+
+'<hr/>
+"PARTE 5: Ejemplo — rotonda vs autopista
+
+R_rot = 15
+κ_rot = 1/R_rot
+R_auto = 500
+κ_auto = 1/R_auto
+ratio_curv = κ_rot/κ_auto
+
+'<p>La rotonda tiene 33 veces mas curvatura que la autopista.</p>
+
+'<hr/>
+"PARTE 6: La viga como curva
+
+'<p>Cuando una viga se dobla, su forma es una curva con curvatura κ = 1/R.</p>
+
+"(a) Viga en reposo — fibras iguales: mp = nq
+#svg 420 180
+.fillrect 20 30 350 100 #d4e6f1 0.5
+.rect 20 30 350 100 none 1 #2c3e50 1.5
+.dashed 20 80 370 80 #555555 1 5
+.text 195 85 y 10 #555555 middle
+.line 80 30 80 130 #555555 0.5
+.line 310 30 310 130 #555555 0.5
+.text 80 25 m 10 black middle
+.text 310 25 p 10 black middle
+.text 80 142 n 10 black middle
+.text 310 142 q 10 black middle
+.text 25 25 A 11 black middle bold
+.text 360 25 B 11 black middle bold
+.hdim 80 165 310 165 0 dx
+.curvedarrow 400 80 12 90 270 #2980b9
+.text 400 65 M 12 #2980b9 middle bold
+.curvedarrow 15 80 12 270 90 #2980b9
+.text 10 65 M 12 #2980b9 middle bold
+#end svg
+
+'<p>mp = nq: todas las fibras tienen la misma longitud.</p>
+
+"(b) Viga en flexion — fibras cambian: mp < nq
+#svg 420 210
+.line 40 50 100 72 #2c3e50 1.5
+.line 100 72 210 90 #2c3e50 1.5
+.line 210 90 310 72 #2c3e50 1.5
+.line 310 72 380 50 #2c3e50 1.5
+.line 40 95 100 115 #2c3e50 1.5
+.line 100 115 210 130 #2c3e50 1.5
+.line 210 130 310 115 #2c3e50 1.5
+.line 310 115 380 95 #2c3e50 1.5
+.line 40 72 100 93 gray 0.8
+.line 100 93 210 110 gray 0.8
+.line 210 110 310 93 gray 0.8
+.line 310 93 380 72 gray 0.8
+.line 40 50 40 95 #2c3e50 1.5
+.line 380 50 380 95 #2c3e50 1.5
+.text 30 45 A 10 black middle bold
+.text 390 45 B 10 black middle bold
+.text 45 60 m 9 black start
+.text 370 60 p 9 black end
+.text 30 100 n 9 black middle
+.text 390 100 q 9 black middle
+.darrow 155 55 155 125 green 1.5
+.text 160 90 y 11 green start bold
+.text 130 50 Compresion 8 #cc0000 middle
+.text 130 130 Tension 8 #0000cc middle
+.curvedarrow 405 72 10 90 270 #2980b9
+.text 416 70 M 10 #2980b9 start bold
+.curvedarrow 20 72 10 270 90 #2980b9
+.text 8 70 M 10 #2980b9 end bold
+.text 210 165 mp_<_nq_(arriba_se_acorta) 10 gray middle
+.text 210 180 Centro_O_esta_abajo 9 gray middle
+.dashed 210 135 210 200 gray 0.5 4
+.text 215 200 O 9 gray start
+#end svg
+
+'<p>Arriba (m→p): fibras se ACORTAN (compresion)</p>
+'<p>Abajo (n→q): fibras se ALARGAN (tension)</p>
+'<p>De aqui sale la deformacion:</p>
+
+#deq ε = -y/ρ = -y*κ
+
+'<p>Con Hooke (σ = E*ε) e integrando en la seccion:</p>
+#deq M = EI*κ
+
+'<p>Y como κ ≈ d²v/dx² para deflexiones pequenas:</p>
+#deq M = EI*d^2v/dx^2
+
+'<hr/>
+"PARTE 7: Ejemplo numerico
+
+E_n = 200000
+b_n = 0.3
+h_n = 0.5
+I_n = b_n*h_n^3/12
+EI_n = E_n*I_n
+q_n = 10
+L_n = 6
+M_max_n = q_n*L_n^2/8
+kappa_n = M_max_n/EI_n
+R_n = 1/kappa_n
+v_max_n = 5*q_n*L_n^4/(384*EI_n)
+
+'<p>R = 13,889m (circulo de 14 km). Deflexion = 2.7cm en 6m.</p>
+'<p>Por eso la simplificacion κ ≈ d²v/dx² funciona tan bien.</p>
