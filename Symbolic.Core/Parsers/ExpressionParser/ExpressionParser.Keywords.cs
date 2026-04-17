@@ -1032,6 +1032,7 @@ namespace Calcpad.Core
                 try
                 {
                     _parser.Parse(part);
+                    _parser.Calculate();
                     var html = _parser.ToHtml();
                     // If html is just a variable name with no '=', append the result
                     if (string.IsNullOrWhiteSpace(html) || (!html.Contains('=') && !html.Contains("&gt;")))

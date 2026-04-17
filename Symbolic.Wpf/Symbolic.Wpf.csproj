@@ -63,6 +63,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--Excel Viewer (Univer)-->
+    <None Update="excel-viewer\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <!--Ivariant (en)-->
     <None Update="doc\help.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
