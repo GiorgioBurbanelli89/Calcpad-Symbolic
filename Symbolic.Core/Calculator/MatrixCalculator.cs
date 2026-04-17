@@ -622,6 +622,7 @@ namespace Calcpad.Core
                 HpDiagonalMatrix hp_dm => hp_dm.EigenValues(n),
                 SymmetricMatrix sm => sm.EigenValues(n),
                 DiagonalMatrix dm => dm.EigenValues(n),
+                Matrix mg => TrySymEigenValues(mg, n),
                 _ => throw Exceptions.MatrixMustBeSymmetric()
             };
         }
@@ -635,6 +636,7 @@ namespace Calcpad.Core
                 HpDiagonalMatrix hp_dm => hp_dm.EigenVectors(n),
                 SymmetricMatrix sm => sm.EigenVectors(n),
                 DiagonalMatrix dm => dm.EigenVectors(n),
+                Matrix mg => TrySymEigenVectors(mg, n),
                 _ => throw Exceptions.MatrixMustBeSymmetric()
             };
         }
@@ -648,8 +650,51 @@ namespace Calcpad.Core
                 HpDiagonalMatrix hp_dm => hp_dm.Eigen(n),
                 SymmetricMatrix sm => sm.Eigen(n),
                 DiagonalMatrix dm => dm.Eigen(n),
+                Matrix mg => TrySymEigen(mg, n),
                 _ => throw Exceptions.MatrixMustBeSymmetric()
             };
+        }
+
+        /// <summary>Convert generic Matrix to SymmetricMatrix with tolerance, then compute eigenvalues.</summary>
+        private static Vector TrySymEigenValues(Matrix m, int n)
+        {
+            return MakeSymmetricCopy(m).EigenValues(n);
+        }
+
+        private static Matrix TrySymEigenVectors(Matrix m, int n)
+        {
+            return MakeSymmetricCopy(m).EigenVectors(n);
+        }
+
+        private static Matrix TrySymEigen(Matrix m, int n)
+        {
+            return MakeSymmetricCopy(m).Eigen(n);
+        }
+
+        /// <summary>
+        /// Build a SymmetricMatrix copy from a numerically symmetric generic Matrix.
+        /// Accepts small rounding asymmetries (tolerance 1e-8).
+        /// </summary>
+        private static SymmetricMatrix MakeSymmetricCopy(Matrix m)
+        {
+            int sz = m.RowCount;
+            if (sz != m.ColCount)
+                throw Exceptions.MatrixMustBeSymmetric();
+
+            var sym = new SymmetricMatrix(sz);
+            for (int i = 0; i < sz; i++)
+            {
+                for (int j = i; j < sz; j++)
+                {
+                    double a = m[i, j].D;
+                    double b = m[j, i].D;
+                    double scale = Math.Max(Math.Abs(a), Math.Abs(b)) + 1.0;
+                    if (Math.Abs(a - b) > 1e-8 * scale)
+                        throw Exceptions.MatrixMustBeSymmetric();
+                    sym[i, j] = new RealValue((a + b) / 2);
+                }
+            }
+            return sym;
         }
 
         internal static Matrix LUDecomposition(in IValue M, HpVector indexes)
@@ -670,8 +715,35 @@ namespace Calcpad.Core
                 HpDiagonalMatrix hp_dm => hp_dm.CholeskyDecomposition(),
                 SymmetricMatrix sm => sm.CholeskyDecomposition(),
                 DiagonalMatrix dm => dm.CholeskyDecomposition(),
-                _ => throw Exceptions.MatrixMustBeSymmetric()
+                _ => TryCholeskyFromGeneric(matrix)
             };
+        }
+
+        /// <summary>
+        /// Convert a generic Matrix to SymmetricMatrix if numerically symmetric,
+        /// then compute its Cholesky. Tolerant to small rounding errors.
+        /// </summary>
+        private static Matrix TryCholeskyFromGeneric(Matrix m)
+        {
+            int n = m.RowCount;
+            if (n != m.ColCount)
+                throw Exceptions.MatrixMustBeSymmetric();
+
+            var sym = new SymmetricMatrix(n);
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = i; j < n; j++)
+                {
+                    double a = m[i, j].D;
+                    double b = m[j, i].D;
+                    double scale = Math.Max(Math.Abs(a), Math.Abs(b)) + 1.0;
+                    if (Math.Abs(a - b) > 1e-8 * scale)
+                        throw Exceptions.MatrixMustBeSymmetric();
+                    // Use the average to minimize numerical asymmetry
+                    sym[i, j] = new RealValue((a + b) / 2);
+                }
+            }
+            return sym.CholeskyDecomposition();
         }
         private static Matrix Create(in IValue m, in IValue n) => new(IValue.AsInt(m), IValue.AsInt(n));
         private static DiagonalMatrix Diagonal(in IValue n, in IValue value) => new(IValue.AsInt(n), IValue.AsReal(value));

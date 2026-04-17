@@ -1025,6 +1025,24 @@ namespace Calcpad.Core
                     continue;
                 }
 
+                // Symbolic operations (integrate, diff, simplify, solve, …):
+                // route through SymbolicProcessor just like #sym does, so cells
+                // can mix symbolic work with plain numeric calculations.
+                if (SymbolicProcessor.IsSymbolicOp(part))
+                {
+                    var symRes = SymbolicProcessor.Process(part);
+                    if (symRes.IsError)
+                    {
+                        columns.Add($"<span class=\"err\">{System.Web.HttpUtility.HtmlEncode(symRes.Error)}</span>");
+                    }
+                    else
+                    {
+                        var body = RenderSymResultBody(symRes);
+                        columns.Add($"<span class=\"eq\">{body}</span>");
+                    }
+                    continue;
+                }
+
                 // Parse as real calculation (variables get assigned)
                 _isVal = savedIsVal;
                 _parser.IsCalculation = true;
@@ -1032,6 +1050,16 @@ namespace Calcpad.Core
                 try
                 {
                     _parser.Parse(part);
+                    // Execute: scalar/vector/matrix assignments persist in the parser's
+                    // variable table so subsequent code can reference them.
+                    try
+                    {
+                        _parser.Calculate(false);
+                    }
+                    catch
+                    {
+                        // Evaluation may fail for undefined vars on RHS; still render.
+                    }
                     var html = _parser.ToHtml();
                     // If html is just a variable name with no '=', append the result
                     if (string.IsNullOrWhiteSpace(html) || (!html.Contains('=') && !html.Contains("&gt;")))
@@ -2072,7 +2100,20 @@ namespace Calcpad.Core
                 return;
             }
 
+            var sb2 = RenderSymResultBody(result);
+
+            if (sb2.Length > 0)
+                _sb.Append($"<p{HtmlId}><span class=\"eq\">{sb2}</span></p>\n");
+        }
+
+        // Reusable rendering of a SymResult's Parts into the inner HTML that
+        // would go inside <span class="eq">…</span>. Shared by ParseKeywordSym
+        // and ParseKeywordColumns so symbolic operations render identically
+        // whether they're line-level (#sym …) or cell-level (#blk cells).
+        private System.Text.StringBuilder RenderSymResultBody(SymbolicProcessor.SymResult result)
+        {
             var savedIsVal = _isVal;
+            var savedIsCalc = _parser.IsCalculation;
             _isVal = -1; // #noc mode
             _parser.IsCalculation = false;
             var hw = new HtmlWriter(Settings.Math, _parser.Phasor);
@@ -2204,10 +2245,8 @@ namespace Calcpad.Core
             }
 
             _isVal = savedIsVal;
-            _parser.IsCalculation = _isVal != -1;
-
-            if (sb2.Length > 0)
-                _sb.Append($"<p{HtmlId}><span class=\"eq\">{sb2}</span></p>\n");
+            _parser.IsCalculation = savedIsCalc;
+            return sb2;
         }
 
         // Render a Calcpad expression to HTML via MathParser
@@ -2222,10 +2261,14 @@ namespace Calcpad.Core
             expr = ConvertDigitSuffixToSubscript(expr);
 
             // Pre-define variable names found in the expression so MathParser
-            // doesn't interpret them as units (e.g. "u" as atomic mass unit)
+            // doesn't interpret them as units (e.g. "u" as atomic mass unit).
+            // Only stub variables that aren't already bound — otherwise we
+            // would clobber real numeric values assigned earlier (e.g. L = 60
+            // defined outside a #blk cell and referenced inside a #sym op).
             var varNames = ExtractVariableNames(expr);
             foreach (var vn in varNames)
             {
+                if (_parser.HasVariable(vn)) continue;
                 try { _parser.SetVariable(vn, 0); } catch { }
             }
 
@@ -2917,9 +2960,13 @@ namespace Calcpad.Core
         /// </summary>
         private void PreDefineVariables(string expr)
         {
+            // Only stub variables that aren't already bound. Otherwise we'd
+            // wipe out real values assigned elsewhere — e.g. a preceding
+            // L = 60 would be reset to 0 the first time a #deq referenced L.
             var names = ExtractVariableNames(expr);
             foreach (var vn in names)
             {
+                if (_parser.HasVariable(vn)) continue;
                 try { _parser.SetVariable(vn, 0); } catch { }
             }
         }

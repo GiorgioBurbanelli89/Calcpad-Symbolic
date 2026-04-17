@@ -1,0 +1,192 @@
+#margen 20
+"Ejemplo 13.1 Mario Paz — RESULTADOS
+
+'Portico espacial 3D con 4 elementos.
+'Nudo central libre (6 DOF), 4 apoyos empotrados.
+'Se calculan: (a) Kf y Mf reducidas a 6x6, (b) frecuencias
+'naturales y modos, (c) respuesta dinamica.
+
+"Datos
+
+E = 30000000
+G = 12000000
+
+'Miembros 1 y 3:
+A_1 = 50
+I_1 = 200
+J_1 = 40
+m_1 = 0.2
+
+'Miembros 2 y 4:
+A_2 = 28
+I_2 = 64
+J_2 = 12.8
+m_2 = 0.1
+
+L = 200
+
+#pgb
+"(a) Matriz de rigidez reducida Kf (6x6)
+
+'Por simetria del portico (4 brazos ortogonales), ensamblando las
+'contribuciones axiales y transversales al nudo 1:
+
+"Componentes translacionales
+
+'K_xx: axial elem 3 + transversal elem 1,2,4
+K_xx = E*A_1/L + 12*E*(I_1 + 2*I_2)/L^3
+
+'K_yy: axial elem 2+4 + transversal elem 1,3
+K_yy = 2*E*A_2/L + 12*E*2*I_1/L^3
+
+'K_zz: axial elem 1 + transversal elem 2,3,4
+K_zz = E*A_1/L + 12*E*(I_1 + 2*I_2)/L^3
+
+"Componentes rotacionales
+
+'K_θx: torsion elem 3 (X-beam) + flexion en x elem 1,2,4
+K_tx = G*J_1/L + 4*E*(I_1 + 2*I_2)/L
+
+'K_θy: torsion elem 2+4 + flexion en y elem 1,3
+K_ty = 2*G*J_2/L + 4*E*2*I_1/L
+
+'K_θz: torsion elem 1 + flexion en z elem 2,3,4
+K_tz = G*J_1/L + 4*E*(I_1 + 2*I_2)/L
+
+#pgb
+"Matriz Kf reducida (6x6, aproximada diagonal)
+
+'Despreciando acoplamientos rotacion-translacion (validos por
+'simetria del problema):
+
+Kf = [K_xx; 0; 0; 0; 0; 0 | 0; K_yy; 0; 0; 0; 0 | 0; 0; K_zz; 0; 0; 0 | 0; 0; 0; K_tx; 0; 0 | 0; 0; 0; 0; K_ty; 0 | 0; 0; 0; 0; 0; K_tz]
+
+#pgb
+"Matriz Mf reducida (masa consistente)
+
+'Masa translacional en nudo 1 (por Paz ecuacion 13.24):
+'   Traslacion axial: m_bar*L/3
+'   Traslacion transversal: m_bar*L*13/35
+
+'M_xx: axial elem 3 + transversal elem 1,2,4
+M_xx = m_1*L/3 + m_1*L*13/35 + 2*(m_2*L*13/35)
+
+'M_yy: axial elem 2+4 + transversal elem 1,3
+M_yy = 2*(m_2*L/3) + 2*(m_1*L*13/35)
+
+'M_zz: axial elem 1 + transversal elem 2,3,4
+M_zz = m_1*L/3 + 2*(m_2*L*13/35) + m_1*L*13/35
+
+'Rotacional (momento de inercia de masa, aproximado):
+M_tx = m_1*L^3/105 + 2*(m_2*L^3/105)
+M_ty = 2*(m_2*L^3/105) + m_1*L^3/105
+M_tz = m_1*L^3/105 + 2*(m_2*L^3/105)
+
+Mf = [M_xx; 0; 0; 0; 0; 0 | 0; M_yy; 0; 0; 0; 0 | 0; 0; M_zz; 0; 0; 0 | 0; 0; 0; M_tx; 0; 0 | 0; 0; 0; 0; M_ty; 0 | 0; 0; 0; 0; 0; M_tz]
+
+#pgb
+"(b) Frecuencias naturales y modos (solucion del eigenproblema)
+
+'Para Kf y Mf diagonales, el eigenproblema K·phi = ω²·M·phi
+'se desacopla. Cada DOF tiene su propia frecuencia natural:
+'   ω_i² = K_ii / M_ii
+
+"Frecuencias angulares (rad/s)
+
+w1 = sqrt(K_xx/M_xx)
+w2 = sqrt(K_yy/M_yy)
+w3 = sqrt(K_zz/M_zz)
+w4 = sqrt(K_tx/M_tx)
+w5 = sqrt(K_ty/M_ty)
+w6 = sqrt(K_tz/M_tz)
+
+"Frecuencias (Hz)
+
+f1 = w1/(2*π)
+f2 = w2/(2*π)
+f3 = w3/(2*π)
+f4 = w4/(2*π)
+f5 = w5/(2*π)
+f6 = w6/(2*π)
+
+"Periodos naturales (s)
+
+T1 = 2*π/w1
+T2 = 2*π/w2
+T3 = 2*π/w3
+T4 = 2*π/w4
+T5 = 2*π/w5
+T6 = 2*π/w6
+
+#pgb
+"Modos de vibracion
+
+'Kf diagonal → modos son los vectores unitarios ei:
+'   Modo 1: desplazamiento puro en x (DOF 1)
+'   Modo 2: desplazamiento puro en y (DOF 2)
+'   Modo 3: desplazamiento puro en z (DOF 3)
+'   Modo 4: rotacion pura alrededor de x (DOF 4)
+'   Modo 5: rotacion pura alrededor de y (DOF 5)
+'   Modo 6: rotacion pura alrededor de z (DOF 6)
+
+Phi_1 = [1; 0; 0; 0; 0; 0]
+Phi_2 = [0; 1; 0; 0; 0; 0]
+Phi_3 = [0; 0; 1; 0; 0; 0]
+Phi_4 = [0; 0; 0; 1; 0; 0]
+Phi_5 = [0; 0; 0; 0; 1; 0]
+Phi_6 = [0; 0; 0; 0; 0; 1]
+
+#pgb
+"(c) Respuesta a carga impulsiva
+
+'Fuerza aplicada en nudo 1 direccion z: F(3) = 5000 lb
+'Duracion: 0.1 s (suddenly applied)
+
+F_z = 5000
+t_pulso = 0.1
+
+'El modo dominante es el modo 3 (traslacion en z).
+'Para un pulso rectangular de amplitud F, duracion t_d, sobre un
+'sistema con T_n:
+
+'Factor de amplificacion dinamica (carga sudden applied):
+
+R1 = 2*sin(π*t_pulso/T3)
+
+'Desplazamiento estatico equivalente:
+u_static = F_z/K_zz
+
+'Desplazamiento dinamico maximo:
+u_3_max = R1*u_static
+
+#pgb
+"Valores esperados segun Paz (libro)
+
+'Maximos desplazamientos en nudo 1:
+'   u_1_max = 8.814e-5 in      (direccion x)
+'   u_2_max = 2.6552e-7 in     (direccion y)
+'   u_3_max = 0.9827 radian    (rotacion)
+
+u_1_max_libro = 0.00008814
+u_2_max_libro = 0.00000026552
+u_3_max_libro = 0.9827
+
+#pgb
+"Resumen
+
+#blk
+'Cantidad ; 'Simbolo ; 'Valor calculado (aprox)
+'Rigidez axial z ; 'K_zz ; 'K_zz
+'Masa translacional z ; 'M_zz ; 'M_zz
+'Frecuencia angular 3 ; 'ω_3 ; 'w3 rad/s
+'Frecuencia 3 ; 'f_3 ; 'f3 Hz
+'Periodo 3 ; 'T_3 ; 'T3 s
+'Desp. estatico z ; 'u_st ; 'u_static in
+'Desp. dinamico max z ; 'u_dyn ; 'u_3_max in
+#end blk
+
+'Estos valores son aproximaciones con Kf y Mf diagonales.
+'Los valores exactos de Paz requieren resolver el eigenproblema
+'acoplado 6x6 con las matrices completas (incluyendo terminos
+'de acoplamiento translacion-rotacion de los elementos viga).
+#end margen

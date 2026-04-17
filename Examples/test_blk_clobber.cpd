@@ -1,0 +1,25 @@
+"Test — variables persisten despues de definir funciones en #blk?
+
+#blk
+E = 30000000 ; 'Modulo
+L = 60 ; 'Longitud
+EA = E*10 ; 'Rigidez axial
+#end blk
+
+"Antes de funciones: EA =
+EA = ?
+
+"Ahora definamos una funcion en otro #blk:
+#blk
+N_1(x) = 1 - x/L ; 'N1
+N_2(x) = x/L ; 'N2
+#end blk
+
+"Despues de funciones: EA =
+EA = ?
+
+"L =
+L = ?
+
+"Calculo final:
+k = (EA/L)

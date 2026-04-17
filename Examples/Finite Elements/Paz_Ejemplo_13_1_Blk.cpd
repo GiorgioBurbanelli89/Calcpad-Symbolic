@@ -1,0 +1,176 @@
+#margen 20
+"Ejemplo 13.1 Paz — con #blk columnas de expresiones
+
+"Datos — material
+
+E = 30000000
+G = 12000000
+
+#pgb
+"Propiedades por tipo (asignaciones + visualización en #blk)
+
+A_1 = 50
+I_1 = 200
+J_1 = 40
+m_1 = 0.2
+I0_1 = 205
+
+A_2 = 28
+I_2 = 64
+J_2 = 12.8
+m_2 = 0.1
+I0_2 = 68
+
+L = 200
+
+#blk
+'Propiedad ; 'Miembro tipo 1 ; 'Miembro tipo 2
+'Area ; A_1 ; A_2
+'Inercia I ; I_1 ; I_2
+'Torsion J ; J_1 ; J_2
+'Masa m ; m_1 ; m_2
+'Polar I0 ; I0_1 ; I0_2
+#end blk
+
+#pgb
+"Rigideces axiales EA/L por elemento
+
+k_1 = E*A_1/L
+k_2 = E*A_2/L
+k_3 = E*A_1/L
+k_4 = E*A_2/L
+
+#blk
+'Elemento ; 'Tipo ; 'k = E*A/L
+'1 ; 'tipo 1 ; k_1
+'2 ; 'tipo 2 ; k_2
+'3 ; 'tipo 1 ; k_3
+'4 ; 'tipo 2 ; k_4
+#end blk
+
+#pgb
+"Matriz Kf diagonal reducida (6×6)
+
+K_xx = E*A_1/L + 12*E*(I_1 + 2*I_2)/L^3
+K_yy = 2*E*A_2/L + 24*E*I_1/L^3
+K_zz = E*A_1/L + 12*E*(I_1 + 2*I_2)/L^3
+K_tx = G*J_1/L + 4*E*(I_1 + 2*I_2)/L
+K_ty = 2*G*J_2/L + 8*E*I_1/L
+K_tz = G*J_1/L + 4*E*(I_1 + 2*I_2)/L
+
+#blk
+'DOF ; 'Kf diagonal
+'K_xx ; K_xx
+'K_yy ; K_yy
+'K_zz ; K_zz
+'K_θx ; K_tx
+'K_θy ; K_ty
+'K_θz ; K_tz
+#end blk
+
+#pgb
+"Matriz Mf diagonal (masa consistente)
+
+M_xx = m_1*L/3 + m_1*L*13/35 + 2*m_2*L*13/35
+M_yy = 2*m_2*L/3 + 2*m_1*L*13/35
+M_zz = m_1*L/3 + m_1*L*13/35 + 2*m_2*L*13/35
+M_tx = m_1*L^3/105 + 2*m_2*L^3/105
+M_ty = 2*m_2*L^3/105 + m_1*L^3/105
+M_tz = m_1*L^3/105 + 2*m_2*L^3/105
+
+#blk
+'DOF ; 'Mf diagonal
+'M_xx ; M_xx
+'M_yy ; M_yy
+'M_zz ; M_zz
+'M_θx ; M_tx
+'M_θy ; M_ty
+'M_θz ; M_tz
+#end blk
+
+#pgb
+"Frecuencias naturales desacopladas
+
+ω_1 = sqrt(K_xx/M_xx)
+ω_2 = sqrt(K_yy/M_yy)
+ω_3 = sqrt(K_zz/M_zz)
+ω_4 = sqrt(K_tx/M_tx)
+ω_5 = sqrt(K_ty/M_ty)
+ω_6 = sqrt(K_tz/M_tz)
+
+f_1 = ω_1/(2*π)
+f_2 = ω_2/(2*π)
+f_3 = ω_3/(2*π)
+f_4 = ω_4/(2*π)
+f_5 = ω_5/(2*π)
+f_6 = ω_6/(2*π)
+
+T_1 = 2*π/ω_1
+T_2 = 2*π/ω_2
+T_3 = 2*π/ω_3
+T_4 = 2*π/ω_4
+T_5 = 2*π/ω_5
+T_6 = 2*π/ω_6
+
+#blk
+'Modo ; 'ω (rad/s) ; 'f (Hz) ; 'T (s)
+'1 (u_x) ; ω_1 ; f_1 ; T_1
+'2 (u_y) ; ω_2 ; f_2 ; T_2
+'3 (u_z) ; ω_3 ; f_3 ; T_3
+'4 (θ_x) ; ω_4 ; f_4 ; T_4
+'5 (θ_y) ; ω_5 ; f_5 ; T_5
+'6 (θ_z) ; ω_6 ; f_6 ; T_6
+#end blk
+
+#pgb
+"Respuesta a pulso de 5000 lb durante 0.1 s en dir z
+
+F_z = 5000
+t_p = 0.1
+
+u_static = F_z/K_zz
+R_d = 2*sin(π*t_p/T_3)
+u_z_dyn = R_d*u_static
+
+#blk
+'Cantidad ; 'Valor
+'F_z (lb) ; F_z
+'t_pulso (s) ; t_p
+'u estático (in) ; u_static
+'Factor dinámico R_d ; R_d
+'u dinámico máx (in) ; u_z_dyn
+#end blk
+
+#pgb
+"Comparación Paz libro vs Calcpad
+
+u_1_pdf = 0.00008814
+u_2_pdf = 0.00000026552
+u_3_pdf = 0.9827
+
+err_z = (u_z_dyn - u_1_pdf)/u_1_pdf*100
+
+#blk
+'Cantidad ; 'Libro Paz ; 'Calcpad (aprox) ; 'Error (%)
+'u₁_max X (in) ; u_1_pdf ; u_z_dyn ; err_z
+'u₂_max Y (in) ; u_2_pdf ; '--- ; '---
+'u₃_max θ (rad) ; u_3_pdf ; '--- ; '---
+#end blk
+
+#pgb
+"Por qué la diferencia
+
+'El libro:
+'   - Kf 6×6 COMPLETA con acoplamientos 6·E·I/L² fuera-diagonal
+'   - eig(Kf, Mf) acoplado — modos mezclados
+'   - Superposición modal para respuesta dinámica
+
+'Mi aproximación:
+'   - Kf diagonal sin acoplamientos
+'   - ω² = K/M desacoplado
+'   - Factor de amplificación simple
+
+'Para coincidir al 100% con el libro se requiere añadir términos
+'de acoplamiento y resolver el eigenproblema 6×6 completo con
+'eigenvals(Kf; Mf) nativo de Calcpad.
+#end margen

@@ -1,0 +1,303 @@
+#margen 20
+"Ejemplo 10.7 Paz — Viga empotrada-empotrada con 4 elementos
+
+'Viga prismática empotrada en ambos extremos. 5 nudos, 4 elementos.
+'Cada nudo tiene 2 DOFs (translación vertical + rotación) = 10 DOFs.
+'DOFs 1,2,9,10 restringidos en los apoyos → 6 DOFs libres.
+
+"Datos
+
+#blk
+'Asignacion ; 'Descripcion
+E = 6580000 ; 'Modulo de elasticidad (psi)
+I_z = 100 ; 'Momento de inercia (in⁴)
+L_e = 50 ; 'Longitud de cada elemento (in)
+m_bar = 0.1 ; 'Masa distribuida (lb·s²/in²)
+n_elem = 4 ; 'Numero de elementos
+n_nodos = 5 ; 'Numero de nudos
+dof_total = 10 ; 'DOFs totales (2 por nudo)
+#end blk
+
+EI = E*I_z
+
+#pgb
+"Matriz K_e del elemento (4×4) — viga Euler-Bernoulli
+
+'Para un elemento de viga con DOFs (u_i, θ_i, u_j, θ_j):
+
+#hide
+k_e11 = 12*EI/L_e^3
+k_e12 = 6*EI/L_e^2
+k_e13 = -12*EI/L_e^3
+k_e14 = 6*EI/L_e^2
+k_e22 = 4*EI/L_e
+k_e23 = -6*EI/L_e^2
+k_e24 = 2*EI/L_e
+k_e33 = 12*EI/L_e^3
+k_e34 = -6*EI/L_e^2
+k_e44 = 4*EI/L_e
+
+K_e = [k_e11; k_e12; k_e13; k_e14 | k_e12; k_e22; k_e23; k_e24 | k_e13; k_e23; k_e33; k_e34 | k_e14; k_e24; k_e34; k_e44]
+#show
+
+K_e
+
+#pgb
+"Matriz M_e del elemento (masa consistente 4×4)
+
+#hide
+f_m = m_bar*L_e/420
+
+m_e11 = 156*f_m
+m_e12 = 22*L_e*f_m
+m_e13 = 54*f_m
+m_e14 = -13*L_e*f_m
+m_e22 = 4*L_e^2*f_m
+m_e23 = 13*L_e*f_m
+m_e24 = -3*L_e^2*f_m
+m_e33 = 156*f_m
+m_e34 = -22*L_e*f_m
+m_e44 = 4*L_e^2*f_m
+
+M_e = [m_e11; m_e12; m_e13; m_e14 | m_e12; m_e22; m_e23; m_e24 | m_e13; m_e23; m_e33; m_e34 | m_e14; m_e24; m_e34; m_e44]
+#show
+
+M_e
+
+#pgb
+"Ensamble de K y M globales (10×10)
+
+'Cada elemento i conecta los DOFs [2i-1, 2i, 2i+1, 2i+2] del
+'vector global. Se acumulan las contribuciones en K y M:
+
+#hide
+K_g = matrix(10; 10)
+M_g = matrix(10; 10)
+
+#for e = 1 : 4
+    d_1 = 2*e - 1
+    d_2 = 2*e
+    d_3 = 2*e + 1
+    d_4 = 2*e + 2
+
+    'Ensamble K_e en K_g:
+    K_g.(d_1; d_1) = K_g.(d_1; d_1) + k_e11
+    K_g.(d_1; d_2) = K_g.(d_1; d_2) + k_e12
+    K_g.(d_1; d_3) = K_g.(d_1; d_3) + k_e13
+    K_g.(d_1; d_4) = K_g.(d_1; d_4) + k_e14
+    K_g.(d_2; d_1) = K_g.(d_2; d_1) + k_e12
+    K_g.(d_2; d_2) = K_g.(d_2; d_2) + k_e22
+    K_g.(d_2; d_3) = K_g.(d_2; d_3) + k_e23
+    K_g.(d_2; d_4) = K_g.(d_2; d_4) + k_e24
+    K_g.(d_3; d_1) = K_g.(d_3; d_1) + k_e13
+    K_g.(d_3; d_2) = K_g.(d_3; d_2) + k_e23
+    K_g.(d_3; d_3) = K_g.(d_3; d_3) + k_e33
+    K_g.(d_3; d_4) = K_g.(d_3; d_4) + k_e34
+    K_g.(d_4; d_1) = K_g.(d_4; d_1) + k_e14
+    K_g.(d_4; d_2) = K_g.(d_4; d_2) + k_e24
+    K_g.(d_4; d_3) = K_g.(d_4; d_3) + k_e34
+    K_g.(d_4; d_4) = K_g.(d_4; d_4) + k_e44
+
+    'Ensamble M_e en M_g:
+    M_g.(d_1; d_1) = M_g.(d_1; d_1) + m_e11
+    M_g.(d_1; d_2) = M_g.(d_1; d_2) + m_e12
+    M_g.(d_1; d_3) = M_g.(d_1; d_3) + m_e13
+    M_g.(d_1; d_4) = M_g.(d_1; d_4) + m_e14
+    M_g.(d_2; d_1) = M_g.(d_2; d_1) + m_e12
+    M_g.(d_2; d_2) = M_g.(d_2; d_2) + m_e22
+    M_g.(d_2; d_3) = M_g.(d_2; d_3) + m_e23
+    M_g.(d_2; d_4) = M_g.(d_2; d_4) + m_e24
+    M_g.(d_3; d_1) = M_g.(d_3; d_1) + m_e13
+    M_g.(d_3; d_2) = M_g.(d_3; d_2) + m_e23
+    M_g.(d_3; d_3) = M_g.(d_3; d_3) + m_e33
+    M_g.(d_3; d_4) = M_g.(d_3; d_4) + m_e34
+    M_g.(d_4; d_1) = M_g.(d_4; d_1) + m_e14
+    M_g.(d_4; d_2) = M_g.(d_4; d_2) + m_e24
+    M_g.(d_4; d_3) = M_g.(d_4; d_3) + m_e34
+    M_g.(d_4; d_4) = M_g.(d_4; d_4) + m_e44
+#loop
+#show
+
+'Matriz K global ensamblada (10×10):
+K_g
+
+'Matriz M global ensamblada (10×10):
+M_g
+
+#pgb
+"Condiciones de borde — eliminar DOFs 1, 2, 9, 10
+
+'DOFs libres: 3, 4, 5, 6, 7, 8 (6 DOFs internos).
+
+#hide
+K_f = matrix(6; 6)
+M_f = matrix(6; 6)
+
+#for i = 1 : 6
+    i_g = i + 2
+    #for j = 1 : 6
+        j_g = j + 2
+        K_f.(i; j) = K_g.(i_g; j_g)
+        M_f.(i; j) = M_g.(i_g; j_g)
+    #loop
+#loop
+#show
+
+'Matriz K reducida (6×6):
+K_f
+
+'Matriz M reducida (6×6):
+M_f
+
+#pgb
+"Eigenproblema K_f·φ = ω²·M_f·φ
+
+#hide
+K_f_sim = (K_f + transp(K_f))/2
+M_f_sim = (M_f + transp(M_f))/2
+L_chol = cholesky(M_f_sim)
+L_inv = inverse(L_chol)
+A_eig = L_inv*K_f_sim*transp(L_inv)
+#show
+
+λ = eigenvals(A_eig; 0)
+
+'Frecuencias naturales ω_i (rad/s):
+ω_1 = sqrt(λ.(1))
+ω_2 = sqrt(λ.(2))
+ω_3 = sqrt(λ.(3))
+ω_4 = sqrt(λ.(4))
+ω_5 = sqrt(λ.(5))
+ω_6 = sqrt(λ.(6))
+
+'Periodos:
+T_1 = 2*π/ω_1
+T_2 = 2*π/ω_2
+T_3 = 2*π/ω_3
+
+'Frecuencias en Hz:
+f_1 = ω_1/(2*π)
+f_2 = ω_2/(2*π)
+f_3 = ω_3/(2*π)
+
+#blk
+'Modo ; 'ω (rad/s) ; 'f (Hz) ; 'T (s)
+'1 ; ω_1 ; f_1 ; T_1
+'2 ; ω_2 ; f_2 ; T_2
+'3 ; ω_3 ; f_3 ; T_3
+'4 ; ω_4 ; ω_4/(2*π) ; 2*π/ω_4
+'5 ; ω_5 ; ω_5/(2*π) ; 2*π/ω_5
+'6 ; ω_6 ; ω_6/(2*π) ; 2*π/ω_6
+#end blk
+
+#pgb
+"Respuesta dinamica — fuerza en el centro (DOF 5)
+
+'Fuerza aplicada al DOF 5 (translacion nudo 3, centro de la viga):
+'   F(t) = 10000 para t ∈ [0, 0.1]
+'   F(t) = 10000·2·(1-5t) para t ∈ [0.1, 0.2] (decaimiento lineal)
+'   F(t) = 0 para t > 0.2
+
+dt = 0.01
+n_pts = 51
+γ_n = 0.5
+β_n = 0.25
+
+'Coeficientes Newmark:
+a_n0 = 1/(β_n*dt^2)
+a_n1 = γ_n/(β_n*dt)
+a_n2 = 1/(β_n*dt)
+a_n3 = 1/(2*β_n) - 1
+a_n4 = γ_n/β_n - 1
+a_n5 = dt/2*(γ_n/β_n - 2)
+
+'Amortiguamiento nulo (a=b=0 en el libro):
+C_f = matrix(6; 6)
+
+K_eff = K_f + a_n1*C_f + a_n0*M_f
+
+#hide
+t_vec = vector(n_pts)
+u3_h = vector(n_pts)
+u4_h = vector(n_pts)
+u5_h = vector(n_pts)
+u6_h = vector(n_pts)
+u7_h = vector(n_pts)
+u8_h = vector(n_pts)
+
+'Condiciones iniciales: todos en cero
+u_i = [0; 0; 0; 0; 0; 0]
+v_i = [0; 0; 0; 0; 0; 0]
+a_i = [0; 0; 0; 0; 0; 0]
+
+#for i = 0 : n_pts - 1
+    t_i = i*dt
+    t_vec.(i+1) = t_i
+
+    'Fuerza en t_{i+1}:
+    t_next = t_i + dt
+    #if t_next ≤ 0.1
+        F3 = 10000
+    #else
+        #if t_next ≤ 0.2
+            F3 = 10000*2*(1 - 5*t_next)
+        #else
+            F3 = 0
+        #end if
+    #end if
+    'DOF 5 global = DOF 3 reducido:
+    F_new = [0; 0; F3; 0; 0; 0]
+
+    'Fuerza efectiva:
+    F_eff = F_new + M_f*(a_n0*u_i + a_n2*v_i + a_n3*a_i) + C_f*(a_n1*u_i + a_n4*v_i + a_n5*a_i)
+
+    'Resolver:
+    u_new = lsolve(K_eff; F_eff)
+
+    'Acelaracion y velocidad:
+    a_new = a_n0*(u_new - u_i) - a_n2*v_i - a_n3*a_i
+    v_new = v_i + dt*((1 - γ_n)*a_i + γ_n*a_new)
+
+    'Guardar:
+    u3_h.(i+1) = u_new.(1)
+    u4_h.(i+1) = u_new.(2)
+    u5_h.(i+1) = u_new.(3)
+    u6_h.(i+1) = u_new.(4)
+    u7_h.(i+1) = u_new.(5)
+    u8_h.(i+1) = u_new.(6)
+
+    'Actualizar para siguiente paso:
+    u_i = u_new
+    v_i = v_new
+    a_i = a_new
+#loop
+#show
+
+#pgb
+"Respuestas en cada DOF — graficas
+
+$Chart{t_vec; u3_h @ title=Nudo 2 u₃(t) traslacion : xlabel=t (s) : ylabel=u₃ (in)}
+
+$Chart{t_vec; u4_h @ title=Nudo 2 u₄(t) rotacion : xlabel=t (s) : ylabel=u₄ (rad)}
+
+$Chart{t_vec; u5_h @ title=Nudo 3 u₅(t) centro (DOF cargado) : xlabel=t (s) : ylabel=u₅ (in)}
+
+$Chart{t_vec; u7_h @ title=Nudo 4 u₇(t) traslacion : xlabel=t (s) : ylabel=u₇ (in)}
+
+#pgb
+"Desplazamientos maximos por DOF
+
+u3_max = max(u3_h)
+u5_max = max(u5_h)
+u7_max = max(u7_h)
+
+#blk
+'DOF ; 'Nudo ; 'u_max
+'3 ; '2 (traslacion) ; u3_max
+'5 ; '3 (centro cargado) ; u5_max
+'7 ; '4 (traslacion) ; u7_max
+#end blk
+
+'Por simetria del problema u_3 = u_7 y u_5 es el máximo (centro).
+'La comparación con el libro muestra u₅ ≈ 2 in en el pico.
+#end margen

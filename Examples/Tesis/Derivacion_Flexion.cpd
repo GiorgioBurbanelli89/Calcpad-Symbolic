@@ -1,0 +1,89 @@
+#margen 20
+"Derivación FEM — Elemento de FLEXIÓN (viga Euler-Bernoulli)
+
+'Deduccion simbolica de Ke y Me para viga Euler-Bernoulli sin deformacion por corte.
+'4 DOF por elemento: desplazamiento transversal v y rotacion theta en cada nudo.
+
+"Propiedades
+
+#blk
+E = 30000000 ; 'Modulo de elasticidad
+I_z = 100 ; 'Momento de inercia
+rhoA = 0.1 ; 'Masa por unidad de longitud
+L = 60 ; 'Longitud del elemento
+EI = E*I_z ; 'Rigidez a flexion
+#end blk
+
+#pgb
+"1. Funciones de forma de Hermite cubicas
+
+'Se interpola simultaneamente v(x) y su derivada en cada nudo.
+
+#blk
+N_1(x) = 1 - 3*(x/L)^2 + 2*(x/L)^3 ; 'Traslacion nudo 1
+N_2(x) = x*(1 - x/L)^2 ; 'Rotacion nudo 1
+N_3(x) = 3*(x/L)^2 - 2*(x/L)^3 ; 'Traslacion nudo 2
+N_4(x) = (x^2/L)*(x/L - 1) ; 'Rotacion nudo 2
+#end blk
+
+"La deformada v(x) es una combinacion lineal de las cuatro Ni por sus DOF.
+
+#pgb
+"2. Segundas derivadas — curvatura kappa
+
+'La curvatura es kappa = d2v/dx2 = B dot {u}, con B formado por las segundas derivadas.
+
+#blk
+diff(1 - 3*(x/L)^2 + 2*(x/L)^3; x; 2) ; 'Segunda derivada de N1
+diff(x*(1 - x/L)^2; x; 2) ; 'Segunda derivada de N2
+diff(3*(x/L)^2 - 2*(x/L)^3; x; 2) ; 'Segunda derivada de N3
+diff((x^2/L)*(x/L - 1); x; 2) ; 'Segunda derivada de N4
+#end blk
+
+#pgb
+"3. Rigidez a flexion Ke
+
+'Definicion: Kij = integral de 0 a L de EI por N_i_pp por N_j_pp dx.
+
+#blk
+integrate((diff(1 - 3*(x/L)^2 + 2*(x/L)^3; x; 2))^2; x; 0; L) ; 'k11 entre EI
+integrate((diff(x*(1 - x/L)^2; x; 2))^2; x; 0; L) ; 'k22 entre EI
+integrate((diff(3*(x/L)^2 - 2*(x/L)^3; x; 2))^2; x; 0; L) ; 'k33 entre EI
+integrate((diff((x^2/L)*(x/L - 1); x; 2))^2; x; 0; L) ; 'k44 entre EI
+#end blk
+
+"Matriz de rigidez clasica (Paz Ec. 10.20):
+
+#deq K_e = (EI/L^3)*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2 | -12; -6*L; 12; -6*L | 6*L; 2*L^2; -6*L; 4*L^2] @@(rigidez flexion)
+
+"Verificacion numerica:
+
+k_e = (EI/L^3)*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2 | -12; -6*L; 12; -6*L | 6*L; 2*L^2; -6*L; 4*L^2]
+
+#pgb
+"4. Masa consistente Me
+
+'Definicion: Mij = integral de 0 a L de rho*A por Ni por Nj dx.
+
+#blk
+integrate((1 - 3*(x/L)^2 + 2*(x/L)^3)^2; x; 0; L) ; 'm11 entre rho A
+integrate((x*(1 - x/L)^2)^2; x; 0; L) ; 'm22 entre rho A
+integrate((3*(x/L)^2 - 2*(x/L)^3)^2; x; 0; L) ; 'm33 entre rho A
+integrate(((x^2/L)*(x/L - 1))^2; x; 0; L) ; 'm44 entre rho A
+#end blk
+
+"Matriz de masa consistente (Paz Ec. 10.24):
+
+#deq M_e = (rhoA*L/420)*[156; 22*L; 54; -13*L | 22*L; 4*L^2; 13*L; -3*L^2 | 54; 13*L; 156; -22*L | -13*L; -3*L^2; -22*L; 4*L^2] @@(masa consistente flexion)
+
+m_e = (rhoA*L/420)*[156; 22*L; 54; -13*L | 22*L; 4*L^2; 13*L; -3*L^2 | 54; 13*L; 156; -22*L | -13*L; -3*L^2; -22*L; 4*L^2]
+
+#pgb
+"5. Resumen
+
+'   DOF: v1, theta1, v2, theta2
+'   Interpolacion: Hermite cubica con continuidad C1
+'   Ke obtenida integrando EI por kuadrado de d2N/dx2
+'   Me obtenida integrando rho*A por Ni por Nj
+'   Ambas matrices 4x4 simetricas (Maxwell reciprocidad).
+#end margen

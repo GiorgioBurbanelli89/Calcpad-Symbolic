@@ -38,6 +38,13 @@
   <ItemGroup>
     <ProjectReference Include="..\Symbolic.Core\Symbolic.Core.csproj" />
     <ProjectReference Include="..\Symbolic.OpenXml\Symbolic.OpenXml.csproj" />
+    <!-- Standalone helper process for risky AngouriMath calls. Copy its output
+         artifacts into our bin directory but don't reference its assembly. -->
+    <ProjectReference Include="..\Symbolic.Sandbox\Symbolic.Sandbox.csproj"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Content"
+                      CopyToOutputDirectory="PreserveNewest"
+                      Private="true" />
   </ItemGroup>
 
   <ItemGroup>

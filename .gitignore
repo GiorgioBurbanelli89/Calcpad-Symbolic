@@ -5,4 +5,7 @@ obj/
 .vs/
 node_modules/
 *.exe
-!Installer/*.exe
+# Installer binaries are distributed via GitHub Releases, not the repo —
+# they exceed GitHub's 100MB push limit.
+# Temporary debug project used while diagnosing AngouriMath stack overflow.
+TestAngouri/

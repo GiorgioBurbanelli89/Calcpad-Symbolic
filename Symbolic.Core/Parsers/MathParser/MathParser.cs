@@ -175,6 +175,11 @@ namespace Calcpad.Core
 
         public void ClearCustomUnits() => _units.Clear();
 
+        // Used by keyword renderers that need to know whether a name is already
+        // bound in the parser before they decide to pre-define it (e.g. the #sym
+        // stub assignment SetVariable(n, 0) must not clobber a real user value).
+        public bool HasVariable(string name) => _variables.ContainsKey(name);
+
         internal IScalarValue GetVariable(string name)
         {
             try

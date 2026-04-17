@@ -1,0 +1,136 @@
+#margen 20
+"Space Frame — Ejemplo Cap. 13 Mario Paz con cells
+
+'Adaptado de Structural Dynamics (Paz, 6th ed.) Cap. 13.
+'Portico espacial de 4 elementos que conectan un nudo central
+'con 4 nudos de apoyo. Usamos "cells" para almacenar las 4
+'matrices de rigidez elementales K_e.
+
+"Datos — propiedades del material
+
+E = 30000000
+G = 12000000
+
+"Miembros 1 y 3 (verticales)
+
+A_1 = 50
+Iz_1 = 200
+Iy_1 = 200
+J_1 = 40
+m_1 = 0.2
+I0_1 = 205
+
+"Miembros 2 y 4 (horizontales)
+
+A_2 = 28
+Iz_2 = 64
+Iy_2 = 64
+J_2 = 12.8
+m_2 = 0.1
+I0_2 = 68
+
+#pgb
+"Geometria — nudos del portico
+
+'Coordenadas de los 5 nudos (x, y, z):
+'   Nudo 1: (0, 0, 0)       — centro (libre)
+'   Nudo 2: (0, 0, -200)    — apoyo inferior
+'   Nudo 3: (0, 200, 0)     — apoyo en Y+
+'   Nudo 4: (-200, 0, 0)    — apoyo en X-
+'   Nudo 5: (0, -200, 0)    — apoyo en Y-
+
+nodes = [0; 0; 0 | 0; 0; -200 | 0; 200; 0 | -200; 0; 0 | 0; -200; 0]
+
+'Longitudes de los elementos:
+L_1 = 200
+L_2 = 200
+L_3 = 200
+L_4 = 200
+
+#pgb
+"Cells con matrices de rigidez — ejemplo del poder de cells()
+
+'Para ilustrar "cells" en su forma nativa, guardamos la matriz
+'de rigidez axial reducida (2x2) de cada miembro. El patron
+'funciona identico para K_e completas de 12x12.
+
+k_1 = E*A_1/L_1
+k_2 = E*A_2/L_2
+k_3 = E*A_1/L_3
+k_4 = E*A_2/L_4
+
+K_e = cells(4)
+
+K_e.(1) = k_1*[1; -1 | -1; 1]
+K_e.(2) = k_2*[1; -1 | -1; 1]
+K_e.(3) = k_3*[1; -1 | -1; 1]
+K_e.(4) = k_4*[1; -1 | -1; 1]
+
+"Cell array completo — las 4 matrices lado a lado
+
+K_e
+
+#pgb
+"Acceso individual — cada matriz por separado
+
+K_e.(1)
+
+K_e.(2)
+
+K_e.(3)
+
+K_e.(4)
+
+#pgb
+"Bucle #for — procesa cada elemento
+
+areas = [50; 28; 50; 28]
+longs = [200; 200; 200; 200]
+
+K_loop = cells(4)
+
+#for i = 1 : 4
+    k_i = E*areas.(i)/longs.(i)
+    K_loop.(i) = k_i*[1; -1 | -1; 1]
+#loop
+
+K_loop
+
+'Las 4 matrices se generaron con un solo #for iterando sobre i.
+
+#pgb
+"Matrices de masa — mismo patron
+
+M_e = cells(4)
+
+M_e.(1) = (m_1*L_1/6)*[2; 1 | 1; 2]
+M_e.(2) = (m_2*L_2/6)*[2; 1 | 1; 2]
+M_e.(3) = (m_1*L_3/6)*[2; 1 | 1; 2]
+M_e.(4) = (m_2*L_4/6)*[2; 1 | 1; 2]
+
+M_e
+
+#pgb
+"Ensamble ilustrativo — suma de las rigideces
+
+K_total = K_e.(1) + K_e.(2) + K_e.(3) + K_e.(4)
+
+'Un ensamble real a K global requeriria mapeo DOF — este es
+'el concepto nuclear.
+
+"Comparacion con Matlab de Paz
+
+'Matlab (como lo escribe Paz):
+'   for i = 1:4
+'       ke = SpaceFrameElement(E, G, Iz, Iy, J, A, nodes(con,:));
+'       K(lm, lm) = K(lm, lm) + ke;
+'   end
+
+'Calcpad con cells nativos:
+'   K_e = cells(4)
+'   #for i = 1 : 4
+'       K_e.(i) = ...
+'   #loop
+
+'Mismo concepto, sintaxis equivalente.
+#end margen

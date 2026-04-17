@@ -1,0 +1,263 @@
+#margen 20
+"Respuesta elastoplastica — Ejemplo 6.5 Paz con Newmark-β
+
+'SDOF con comportamiento elastoplastico sometido a una fuerza
+'dinamica. Se integra con Newmark-β (γ=1/2, β=1/6) detectando
+'fluencia en tension y compresion mediante una variable KEY.
+
+"Datos del sistema (Ejemplo 6.4 Paz)
+
+#blk
+'Asignacion ; 'Descripcion
+k = 12.35 ; 'Rigidez elastica (kip/in)
+c = 0.274 ; 'Amortiguamiento (kip·s/in)
+m = 0.2 ; 'Masa (kip·s²/in)
+R_t = 15 ; 'Fuerza de fluencia en tension (kip)
+R_c = -15 ; 'Fuerza de fluencia en compresion (kip)
+dt = 0.1 ; 'Paso de tiempo (s)
+#end blk
+
+'Parametros derivados:
+ω_n = sqrt(k/m)
+T_n = 2*π/ω_n
+ξ = c/(2*sqrt(m*k))
+
+#blk
+'Asignacion ; 'Descripcion
+ω_n = sqrt(k/m) ; 'Frecuencia natural (rad/s)
+T_n = 2*π/ω_n ; 'Periodo natural (s)
+ξ = c/(2*sqrt(m*k)) ; 'Razon de amortiguamiento
+#end blk
+
+'Desplazamientos de fluencia iniciales:
+u_t0 = R_t/k
+u_c0 = R_c/k
+
+#pgb
+"Fuerza aplicada F(t) — pulso que induce fluencia
+
+'Fuerza dinamica diseñada para provocar plasticidad:
+'   t ∈ [0, 0.4]: rampa hasta 30 kip (doble de R_t)
+'   t ∈ [0.4, 0.8]: descenso hasta -20 kip
+'   t ∈ [0.8, 2.0]: cero
+
+n_pts = 21
+
+#hide
+t_s = vector(n_pts)
+F_vec = vector(n_pts)
+
+#for i = 1 : n_pts
+    t_i = (i - 1)*dt
+    t_s.(i) = t_i
+    #if t_i ≤ 0.4
+        F_vec.(i) = 75*t_i
+    #else
+        #if t_i ≤ 0.8
+            F_vec.(i) = 30 - 125*(t_i - 0.4)
+        #else
+            F_vec.(i) = 0
+        #end if
+    #end if
+#loop
+#show
+
+$Chart{t_s; F_vec @ title=Fuerza aplicada F(t) : xlabel=t (s) : ylabel=F (kip)}
+
+#pgb
+"Coeficientes Newmark-β (aceleracion lineal)
+
+γ_n = 0.5
+β_n = 1/6
+
+'Coeficientes A y B (constantes — Eq. 6.46):
+A_coef = m/(β_n*dt) + γ_n*c/β_n
+B_coef = m/(2*β_n) + dt*c*(0.5*γ_n/β_n - 1)
+
+#pgb
+"Integracion Newmark con comportamiento elastoplastico
+
+#hide
+u_hist = vector(n_pts)
+v_hist = vector(n_pts)
+a_hist = vector(n_pts)
+R_hist = vector(n_pts)
+key_hist = vector(n_pts)
+kp_hist = vector(n_pts)
+
+'Condiciones iniciales:
+u_hist.(1) = 0
+v_hist.(1) = 0
+a_hist.(1) = (F_vec.(1) - c*v_hist.(1) - k*u_hist.(1))/m
+R_hist.(1) = 0
+key_hist.(1) = 0
+kp_hist.(1) = k
+
+'Puntos de fluencia actuales (mutables):
+u_t = u_t0
+u_c = u_c0
+k_p = k
+R_val = 0
+key_val = 0
+
+#for i = 1 : n_pts - 1
+    'Tangente de rigidez actual:
+    kbar_i = k_p + γ_n*c/(β_n*dt) + m/(β_n*dt^2)
+
+    'Incremento de fuerza:
+    DF = F_vec.(i+1) - F_vec.(i)
+    DF_bar = DF + A_coef*v_hist.(i) + B_coef*a_hist.(i)
+
+    'Incremento de desplazamiento y velocidad:
+    Du = DF_bar/kbar_i
+    Dv = γ_n*Du/(β_n*dt) - γ_n*v_hist.(i)/β_n + dt*a_hist.(i)*(1 - 0.5*γ_n/β_n)
+
+    'Nuevos valores:
+    u_new = u_hist.(i) + Du
+    v_new = v_hist.(i) + Dv
+
+    'Detectar keyp (estado elastico/plastico por desplazamiento):
+    #if u_new < u_t
+        #if u_new > u_c
+            keyp = 0
+        #else
+            keyp = -1
+        #end if
+    #else
+        keyp = 1
+    #end if
+
+    'Detectar key (considera signo de velocidad):
+    #if keyp = 1
+        #if v_new > 0
+            key_val = 1
+        #else
+            key_val = 0
+        #end if
+    #else
+        #if keyp = -1
+            #if v_new < 0
+                key_val = -1
+            #else
+                key_val = 0
+            #end if
+        #else
+            key_val = 0
+        #end if
+    #end if
+
+    'Actualizar fuerza restauradora R:
+    #if key_val = 0
+        R_tent = R_val + Du*k
+        #if R_tent ≥ 0
+            R_val = min(R_tent; R_t)
+        #else
+            R_val = max(R_tent; R_c)
+        #end if
+    #else
+        #if key_val = 1
+            R_val = R_t
+        #else
+            R_val = R_c
+        #end if
+    #end if
+
+    'Actualizar rigidez tangente k_p:
+    #if key_val = 0
+        k_p = k
+    #else
+        k_p = 0
+    #end if
+
+    'Nueva aceleracion (Eq. 6.64):
+    a_new = (F_vec.(i+1) - c*v_new - R_val)/m
+
+    'Actualizar puntos de fluencia al cambiar signo de velocidad:
+    #if v_new < 0
+        #if v_hist.(i) > 0
+            u_t = u_new
+            u_c = u_t - (R_t - R_c)/k
+        #end if
+    #end if
+    #if v_new > 0
+        #if v_hist.(i) < 0
+            u_c = u_new
+            u_t = u_c + (R_t - R_c)/k
+        #end if
+    #end if
+
+    'Guardar historial:
+    u_hist.(i+1) = u_new
+    v_hist.(i+1) = v_new
+    a_hist.(i+1) = a_new
+    R_hist.(i+1) = R_val
+    key_hist.(i+1) = key_val
+    kp_hist.(i+1) = k_p
+#loop
+#show
+
+#pgb
+"Respuesta elastoplastica — graficas
+
+$Chart{t_s; u_hist @ title=Desplazamiento u(t) : xlabel=t (s) : ylabel=u (in)}
+
+$Chart{t_s; v_hist @ title=Velocidad v(t) : xlabel=t (s) : ylabel=v (in/s)}
+
+$Chart{t_s; a_hist @ title=Aceleracion a(t) : xlabel=t (s) : ylabel=a (in/s²)}
+
+$Chart{t_s; R_hist @ title=Fuerza restauradora R(t) : xlabel=t (s) : ylabel=R (kip)}
+
+"Estado KEY a lo largo del tiempo
+
+'KEY = 0: elastico | KEY = 1: fluyendo en tension | KEY = -1: fluyendo en compresion
+
+$Chart{t_s; key_hist @ title=Estado KEY elastoplastico : xlabel=t (s) : ylabel=KEY}
+
+#pgb
+"Comparacion elastico vs elastoplastico
+
+'Ahora repetimos sin limite de fluencia (comportamiento elastico puro):
+
+#hide
+u_el = vector(n_pts)
+v_el = vector(n_pts)
+a_el = vector(n_pts)
+
+u_el.(1) = 0
+v_el.(1) = 0
+a_el.(1) = (F_vec.(1) - c*v_el.(1) - k*u_el.(1))/m
+
+kbar_el = k + γ_n*c/(β_n*dt) + m/(β_n*dt^2)
+
+#for i = 1 : n_pts - 1
+    DF_el = F_vec.(i+1) - F_vec.(i)
+    DFb_el = DF_el + A_coef*v_el.(i) + B_coef*a_el.(i)
+    Du_el = DFb_el/kbar_el
+    Dv_el = γ_n*Du_el/(β_n*dt) - γ_n*v_el.(i)/β_n + dt*a_el.(i)*(1 - 0.5*γ_n/β_n)
+    u_el.(i+1) = u_el.(i) + Du_el
+    v_el.(i+1) = v_el.(i) + Dv_el
+    a_el.(i+1) = (F_vec.(i+1) - c*v_el.(i+1) - k*u_el.(i+1))/m
+#loop
+#show
+
+$Chart{t_s; u_hist; t_s; u_el @ title=Desplazamiento: elastoplastico vs elastico : xlabel=t (s) : ylabel=u (in) : labels=Elastoplastico,Elastico}
+
+#pgb
+"Valores maximos
+
+u_max_ep = max(u_hist)
+u_min_ep = min(u_hist)
+u_max_el = max(u_el)
+u_min_el = min(u_el)
+
+#blk
+'Caso ; 'u_max (in) ; 'u_min (in)
+'Elastoplastico ; u_max_ep ; u_min_ep
+'Elastico puro ; u_max_el ; u_min_el
+#end blk
+
+'El caso elastoplastico muestra desplazamientos RESIDUALES
+'(no vuelve a cero) debido a la deformacion plastica irreversible.
+'El caso elastico oscila alrededor de cero sin deformacion
+'permanente.
+#end margen

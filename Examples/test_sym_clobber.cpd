@@ -1,0 +1,35 @@
+"Test — sym ops clobber vars? (extended)
+
+#blk
+E = 30000000 ; 'Modulo
+A_s = 10 ; 'Area
+L = 60 ; 'Longitud
+EA = E*A_s ; 'Rigidez
+#end blk
+
+EA_after_1 = EA
+L_after_1 = L
+
+#blk
+N_1(x) = 1 - x/L ; 'N1 (fn def, no sym op)
+N_2(x) = x/L ; 'N2
+#end blk
+
+EA_after_2 = EA
+L_after_2 = L
+
+#blk
+integrate((1/L)^2; x; 0; L) ; 'sym integrate
+#end blk
+
+EA_after_3 = EA
+L_after_3 = L
+
+"Deq decorativo:
+#deq K_e = (EA/L)*[1; -1 | -1; 1] @@(rigidez axial)
+
+EA_after_deq = EA
+L_after_deq = L
+
+"Final numerico:
+k_e = (EA/L)*[1; -1 | -1; 1]
