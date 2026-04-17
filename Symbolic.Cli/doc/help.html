@@ -855,6 +855,22 @@
             </span>
         </li>
         <li style="list-style-type: none;">
+            <span class="exp" id="btn_inline">+</span><b>Inline Directives in Text (mixed mode):</b><br />
+            <span id="list_inline" style="display: none;">
+                When a line starts with <code>'</code> (text mode), each additional <code>'</code> toggles between <b>Text</b> and <b>Expression</b> mode.<br />
+                <b>Supported inline directives:</b><br />
+                <code>'Hooke '#deq F = k*x' is famous.</code><br />
+                <code>'Derivative '#sym diff(x^3; x)' is simple.</code><br />
+                <code>'Sum '$Sum{i^2 @ i=1:n}' works.</code><br />
+                <code>'Work '$Integral{k*x @ x=0:x_0}' simple.</code><br />
+                <code>'Factorial '$Product{i @ i=1:n}' is n!.</code><br />
+                <b>Not supported inline:</b> <code>#noc</code>, <code>#hide</code>, <code>#show</code> (block only).<br />
+                <b>Position rule:</b> need at least 1 character of text before the first directive.<br />
+                <code>✓ ' '#deq F = k*x' at start works (space before).</code><br />
+                <code>✗ '#deq F = k*x' fails (no text before).</code>
+            </span>
+        </li>
+        <li style="list-style-type: none;">
             <span class="exp" id="btn_layout">+</span><b>Layout Directives:</b><br />
             <span id="list_layout" style="display: none;">
                 <b>Inline columns:</b> <code>#inl A = 5 ; B = 3 ; C = 8</code> — N columns in one line.<br />
@@ -863,7 +879,8 @@
                 <b>Margin:</b> <code>#margen 20</code> ... <code>#end margen</code> — justified text with 20mm margins.<br />
                 <b>Page break:</b> <code>#pgb</code> — insert page break for PDF/Word export.<br />
                 <b>Table:</b> <code>$Table{v1; v2 @ "H1"; "H2" &amp; fmt=3 &amp; row=1}</code> — HTML table from vectors.<br />
-                <b>Spacing:</b> <code>~</code> in comments = <code>&amp;nbsp;</code> (non-breaking space shortcut).
+                <b>Spacing:</b> three equivalent ways to force non-breaking space:<br />
+                &nbsp;&nbsp;<code>~</code> (Calcpad shortcut), <code>&amp;nbsp;</code> (HTML entity), literal space (browsers collapse multiples).
             </span>
         </li>
         <li style="list-style-type: none;">

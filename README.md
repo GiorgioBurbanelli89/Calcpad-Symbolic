@@ -60,6 +60,45 @@ Show symbolic equations without computation. Double/triple equality for referenc
 
 **Inline in headings:** `"Title '#deq expr'`
 
+### 5b. Inline Directives in Text (mixed mode)
+
+When a line starts with `'` (text mode), each additional `'` toggles between **Text** and **Expression** mode. Multiple directives can be embedded inline:
+
+```
+'Hooke '#deq F = k*x' is famous.
+'Derivative '#sym diff(x^3; x)' is simple.
+'Sum '$Sum{i^2 @ i=1:n}' works inline.
+'Work '$Integral{k*x @ x=0:x_0}' direct.
+'Factorial '$Product{i @ i=1:n}' is n!.
+```
+
+**Supported inline:** `#deq`, `#sym`, `$Sum`, `$Integral`, `$Product`.
+**Block only (not inline):** `#noc/#equ`, `#hide/#show`.
+
+**Position rule:** need at least 1 character of text before the first directive.
+- ✓ `' '#deq F = k*x' at start.` (space before → works)
+- ✗ `'#deq F = k*x' at start.` (no text before → fails)
+
+### 5c. Cell Arrays — `cells(n)` (Matlab-style)
+
+Store multiple matrices in a single indexed container. Natively integrated with `#for` loops for FEM element assembly workflows.
+
+```
+K = cells(4)                       ← create container for 4 matrices
+
+#for i = 1 : 4
+    K.(i) = (E*A/L.(i))*[1;-1|-1;1]  ← assign matrix at slot i
+#loop
+
+K                                  ← render: [M₁ M₂ M₃ M₄] side by side
+K.(2)                              ← access individual matrix (2nd slot)
+K_sum = K.(1) + K.(2) + K.(3)      ← operations between cell elements
+```
+
+**Visual**: renders as `[ matrix_1  matrix_2  matrix_3 ... ]` with a single outer bracket container stretched to the full height of the matrices.
+
+Use case: storing element stiffness matrices (`K_e`) in FEM without flattening into a giant global matrix. Direct translation of Matlab cell arrays like `K_e{i}`.
+
 ### 6. Layout Directives — `#inl`, `#blk`, `#cen`, `#margen`, `#pgb`
 
 **Inline columns:** `#inl A = 5 ; B = 3 ; C = 8` — N columns in one line.
@@ -72,7 +111,12 @@ Show symbolic equations without computation. Double/triple equality for referenc
 
 **Page break:** `#pgb` — for PDF/Word export.
 
-**Spacing:** `~` in comments = `&nbsp;` (non-breaking space shortcut).
+**Spacing:** three equivalent ways to force a non-breaking space:
+- `~` — Calcpad shortcut (converts to `&nbsp;`)
+- `&nbsp;` — HTML entity (explicit, standard)
+- literal space — single space preserved, but browsers collapse multiples visually
+
+For precise spacing/alignment use `~` or `&nbsp;`. For normal text, plain spaces are fine.
 
 ### 7. Tables — `$Table`
 

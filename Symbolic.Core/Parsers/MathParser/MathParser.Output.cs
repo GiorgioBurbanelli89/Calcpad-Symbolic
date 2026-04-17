@@ -115,6 +115,7 @@ namespace Calcpad.Core
                             IScalarValue scalar => writer.FormatValue(scalar),
                             Vector vector => RenderVector(vector, writer),
                             Matrix matrix => RenderMatrix(matrix, writer),
+                            MatrixArray cells => RenderMatrixArray(cells, writer),
                             _ => null
                         };
                         // Skip duplicate result for constant vector/matrix assignments
@@ -367,6 +368,15 @@ namespace Calcpad.Core
                         var isVec = matrix.ColCount == 1 || matrix.RowCount == 1;
                         var prefix = isVec ? "\u20D7" : "";
                         t.Content = writer.FormatVariable(prefix + t.Content, s, true);
+                    }
+                    else if (ival is MatrixArray cellsVal)
+                    {
+                        var s = !_parser._settings.Substitute &&
+                                 _parser._functionDefinitionIndex < 0 &&
+                                 _parser._isCalculated ?
+                            RenderMatrixArray(cellsVal, writer) :
+                            string.Empty;
+                        t.Content = writer.FormatVariable(t.Content, s, true);
                     }
                     else
                         t.Content = writer.FormatVariable(t.Content, string.Empty, false);
@@ -878,13 +888,22 @@ namespace Calcpad.Core
                     var a = stackBuffer.Pop();
                     if (substitute)
                     {
-                        IScalarValue value;
+                        IScalarValue value = null;
                         var variableName = $"{t.Content}.{t.Index}";
+                        var targetValue = _parser._variables[t.Content].Value;
                         if (variableName == _parser._backupVariable.Key)
                             value = (IScalarValue)_parser._backupVariable.Value;
+                        else if (targetValue is MatrixArray cellsVal)
+                        {
+                            // MatrixArray: cell reference, render as matrix (not scalar)
+                            var m = cellsVal[(int)t.Index];
+                            if (m is not null && m.RowCount > 0)
+                                t.Content = RenderMatrix(m, writer);
+                            return;
+                        }
                         else
                         {
-                            var vector = (Vector)_parser._variables[t.Content].Value;
+                            var vector = (Vector)targetValue;
                             value = vector[(int)t.Index - 1];
                         }
                         t.Content = writer.FormatValue(value);
@@ -957,6 +976,32 @@ namespace Calcpad.Core
 
             private static string RenderVector(Vector vector, OutputWriter writer) =>
                 writer.FormatVector(vector);
+
+            /// <summary>
+            /// Render a MatrixArray (cells) as [M_1 M_2 ... M_n] with matrices side by side.
+            /// Uses HTML span with cell-array class, or plain brackets for text/xml writers.
+            /// </summary>
+            private static string RenderMatrixArray(MatrixArray cells, OutputWriter writer)
+            {
+                var sb = new System.Text.StringBuilder();
+                // Always output HTML-style wrapping; TextWriter/XmlWriter callers
+                // render the matrix same way but bracket spans ignored visually.
+                sb.Append("<span class=\"cell-array\">");
+                sb.Append("<span class=\"cell-bracket\">[</span>");
+                for (int i = 1; i <= cells.Length; i++)
+                {
+                    if (i > 1)
+                        sb.Append("<span class=\"cell-sep\">&nbsp;&nbsp;</span>");
+                    var m = cells[i];
+                    if (m is null || m.RowCount == 0)
+                        sb.Append("&empty;");
+                    else
+                        sb.Append(writer.FormatMatrix(m));
+                }
+                sb.Append("<span class=\"cell-bracket\">]</span>");
+                sb.Append("</span>");
+                return sb.ToString();
+            }
 
             private string RenderSolver(int index, bool substitute, OutputWriter writer)
             {

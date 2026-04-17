@@ -298,17 +298,32 @@ namespace Calcpad.Core
                         var variable = ta.Variable;
                         if (t0.Type == TokenTypes.Vector)
                         {
-                            var vector = (Vector)variable.Value;
-                            if (i < 1 || i > vector.Length)
-                                throw Exceptions.IndexOutOfRange(i.ToString());
-
-                            if (b is RealValue rb)
+                            // MatrixArray (cells) assignment path.
+                            if (variable.Value is MatrixArray cellsVal)
                             {
-                                _parser._backupVariable = new($"{ta.Content}.{i}", vector[i - 1]);
-                                vector[i - 1] = rb;
+                                if (i < 1 || i > cellsVal.Length)
+                                    throw Exceptions.IndexOutOfRange(i.ToString());
+                                if (b is Matrix mb)
+                                    cellsVal[i] = mb;
+                                else if (b is Vector vb)
+                                    cellsVal[i] = IValue.AsMatrix(vb);
+                                else
+                                    throw Exceptions.MustBeMatrix(Exceptions.Items.Value);
                             }
                             else
-                                throw Exceptions.CannotAssignVectorToScalar();
+                            {
+                                var vector = (Vector)variable.Value;
+                                if (i < 1 || i > vector.Length)
+                                    throw Exceptions.IndexOutOfRange(i.ToString());
+
+                                if (b is RealValue rb)
+                                {
+                                    _parser._backupVariable = new($"{ta.Content}.{i}", vector[i - 1]);
+                                    vector[i - 1] = rb;
+                                }
+                                else
+                                    throw Exceptions.CannotAssignVectorToScalar();
+                            }
                         }
                         else
                         {
@@ -530,13 +545,22 @@ namespace Calcpad.Core
                     return EvaluateToken(t);
             }
 
-            private RealValue EvaluateIndexToken(Token t)
+            private IValue EvaluateIndexToken(Token t)
             {
                 var value = IValue.AsValue(StackPop(), Exceptions.Items.Index);
                 var i = (int)value.Re;
                 if (t.Type == TokenTypes.VectorIndex)
                 {
-                    var vector = IValue.AsVector(StackPop(), Exceptions.Items.IndexTarget);
+                    var target = StackPop();
+                    // MatrixArray (cells): returns a Matrix, not a scalar.
+                    if (target is MatrixArray cells)
+                    {
+                        if (i < 1 || i > cells.Length)
+                            throw Exceptions.IndexOutOfRange(i.ToString());
+                        t.Index = i;
+                        return cells[i] ?? new Matrix(0, 0);
+                    }
+                    var vector = IValue.AsVector(target, Exceptions.Items.IndexTarget);
                     if (i < 1 || i > vector.Length)
                         throw Exceptions.IndexOutOfRange(i.ToString());
 

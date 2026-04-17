@@ -295,6 +295,70 @@
             display: inline-table;
         }
 
+        /* Paragraphs containing a cell-array: disable justify so there's no
+           giant gap between K_e = and the wrapped cell-array. */
+        p:has(.cell-array),
+        p:has(.cell-array) .eq {
+            text-align: left !important;
+            word-spacing: normal !important;
+        }
+
+        /* Cell array (MatrixArray) — outer [...] shaped with pseudo-elements
+           Keeps cell-array on SAME line as K_e = ... by using inline-block. */
+        .cell-array {
+            display: inline-block;
+            vertical-align: middle;
+            position: relative;
+            padding: 2pt 8pt;
+            margin: 0 1pt;
+            white-space: nowrap;
+        }
+
+        /* Left bracket [ — left side + top arm + bottom arm */
+        .cell-array::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 5pt;
+            border-left: solid 1.5pt black;
+            border-top: solid 1.5pt black;
+            border-bottom: solid 1.5pt black;
+        }
+
+        /* Right bracket ] — right side + top arm + bottom arm */
+        .cell-array::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 5pt;
+            border-right: solid 1.5pt black;
+            border-top: solid 1.5pt black;
+            border-bottom: solid 1.5pt black;
+        }
+
+        /* Hide the literal [ ] text — pseudo-elements draw the brackets */
+        .cell-array .cell-bracket {
+            display: none;
+        }
+
+        /* Separators between matrices inside cell-array */
+        .cell-array .cell-sep {
+            display: inline-block;
+            width: 6pt;
+        }
+
+        /* Matrices inside cell-array: inline-block + middle align */
+        .cell-array .matrix {
+            display: inline-table;
+            vertical-align: middle;
+        }
+
+        /* Inner matrices keep their own brackets (so each looks like a matrix) */
+
             .matrix .tr {
                 display: table-row;
             }

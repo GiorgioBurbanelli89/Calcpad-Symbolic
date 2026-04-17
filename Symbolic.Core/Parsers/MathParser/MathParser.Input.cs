@@ -829,6 +829,13 @@ namespace Calcpad.Core
                             {
                                 Type = TokenTypes.Matrix
                             };
+                        // MatrixArray (cells) — use Vector token path; GetElement/SetElement
+                        // detect MatrixArray at runtime and return/store the proper Matrix.
+                        else if (value is MatrixArray)
+                            return new VariableToken(s, v)
+                            {
+                                Type = TokenTypes.Vector
+                            };
                         else if (value is null && (!_parser.IsEnabled || !ReferenceEquals(variables, _variables)))
                             return new VariableToken(s, null)
                             {

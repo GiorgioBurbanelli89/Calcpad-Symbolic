@@ -433,9 +433,19 @@ namespace Calcpad.Core
 
         internal static IValue GetElement(IValue vector, IValue ii)
         {
-            var vec = IValue.AsVector(vector, Exceptions.Items.IndexTarget);
             var val = IValue.AsValue(ii, Exceptions.Items.Index);
             var i = (int)val.Re;
+
+            // MatrixArray (cells) support — returns the matrix at slot i.
+            if (vector is MatrixArray cells)
+            {
+                if (i < 1 || i > cells.Length)
+                    throw Exceptions.IndexOutOfRange(i.ToString());
+                var m = cells[i];
+                return m ?? new Matrix(0, 0);
+            }
+
+            var vec = IValue.AsVector(vector, Exceptions.Items.IndexTarget);
             if (i < 1 || i > vec.Length)
                 throw Exceptions.IndexOutOfRange(i.ToString());
 
@@ -444,9 +454,24 @@ namespace Calcpad.Core
 
         internal static IValue SetElement(IValue vector, IValue ii, IValue value)
         {
-            var vec = IValue.AsVector(vector, Exceptions.Items.IndexTarget);
             var val = IValue.AsValue(ii, Exceptions.Items.Index);
             var i = (int)val.Re;
+
+            // MatrixArray (cells) assignment — stores a Matrix at slot i.
+            if (vector is MatrixArray cells)
+            {
+                if (i < 1 || i > cells.Length)
+                    throw Exceptions.IndexOutOfRange(i.ToString());
+                if (value is Matrix matVal)
+                    cells[i] = matVal;
+                else if (value is Vector vecVal)
+                    cells[i] = IValue.AsMatrix(vecVal);
+                else
+                    throw Exceptions.MustBeMatrix(Exceptions.Items.Value);
+                return value;
+            }
+
+            var vec = IValue.AsVector(vector, Exceptions.Items.IndexTarget);
             if (i < 1 || i > vec.Length)
                 throw Exceptions.IndexOutOfRange(i.ToString());
 

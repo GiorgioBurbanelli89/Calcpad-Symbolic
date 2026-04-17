@@ -200,12 +200,64 @@ To:  °  ′ (single prime)  ″ (double prime/second)
     #inl a ; b ; c      - inline columns (one line, N columns separated by ;)
                           e.g.: #inl D ; α ; G
                           e.g.: #inl F = 100 ; 'Force in kN
+    cells(n)            - Matlab-style cell array of N matrices
+                          Access/assign: K.(i) = matrix  or  m = K.(i)
+                          Renders as [M_1  M_2  M_3 ...] with bracket container
+                          e.g.:  K = cells(4)
+                                 #for i = 1 : 4
+                                     K.(i) = (E*A/L.(i))*[1; -1 | -1; 1]
+                                 #loop
+                                 K      — shows all 4 matrices side by side
+                                 K.(2)  — shows the 2nd matrix alone
+
     #blk ... #end blk   - block of columns (multiple rows with border)
                           each line inside is a row of columns (separated by ;)
                           e.g.: #blk
                                 E = 210000 ; 'Modulus (MPa)
                                 ν = 0.3 ; 'Poisson ratio
                                 #end blk
+
+————————————————————————————————————————————————————————————————————————————————
+ Inline text with expressions and directives (mixed mode):
+————————————————————————————————————————————————————————————————————————————————
+    ' ... '             - single quote toggles between Text and Expression modes
+                          when a line starts with ' (text line).
+                          Each additional ' switches mode.
+                          Number of ' must be EVEN in a line (or text continues).
+
+    Syntax:   'text '<directive>' more text '<directive>' text'
+
+    Inline directives supported:
+        #deq    e.g.: 'The law is '#deq F = k*x' is famous.
+        #sym    e.g.: 'The derivative '#sym diff(x^3; x)' is simple.
+        $Sum    e.g.: 'Sum '$Sum{i^2 @ i=1:n}' works.
+        $Integral e.g.: 'Work: '$Integral{k*x @ x=0:x_0}' is simple.
+        $Product e.g.: 'Factorial '$Product{i @ i=1:n}' is n!.
+
+    NOT supported inline (block only):
+        #noc ... #equ, #hide ... #show
+
+    Position rule:
+        ✓ 'text '#deq ...' text.        (text BEFORE directive — works)
+        ✓ ' '#deq ...' text at start.   (space before — works)
+        ✗ '#deq ...' text at start.     (no text before — fails)
+
+————————————————————————————————————————————————————————————————————————————————
+ Non-breaking space (&nbsp;):
+————————————————————————————————————————————————————————————————————————————————
+    Three ways to force a non-breaking space in text:
+        ~             - Calcpad shortcut (converts to &nbsp;)
+        &nbsp;        - HTML entity (explicit, standard)
+        literal space - single space preserved, but browsers collapse
+                        multiple spaces to one visually.
+
+    For precise visual spacing (alignment, fixed-width), use ~ or &nbsp;.
+    For normal flowing text, plain spaces are fine.
+
+    Examples:
+        'Before~'#deq F = k*x'~after.     (tilde = &nbsp;)
+        'Before&nbsp;'#deq F = k*x'&nbsp;after.   (equivalent, verbose)
+        'Before '#deq F = k*x' after.     (plain spaces — normal text)
 
 ————————————————————————————————————————————————————————————————————————————————
  Command line options (support the same language features as Calcpad.exe):

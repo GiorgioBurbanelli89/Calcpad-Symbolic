@@ -74,6 +74,7 @@ namespace Calcpad.Core
             { "mesh_hex8_elems", 40 },
             { "mesh_soil_specs", 41 },
             { "mesh_soil_specs_rect", 42 },
+            { "cells", 43 },
         }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
         internal static readonly FrozenDictionary<string, int> Function2Index =
@@ -236,6 +237,7 @@ namespace Calcpad.Core
                 MeshHex8Elems,          // 40
                 MeshSoilSpecs,          // 41
                 MeshSoilSpecsRect,      // 42
+                Cells,                  // 43
             ];
 
             MatrixFunctions2 = [
@@ -441,6 +443,9 @@ namespace Calcpad.Core
             Interpolations[index](a, b, c);
 
         private static DiagonalMatrix Identity(in IValue n) => new(IValue.AsInt(n), RealValue.One);
+
+        /// <summary>Create a cell array of n matrices (Matlab-style cells).</summary>
+        private static IValue Cells(in IValue n) => new MatrixArray(IValue.AsInt(n));
         private static UpperTriangularMatrix UpperTriangular(in IValue n) => new(IValue.AsInt(n));
         private static LowerTriangularMatrix LowerTriangular(in IValue n) => new(IValue.AsInt(n));
         private static SymmetricMatrix Symmetric(in IValue n) => new(IValue.AsInt(n));
