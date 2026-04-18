@@ -1,0 +1,211 @@
+#margen 20
+"Cap. 15 Paz — Elemento triangular de elasticidad plana (plane stress)
+
+'Sigue los 9 pasos del libro para derivar [K]_e y [M]_e del elemento
+'triangular de 3 nudos con 2 DOF por nudo (total 6 DOF).
+
+"Propiedades del material y del elemento
+
+#blk
+E = 30000000 ; 'Modulo de elasticidad
+nu = 0.3 ; 'Coeficiente de Poisson
+t = 1 ; 'Espesor del plato
+rho = 0.000733 ; 'Densidad por unidad de volumen
+#end blk
+
+"Coordenadas nodales (triangulo de prueba)
+
+#blk
+x_1 = 0 ; 'Nodo 1 en el origen
+y_1 = 0 ; '
+x_2 = 2 ; 'Nodo 2 sobre eje x
+y_2 = 0 ; '
+x_3 = 0 ; 'Nodo 3 sobre eje y
+y_3 = 3 ; '
+#end blk
+
+"Area del triangulo (formula de Herron con coordenadas nodales)
+
+Area = (x_1*(y_2 - y_3) + x_2*(y_3 - y_1) + x_3*(y_1 - y_2))/2
+
+#pgb
+"Paso I — Modelado de la estructura
+
+'El elemento triangular plano tiene 6 DOF:
+'   q_1, q_2  = u y v en el nodo 1
+'   q_3, q_4  = u y v en el nodo 2
+'   q_5, q_6  = u y v en el nodo 3
+'La rigidez [K]_e y la masa [M]_e son matrices 6x6.
+
+#pgb
+"Paso II — Seleccion de la funcion de desplazamiento
+
+'Polinomio lineal completo en x, y (6 coeficientes para los 6 DOFs):
+
+#blk
+u(x; y) = c_1 + c_2*x + c_3*y ; 'Desplazamiento en direccion x
+v(x; y) = c_4 + c_5*x + c_6*y ; 'Desplazamiento en direccion y
+#end blk
+
+'En forma matricial:  {q(x;y)} = [g(x;y)] {c}   Ec. (15.3)
+'con [g(x;y)] = [ 1 x y 0 0 0 | 0 0 0 1 x y ]
+
+#pgb
+"Paso III — Expresar {c} en funcion de los DOFs nodales {q}_e
+
+'Evaluando u y v en cada nodo obtenemos {q}_e = [A] {c}   Ec. (15.4)
+'donde [A] es una matriz 6x6 que depende de las coordenadas nodales.
+
+A = [1; x_1; y_1; 0; 0; 0 | 0; 0; 0; 1; x_1; y_1 | 1; x_2; y_2; 0; 0; 0 | 0; 0; 0; 1; x_2; y_2 | 1; x_3; y_3; 0; 0; 0 | 0; 0; 0; 1; x_3; y_3]
+
+'Inversa: {c} = [A]^-1 {q}_e    Ec. (15.5)
+
+Ainv = inverse(A)
+
+#pgb
+"Paso IV — Relacion deformacion–desplazamiento
+
+'Deformaciones planas segun Timoshenko & Goodier:
+
+#blk
+epsilon_x(x; y) = diff(c_1 + c_2*x + c_3*y; x) ; 'eps_x = du/dx
+epsilon_y(x; y) = diff(c_4 + c_5*x + c_6*y; y) ; 'eps_y = dv/dy
+gamma_xy(x; y) = diff(c_1 + c_2*x + c_3*y; y) + diff(c_4 + c_5*x + c_6*y; x) ; 'gamma_xy = du/dy + dv/dx
+#end blk
+
+'Estos resultados dan eps_x = c_2, eps_y = c_6, gamma_xy = c_3 + c_5.
+'En forma matricial  {eps} = [B] {q}_e,  con [B] constante (3x6):
+'[B] = (1/(2*Area)) * [ y_23  0    y_31  0    y_12  0
+'                       0     x_32  0    x_13  0    x_21
+'                       x_32  y_23 x_13  y_31 x_21  y_12 ]
+'donde y_ij = y_i - y_j  y  x_ij = x_i - x_j.
+
+y_23 = y_2 - y_3
+y_31 = y_3 - y_1
+y_12 = y_1 - y_2
+x_32 = x_3 - x_2
+x_13 = x_1 - x_3
+x_21 = x_2 - x_1
+
+B = (1/(2*Area))*[y_23; 0; y_31; 0; y_12; 0 | 0; x_32; 0; x_13; 0; x_21 | x_32; y_23; x_13; y_31; x_21; y_12]
+
+#pgb
+"Paso V — Relacion esfuerzo–deformacion (plane stress)
+
+'Para problemas de esfuerzo plano (Ec. 15.13):
+'   d_11 = d_22 = E/(1 - nu^2)
+'   d_12 = d_21 = nu*E/(1 - nu^2)
+'   d_33 = E/(2*(1 + nu))
+
+d_11 = E/(1 - nu^2)
+d_12 = nu*E/(1 - nu^2)
+d_33 = E/(2*(1 + nu))
+
+D = [d_11; d_12; 0 | d_12; d_11; 0 | 0; 0; d_33]
+
+'Entonces  {sigma} = [D] {eps} = [D][B] {q}_e    Ec. (15.12)
+
+#pgb
+"Paso VI — Matrices de rigidez y masa por trabajo virtual
+
+'[K]_e = integral sobre volumen de [B]^T [D] [B] dV   Ec. (15.22)
+'Como [B] y [D] son constantes en el triangulo, la integral se reduce
+'a  [K]_e = t * Area * [B]^T [D] [B].
+
+K_e = t*Area*transp(B)*D*B
+
+'La matriz [M]_e requiere las funciones de forma N_1, N_2, N_3:
+'   N_i = (a_i + b_i*x + c_i*y)/(2*Area)
+'con a_1 = x_2*y_3 - x_3*y_2,  b_1 = y_2 - y_3,  c_1 = x_3 - x_2,  etc.
+
+#blk
+a_1 = x_2*y_3 - x_3*y_2 ; 'Termino independiente N1
+b_1 = y_2 - y_3 ; 'Coef x en N1
+c_1 = x_3 - x_2 ; 'Coef y en N1
+a_2 = x_3*y_1 - x_1*y_3 ; 'Termino independiente N2
+b_2 = y_3 - y_1 ; 'Coef x en N2
+c_2 = x_1 - x_3 ; 'Coef y en N2
+a_3 = x_1*y_2 - x_2*y_1 ; 'Termino independiente N3
+b_3 = y_1 - y_2 ; 'Coef x en N3
+c_3 = x_2 - x_1 ; 'Coef y en N3
+#end blk
+
+#blk
+N_1(x; y) = (a_1 + b_1*x + c_1*y)/(2*Area) ; 'Funcion de forma 1
+N_2(x; y) = (a_2 + b_2*x + c_2*y)/(2*Area) ; 'Funcion de forma 2
+N_3(x; y) = (a_3 + b_3*x + c_3*y)/(2*Area) ; 'Funcion de forma 3
+#end blk
+
+'Integrales tipicas sobre un triangulo (formula exacta para polinomios):
+'   integral de N_i dA = Area/3
+'   integral de N_i^2 dA = Area/6
+'   integral de N_i*N_j dA = Area/12   (i != j)
+
+"Matriz [f(x;y)] de interpolacion  (2x6):
+'[f] = [ N_1  0    N_2  0    N_3  0
+'        0    N_1  0    N_2  0    N_3 ]
+
+"Resultado de la integracion rho * integral [f]^T [f] dV :
+
+#deq M_e = (rho*t*Area/12)*[2; 0; 1; 0; 1; 0 | 0; 2; 0; 1; 0; 1 | 1; 0; 2; 0; 1; 0 | 0; 1; 0; 2; 0; 1 | 1; 0; 1; 0; 2; 0 | 0; 1; 0; 1; 0; 2] @@(masa consistente triangulo)
+
+M_e = (rho*t*Area/12)*[2; 0; 1; 0; 1; 0 | 0; 2; 0; 1; 0; 1 | 1; 0; 2; 0; 1; 0 | 0; 1; 0; 2; 0; 1 | 1; 0; 1; 0; 2; 0 | 0; 1; 0; 1; 0; 2]
+
+#pgb
+"Paso VII — Ensamblaje global (simbolico)
+
+'Se ensambla por suma directa sobre los DOFs globales:
+'   [K] = suma sobre elementos de [K]_e
+'   [M] = suma sobre elementos de [M]_e
+'Los terminos coinciden en los DOFs compartidos por elementos adyacentes.
+
+"Paso VIII — Ecuacion dinamica del sistema
+
+'[M] {u_pp} + [K] {u} = {F(t)}     Ec. (15.28)
+'Se resuelve por superposicion modal (Cap. 8 Paz) o integracion directa
+'paso a paso (Newmark, Wilson-theta, etc.).
+
+"Paso IX — Recuperacion de esfuerzos
+
+'Para el nodo j del elemento:
+'   {sigma(x_j; y_j)}_e = [D]_j [B]_j {q}_e    Ec. (15.29)
+'Como [B] es constante en el triangulo, los esfuerzos son uniformes en
+'todo el elemento y no dependen del punto j.
+
+sigma_elem = D*B
+
+#pgb
+"Verificacion numerica — triangulo (0;0), (2;0), (0;3)
+
+'Con los valores definidos al inicio:
+'   Area = 3, E = 30e6, nu = 0.3, t = 1, rho = 0.000733
+
+"Coeficientes de la matriz constitutiva [D]:
+
+#blk
+d_11 = E/(1 - nu^2) ; 'd_11
+d_12 = nu*E/(1 - nu^2) ; 'd_12
+d_33 = E/(2*(1 + nu)) ; 'd_33
+#end blk
+
+"Matriz [B] (3x6) con los valores numericos:
+
+B_num = (1/(2*Area))*[y_23; 0; y_31; 0; y_12; 0 | 0; x_32; 0; x_13; 0; x_21 | x_32; y_23; x_13; y_31; x_21; y_12]
+
+"Matriz de rigidez elemental (6x6):
+
+K_num = t*Area*transp(B_num)*D*B_num
+
+"Matriz de masa consistente (6x6):
+
+M_num = (rho*t*Area/12)*[2; 0; 1; 0; 1; 0 | 0; 2; 0; 1; 0; 1 | 1; 0; 2; 0; 1; 0 | 0; 1; 0; 2; 0; 1 | 1; 0; 1; 0; 2; 0 | 0; 1; 0; 1; 0; 2]
+
+#pgb
+"Resumen
+
+'   Triangulo plano de 3 nodos, 6 DOF, plane stress
+'   Funciones de forma N_i lineales en x, y
+'   [B] constante -> [K]_e = t*Area*[B]^T [D] [B]
+'   [M]_e = rho*t*Area/12 * patron consistente
+'   Derivacion paso a paso siguiendo Paz Cap. 15 Ec. (15.1)-(15.29)
+#end margen
