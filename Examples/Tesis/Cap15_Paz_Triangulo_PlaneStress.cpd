@@ -141,7 +141,7 @@ M_e = (ρ*t*Area/12)*[2; 0; 1; 0; 1; 0 | 0; 2; 0; 1; 0; 1 | 1; 0; 2; 0; 1; 0 | 0
 
 "Paso IX — Recuperacion de esfuerzos
 
-'En el nudo j del elemento: '#deq σ(x_j; y_j) = [D]_j*[B]_j*q_e' (Ec. 15.29). Como '#deq [B]' es constante, los esfuerzos son UNIFORMES en todo el CST.
+'En el nudo '#deq j' del elemento: '#deq σ(x_j; y_j) = [D]·[B]·q_e' (Ec. 15.29). Como '#deq [B]' y '#deq [D]' son constantes en el CST, los esfuerzos son UNIFORMES en todo el elemento — no dependen del nudo '#deq j' elegido.
 
 σ_elem = D*B
 
