@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Calcpad — Visor Excel (Univer)</title>
+    <link rel="stylesheet" href="https://unpkg.com/@univerjs/presets@0.9.0/lib/styles/preset-sheets-core.css" />
+    <link rel="stylesheet" href="https://unpkg.com/@univerjs/presets@0.9.0/lib/styles/preset-sheets-advanced.css" />
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; }
+        #app { width: 100vw; height: calc(100vh - 200px); }
+        #logbox { position: fixed; bottom: 0; left: 0; right: 0; height: 200px; background: #1e1e1e; color: #ddd; font-family: 'Consolas', monospace; font-size: 11px; overflow-y: auto; padding: 6px; border-top: 2px solid #305496; z-index: 10000; }
+        #logbox .info { color: #8cf; }
+        #logbox .ok { color: #6f6; }
+        #logbox .err { color: #f66; font-weight: bold; }
+        #logbox .warn { color: #fc6; }
+        #empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #888; }
+        #empty h2 { color: #305496; margin: 0 0 8px 0; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="empty">
+            <h2>Visor Excel de Calcpad (Univer)</h2>
+            <p>Logs abajo ⬇️ — si ves "Univer listo", podés abrir un .xlsx</p>
+        </div>
+    </div>
+    <div id="logbox"></div>
+
+    <script>
+        function log(msg, level) {
+            level = level || 'info';
+            const box = document.getElementById('logbox');
+            if (!box) return;
+            const t = new Date().toLocaleTimeString();
+            const line = document.createElement('div');
+            line.className = level;
+            line.textContent = `[${t}] ${msg}`;
+            box.appendChild(line);
+            box.scrollTop = box.scrollHeight;
+            if (window.chrome && window.chrome.webview) {
+                try { window.chrome.webview.postMessage('LOG:' + level + ':' + msg); } catch (e) {}
+            }
+        }
+        window.addEventListener('error', (e) => {
+            log('window.error: ' + (e.message || e.error) + ' @ ' + e.filename + ':' + e.lineno, 'err');
+        });
+        window.addEventListener('unhandledrejection', (e) => {
+            log('unhandled: ' + (e.reason && (e.reason.message || e.reason)), 'err');
+        });
+        log('Página cargada. User-Agent: ' + navigator.userAgent.substring(0, 80));
+    </script>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "react":        "https://esm.sh/react@19.2.5",
+            "react/":       "https://esm.sh/react@19.2.5/",
+            "react-dom":    "https://esm.sh/react-dom@19.2.5?deps=react@19.2.5",
+            "react-dom/":   "https://esm.sh/react-dom@19.2.5&deps=react@19.2.5/",
+            "react-dom/client": "https://esm.sh/react-dom@19.2.5/client?deps=react@19.2.5",
+
+            "@univerjs/presets":                                     "https://esm.sh/@univerjs/presets@0.9.0?deps=react@19.2.5,react-dom@19.2.5&external=react,react-dom",
+            "@univerjs/presets/preset-sheets-core":                  "https://esm.sh/@univerjs/presets@0.9.0/preset-sheets-core?deps=react@19.2.5,react-dom@19.2.5&external=react,react-dom",
+            "@univerjs/presets/preset-sheets-core/locales/en-US":    "https://esm.sh/@univerjs/presets@0.9.0/preset-sheets-core/locales/en-US?deps=react@19.2.5,react-dom@19.2.5&external=react,react-dom",
+            "@univerjs/presets/preset-sheets-advanced":              "https://esm.sh/@univerjs/presets@0.9.0/preset-sheets-advanced?deps=react@19.2.5,react-dom@19.2.5&external=react,react-dom",
+            "@univerjs/presets/preset-sheets-advanced/locales/en-US":"https://esm.sh/@univerjs/presets@0.9.0/preset-sheets-advanced/locales/en-US?deps=react@19.2.5,react-dom@19.2.5&external=react,react-dom",
+
+            "@univerjs-pro/exchange-client":         "https://esm.sh/@univerjs-pro/exchange-client@0.9.0?deps=react@19.2.5,react-dom@19.2.5&external=react,react-dom",
+            "@univerjs-pro/exchange-client/facade":  "https://esm.sh/@univerjs-pro/exchange-client@0.9.0/facade?deps=react@19.2.5,react-dom@19.2.5&external=react,react-dom"
+        }
+    }
+    </script>
+
+    <script type="module">
+        log('Módulo cargando imports Univer…', 'info');
+        let univerAPI = null;
+        try {
+            const presetsMod = await import('@univerjs/presets');
+            log('Import @univerjs/presets OK (keys: ' + Object.keys(presetsMod).slice(0,10).join(',') + ')', 'ok');
+
+            const coreMod = await import('@univerjs/presets/preset-sheets-core');
+            log('Import preset-sheets-core OK', 'ok');
+
+            const advMod = await import('@univerjs/presets/preset-sheets-advanced');
+            log('Import preset-sheets-advanced OK', 'ok');
+
+            await import('@univerjs-pro/exchange-client/facade');
+            log('Import exchange-client facade OK (habilita importXLSX)', 'ok');
+
+            const coreLocale = (await import('@univerjs/presets/preset-sheets-core/locales/en-US')).default;
+            const advLocale = (await import('@univerjs/presets/preset-sheets-advanced/locales/en-US')).default;
+            log('Locales en-US cargadas', 'ok');
+
+            const { createUniver, defaultTheme, LocaleType, merge } = presetsMod;
+            const { UniverSheetsCorePreset } = coreMod;
+            const { UniverSheetsAdvancedPreset } = advMod;
+
+            const empty = document.getElementById('empty');
+            if (empty) empty.remove();
+
+            log('Invocando createUniver…');
+            const api = createUniver({
+                locale: LocaleType.EN_US,
+                locales: {
+                    [LocaleType.EN_US]: merge({}, coreLocale, advLocale),
+                },
+                theme: defaultTheme,
+                presets: [
+                    UniverSheetsCorePreset({ container: 'app' }),
+                    UniverSheetsAdvancedPreset(),
+                ],
+            });
+            univerAPI = api.univerAPI;
+            log('Univer API creada. Métodos disponibles: ' + Object.getOwnPropertyNames(Object.getPrototypeOf(univerAPI)).slice(0, 15).join(','), 'ok');
+
+            window.calcpadLoadXlsx = async function (base64, fileName) {
+                try {
+                    log('calcpadLoadXlsx invocado, base64 length=' + base64.length + ' name=' + fileName);
+                    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+                    log('bytes decoded = ' + bytes.length);
+                    const file = new File([bytes], fileName || 'workbook.xlsx', {
+                        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    });
+                    log('File object creado, size=' + file.size);
+                    log('Métodos import disponibles: ' + ['importXLSXToSnapshotAsync','importXLSXToUnitIdAsync','importXLSXToSnapshot','importXLSXToUnitId'].filter(m => typeof univerAPI[m] === 'function').join(', '));
+                    log('Invocando importXLSXToSnapshotAsync…');
+                    const snap = await univerAPI.importXLSXToSnapshotAsync(file);
+                    log('Snapshot generado. keys: ' + (snap && typeof snap === 'object' ? Object.keys(snap).slice(0, 10).join(',') : typeof snap), 'ok');
+                    log('Invocando createWorkbook…');
+                    univerAPI.createWorkbook(snap);
+                    log('Workbook creado ✓', 'ok');
+                    return 'ok';
+                } catch (e) {
+                    log('calcpadLoadXlsx ERROR: ' + (e.message || e) + ' | stack: ' + (e.stack || ''), 'err');
+                    return 'error:' + (e.message || e);
+                }
+            };
+
+            window.calcpadExportXlsx = async function () {
+                try {
+                    log('Export invocado');
+                    const activeWb = univerAPI.getActiveWorkbook();
+                    if (!activeWb) { log('No hay workbook activo', 'warn'); return null; }
+                    const buf = await univerAPI.exportXLSXByUnitIdAsync(activeWb.getId());
+                    const bytes = new Uint8Array(buf);
+                    log('Export bytes = ' + bytes.length, 'ok');
+                    let binary = '';
+                    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+                    return btoa(binary);
+                } catch (e) {
+                    log('Export error: ' + e.message, 'err');
+                    return null;
+                }
+            };
+
+            if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage('univer-ready');
+                log('postMessage univer-ready enviado al host', 'ok');
+            } else {
+                log('window.chrome.webview NO disponible (no estás en WebView2)', 'warn');
+            }
+        } catch (e) {
+            log('FALLO iniciando Univer: ' + (e.message || e) + ' | stack: ' + (e.stack || ''), 'err');
+        }
+    </script>
+</body>
+</html>

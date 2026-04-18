@@ -1052,14 +1052,13 @@ namespace Calcpad.Core
                     _parser.Parse(part);
                     // Execute: scalar/vector/matrix assignments persist in the parser's
                     // variable table so subsequent code can reference them.
+                    // Wrapped in try/catch because evaluation may fail for cells that
+                    // reference undefined vars on the RHS — we still want to render them.
                     try
                     {
                         _parser.Calculate(false);
                     }
-                    catch
-                    {
-                        // Evaluation may fail for undefined vars on RHS; still render.
-                    }
+                    catch { }
                     var html = _parser.ToHtml();
                     // If html is just a variable name with no '=', append the result
                     if (string.IsNullOrWhiteSpace(html) || (!html.Contains('=') && !html.Contains("&gt;")))
