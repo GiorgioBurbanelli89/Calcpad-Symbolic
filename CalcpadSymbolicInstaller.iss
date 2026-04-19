@@ -2,7 +2,7 @@
 ; Genera un instalador setup.exe
 
 #define MyAppName "Calcpad-Symbolic"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.2"
 #define MyAppPublisher "Jorge Burbano"
 #define MyAppURL "https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic"
 #define MyAppExeName "Calcpad.exe"

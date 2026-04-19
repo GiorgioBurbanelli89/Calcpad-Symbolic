@@ -2719,18 +2719,36 @@ namespace Calcpad.Core
             if (!_calculate || !_isVisible) return;
             try
             {
-                // Find Maxima
-                var maximaCmd = "C:/maxima-5.48.1/bin/maxima.bat";
-                if (!System.IO.File.Exists(maximaCmd))
-                    maximaCmd = "maxima"; // fallback to PATH
+                // Auto-discover any C:\maxima-*\bin\maxima.bat instead of
+                // hard-coding 5.48.1. Falls back to PATH.
+                string maximaCmd = null;
+                var preferred = "C:/maxima-5.48.1/bin/maxima.bat";
+                if (System.IO.File.Exists(preferred))
+                    maximaCmd = preferred;
+                else
+                {
+                    try
+                    {
+                        foreach (var dir in System.IO.Directory.EnumerateDirectories("C:/", "maxima-*"))
+                        {
+                            var bat = System.IO.Path.Combine(dir, "bin", "maxima.bat");
+                            if (System.IO.File.Exists(bat)) { maximaCmd = bat; break; }
+                        }
+                    }
+                    catch { }
+                }
+                maximaCmd ??= "maxima"; // PATH fallback
 
                 var tempFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "calcpad_maxima_" + Guid.NewGuid().ToString("N")[..8] + ".mac");
                 System.IO.File.WriteAllText(tempFile, "display2d:false$\n" + code, new System.Text.UTF8Encoding(false));
 
+                // Maxima interprets backslashes in the batch path as escape
+                // chars — force forward slashes.
+                var batchPath = tempFile.Replace('\\', '/');
                 var psi = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = maximaCmd,
-                    Arguments = $"--very-quiet --batch \"{tempFile}\"",
+                    Arguments = $"--very-quiet --batch \"{batchPath}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
