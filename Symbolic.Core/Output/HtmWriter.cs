@@ -84,7 +84,23 @@ namespace Calcpad.Core
             {
                 var i1 = i + 1;
                 if (i1 < name.Length)
-                    return FormatSubscript(FormatBold($"<var{s}>{name[..i]}</var>"), name[i1..]);
+                {
+                    // Subscript only consumes identifier-ish chars (letters,
+                    // digits, underscore). If the remainder contains operators
+                    // or whitespace, the subscript ends at the first such char
+                    // and the rest is emitted as plain text — otherwise the
+                    // fallback path (used when MathParser.Parse fails) would
+                    // greedy-consume everything after '_' into a single <sub>.
+                    int subEnd = i1;
+                    while (subEnd < name.Length &&
+                           (char.IsLetterOrDigit(name[subEnd]) || name[subEnd] == '_'))
+                        subEnd++;
+                    var subContent = name[i1..subEnd];
+                    var head = FormatSubscript(FormatBold($"<var{s}>{name[..i]}</var>"), subContent);
+                    if (subEnd < name.Length)
+                        head += System.Net.WebUtility.HtmlEncode(name[subEnd..]);
+                    return head;
+                }
             }
             return FormatBold($"<var{s}>{name}</var>");
 

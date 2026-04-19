@@ -539,7 +539,13 @@ namespace Calcpad.Core
             _result = RealValue.Zero;
             _isCalculated = false;
             _functionDefinitionIndex = -1;
-            // Preproceso: ]unidad → ]*unidad (multiplicación implícita para vectores/matrices)
+            // Preproceso 1: normalizar operadores Unicode de multiplicación que el
+            // usuario puede pegar desde texto renderizado (·, ×, ∗) → '*'.  Sin
+            // esto, '[M]·u_pp + [K]·u' fallaba en el tokenizador y el fallback
+            // de FormatVariable consumía el subscript greedy.
+            var normStr = NormalizeMultiplicationOperators(expression);
+            if (normStr != null) expression = normStr.AsSpan();
+            // Preproceso 2: ]unidad → ]*unidad (multiplicación implícita para vectores/matrices)
             var exprStr = InsertImplicitMultiplyAfterBracket(expression);
             ReadOnlySpan<char> processedExpr = exprStr ?? expression;
             var input = _input.GetInput(processedExpr, allowAssignment);
@@ -555,6 +561,32 @@ namespace Calcpad.Core
             }
             else
                 _rpn = Input.GetRpn(input);
+        }
+
+        // Acepta · (middle dot, U+00B7), × (U+00D7) y ∗ (U+2217) como alias de
+        // '*'. Útil cuando el usuario pega ecuaciones formateadas donde la
+        // multiplicación se muestra como punto medio o cruz.
+        // Retorna null si no hay cambios.
+        private static string NormalizeMultiplicationOperators(ReadOnlySpan<char> expression)
+        {
+            for (int i = 0; i < expression.Length; i++)
+            {
+                var c = expression[i];
+                if (c == '\u00B7' || c == '\u00D7' || c == '\u2217')
+                {
+                    var sb = new StringBuilder(expression.Length);
+                    for (int j = 0; j < expression.Length; j++)
+                    {
+                        var cj = expression[j];
+                        if (cj == '\u00B7' || cj == '\u00D7' || cj == '\u2217')
+                            sb.Append('*');
+                        else
+                            sb.Append(cj);
+                    }
+                    return sb.ToString();
+                }
+            }
+            return null;
         }
 
         // Inserta * entre ] y una letra (unidad) para permitir sintaxis ]unidad

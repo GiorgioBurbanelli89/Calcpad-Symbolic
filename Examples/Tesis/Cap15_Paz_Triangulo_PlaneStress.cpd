@@ -1,7 +1,7 @@
 #margen 20
 "Cap. 15 Paz — Elemento triangular de elasticidad plana (plane stress)
 
-'Estructuras tipo "skeletal" (vigas, porticos, armaduras) son unidimensionales: su comportamiento se describe con una ODE a lo largo del eje longitudinal. Las estructuras CONTINUAS bidimensionales, como una placa, se rigen por una EDP mucho mas compleja — de aqui el Metodo de Elementos Finitos. El sistema global es '#deq [M]_s*u_pp + [K]_s*u = F(t)' donde las matrices elementales '#deq [K]_e' y '#deq [M]_e' se derivan abajo para el elemento CST ("Constant Strain Triangle") de 3 nudos.
+'Estructuras tipo "skeletal" (vigas, porticos, armaduras) son unidimensionales: su comportamiento se describe con una ODE a lo largo del eje longitudinal. Las estructuras CONTINUAS bidimensionales, como una placa, se rigen por una EDP mucho mas compleja — de aqui el Metodo de Elementos Finitos. El sistema global es '#deq [M]·u_pp + [K]·u = F(t)' donde las matrices elementales '#deq [K]_e' y '#deq [M]_e' se derivan abajo para el elemento CST ("Constant Strain Triangle") de 3 nudos.
 
 "15.1 Problemas de elasticidad plana — dos tipos
 
@@ -98,7 +98,7 @@ D = [d_11; d_12; 0 | d_12; d_11; 0 | 0; 0; d_33]
 #pgb
 "Paso VI — Rigidez y masa por Trabajo Virtual
 
-'Principio de Trabajo Virtual (PVW): '#deq δW_I = δW_E' (Ec. 15.15). Cancelando '#deq δq^T' se obtiene la ecuacion dinamica elemental '#deq [M]_e*q_pp + [K]_e*q_e = P_e + P_be' (Ec. 15.21), con integrales '#deq [K]_e = int_V ([B]^T*[D]*[B]) dV' (Ec. 15.22) y '#deq [M]_e = int_V (ρ*[f]^T*[f]) dV' (Ec. 15.23).
+'Principio de Trabajo Virtual (PVW): '#deq δW_I = δW_E' (Ec. 15.15). Cancelando '#deq δq^T' se obtiene la ecuacion dinamica elemental '#deq [M]·q_pp + [K]·q_e = P_e + P_be' (Ec. 15.21), con integrales '#deq [K]_e = int ([B]^T·[D]·[B]) dV' (Ec. 15.22) y '#deq [M]_e = int (ρ·[f]^T·[f]) dV' (Ec. 15.23).
 
 'Como '#deq [B]' y '#deq [D]' son constantes en el CST, la integral de rigidez se reduce a '#deq [K]_e = t*Area*[B]^T*[D]*[B]'.
 
