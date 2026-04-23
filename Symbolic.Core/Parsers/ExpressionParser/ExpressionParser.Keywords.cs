@@ -1726,22 +1726,28 @@ namespace Calcpad.Core
                 return DeqRenderVar(cellExpr.Trim());
             }
 
-            // Build HTML: table wrapped in tall square brackets using
-            // position:absolute rails. The rails automatically span the
-            // full height of the matwrap container (which matches the
-            // table height). No nested flex — avoids the collapse when
-            // the outer span wraps to a new line.
+            // Build HTML: add matrix brackets as extra table cells with
+            // Unicode math bracket characters (U+23A1..U+23A6). These
+            // characters are designed to stack vertically forming a
+            // clean [ … ] matrix bracket regardless of row count.
+            //   ⎡ top-left    ⎤ top-right
+            //   ⎢ middle-left ⎥ middle-right
+            //   ⎣ bottom-left ⎦ bottom-right
             var sb = new System.Text.StringBuilder();
-            sb.Append("<span class=\"matwrap\" style=\"position:relative;display:inline-block;padding:0 14px;vertical-align:middle;\">");
-            // Left bracket: 3 pieces
-            sb.Append("<span style=\"position:absolute;left:0;top:0;bottom:0;width:2px;background:currentColor;\"></span>");
-            sb.Append("<span style=\"position:absolute;left:0;top:0;width:8px;height:2px;background:currentColor;\"></span>");
-            sb.Append("<span style=\"position:absolute;left:0;bottom:0;width:8px;height:2px;background:currentColor;\"></span>");
-            // Table
-            sb.Append("<table class=\"mat\" style=\"border-collapse:collapse;display:inline-table;vertical-align:middle;\">");
-            foreach (var row in cells)
+            sb.Append("<table class=\"matwrap\" style=\"border-collapse:collapse;display:inline-table;vertical-align:middle;line-height:1.1;\">");
+            int nRows = cells.Count;
+            for (int r = 0; r < nRows; r++)
             {
                 sb.Append("<tr>");
+                // Left bracket character
+                string lbr;
+                if (nRows == 1) lbr = "[";
+                else if (r == 0) lbr = "⎡";
+                else if (r == nRows - 1) lbr = "⎣";
+                else lbr = "⎢";
+                sb.Append($"<td style=\"padding:0;font-size:1.4em;line-height:1;vertical-align:middle;\">{lbr}</td>");
+                // Data cells
+                var row = cells[r];
                 for (int c = 0; c < maxCols; c++)
                 {
                     var cell = c < row.Count ? row[c] : "";
@@ -1749,14 +1755,16 @@ namespace Calcpad.Core
                     sb.Append(renderCell(cell));
                     sb.Append("</td>");
                 }
+                // Right bracket character
+                string rbr;
+                if (nRows == 1) rbr = "]";
+                else if (r == 0) rbr = "⎤";
+                else if (r == nRows - 1) rbr = "⎦";
+                else rbr = "⎥";
+                sb.Append($"<td style=\"padding:0;font-size:1.4em;line-height:1;vertical-align:middle;\">{rbr}</td>");
                 sb.Append("</tr>");
             }
             sb.Append("</table>");
-            // Right bracket: 3 pieces
-            sb.Append("<span style=\"position:absolute;right:0;top:0;bottom:0;width:2px;background:currentColor;\"></span>");
-            sb.Append("<span style=\"position:absolute;right:0;top:0;width:8px;height:2px;background:currentColor;\"></span>");
-            sb.Append("<span style=\"position:absolute;right:0;bottom:0;width:8px;height:2px;background:currentColor;\"></span>");
-            sb.Append("</span>");
             return sb.ToString();
         }
 
