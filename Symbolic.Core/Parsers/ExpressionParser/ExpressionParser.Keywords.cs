@@ -139,6 +139,31 @@ namespace Calcpad.Core
             else if (s[0] == '#' && keyword == Keyword.None)
                 keyword = GetKeyword(s);
 
+            // Markdown-style headings: "# Title", "## Subtitle", ... "###### h6"
+            // Activates automatically when a '#'-prefixed line has no matching
+            // keyword and follows the markdown pattern (1–6 hashes + space + text).
+            // Lets users write natural Markdown headings without the ugly "'# "
+            // text-prefix workaround.
+            if (keyword == Keyword.None && s.Length > 2 && s[0] == '#')
+            {
+                int hashCount = 0;
+                while (hashCount < s.Length && hashCount < 6 && s[hashCount] == '#')
+                    hashCount++;
+                if (hashCount > 0 && hashCount < s.Length && s[hashCount] == ' ')
+                {
+                    var titleText = s[(hashCount + 1)..].Trim().ToString();
+                    if (_isVisible && !string.IsNullOrEmpty(titleText))
+                    {
+                        // HTML-encode text content (preserves < > & but as safe text).
+                        // If the user wants inline HTML in the title, they can still
+                        // use the classic "Title syntax. Here we treat as plain text.
+                        var safe = System.Web.HttpUtility.HtmlEncode(titleText);
+                        _sb.Append($"<h{hashCount}{HtmlId}>{safe}</h{hashCount}>\n");
+                    }
+                    return KeywordResult.Continue;
+                }
+            }
+
             if (keyword == Keyword.None)
                 return KeywordResult.None;
 
