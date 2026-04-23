@@ -900,7 +900,7 @@ namespace Calcpad.Core
 
                 if (i > 0) sb2.Append(_lastDeqSeparator);
 
-                // Try special rendering for derivatives and primes
+                // Try special rendering for derivatives, primes, matrices
                 var specialHtml = TryRenderDeqSpecial(part);
                 if (specialHtml != null)
                 {
@@ -908,24 +908,10 @@ namespace Calcpad.Core
                     continue;
                 }
 
-                try
-                {
-                    _parser.Parse(NormalizeOps(part), false);
-                    var html = _parser.ToHtml();
-                    if (string.IsNullOrWhiteSpace(html))
-                    {
-                        // Fallback: renderizar como variable formateada
-                        var w = new HtmlWriter(Settings.Math, _parser.Phasor);
-                        html = w.FormatVariable(part, string.Empty, false);
-                    }
-                    sb2.Append(html);
-                }
-                catch
-                {
-                    // Si el parser falla, renderizar como texto con formato de variable
-                    var w = new HtmlWriter(Settings.Math, _parser.Phasor);
-                    sb2.Append(w.FormatVariable(part, string.Empty, false));
-                }
+                // For arbitrary scalar expressions use our recursive scalar
+                // renderer which builds fractions, products, exponents,
+                // subscripts — matching Calcpad's native HTML structure.
+                sb2.Append(RenderDeqScalar(part));
             }
 
             _isVal = savedIsVal;
@@ -1027,19 +1013,7 @@ namespace Calcpad.Core
             string renderChunk(string s)
             {
                 if (string.IsNullOrWhiteSpace(s)) return "";
-                var sp = TryRenderDeqSpecial(s);
-                if (!string.IsNullOrEmpty(sp)) return sp;
-                // Normalize operators the Calcpad parser understands:
-                // · × ⋅ (Unicode mul) → *
-                var normalized = s.Replace('·', '*').Replace('×', '*').Replace('⋅', '*');
-                try
-                {
-                    _parser.Parse(normalized, false);
-                    var html = _parser.ToHtml();
-                    if (!string.IsNullOrWhiteSpace(html)) return html;
-                }
-                catch { }
-                return DeqRenderVar(s);
+                return RenderDeqScalar(s);
             }
 
             string DispOps(string ops) => ops.Replace("*", "·").Trim();
@@ -1699,6 +1673,161 @@ namespace Calcpad.Core
         {
             if (string.IsNullOrEmpty(s)) return s;
             return s.Replace('·', '*').Replace('×', '*').Replace('⋅', '*');
+        }
+
+        /// <summary>
+        /// Render a decorative scalar expression into HTML, recursively handling
+        /// fractions (top-level '/'), multiplication (top-level '·'/'*'),
+        /// exponents ('^'), parentheses, and variables with subscripts.
+        /// Does NOT evaluate — pure decorative output for #deq/#sym/#blk.
+        /// Produces the same HTML structure as Calcpad native output:
+        ///   fraction: <span class="dvc">num<span class="dvl"></span>den</span>
+        ///   mul:      a · b (middle-dot glue)
+        ///   exp:      a<sup>n</sup>
+        /// </summary>
+        [ThreadStatic] private static int _renderDeqScalarDepth;
+        private string RenderDeqScalar(string expr)
+        {
+            if (string.IsNullOrWhiteSpace(expr)) return "";
+            if (++_renderDeqScalarDepth > 32)
+            {
+                _renderDeqScalarDepth--;
+                return DeqRenderVar(expr);
+            }
+            try
+            {
+                return RenderDeqScalarInner(expr);
+            }
+            finally { _renderDeqScalarDepth--; }
+        }
+
+        private string RenderDeqScalarInner(string expr)
+        {
+            expr = expr.Trim();
+            // Special patterns (partial/total derivatives, primes, integrals, matrix)
+            var sp = TryRenderDeqSpecial(expr);
+            if (!string.IsNullOrEmpty(sp)) return sp;
+
+            // Strip redundant outer parens in-place (not via recursion to avoid loops)
+            while (expr.Length > 1 && expr[0] == '(' && expr[^1] == ')')
+            {
+                int dp = 0;
+                bool ok = true;
+                for (int i = 0; i < expr.Length - 1; i++)
+                {
+                    if (expr[i] == '(') dp++;
+                    else if (expr[i] == ')') { dp--; if (dp == 0) { ok = false; break; } }
+                }
+                if (ok) expr = expr.Substring(1, expr.Length - 2).Trim();
+                else break;
+            }
+
+            // 1. Top-level addition/subtraction → render terms and join
+            if (HasTopLevelAddSub(expr))
+            {
+                var sb = new System.Text.StringBuilder();
+                int depth = 0; int start = 0;
+                for (int i = 0; i < expr.Length; i++)
+                {
+                    var c = expr[i];
+                    if (c == '(' || c == '[') depth++;
+                    else if (c == ')' || c == ']') depth--;
+                    else if ((c == '+' || c == '-') && depth == 0 && i > 0
+                             && expr[i - 1] != 'e' && expr[i - 1] != 'E')
+                    {
+                        var term = expr.Substring(start, i - start).Trim();
+                        if (term.Length > 0) sb.Append(RenderDeqScalar(term));
+                        sb.Append(c == '+' ? " + " : " &minus; ");
+                        start = i + 1;
+                    }
+                }
+                var last = expr.Substring(start).Trim();
+                if (last.Length > 0) sb.Append(RenderDeqScalar(last));
+                return sb.ToString();
+            }
+
+            // 2. Top-level division (fraction) → <span class="dvc">num dvl den</span>
+            var slashIdx = FindTopLevelChar(expr, '/');
+            if (slashIdx > 0)
+            {
+                var num = expr.Substring(0, slashIdx).Trim();
+                var den = expr.Substring(slashIdx + 1).Trim();
+                return $"<span class=\"dvc\">{RenderDeqScalar(num)}<span class=\"dvl\"></span>{RenderDeqScalar(den)}</span>";
+            }
+
+            // 3. Top-level multiplication → a · b · c
+            if (expr.IndexOfAny(new[] { '·', '*', '×', '⋅' }) >= 0)
+            {
+                var parts = new List<string>();
+                int depth = 0; int start = 0;
+                for (int i = 0; i < expr.Length; i++)
+                {
+                    var c = expr[i];
+                    if (c == '(' || c == '[') depth++;
+                    else if (c == ')' || c == ']') depth--;
+                    else if (depth == 0 && (c == '·' || c == '*' || c == '×' || c == '⋅'))
+                    {
+                        parts.Add(expr.Substring(start, i - start).Trim());
+                        start = i + 1;
+                    }
+                }
+                parts.Add(expr.Substring(start).Trim());
+                if (parts.Count > 1)
+                    return string.Join(" · ", parts.Where(p => p.Length > 0).Select(RenderDeqScalar));
+            }
+
+            // 4. Exponent: base^exponent → base<sup>exp</sup>
+            var caretIdx = FindTopLevelChar(expr, '^');
+            if (caretIdx > 0)
+            {
+                var baseExpr = expr.Substring(0, caretIdx).Trim();
+                var expExpr = expr.Substring(caretIdx + 1).Trim();
+                return $"{RenderDeqScalar(baseExpr)}<sup>{RenderDeqScalar(expExpr)}</sup>";
+            }
+
+            // 5. Leaf — try parser, else DeqRenderVar
+            try
+            {
+                _parser.Parse(NormalizeOps(expr), false);
+                var html = _parser.ToHtml();
+                if (!string.IsNullOrWhiteSpace(html)) return html;
+            }
+            catch { }
+            return DeqRenderVar(expr);
+        }
+
+        /// <summary>Find the index of the first char 'c' at top level (depth=0), or -1.</summary>
+        private static int FindTopLevelChar(string s, char c)
+        {
+            int depth = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (s[i] == '(' || s[i] == '[') depth++;
+                else if (s[i] == ')' || s[i] == ']') depth--;
+                else if (s[i] == c && depth == 0) return i;
+            }
+            return -1;
+        }
+
+        /// <summary>Strip redundant outer parentheses "(expr)" → "expr" when the
+        /// opening '(' matches with the closing ')' at the end.</summary>
+        private static string StripOuterParens(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            s = s.Trim();
+            while (s.Length > 1 && s[0] == '(' && s[^1] == ')')
+            {
+                int depth = 0;
+                bool matches = true;
+                for (int i = 0; i < s.Length - 1; i++)
+                {
+                    if (s[i] == '(') depth++;
+                    else if (s[i] == ')') { depth--; if (depth == 0) { matches = false; break; } }
+                }
+                if (matches && depth == 1) s = s.Substring(1, s.Length - 2).Trim();
+                else break;
+            }
+            return s;
         }
 
         /// <summary>
