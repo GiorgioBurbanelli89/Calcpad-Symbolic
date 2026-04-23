@@ -910,7 +910,7 @@ namespace Calcpad.Core
 
                 try
                 {
-                    _parser.Parse(part, false);
+                    _parser.Parse(NormalizeOps(part), false);
                     var html = _parser.ToHtml();
                     if (string.IsNullOrWhiteSpace(html))
                     {
@@ -1029,9 +1029,12 @@ namespace Calcpad.Core
                 if (string.IsNullOrWhiteSpace(s)) return "";
                 var sp = TryRenderDeqSpecial(s);
                 if (!string.IsNullOrEmpty(sp)) return sp;
+                // Normalize operators the Calcpad parser understands:
+                // · × ⋅ (Unicode mul) → *
+                var normalized = s.Replace('·', '*').Replace('×', '*').Replace('⋅', '*');
                 try
                 {
-                    _parser.Parse(s, false);
+                    _parser.Parse(normalized, false);
                     var html = _parser.ToHtml();
                     if (!string.IsNullOrWhiteSpace(html)) return html;
                 }
@@ -1691,6 +1694,13 @@ namespace Calcpad.Core
             return parts;
         }
 
+        /// <summary>Normalize Unicode math operators to ASCII so the parser accepts them.</summary>
+        private static string NormalizeOps(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            return s.Replace('·', '*').Replace('×', '*').Replace('⋅', '*');
+        }
+
         /// <summary>
         /// Render a multiplicative expression "A · B · C" where any factor can
         /// be a partial derivative (∂f/∂x), a total derivative (df/dx), a
@@ -1725,10 +1735,10 @@ namespace Calcpad.Core
                 // Try the special renderer first (derivatives, primes, etc.)
                 var sp = TryRenderDeqSpecial(f);
                 if (!string.IsNullOrEmpty(sp)) { sb.Append(sp); continue; }
-                // Parser fallback
+                // Parser fallback (normalize Unicode mul chars first)
                 try
                 {
-                    _parser.Parse(f, false);
+                    _parser.Parse(NormalizeOps(f), false);
                     var html = _parser.ToHtml();
                     if (!string.IsNullOrWhiteSpace(html)) { sb.Append(html); continue; }
                 }
@@ -1827,7 +1837,7 @@ namespace Calcpad.Core
                 {
                     try
                     {
-                        _parser.Parse(term, false);
+                        _parser.Parse(NormalizeOps(term), false);
                         termHtml = _parser.ToHtml();
                     }
                     catch { }
