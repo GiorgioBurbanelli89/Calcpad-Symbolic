@@ -1319,13 +1319,21 @@ namespace Calcpad.Core
             // e.g. "∂w/∂x - θ_y", "∂θ_x/∂x - ∂θ_y/∂y", "a*∂f/∂x + b",
             //      "κ_x = -∂θ_y/∂x" is split earlier by '=', so this sees "-∂θ_y/∂x" alone
             // Split by top-level +/- and render each term, then join with operators.
-            if ((part.Contains('∂') || part.Contains("d/d") ||
-                 System.Text.RegularExpressions.Regex.IsMatch(part, @"\bd[a-zA-Zα-ωΑ-Ω_]+/d[a-zA-Zα-ωΑ-Ω_]"))
-                && HasTopLevelAddSub(part))
+            bool hasDeriv = part.Contains('∂') || part.Contains("d/d") ||
+                 System.Text.RegularExpressions.Regex.IsMatch(part, @"\bd[a-zA-Zα-ωΑ-Ω_]+/d[a-zA-Zα-ωΑ-Ω_]");
+            if (hasDeriv && HasTopLevelAddSub(part))
             {
                 var multiTermHtml = TryRenderMultiTermDerivative(part);
                 if (!string.IsNullOrEmpty(multiTermHtml))
                     return multiTermHtml;
+            }
+            // --- Pattern 0d: Single-term multiplicative with derivative ---
+            // e.g. "∂N_i/∂x · u_i", "a·∂f/∂x", "2·∂^2v/∂x^2"
+            if (hasDeriv && (part.Contains('·') || part.Contains('*') || part.Contains('×') || part.Contains('⋅')))
+            {
+                var mulHtml = RenderMultiplicativeFactors(part);
+                if (!string.IsNullOrEmpty(mulHtml))
+                    return mulHtml;
             }
 
             // --- Pattern 1: Leibniz derivative fractions ---
@@ -1658,6 +1666,54 @@ namespace Calcpad.Core
             return parts;
         }
 
+        /// <summary>
+        /// Render a multiplicative expression "A · B · C" where any factor can
+        /// be a partial derivative (∂f/∂x), a total derivative (df/dx), a
+        /// variable with subscript (u_i), or a scalar. Joins factors with
+        /// a middle-dot operator.
+        /// </summary>
+        private string RenderMultiplicativeFactors(string term)
+        {
+            // Split by top-level '·', '*', '×', '⋅' respecting parentheses.
+            var factors = new List<string>();
+            int depth = 0, start = 0;
+            for (int i = 0; i < term.Length; i++)
+            {
+                var c = term[i];
+                if (c == '(' || c == '[') depth++;
+                else if (c == ')' || c == ']') depth--;
+                else if (depth == 0 && (c == '·' || c == '*' || c == '×' || c == '⋅'))
+                {
+                    factors.Add(term.Substring(start, i - start).Trim());
+                    start = i + 1;
+                }
+            }
+            factors.Add(term.Substring(start).Trim());
+            if (factors.Count < 2) return null;
+
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < factors.Count; i++)
+            {
+                if (i > 0) sb.Append(" · ");
+                var f = factors[i];
+                if (string.IsNullOrEmpty(f)) { sb.Append(f); continue; }
+                // Try the special renderer first (derivatives, primes, etc.)
+                var sp = TryRenderDeqSpecial(f);
+                if (!string.IsNullOrEmpty(sp)) { sb.Append(sp); continue; }
+                // Parser fallback
+                try
+                {
+                    _parser.Parse(f, false);
+                    var html = _parser.ToHtml();
+                    if (!string.IsNullOrWhiteSpace(html)) { sb.Append(html); continue; }
+                }
+                catch { }
+                // Last resort: format as variable with subscript handling
+                sb.Append(DeqRenderVar(f));
+            }
+            return sb.ToString();
+        }
+
         /// <summary>True if s contains a '+' or '-' at top-level (outside [](), depth=0) past position 0.</summary>
         private static bool HasTopLevelAddSub(string s)
         {
@@ -1725,16 +1781,22 @@ namespace Calcpad.Core
                 {
                     sb.Append(op == "-" ? " &minus; " : " + ");
                 }
-                // Render the term — try derivative pattern first, then parser
+                // Render the term — try derivative pattern first, then multiplicative
+                // factor rendering, then parser fallback.
                 string termHtml = null;
-                // Try as full derivative expression first
-                var signedTerm = (k == 0 && op == "-") ? "-" + term : term;
                 var spHtml = TryRenderDeqSpecial(term);
                 if (!string.IsNullOrEmpty(spHtml))
                 {
                     termHtml = spHtml;
-                    if (term.Contains('∂') || term.StartsWith("d") && term.Contains("/d"))
+                    if (term.Contains('∂') || (term.StartsWith("d") && term.Contains("/d")))
                         anyDeriv = true;
+                }
+                else if (term.Contains('∂') || term.Contains("d/d")
+                         || System.Text.RegularExpressions.Regex.IsMatch(term, @"\bd[a-zA-Zα-ωΑ-Ω_]+/d[a-zA-Zα-ωΑ-Ω_]"))
+                {
+                    // Term has a derivative + multiplicative factors: split by ·/*
+                    termHtml = RenderMultiplicativeFactors(term);
+                    anyDeriv = true;
                 }
                 else
                 {
