@@ -920,19 +920,13 @@ namespace Calcpad.Core
         }
 
         /// <summary>
-        /// If HTML contains a matrix wrapper, use block-level flex with
-        /// align-items:center and nowrap so LHS, operators, scalar
-        /// fractions and matrix all stay on a single horizontal row
-        /// aligned with the vertical center of the matrix brackets.
-        /// Horizontal overflow is allowed (overflow-x:auto) so wide
-        /// expressions don't get broken across paragraph lines.
-        /// Block flex (not inline-flex) prevents the browser from
-        /// splitting the container at paragraph line-break points.
+        /// No extra inline style needed: we now use the native Calcpad
+        /// <span class="matrix"> structure whose stylesheet already places
+        /// the matrix inline with proper bracket rendering and automatic
+        /// centre-alignment with surrounding text ('=', '·', scalars…).
         /// </summary>
         private static string EqStyleForMatrix(string html)
         {
-            if (html != null && html.Contains("class=\"matwrap\""))
-                return " style=\"display:flex;align-items:center;flex-wrap:nowrap;gap:0 0.3em;overflow-x:auto;white-space:nowrap;\"";
             return "";
         }
 
@@ -1732,45 +1726,28 @@ namespace Calcpad.Core
                 return DeqRenderVar(cellExpr.Trim());
             }
 
-            // Build HTML: add matrix brackets as extra table cells with
-            // Unicode math bracket characters (U+23A1..U+23A6). These
-            // characters are designed to stack vertically forming a
-            // clean [ … ] matrix bracket regardless of row count.
-            //   ⎡ top-left    ⎤ top-right
-            //   ⎢ middle-left ⎥ middle-right
-            //   ⎣ bottom-left ⎦ bottom-right
+            // Build HTML using the SAME <span class="matrix"> pattern that
+            // native Calcpad uses for computed matrices. The existing
+            // stylesheet already renders proper tall square brackets via
+            // the empty first/last <span class="td"></span> cells combined
+            // with CSS pseudo-elements — so our decorative matrices look
+            // IDENTICAL to native ones, align perfectly inline with other
+            // expressions, and don't force line breaks in the paragraph.
             var sb = new System.Text.StringBuilder();
-            sb.Append("<table class=\"matwrap\" style=\"border-collapse:collapse;display:inline-table;vertical-align:middle;line-height:1.1;\">");
-            int nRows = cells.Count;
-            for (int r = 0; r < nRows; r++)
+            sb.Append("<span class=\"matrix matwrap\">");
+            foreach (var row in cells)
             {
-                sb.Append("<tr>");
-                // Left bracket character
-                string lbr;
-                if (nRows == 1) lbr = "[";
-                else if (r == 0) lbr = "⎡";
-                else if (r == nRows - 1) lbr = "⎣";
-                else lbr = "⎢";
-                sb.Append($"<td style=\"padding:0;font-size:1.4em;line-height:1;vertical-align:middle;\">{lbr}</td>");
-                // Data cells
-                var row = cells[r];
+                sb.Append("<span class=\"tr\"><span class=\"td\"></span>");
                 for (int c = 0; c < maxCols; c++)
                 {
                     var cell = c < row.Count ? row[c] : "";
-                    sb.Append("<td style=\"padding:4px 10px;text-align:center;vertical-align:middle;\">");
+                    sb.Append("<span class=\"td\">");
                     sb.Append(renderCell(cell));
-                    sb.Append("</td>");
+                    sb.Append("</span>");
                 }
-                // Right bracket character
-                string rbr;
-                if (nRows == 1) rbr = "]";
-                else if (r == 0) rbr = "⎤";
-                else if (r == nRows - 1) rbr = "⎦";
-                else rbr = "⎥";
-                sb.Append($"<td style=\"padding:0;font-size:1.4em;line-height:1;vertical-align:middle;\">{rbr}</td>");
-                sb.Append("</tr>");
+                sb.Append("<span class=\"td\"></span></span>");
             }
-            sb.Append("</table>");
+            sb.Append("</span>");
             return sb.ToString();
         }
 
