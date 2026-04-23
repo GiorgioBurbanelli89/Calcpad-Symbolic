@@ -1315,6 +1315,18 @@ namespace Calcpad.Core
                 if (!string.IsNullOrEmpty(mixedHtml))
                     return mixedHtml;
             }
+            // --- Pattern 0c: Multi-term expression with partial/total derivative ---
+            // e.g. "∂w/∂x - θ_y", "∂θ_x/∂x - ∂θ_y/∂y", "a*∂f/∂x + b",
+            //      "κ_x = -∂θ_y/∂x" is split earlier by '=', so this sees "-∂θ_y/∂x" alone
+            // Split by top-level +/- and render each term, then join with operators.
+            if ((part.Contains('∂') || part.Contains("d/d") ||
+                 System.Text.RegularExpressions.Regex.IsMatch(part, @"\bd[a-zA-Zα-ωΑ-Ω_]+/d[a-zA-Zα-ωΑ-Ω_]"))
+                && HasTopLevelAddSub(part))
+            {
+                var multiTermHtml = TryRenderMultiTermDerivative(part);
+                if (!string.IsNullOrEmpty(multiTermHtml))
+                    return multiTermHtml;
+            }
 
             // --- Pattern 1: Leibniz derivative fractions ---
             // d^nf/dx^n, d^2v/dx^2, df/dx, ∂f/∂x, ∂^2u/∂x^2, ∂^2u/∂x∂y
@@ -1644,6 +1656,100 @@ namespace Calcpad.Core
             }
             if (start < s.Length) parts.Add(s.Substring(start));
             return parts;
+        }
+
+        /// <summary>True if s contains a '+' or '-' at top-level (outside [](), depth=0) past position 0.</summary>
+        private static bool HasTopLevelAddSub(string s)
+        {
+            int depth = 0;
+            for (int i = 1; i < s.Length; i++)  // skip leading sign
+            {
+                var c = s[i];
+                if (c == '(' || c == '[') depth++;
+                else if (c == ')' || c == ']') depth--;
+                else if ((c == '+' || c == '-') && depth == 0)
+                {
+                    // Not an exponent sign like 1e-3
+                    if (i > 0 && (s[i - 1] == 'e' || s[i - 1] == 'E')) continue;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Render an expression with top-level +/- separating terms that may
+        /// include a partial/total derivative (∂f/∂x or df/dx or d^2v/dx^2).
+        /// Splits the expression, renders each term through TryRenderDeqSpecial
+        /// (or parser fallback) and re-joins with the original operators.
+        /// </summary>
+        private string TryRenderMultiTermDerivative(string expr)
+        {
+            // Split into tokens with their preceding operator (+/-).
+            var tokens = new List<(string op, string term)>();
+            int depth = 0;
+            int start = 0;
+            string curOp = "+";
+            if (expr.Length > 0 && expr[0] == '-') { curOp = "-"; start = 1; }
+            else if (expr.Length > 0 && expr[0] == '+') { curOp = "+"; start = 1; }
+            for (int i = start; i < expr.Length; i++)
+            {
+                var c = expr[i];
+                if (c == '(' || c == '[') depth++;
+                else if (c == ')' || c == ']') depth--;
+                else if ((c == '+' || c == '-') && depth == 0
+                         && i > start
+                         && !(i > 0 && (expr[i - 1] == 'e' || expr[i - 1] == 'E')))
+                {
+                    tokens.Add((curOp, expr.Substring(start, i - start).Trim()));
+                    curOp = c.ToString();
+                    start = i + 1;
+                }
+            }
+            if (start < expr.Length)
+                tokens.Add((curOp, expr.Substring(start).Trim()));
+
+            if (tokens.Count == 0) return null;
+
+            var sb = new System.Text.StringBuilder();
+            bool anyDeriv = false;
+            for (int k = 0; k < tokens.Count; k++)
+            {
+                var (op, term) = tokens[k];
+                // Render operator prefix (except leading '+' which we omit)
+                if (k == 0)
+                {
+                    if (op == "-") sb.Append("&minus;");
+                }
+                else
+                {
+                    sb.Append(op == "-" ? " &minus; " : " + ");
+                }
+                // Render the term — try derivative pattern first, then parser
+                string termHtml = null;
+                // Try as full derivative expression first
+                var signedTerm = (k == 0 && op == "-") ? "-" + term : term;
+                var spHtml = TryRenderDeqSpecial(term);
+                if (!string.IsNullOrEmpty(spHtml))
+                {
+                    termHtml = spHtml;
+                    if (term.Contains('∂') || term.StartsWith("d") && term.Contains("/d"))
+                        anyDeriv = true;
+                }
+                else
+                {
+                    try
+                    {
+                        _parser.Parse(term, false);
+                        termHtml = _parser.ToHtml();
+                    }
+                    catch { }
+                    if (string.IsNullOrWhiteSpace(termHtml))
+                        termHtml = DeqRenderVar(term);
+                }
+                sb.Append(termHtml);
+            }
+            return anyDeriv ? sb.ToString() : null;
         }
 
         /// <summary>Find the index of the first top-level '=' (outside [](), depth=0), or -1.</summary>
