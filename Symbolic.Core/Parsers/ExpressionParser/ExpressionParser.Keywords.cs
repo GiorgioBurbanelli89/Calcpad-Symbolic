@@ -920,16 +920,19 @@ namespace Calcpad.Core
         }
 
         /// <summary>
-        /// If HTML contains a matrix wrapper, use inline-flex with
+        /// If HTML contains a matrix wrapper, use block-level flex with
         /// align-items:center and nowrap so LHS, operators, scalar
-        /// fractions and matrix all stay on a single line visually
+        /// fractions and matrix all stay on a single horizontal row
         /// aligned with the vertical center of the matrix brackets.
-        /// Horizontal overflow is allowed (rare; use narrower cells).
+        /// Horizontal overflow is allowed (overflow-x:auto) so wide
+        /// expressions don't get broken across paragraph lines.
+        /// Block flex (not inline-flex) prevents the browser from
+        /// splitting the container at paragraph line-break points.
         /// </summary>
         private static string EqStyleForMatrix(string html)
         {
             if (html != null && html.Contains("class=\"matwrap\""))
-                return " style=\"display:inline-flex;align-items:center;flex-wrap:nowrap;gap:0 0.3em;vertical-align:middle;\"";
+                return " style=\"display:flex;align-items:center;flex-wrap:nowrap;gap:0 0.3em;overflow-x:auto;white-space:nowrap;\"";
             return "";
         }
 
