@@ -920,13 +920,13 @@ namespace Calcpad.Core
         }
 
         /// <summary>
-        /// If HTML contains a matrix wrapper, return inline-flex centering style
-        /// so the '=' sign and LHS align with the middle of the matrix brackets.
+        /// If HTML contains a matrix wrapper, the matwrap itself uses
+        /// vertical-align:middle so surrounding inline text (like "LHS = "
+        /// or "·") aligns with the vertical center of the matrix brackets.
+        /// No extra style on the parent needed — we return empty.
         /// </summary>
         private static string EqStyleForMatrix(string html)
         {
-            if (html != null && html.Contains("class=\"matwrap\""))
-                return " style=\"display:inline-flex;align-items:center;flex-wrap:wrap;gap:0 0.25em;\"";
             return "";
         }
 
@@ -1726,16 +1726,19 @@ namespace Calcpad.Core
                 return DeqRenderVar(cellExpr.Trim());
             }
 
-            // Build HTML: table wrapped in tall square brackets.
-            // Use display:inline-flex with align-items:stretch so brackets
-            // automatically match the height of the table, and flex:0 0 8px
-            // gives each bracket a fixed width of 8px.
+            // Build HTML: table wrapped in tall square brackets using
+            // position:absolute rails. The rails automatically span the
+            // full height of the matwrap container (which matches the
+            // table height). No nested flex — avoids the collapse when
+            // the outer span wraps to a new line.
             var sb = new System.Text.StringBuilder();
-            sb.Append("<span class=\"matwrap\" style=\"display:inline-flex;align-items:stretch;vertical-align:middle;line-height:1;\">");
-            // Left bracket — open square: top, left, bottom borders
-            sb.Append("<span style=\"display:block;flex:0 0 8px;border:2px solid currentColor;border-right:none;margin-right:4px;\"></span>");
+            sb.Append("<span class=\"matwrap\" style=\"position:relative;display:inline-block;padding:0 14px;vertical-align:middle;\">");
+            // Left bracket: 3 pieces
+            sb.Append("<span style=\"position:absolute;left:0;top:0;bottom:0;width:2px;background:currentColor;\"></span>");
+            sb.Append("<span style=\"position:absolute;left:0;top:0;width:8px;height:2px;background:currentColor;\"></span>");
+            sb.Append("<span style=\"position:absolute;left:0;bottom:0;width:8px;height:2px;background:currentColor;\"></span>");
             // Table
-            sb.Append("<table class=\"mat\" style=\"border-collapse:collapse;display:inline-table;\">");
+            sb.Append("<table class=\"mat\" style=\"border-collapse:collapse;display:inline-table;vertical-align:middle;\">");
             foreach (var row in cells)
             {
                 sb.Append("<tr>");
@@ -1749,8 +1752,10 @@ namespace Calcpad.Core
                 sb.Append("</tr>");
             }
             sb.Append("</table>");
-            // Right bracket — close square: top, right, bottom borders
-            sb.Append("<span style=\"display:block;flex:0 0 8px;border:2px solid currentColor;border-left:none;margin-left:4px;\"></span>");
+            // Right bracket: 3 pieces
+            sb.Append("<span style=\"position:absolute;right:0;top:0;bottom:0;width:2px;background:currentColor;\"></span>");
+            sb.Append("<span style=\"position:absolute;right:0;top:0;width:8px;height:2px;background:currentColor;\"></span>");
+            sb.Append("<span style=\"position:absolute;right:0;bottom:0;width:8px;height:2px;background:currentColor;\"></span>");
             sb.Append("</span>");
             return sb.ToString();
         }
