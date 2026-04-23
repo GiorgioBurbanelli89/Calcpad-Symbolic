@@ -839,6 +839,9 @@ namespace Calcpad.Core
         // #formeq expr1 = expr2 = expr3
         // Muestra ecuación simbólica con doble igualdad.
         // Divide por '=' (fuera de []) y renderiza cada parte como #noc con ' = ' entre ellas.
+        // También soporta múltiples ecuaciones separadas por coma:
+        //   #deq θ_x = -∂w/∂y, θ_y = ∂w/∂x
+        // → renderiza cada ecuación y las une con ',  '
         private void ParseKeywordDeq(ReadOnlySpan<char> s)
         {
             _sb.Append($"<!-- FORMEQ CALLED: len={s.Length} -->");
@@ -856,6 +859,28 @@ namespace Calcpad.Core
                 expr = expr[..atIdx].Trim();
             }
 
+            // Split by top-level ',' to allow multiple equations on one #deq line
+            // e.g. "θ_x = -∂w/∂y, θ_y = ∂w/∂x"
+            var equations = SplitTopLevelByChar(expr, ',').Select(e => e.Trim()).Where(e => e.Length > 0).ToList();
+            if (equations.Count > 1)
+            {
+                // Render each sub-equation independently, join with commas
+                var firstEqNumber = eqNumber;  // equation number applies only once (last eq)
+                for (int e = 0; e < equations.Count; e++)
+                {
+                    if (e > 0) _sb.Append("<p>");
+                    RenderDeqSingle(equations[e], e == equations.Count - 1 ? firstEqNumber : null);
+                    if (e > 0) _sb.Append("</p>");
+                }
+                return;
+            }
+
+            RenderDeqSingle(expr, eqNumber);
+        }
+
+        /// <summary>Render a single equation (possibly with double equality a=b=c).</summary>
+        private void RenderDeqSingle(string expr, string eqNumber)
+        {
             // Pre-define variables to avoid unit interpretation
             PreDefineVariables(expr);
 
