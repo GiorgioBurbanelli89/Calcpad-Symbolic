@@ -920,13 +920,16 @@ namespace Calcpad.Core
         }
 
         /// <summary>
-        /// No extra inline style needed: we now use the native Calcpad
-        /// <span class="matrix"> structure whose stylesheet already places
-        /// the matrix inline with proper bracket rendering and automatic
-        /// centre-alignment with surrounding text ('=', '·', scalars…).
+        /// When the HTML contains a native Calcpad matrix, wrap the whole
+        /// expression in inline-flex with align-items:center so that the
+        /// '=' sign and any operator adjacent to the matrix align with
+        /// the VERTICAL MIDDLE of the matrix brackets (not with the text
+        /// baseline, which the Calcpad stylesheet would otherwise use).
         /// </summary>
         private static string EqStyleForMatrix(string html)
         {
+            if (html != null && html.Contains("class=\"matrix"))
+                return " style=\"display:inline-flex;align-items:center;flex-wrap:nowrap;gap:0 0.3em;\"";
             return "";
         }
 
