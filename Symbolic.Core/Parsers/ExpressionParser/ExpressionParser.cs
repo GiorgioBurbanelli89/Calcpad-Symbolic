@@ -737,14 +737,15 @@ namespace Calcpad.Core
                             else
                             {
                                 var html = _parser.ToHtml();
+                                var eqStyle = EqStyleForMatrix(html);
                                 if (getXml && Settings.Math.FormatEquations)
                                 {
                                     var xml = _parser.ToXml();
                                     OpenXmlExpressions.Add(xml);
-                                    _sb.Append($"<span class=\"eq\" id=\"eq-{OpenXmlExpressions.Count - 1}\">{html}</span>");
+                                    _sb.Append($"<span class=\"eq\"{eqStyle} id=\"eq-{OpenXmlExpressions.Count - 1}\">{html}</span>");
                                 }
                                 else
-                                    _sb.Append($"<span class=\"eq\">{html}</span>");
+                                    _sb.Append($"<span class=\"eq\"{eqStyle}>{html}</span>");
                             }
                         }
                     }
@@ -784,7 +785,9 @@ namespace Calcpad.Core
                                 _parser.IsCalculation = _isVal != -1;
                                 if (sb2.Length > 0)
                                 {
-                                    _sb.Append($"<span class=\"eq\">{sb2}</span>");
+                                    var sb2Str = sb2.ToString();
+                                    var eqStyle2 = EqStyleForMatrix(sb2Str);
+                                    _sb.Append($"<span class=\"eq\"{eqStyle2}>{sb2Str}</span>");
                                     continue;
                                 }
                             }
