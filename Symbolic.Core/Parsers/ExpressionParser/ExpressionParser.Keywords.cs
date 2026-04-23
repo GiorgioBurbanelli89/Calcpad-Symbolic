@@ -920,13 +920,16 @@ namespace Calcpad.Core
         }
 
         /// <summary>
-        /// If HTML contains a matrix wrapper, the matwrap itself uses
-        /// vertical-align:middle so surrounding inline text (like "LHS = "
-        /// or "·") aligns with the vertical center of the matrix brackets.
-        /// No extra style on the parent needed — we return empty.
+        /// If HTML contains a matrix wrapper, use inline-flex with
+        /// align-items:center and nowrap so LHS, operators, scalar
+        /// fractions and matrix all stay on a single line visually
+        /// aligned with the vertical center of the matrix brackets.
+        /// Horizontal overflow is allowed (rare; use narrower cells).
         /// </summary>
         private static string EqStyleForMatrix(string html)
         {
+            if (html != null && html.Contains("class=\"matwrap\""))
+                return " style=\"display:inline-flex;align-items:center;flex-wrap:nowrap;gap:0 0.3em;vertical-align:middle;\"";
             return "";
         }
 
