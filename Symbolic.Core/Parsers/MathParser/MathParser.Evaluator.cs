@@ -184,10 +184,14 @@ namespace Calcpad.Core
                     _ =>
                         ((ValueToken)t).Value
                 };
-                // Cuando & [array] está activo, adimensionalizar todo antes de operar
-                // (solo para & con vector de unidades — el & escalar mantiene conversión normal)
-                if (_parser._forceUnitsArray is not null)
-                    StripUnits(ref val);
+                // Cuando & unidad escalar está activo, adimensionalizar CONVIRTIENDO a la
+                // unidad forzada. Esto permite fórmulas empíricas como 14100*sqrt(fc) & kgf/cm²
+                // donde sqrt recibe el valor adimensional y la unidad se re-estampa al final.
+                if (_parser._forceUnits is not null && _parser._forceUnitsArray is null)
+                    StripUnitsToTarget(ref val, _parser._forceUnits);
+                // Para & [array] con vectores/matrices, NO adimensionalizamos aquí — la
+                // conversión componente por componente la hace ForceApplyUnitsArray con
+                // la unidad ORIGINAL de cada componente (no asume SI intermedio).
                 return val;
             }
 
@@ -903,6 +907,91 @@ namespace Calcpad.Core
             // & = fórmulas empíricas (1500*√(fc) & kgf/cm² → 21737 kgf/cm²)
             // Convierte a SI base (g,m,s) y quita la unidad.
             // .D * GetSIFactor() da el valor en unidades SI fundamentales.
+            // Adimensionaliza un valor CONVIRTIENDO a la unidad target (en lugar de a SI).
+            // Usado por & escalar: expresión se evalúa como si todo estuviera en la unidad target,
+            // lo que permite aplicar sqrt/log/exp/trig sobre valores con unidades compatibles.
+            // Ejemplo: 14100*sqrt(fc) & kgf/cm²  →  fc (en cualquier unidad de presión) se
+            // convierte numéricamente a kgf/cm², se hace sqrt del escalar, y al final se re-estampa.
+            //
+            // Si targetUnit es adimensional (& 1), se PRESERVA el valor numérico original.
+            // Ejemplo: 24 MPa & 1 → 24 (no 24 000 000). De esta forma el usuario no pierde
+            // la referencia de la unidad original; el valor numérico que escribió se
+            // mantiene cuando ya es solo un escalar sin unidad.
+            private static void StripUnitsToTarget(ref IValue ival, Unit targetUnit)
+            {
+                // Caso 1: target adimensional (& 1). Quita la unidad pero preserva el valor.
+                if (targetUnit is null || targetUnit.IsDimensionless)
+                {
+                    if (ival is RealValue realBare && realBare.Units is not null)
+                        ival = new RealValue(realBare.D);
+                    else if (ival is ComplexValue cplxBare && cplxBare.Units is not null)
+                        ival = new ComplexValue(cplxBare.A, cplxBare.B, null);
+                    else if (ival is Vector vecBare)
+                    {
+                        for (int i = vecBare.Size - 1; i >= 0; --i)
+                            if (vecBare[i].Units is not null)
+                                vecBare.ValueByRef(i) = new RealValue(vecBare[i].D);
+                    }
+                    else if (ival is Matrix matBare)
+                    {
+                        for (int i = matBare.RowCount - 1; i >= 0; --i)
+                        {
+                            var row = matBare.Rows[i];
+                            for (int j = row.Size - 1; j >= 0; --j)
+                                if (row[j].Units is not null)
+                                    row.ValueByRef(j) = new RealValue(row[j].D);
+                        }
+                    }
+                    return;
+                }
+                if (ival is RealValue real && real.Units is not null && !real.Units.IsDimensionless)
+                {
+                    var factor = ComputeForceConversionFactor(real.Units, targetUnit);
+                    ival = new RealValue(real.D * factor);
+                }
+                else if (ival is RealValue r2 && r2.Units is not null)
+                    ival = new RealValue(r2.D);
+                else if (ival is ComplexValue complex && complex.Units is not null)
+                {
+                    var f = complex.Units.IsDimensionless
+                        ? 1d
+                        : ComputeForceConversionFactor(complex.Units, targetUnit);
+                    ival = new ComplexValue(complex.A * f, complex.B * f, null);
+                }
+                else if (ival is Vector vec)
+                {
+                    for (int i = vec.Size - 1; i >= 0; --i)
+                    {
+                        var u = vec[i].Units;
+                        if (u is not null && !u.IsDimensionless)
+                        {
+                            var f = ComputeForceConversionFactor(u, targetUnit);
+                            vec.ValueByRef(i) = new RealValue(vec[i].D * f);
+                        }
+                        else if (u is not null)
+                            vec.ValueByRef(i) = new RealValue(vec[i].D);
+                    }
+                }
+                else if (ival is Matrix mat)
+                {
+                    for (int i = mat.RowCount - 1; i >= 0; --i)
+                    {
+                        var row = mat.Rows[i];
+                        for (int j = row.Size - 1; j >= 0; --j)
+                        {
+                            var u = row[j].Units;
+                            if (u is not null && !u.IsDimensionless)
+                            {
+                                var f = ComputeForceConversionFactor(u, targetUnit);
+                                row.ValueByRef(j) = new RealValue(row[j].D * f);
+                            }
+                            else if (u is not null)
+                                row.ValueByRef(j) = new RealValue(row[j].D);
+                        }
+                    }
+                }
+            }
+
             private static void StripUnits(ref IValue ival)
             {
                 if (ival is RealValue real && real.Units is not null && !real.Units.IsDimensionless)
@@ -957,16 +1046,35 @@ namespace Calcpad.Core
                 // Calcular factor de conversión por dimensión
                 var factor = ComputeForceConversionFactor(sourceUnit, targetUnit);
 
+                // Si target es adimensional (& 1), preservar valor numérico sin unidad.
+                // Esto completa la regla de StripUnitsToTarget — el valor numérico del
+                // usuario se conserva tal cual.
+                if (targetUnit is null || targetUnit.IsDimensionless)
+                {
+                    if (ival is RealValue rBare)
+                    {
+                        ival = new RealValue(rBare.D);
+                        return null;
+                    }
+                    if (ival is ComplexValue cBare)
+                    {
+                        ival = new ComplexValue(cBare.A, cBare.B, null);
+                        return null;
+                    }
+                }
                 if (ival is RealValue real)
                 {
-                    // & adimensionalizes: convert value, do NOT stamp unit
-                    ival = new RealValue(real.D * factor, null);
-                    return null;
+                    // & ESTAMPA la unidad al resultado. Si el valor ya estaba adimensional
+                    // (StripUnitsToTarget se aplicó antes a los operandos), factor = 1 y
+                    // sólo se re-estampa la unidad forzada (ej. sqrt(fc) & kgf/cm²).
+                    // Si el valor aún tiene unidad (ej. 2 tonf & kN), factor convierte.
+                    ival = new RealValue(real.D * factor, targetUnit);
+                    return targetUnit;
                 }
                 if (ival is ComplexValue complex)
                 {
-                    ival = new ComplexValue(complex.A * factor, complex.B * factor, null);
-                    return null;
+                    ival = new ComplexValue(complex.A * factor, complex.B * factor, targetUnit);
+                    return targetUnit;
                 }
                 if (ival is HpVector hpv)
                 {
@@ -1023,9 +1131,16 @@ namespace Calcpad.Core
                 return sourceUnit.ForceConvertTo(targetUnit);
             }
 
-            // Aplica array de unidades a vector o matriz.
-            // El resultado está adimensional en SI interno. Divide por factor SI del target
-            // para expresar en esa unidad, luego stampa.
+            // Aplica array de unidades a vector o matriz, componente por componente.
+            // Regla:
+            //   - Si componente tiene UNIDAD: CONVIERTE src → target usando factor de
+            //     conversión dimensional.
+            //     Ejemplo: [2 in; 3 tonf] & [mm; kN] → [50.8 mm; 29.89 kN].
+            //   - Si componente es ADIMENSIONAL puro y target tiene dimensión: ESTAMPA directo.
+            //     Ejemplo: [2; 3] & [mm; kN] → [2 mm; 3 kN].
+            // Nota: a diferencia del caso escalar con & 1, aquí el usuario ya declaró las
+            // unidades de cada componente explícitamente (sabe qué tiene), así que la
+            // conversión mediante factor (aun con target adimensional = SI) es consistente.
             internal static Unit ForceApplyUnitsArray(ref IValue ival, Unit[] units)
             {
                 if (units is null || units.Length == 0)
@@ -1035,9 +1150,21 @@ namespace Calcpad.Core
                 {
                     for (int i = 0; i < vec.Size; i++)
                     {
-                        var u = i < units.Length ? (units[i] ?? units[0]) : units[units.Length - 1];
-                        var f = (u is not null && !u.IsDimensionless) ? u.GetSIFactor() : 1d;
-                        vec.ValueByRef(i) = new RealValue(vec[i].D / f, u);
+                        var target = i < units.Length ? (units[i] ?? units[0]) : units[units.Length - 1];
+                        var src = vec[i].Units;
+                        double newVal;
+                        if (src is null)
+                        {
+                            // componente adimensional: estampar sin conversión
+                            newVal = vec[i].D;
+                        }
+                        else
+                        {
+                            // componente con unidad: convertir src → target
+                            var factor = ComputeForceConversionFactor(src, target);
+                            newVal = vec[i].D * factor;
+                        }
+                        vec.ValueByRef(i) = new RealValue(newVal, target);
                     }
                     return null;
                 }
@@ -1050,9 +1177,19 @@ namespace Calcpad.Core
                         for (int j = 0; j < row.Size; j++)
                         {
                             var idx = i * nCols + j;
-                            var u = idx < units.Length ? (units[idx] ?? units[0]) : units[units.Length - 1];
-                            var f = (u is not null && !u.IsDimensionless) ? u.GetSIFactor() : 1d;
-                            row.ValueByRef(j) = new RealValue(row[j].D / f, u);
+                            var target = idx < units.Length ? (units[idx] ?? units[0]) : units[units.Length - 1];
+                            var src = row[j].Units;
+                            double newVal;
+                            if (src is null)
+                            {
+                                newVal = row[j].D;
+                            }
+                            else
+                            {
+                                var factor = ComputeForceConversionFactor(src, target);
+                                newVal = row[j].D * factor;
+                            }
+                            row.ValueByRef(j) = new RealValue(newVal, target);
                         }
                     }
                     return null;

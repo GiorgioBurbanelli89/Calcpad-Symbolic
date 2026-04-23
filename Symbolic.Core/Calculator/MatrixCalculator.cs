@@ -784,6 +784,14 @@ namespace Calcpad.Core
             if (a.RowCount != b.Length)
                 throw Exceptions.MatrixDimensions();
 
+            // Si K o b tienen unidades MIXTAS por posición (caso matriz de rigidez
+            // con DOFs mixtos: kN/m, kN, kN*m), el solver Gauss-Jordan interno no
+            // puede operar directamente. Resolvemos adimensionalizando a SI,
+            // resolvemos numéricamente, y estampamos las unidades derivadas al
+            // vector solución.
+            if (HasMixedUnitsMatrix(a) || HasMixedUnitsVector(b))
+                return LSolveWithMixedUnits(a, b);
+
             if (a is HpMatrix hp_a)
             {
                 if (b is HpVector hp_b)
@@ -792,6 +800,111 @@ namespace Calcpad.Core
                 throw Exceptions.MustBeHpVector(Exceptions.Items.Argument);
             }
             return a.LSolve(b);
+        }
+
+        // Detecta si una matriz tiene unidades distintas en alguna posición.
+        private static bool HasMixedUnitsMatrix(Matrix m)
+        {
+            Unit first = null;
+            bool seen = false;
+            for (int i = 0; i < m.RowCount; i++)
+            {
+                var row = m.Rows[i];
+                for (int j = 0; j < row.Size; j++)
+                {
+                    var u = row[j].Units;
+                    if (!seen) { first = u; seen = true; continue; }
+                    if (!UnitsEqual(first, u)) return true;
+                }
+            }
+            return false;
+        }
+
+        // Detecta si un vector tiene unidades distintas en alguna posición.
+        private static bool HasMixedUnitsVector(Vector v)
+        {
+            Unit first = null;
+            bool seen = false;
+            for (int i = 0; i < v.Length; i++)
+            {
+                var u = v[i].Units;
+                if (!seen) { first = u; seen = true; continue; }
+                if (!UnitsEqual(first, u)) return true;
+            }
+            return false;
+        }
+
+        private static bool UnitsEqual(Unit u1, Unit u2)
+        {
+            if (u1 is null && u2 is null) return true;
+            if (u1 is null || u2 is null) return false;
+            return u1.IsConsistent(u2) && u1.GetSIFactor() == u2.GetSIFactor();
+        }
+
+        // Resuelve K*u = b cuando K y/o b tienen unidades mixtas por posición.
+        // Estrategia:
+        //   1. Convertir cada elemento a su valor en SI (adimensionalizar).
+        //   2. Resolver el sistema numérico (sin unidades).
+        //   3. Determinar la unidad derivada de cada u[i] = unidad(b[0]) / unidad(K[0,i]).
+        //      El sistema es consistente dimensionalmente si K[k,i]*u[i] tiene las mismas
+        //      unidades que b[k] para todo k. Esto se asume para este shortcut.
+        //   4. Convertir el valor numérico SI del resultado a la unidad derivada y estampar.
+        private static Vector LSolveWithMixedUnits(Matrix a, Vector b)
+        {
+            int n = a.RowCount;
+            // 1) Construir matriz y vector numéricos en SI.
+            var aRows = new Vector[n];
+            for (int i = 0; i < n; i++)
+            {
+                var row = a.Rows[i];
+                var cells = new RealValue[row.Size];
+                for (int j = 0; j < row.Size; j++)
+                {
+                    var u = row[j].Units;
+                    var factor = (u is not null && !u.IsDimensionless) ? u.GetSIFactor() : 1d;
+                    cells[j] = new RealValue(row[j].D * factor);
+                }
+                aRows[i] = new Vector(cells);
+            }
+            var aSi = Matrix.CreateFromRows(aRows, a.ColCount);
+
+            var bCells = new RealValue[n];
+            for (int i = 0; i < n; i++)
+            {
+                var u = b[i].Units;
+                var factor = (u is not null && !u.IsDimensionless) ? u.GetSIFactor() : 1d;
+                bCells[i] = new RealValue(b[i].D * factor);
+            }
+            var bSi = new Vector(bCells);
+
+            // 2) Resolver numéricamente (sin unidades).
+            var uSi = aSi.LSolve(bSi);
+
+            // 3) Calcular la unidad derivada de u[i] = unidad(b[0]) / unidad(a[0,i]).
+            //    Si a[0,i] es adimensional, la unidad de u[i] = unidad(b[0]).
+            //    Si b[0] es adimensional, unidad(u[i]) = 1 / unidad(a[0,i]).
+            var resultCells = new RealValue[n];
+            var row0 = a.Rows[0];
+            var ub0 = b[0].Units;
+            for (int i = 0; i < n; i++)
+            {
+                var uAi = row0[i].Units;
+                Unit uResult = null;
+                if (ub0 is null && uAi is null)
+                    uResult = null;
+                else if (ub0 is null)
+                    uResult = uAi.Pow(-1f); // 1/unit
+                else if (uAi is null)
+                    uResult = ub0;
+                else
+                    uResult = ub0 / uAi;
+
+                // Convertir el valor SI al valor en la unidad derivada.
+                var siFactor = (uResult is not null && !uResult.IsDimensionless)
+                    ? uResult.GetSIFactor() : 1d;
+                resultCells[i] = new RealValue(uSi[i].D / siFactor, uResult);
+            }
+            return new Vector(resultCells);
         }
 
         private static Vector ClSolve(in IValue A, in IValue B)
