@@ -930,6 +930,102 @@ namespace Calcpad.Core
             return "";
         }
 
+        /// <summary>
+        /// Render an expression that contains a matrix literal "[..|..|..]"
+        /// anywhere inside (e.g. "A * [1,2|3,4] + B" or "(E·t^3/(..)) · [..|..]").
+        /// Splits at the matrix brackets, renders the prefix/suffix through the
+        /// normal parser and the matrix through the big-bracket template.
+        /// Returns null if no matrix found.
+        /// </summary>
+        private string TryRenderExpressionWithMatrix(string expr)
+        {
+            if (string.IsNullOrEmpty(expr)) return null;
+            // Find the first '[' at depth=0 that starts a matrix literal
+            int depth = 0;
+            int matStart = -1;
+            int matEnd = -1;
+            for (int i = 0; i < expr.Length; i++)
+            {
+                var c = expr[i];
+                if (c == '(') depth++;
+                else if (c == ')') depth--;
+                else if (c == '[' && depth == 0)
+                {
+                    // Find matching ']'
+                    int br = 1;
+                    for (int j = i + 1; j < expr.Length; j++)
+                    {
+                        if (expr[j] == '[') br++;
+                        else if (expr[j] == ']')
+                        {
+                            br--;
+                            if (br == 0)
+                            {
+                                // Check if this bracketed content has a '|' (matrix)
+                                var inner = expr.Substring(i + 1, j - i - 1);
+                                if (inner.Contains('|'))
+                                {
+                                    matStart = i;
+                                    matEnd = j;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    if (matStart >= 0) break;
+                }
+            }
+            if (matStart < 0) return null;
+
+            var prefix = expr.Substring(0, matStart).Trim();
+            var matExpr = expr.Substring(matStart, matEnd - matStart + 1);
+            var suffix = expr.Substring(matEnd + 1).Trim();
+
+            // Strip trailing operator from prefix and leading operator from suffix
+            // so we can render them as separate operator glyphs outside the matrix.
+            string prefixTrail = "";
+            while (prefix.Length > 0 && "+-*/·×⋅ ".IndexOf(prefix[^1]) >= 0)
+            {
+                prefixTrail = prefix[^1] + prefixTrail;
+                prefix = prefix[..^1].TrimEnd();
+            }
+            string suffixHead = "";
+            while (suffix.Length > 0 && "+-*/·×⋅ ".IndexOf(suffix[0]) >= 0)
+            {
+                suffixHead += suffix[0];
+                suffix = suffix[1..].TrimStart();
+            }
+
+            string renderChunk(string s)
+            {
+                if (string.IsNullOrWhiteSpace(s)) return "";
+                var sp = TryRenderDeqSpecial(s);
+                if (!string.IsNullOrEmpty(sp)) return sp;
+                try
+                {
+                    _parser.Parse(s, false);
+                    var html = _parser.ToHtml();
+                    if (!string.IsNullOrWhiteSpace(html)) return html;
+                }
+                catch { }
+                return DeqRenderVar(s);
+            }
+
+            string DispOps(string ops) => ops.Replace("*", "·").Trim();
+
+            var sb = new System.Text.StringBuilder();
+            if (prefix.Length > 0) sb.Append(renderChunk(prefix));
+            var prefixOp = DispOps(prefixTrail);
+            if (!string.IsNullOrEmpty(prefixOp)) sb.Append(' ').Append(prefixOp).Append(' ');
+            var matHtml = TryRenderMatrixLiteral(matExpr);
+            if (string.IsNullOrEmpty(matHtml)) return null;
+            sb.Append(matHtml);
+            var suffixOp = DispOps(suffixHead);
+            if (!string.IsNullOrEmpty(suffixOp)) sb.Append(' ').Append(suffixOp).Append(' ');
+            if (suffix.Length > 0) sb.Append(renderChunk(suffix));
+            return sb.ToString();
+        }
+
         // #cen inline: parse expression and center it
         // Supports: #cen 'text, #cen expr, #cen #deq expr @@(num)
         private void ParseKeywordCenInline(ReadOnlySpan<char> s)
@@ -1205,6 +1301,16 @@ namespace Calcpad.Core
                 var matHtml = TryRenderMatrixLiteral(part);
                 if (!string.IsNullOrEmpty(matHtml))
                     return matHtml;
+            }
+            // --- Pattern 0b: Expression with embedded matrix ---
+            // e.g. "(E·t^3/(12(1-ν^2))) · [1, ν, 0 | ...]" or
+            // "A * [1,2|3,4] + B" — find the [..|..] inside and render neighbors
+            // with the normal parser, the matrix with the big-bracket template.
+            if (part.IndexOf('|') > 0 && part.IndexOf('[') >= 0)
+            {
+                var mixedHtml = TryRenderExpressionWithMatrix(part);
+                if (!string.IsNullOrEmpty(mixedHtml))
+                    return mixedHtml;
             }
 
             // --- Pattern 1: Leibniz derivative fractions ---
