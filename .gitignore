@@ -4,18 +4,11 @@ obj/
 *.suo
 .vs/
 node_modules/
-*.exe
-# Installer binaries are distributed via GitHub Releases, not the repo —
-# they exceed GitHub's 100MB push limit.
-# Portable zip bundles too — also released, not committed.
-*.zip
-# Scratch stdout/stderr dumps
-Symbolic.Wpf/e.txt
-Symbolic.Wpf/o.txt
-# Scratch repl files at repo root
-/minimal.cpd
-/minimal.html
-/integral_demo.cpd
-/integral_demo.html
+# Build output of `dotnet publish` (the same content is already packaged in
+# Calcpad-Symbolic-portable-win-x64.exe / the installers). Adding every
+# individual DLL/PDB would bloat the repo with thousands of redundant files.
+/publish/
+# Large binaries (installers, portable zips) are tracked via Git LFS —
+# see .gitattributes. NOT excluded anymore.
 # Temporary debug project used while diagnosing AngouriMath stack overflow.
 TestAngouri/
