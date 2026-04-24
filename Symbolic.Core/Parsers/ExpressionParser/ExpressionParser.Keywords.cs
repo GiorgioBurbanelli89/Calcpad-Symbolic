@@ -1295,7 +1295,21 @@ namespace Calcpad.Core
         /// - Partial derivatives: ∂f/∂x
         /// Returns null if the part is not a special pattern.
         /// </summary>
+        [ThreadStatic] private static int _tryRenderDeqSpecialDepth;
         private string TryRenderDeqSpecial(string part)
+        {
+            // Guard against mutual recursion with TryRenderMultiTermDerivative
+            // and RenderMultiplicativeFactors (both of which call back into
+            // TryRenderDeqSpecial for sub-terms). 16 levels is more than
+            // enough for realistic inputs; past that, bail with null so the
+            // caller can fall back to parser-based rendering.
+            if (_tryRenderDeqSpecialDepth >= 16) return null;
+            _tryRenderDeqSpecialDepth++;
+            try { return TryRenderDeqSpecialImpl(part); }
+            finally { _tryRenderDeqSpecialDepth--; }
+        }
+
+        private string TryRenderDeqSpecialImpl(string part)
         {
             // --- Pattern 0: Matrix literal [row1 | row2 | row3] ---
             // Renders as a proper HTML matrix with brackets. Each row has
@@ -1321,8 +1335,11 @@ namespace Calcpad.Core
             // e.g. "∂w/∂x - θ_y", "∂θ_x/∂x - ∂θ_y/∂y", "a*∂f/∂x + b",
             //      "κ_x = -∂θ_y/∂x" is split earlier by '=', so this sees "-∂θ_y/∂x" alone
             // Split by top-level +/- and render each term, then join with operators.
+            // hasDeriv: accept d^n, d<digits>, ∂^n, ∂<digits>, and identifiers
+            // with Greek letters / subscripts (e.g. d^2φ_i/dx_j).
             bool hasDeriv = part.Contains('∂') || part.Contains("d/d") ||
-                 System.Text.RegularExpressions.Regex.IsMatch(part, @"[d∂]\d*[a-zA-Zα-ωΑ-Ω_]+\s*/\s*[d∂][a-zA-Zα-ωΑ-Ω_]");
+                 System.Text.RegularExpressions.Regex.IsMatch(part,
+                    @"[d∂](?:\^?\d+)?[a-zA-Zα-ωΑ-Ω_][a-zA-Zα-ωΑ-Ω0-9_]*\s*/\s*[d∂][a-zA-Zα-ωΑ-Ω_]");
             if (hasDeriv && HasTopLevelAddSub(part))
             {
                 var multiTermHtml = TryRenderMultiTermDerivative(part);
@@ -1342,8 +1359,10 @@ namespace Calcpad.Core
             // d^nf/dx^n, d^2v/dx^2, df/dx, ∂f/∂x, ∂^2u/∂x^2, ∂^2u/∂x∂y
             // Acepta signo opcional  -  al inicio: -∂^2w/∂x^2, -df/dx, etc.
             // También acepta factor multiplicativo al inicio: 2*∂^2w/∂x∂y, 3*d^2v/dx^2
+            // Accept identifiers with Greek letters, digits, and subscripts in
+            // both numerator (e.g. φ_i) and denominator variables (e.g. x_j).
             var leibnizMatch = System.Text.RegularExpressions.Regex.Match(part,
-                @"^(-?)((?:\d+(?:\.\d+)?[·*])?)([d∂](?:\^(\d+))?)(\w+)\s*/\s*([d∂])(\w)(?:\^(\d+))?(?:([d∂])(\w)(?:\^(\d+))?)?$");
+                @"^(-?)((?:\d+(?:\.\d+)?[·*])?)([d∂](?:\^(\d+))?)([a-zA-Zα-ωΑ-Ω_][a-zA-Zα-ωΑ-Ω0-9_]*)\s*/\s*([d∂])([a-zA-Zα-ωΑ-Ω_][a-zA-Zα-ωΑ-Ω0-9_]*)(?:\^(\d+))?(?:([d∂])([a-zA-Zα-ωΑ-Ω_][a-zA-Zα-ωΑ-Ω0-9_]*)(?:\^(\d+))?)?$");
             if (leibnizMatch.Success)
             {
                 var signPrefix = leibnizMatch.Groups[1].Value; // "" o "-"
@@ -2046,7 +2065,8 @@ namespace Calcpad.Core
                         anyDeriv = true;
                 }
                 else if (term.Contains('∂') || term.Contains("d/d")
-                         || System.Text.RegularExpressions.Regex.IsMatch(term, @"[d∂]\d*[a-zA-Zα-ωΑ-Ω_]+\s*/\s*[d∂][a-zA-Zα-ωΑ-Ω_]"))
+                         || System.Text.RegularExpressions.Regex.IsMatch(term,
+                            @"[d∂](?:\^?\d+)?[a-zA-Zα-ωΑ-Ω_][a-zA-Zα-ωΑ-Ω0-9_]*\s*/\s*[d∂][a-zA-Zα-ωΑ-Ω_]"))
                 {
                     // Term has a derivative + multiplicative factors: split by ·/*
                     termHtml = RenderMultiplicativeFactors(term);
@@ -3095,7 +3115,12 @@ namespace Calcpad.Core
                 }
             }
 
-            var result = SymbolicProcessor.Process(command);
+            // Normalize Unicode operators before dispatching to AngouriMath:
+            // `·` (U+00B7 middle dot), `×` (U+00D7), `⋅` (U+22C5 dot op) → `*`.
+            // Calcpad Symbolic users habitually type `·` for multiplication but
+            // AngouriMath's parser only understands ASCII `*`.
+            var normalized = NormalizeOps(command);
+            var result = SymbolicProcessor.Process(normalized);
             if (!_isVisible) return;
 
             if (result.IsError)
@@ -3879,7 +3904,8 @@ namespace Calcpad.Core
         private void ParseInlineSym(string command)
         {
             if (string.IsNullOrEmpty(command)) return;
-            var result = SymbolicProcessor.Process(command);
+            // Normalize Unicode operators (·, ×, ⋅) → ASCII * for AngouriMath.
+            var result = SymbolicProcessor.Process(NormalizeOps(command));
             if (result.IsError) { _sb.Append($"<span class=\"err\">{System.Web.HttpUtility.HtmlEncode(result.Error)}</span>"); return; }
 
             var savedIsVal = _isVal;
@@ -4034,7 +4060,115 @@ namespace Calcpad.Core
             _isVal = savedIsVal;
             _parser.IsCalculation = _isVal != -1;
             if (sb2.Length > 0)
-                _sb.Append($"<span class=\"eq\">{sb2}</span>");
+            {
+                // Apply the matrix-aware style so that when the rendered HTML
+                // contains a <span class="matrix"> the equals sign is
+                // vertically centered with the matrix (inline-flex, align-items:center).
+                var sbStr = sb2.ToString();
+                var eqStyle = EqStyleForMatrix(sbStr);
+                _sb.Append($"<span class=\"eq\"{eqStyle}>{sbStr}</span>");
+            }
+        }
+
+        /// <summary>
+        /// Decide whether an inline math fragment (between apostrophes in a
+        /// text line) should be rendered as display-only — mirroring the
+        /// permissiveness of block-level #deq — instead of being evaluated
+        /// through the normal parser (which rejects identities, Leibniz
+        /// derivatives, and literal directive references).
+        /// </summary>
+        /// <remarks>
+        /// Patterns routed to display-only:
+        /// <list type="bullet">
+        /// <item>Literal directive or function reference: starts with
+        /// <c>#</c> or <c>$</c> (e.g. <c>#blk</c>, <c>$Plot</c>). These
+        /// cannot be evaluated inline but the user wants to show them
+        /// as code while narrating.</item>
+        /// <item>Matrix literal: <c>[row1 | row2 | ...]</c>.</item>
+        /// <item>Leibniz derivative: <c>d^n f / d^m x</c>, <c>∂f/∂x</c>,
+        /// <c>d^2w/dxdy</c> — the normal inline parser tokenises these
+        /// wrong (treats <c>dxdy</c> as units).</item>
+        /// <item>Identity whose LHS is not a simple assignable target:
+        /// <c>(a+b)^2 = a^2 + 2·a·b + b^2</c>. The normal parser insists
+        /// the LHS of <c>=</c> be a variable or function name.</item>
+        /// </list>
+        /// </remarks>
+        internal static bool ShouldRenderInlineAsDisplay(string expr)
+        {
+            if (string.IsNullOrWhiteSpace(expr)) return false;
+            var trimmed = expr.Trim();
+            // 1. Literal directive or function reference
+            if (trimmed.Length > 0 && (trimmed[0] == '#' || trimmed[0] == '$'))
+                return true;
+            // 2. Matrix literal [..|..|..] — whole expression is a matrix
+            if (trimmed.Length > 2 && trimmed[0] == '[' && trimmed[^1] == ']' &&
+                trimmed.IndexOf('|') > 0)
+                return true;
+            // 3. Leibniz derivative pattern: d^n f / d^m x (or with ∂)
+            if (System.Text.RegularExpressions.Regex.IsMatch(trimmed,
+                @"[d∂]\^?\d*[a-zA-Zα-ωΑ-Ω_]+\s*/\s*[d∂]"))
+                return true;
+            // 3b. Integral call — Calcpad core does not have `integral` as a
+            // builtin, but #deq/TryRenderIntegralSpecial renders it as ∫.
+            // Route any inline expression containing `integral(` to display.
+            if (System.Text.RegularExpressions.Regex.IsMatch(trimmed,
+                @"(?i)\bintegral\s*\("))
+                return true;
+            // 4. Equality rules
+            var eqIdx = FindTopLevelEquals(trimmed);
+            if (eqIdx > 0)
+            {
+                var lhs = trimmed[..eqIdx].Trim();
+                // 4a. Identity: LHS is not a simple variable/function
+                if (!IsSimpleAssignmentTarget(lhs))
+                    return true;
+                // 4b. Assignment whose RHS is a matrix literal — render the
+                // matrix without forcing evaluation. Useful for "D = [...]"
+                // embedded in narrative where RHS cells may reference vars
+                // that aren't yet in scope at that point of the prose.
+                var rhs = trimmed[(eqIdx + 1)..].Trim();
+                if (rhs.Length > 2 && rhs[0] == '[' && rhs[^1] == ']' &&
+                    rhs.IndexOf('|') > 0)
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// A "simple assignment target" is a variable or function call header
+        /// (no operators in the LHS). Accepts:
+        /// <c>name</c>, <c>name_sub</c>, <c>name(args)</c>.
+        /// Rejects: <c>(a+b)^2</c>, <c>a+b</c>, <c>a*b</c>, empty.
+        /// </summary>
+        private static bool IsSimpleAssignmentTarget(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return false;
+            return System.Text.RegularExpressions.Regex.IsMatch(s.Trim(),
+                @"^[a-zA-Zα-ωΑ-Ω_][a-zA-Zα-ωΑ-Ω0-9_]*(?:\([^)]*\))?$");
+        }
+
+        /// <summary>
+        /// Render an inline math fragment as display-only (no evaluation).
+        /// Delegates to <see cref="ParseInlineDeq"/> for derivatives,
+        /// matrices and identities. Emits a <c>&lt;code&gt;</c> span for
+        /// literal <c>#xxx</c> / <c>$xxx</c> directive references so they
+        /// stand out from surrounding prose.
+        /// </summary>
+        internal void RenderInlineAsDisplay(string expr)
+        {
+            var trimmed = (expr ?? string.Empty).Trim();
+            if (trimmed.Length == 0) return;
+            // Literal directive or function reference → <code>
+            if (trimmed[0] == '#' || trimmed[0] == '$')
+            {
+                _sb.Append($"<code>{System.Web.HttpUtility.HtmlEncode(trimmed)}</code>");
+                return;
+            }
+            // Otherwise route through the same path as #deq inline, which
+            // handles TryRenderDeqSpecial (matrix/Leibniz/partial/primes)
+            // and falls back to _parser.Parse(part, false).ToHtml() with
+            // IsCalculation=false so identities render without evaluating.
+            ParseInlineDeq(trimmed);
         }
 
         private static string _lastDeqSeparator = " = ";

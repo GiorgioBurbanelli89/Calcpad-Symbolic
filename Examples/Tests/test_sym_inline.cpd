@@ -1,0 +1,29 @@
+#margen 20
+#md on
+"Test — #sym y todas las operaciones inline en CUALQUIER parte de la linea
+# #sym al inicio
+'#sym (a + b)^2'de alli tomamos la expansion y usamos -'a = 3'y -'b = 4'.
+# #sym al final
+'La derivada del polinomio es -'#sym diff(x^3 + 2·x^2 + x; x)'.
+# #sym en el medio
+'Antes del simbolico -'α_coef = 0.5'ahora aplicamos -'#sym integrate(sin(x)·cos(x); x)'despues seguimos con'β_coef = 0.8'.
+# Varios #sym en la misma linea
+'Primero -'#sym (x - 1)·(x + 1)'luego -'#sym diff(cos(x); x)'finalmente -'#sym factor(x^3 - 8)'.
+# #deq mezclado con #sym en la misma linea
+'La formula es'#deq D_f = (E·t^3)/(12·(1 - ν^2))'y simbolicamente -'#sym (E·t^3)/(12·(1 - ν^2))'expandida.
+# Operaciones numericas inline entre texto
+'Con -'a = 3'y -'b = 4'obtenemos -'c = sqrt(a^2 + b^2)'mientras que -'area = a*b'es el area.
+# Operaciones numericas con unidades inline
+'Longitud -'L = 5 m'carga -'P = 10 kN'rigidez -'EI = 1000 kN*m^2'deflexion -'δ = P*L^3/(3*EI)'en mm -'δ_mm = δ | mm'.
+# Identidades inline mezcladas con asignaciones
+'La identidad -'(a + b)^2 = a^2 + 2·a·b + b^2'se verifica con -'a_v = 3'y -'b_v = 4'.
+# Matrices inline
+'La matriz identidad 3x3 -'I_3 = [1; 0; 0 | 0; 1; 0 | 0; 0; 1]'y el tensor -'D = [1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]'con -'ν = 0.2'.
+# Derivadas en cualquier posicion
+'Curvatura x -'κ_x = -d^2w/dx^2'derivada parcial -'div_u = ∂u/∂x + ∂v/∂y'biharmonica -'d^4w/dx^4 + 2·d^4w/dx^2dy^2 + d^4w/dy^4 = q/D'.
+# Integral inline
+'Trabajo -'W_ext = integral(q·w; x; 0; L)'y momento -'M_sec = integral(σ·y; y; -h/2; h/2)'.
+# Directivas literales mezcladas
+'Se usan -'#deq', -'#sym', -'#inl', -'#blk', -'$Plot'y -'$Map'durante el flujo.
+# Todo mezclado en una sola linea
+'Con -'E = 25 GPa', -'ν = 0.20'expandimos -'#sym (E·t^3)/(12·(1 - ν^2))'asignamos -'D_mat = (E*t^3/(12*(1 - ν^2)))*[1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]'con -'t = 0.20 m'y definimos -'#deq χ_1 = -d^2w/dx^2'como curvatura, concluimos la linea.

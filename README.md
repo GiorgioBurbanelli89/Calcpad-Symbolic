@@ -62,7 +62,7 @@ Show symbolic equations without computation. Double/triple equality for referenc
 
 ### 5b. Inline Directives in Text (mixed mode)
 
-When a line starts with `'` (text mode), each additional `'` toggles between **Text** and **Expression** mode. Multiple directives can be embedded inline:
+When a line starts with `'` (text mode), each additional `'` toggles between **Text** and **Expression** mode. Multiple directives and bare math expressions can be embedded inline:
 
 ```
 'Hooke '#deq F = k*x' is famous.
@@ -78,6 +78,25 @@ When a line starts with `'` (text mode), each additional `'` toggles between **T
 **Position rule:** need at least 1 character of text before the first directive.
 - ✓ `' '#deq F = k*x' at start.` (space before → works)
 - ✗ `'#deq F = k*x' at start.` (no text before → fails)
+
+#### 🆕 v1.3 — Permissive inline math
+
+Inline math between apostrophes now accepts **display-only constructs** that previously required an explicit `#deq` or would fail evaluation. The parser auto-detects the pattern and routes to the display renderer without attempting to evaluate.
+
+| Pattern | Example | Behaviour |
+|---|---|---|
+| Identity (LHS is not a variable) | `'(a+b)^2 = a^2 + 2·a·b + b^2'` | Renders as HTML math, no assignment check |
+| Leibniz derivative | `'χ_1 = -d^2w/dx^2'` | Proper fraction with d² / dx² |
+| Mixed partials + subscripts + Greek | `'-2·d^2φ_i/dx_j·dy_k'` | Handles Greek letters, subscripts, `^n` exponents |
+| Multi-term biharmonic | `'d^4w/dx^4 + 2·d^4w/dx^2·dy^2 + d^4w/dy^4 = q/D_f'` | Each term rendered as fraction, summed |
+| Integral call | `'W = integral(q·w; x; 0; L)'` | Displays as ∫ with limits |
+| Matrix literal assignment | `'D = [1; ν; 0 \| ν; 1; 0 \| 0; 0; (1-ν)/2]'` | Matrix with proper brackets, RHS can reference undefined vars |
+| Literal `#` / `$` reference | `'usa '#blk' para bloques, '$Plot' para graficas'` | Rendered as `<code>` |
+| Last-resort fallback | `'V = (4/3)·π·R^3'` (R not yet defined) | Falls back to display mode instead of error |
+
+Also fixed in v1.3:
+- `#sym` now normalizes Unicode ops (`·`, `×`, `⋅`) → ASCII `*` before dispatching to AngouriMath.
+- Depth guard (16 levels) in `TryRenderDeqSpecial` prevents stack overflow on pathological recursive inputs like `ε_ij = (∂u_i/∂x_j + ∂u_j/∂x_i)/2`.
 
 ### 5c. Cell Arrays — `cells(n)` (Matlab-style)
 

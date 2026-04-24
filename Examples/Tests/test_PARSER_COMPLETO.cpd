@@ -1,0 +1,127 @@
+#margen 20
+#md on
+"Test COMPLETO del parser — inline + bloque, todas las operaciones
+# 1 — Asignaciones basicas (inline)
+'Sin unidades -'π_num = 3.14159'con unidades SI -'L = 5 m', -'E = 25 GPa', -'q = -10 kN/m^2'y conversiones -'L_cm = L | cm', -'E_MPa = E | MPa'.
+# 2 — Asignaciones basicas (bloque)
+a_b = 3
+b_b = 4
+c_b = sqrt(a_b^2 + b_b^2)
+t_b = 0.20 m
+b_rect = 0.30 m
+# 3 — Operaciones aritmeticas (inline)
+'Suma -'s1 = 2 + 3', resta -'s2 = 10 - 7', producto -'s3 = 4·6', division -'s4 = 20/4', potencia -'s5 = 2^10', raiz -'s6 = sqrt(2)', factorial -'s7 = 5!'.
+# 4 — Funciones trascendentes (inline)
+'Trig -'t1 = sin(π/6)', -'t2 = cos(π/3)', -'t3 = tan(π/4)'. Hiperbolicas -'t4 = sinh(1)', -'t5 = cosh(1)'. Log -'t6 = ln(e^2)', -'t7 = log(1000)'. Exp -'t8 = exp(1)'.
+# 5 — Identidades algebraicas inline (NUEVO v1.3: LHS no asignable)
+'La expansion -'(a + b)^2 = a^2 + 2·a·b + b^2'la diferencia -'a^2 - b^2 = (a + b)·(a - b)'Pitagoras -'sin(x)^2 + cos(x)^2 = 1'Euler -'e^(i·π) + 1 = 0'.
+# 6 — Derivadas Leibniz inline (NUEVO v1.3: acepta ^n griegas subindices)
+'Primera -'v1 = dw/dx', segunda -'χ_1 = -d^2w/dx^2', con griega -'χ_φ = -d^2φ/dx^2', con subindice -'χ_ij = -d^2u_i/dx_j^2', cruzada -'χ_12 = -2·d^2w/dxdy'.
+# 7 — Biharmonic multi-term (NUEVO v1.3: term por term)
+'Ecuacion de placa delgada -'d^4w/dx^4 + 2·d^4w/dx^2dy^2 + d^4w/dy^4 = q/D_f'.
+# 8 — Derivadas parciales (inline)
+'Continuidad -'∂u/∂x + ∂v/∂y = 0', constitutiva -'σ_x = E·∂u/∂x', tensor -'ε_ij = (∂u_i/∂x_j + ∂u_j/∂x_i)/2'.
+# 9 — Integrales inline (NUEVO v1.3: display sin error)
+'Trabajo -'W = integral(q·w; x; 0; L)', momento -'M_sec = integral(σ·y; y; -h/2; h/2)', doble -'U = integral(integral(B; ξ; -1; 1); η; -1; 1)'.
+# 10 — Matrices inline (NUEVO v1.3: RHS con vars no definidas)
+'Identidad -'I_2 = [1; 0 | 0; 1]', tensor -'D_t = [1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]', rigidez -'K_el = [12; 6; -12; 6 | 6; 4; -6; 2 | -12; -6; 12; -6 | 6; 2; -6; 4]'.
+# 11 — Menciones literales a directivas (NUEVO v1.3: rendered como code)
+'Bloques -'#blk', -'#inl', -'#deq', -'#sym', -'#for', -'#if', -'#md on', funciones -'$Plot', -'$Map', -'$Chart', -'$Sum', -'$Integral'.
+# 12 — #deq bloque (ecuacion display aparte)
+#deq I_beam = (b_rect·t_b^3)/12
+#deq D_f = (E·t_b^3)/(12·(1 - ν^2))
+#deq χ_plate = -d^2w/dx^2
+#deq biharmonic: d^4w/dx^4 + 2·d^4w/dx^2dy^2 + d^4w/dy^4 = q/D
+#deq integral(f(x); x; a; b) = F(b) - F(a)
+#deq D_const = (E·t^3)/(12·(1 - ν^2)) · [1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]
+# 13 — #sym bloque (CAS AngouriMath)
+#sym (a + b)^3
+#sym diff(sin(x)·cos(x); x)
+#sym integrate(x^2·e^x; x)
+#sym factor(x^3 - 1)
+#sym simplify((x^2 - 1)/(x - 1))
+#sym solve(x^2 - 5·x + 6; x)
+# 14 — #inl (inline multi-assign)
+#inl k_1 = 100 ; k_2 = 200 ; k_3 = k_1 + k_2 ; 'tres rigideces
+total_k = k_1 + k_2 + k_3
+# 15 — #blk (tabla de resumen)
+ν = 0.20
+E_val = E
+D_val = E*t_b^3/(12*(1 - ν^2))
+G_val = E/(2*(1 + ν))
+#blk
+L     ; 'longitud
+t_b   ; 'espesor
+E_val ; 'Young
+ν     ; 'Poisson
+D_val ; 'rigidez placa
+G_val ; 'corte
+#end blk
+# 16 — #for loop (serie de Basilea)
+S_b = 0
+#for k = 1 : 10
+    S_b = S_b + 1/k^2
+#loop
+# 17 — #if condicional
+#if L > 0 m
+'L es positiva, continuamos
+#else
+'error de datos
+#end if
+# 18 — #while loop
+n_iter = 0
+val = 100
+#while val > 1
+    val = val/2
+    n_iter = n_iter + 1
+#loop
+# 19 — Funciones definidas por el usuario (inline)
+'Cuadrado -'f_sq(x) = x^2', norma 2D -'f_nrm(x; y) = sqrt(x^2 + y^2)', evaluada -'r_nrm = f_nrm(3; 4)'.
+# 20 — Graficas $Plot inline
+L_n = L/m
+f_plot(x) = x*(L_n - x)
+$Plot { f_plot(x) @ x = 0 : L_n }
+# 21 — Graficas $Map
+a_n = 4
+f_map(x; y) = sin(π*x/a_n)*cos(π*y/a_n)
+$Map { f_map(x; y) @ x = 0 : a_n & y = 0 : a_n }
+# 22 — $Sum y $Product inline
+'Suma -'S_inl = $Sum{i^2 @ i = 1 : 5}'producto -'P_inl = $Product{i @ i = 1 : 5}'.
+# 23 — $Integral y $Derivative numericos
+'Numerica -'I_num = $Integral{x^2 @ x = 0 : 1}'derivada -'D_num = $Derivative{x^3 @ x = 2}'.
+# 24 — $Root y $Find numericos
+'Raiz -'x_r = $Root{x^2 - 4 @ x = 0 : 5}'minimo -'x_m = $Find{x^2 - 4·x + 3 @ x = 0 : 5}'.
+# 25 — Cell arrays (Matlab-style)
+K_cells = cells(3)
+#for i = 1 : 3
+    K_cells.(i) = (E*b_rect/L.(i))*[1; -1 | -1; 1]
+#loop
+K_cells
+# 26 — Vectores y matrices evaluables
+v_1 = [1; 2; 3]
+v_2 = [4; 5; 6]
+M_22 = [1; 2 | 3; 4]
+dot_prod = v_1.1*v_2.1 + v_1.2*v_2.2 + v_1.3*v_2.3
+det_M = det(M_22)
+# 27 — Unidades compuestas y conversiones
+P_kN = 10 kN
+P_lbf = P_kN | lbf
+P_tonf = P_kN | tonf
+M_ext = 20 * kN*m
+M_kip_in = M_ext | kip*in
+# 28 — Pagina nueva
+#pgb
+# 29 — Segunda pagina — resumen
+#blk
+c_b      ; 'Pitagoras
+total_k  ; 'rigideces en serie
+S_b      ; 'Basilea 10 terminos
+n_iter   ; 'iteraciones while
+r_nrm    ; 'norma 2D
+dot_prod ; 'producto punto v1·v2
+det_M    ; 'determinante 2x2
+I_num    ; 'integral numerica x^2 de 0 a 1
+x_r      ; 'raiz x^2 = 4
+#end blk
+# 30 — Cierre
+'El parser soporta'30'secciones entre inline y bloque, cubriendo asignaciones con unidades, aritmetica, trascendentes, identidades, derivadas Leibniz con griegas y subindices, biharmonicas, parciales, integrales, matrices, directivas literales, ecuaciones display, CAS AngouriMath, loops, condicionales, funciones de usuario, graficas 1D/2D, sumatorias, productos, raices, extremos, cell arrays, vectores, matrices, unidades y conversiones.

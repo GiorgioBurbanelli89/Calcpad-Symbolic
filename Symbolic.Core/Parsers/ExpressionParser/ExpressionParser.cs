@@ -712,6 +712,19 @@ namespace Calcpad.Core
                         continue;
                     }
 
+                    // Inline display-only pre-check: identities, Leibniz
+                    // derivatives, matrix literals, and literal #/$ directive
+                    // references all bypass evaluation (which would reject
+                    // them) and render as display text. This mirrors the
+                    // permissiveness of block-level #deq for inline math so
+                    // users can intersperse "'texto'math'texto" with richer
+                    // math constructs.
+                    if (isOutput && ShouldRenderInlineAsDisplay(token.Value))
+                    {
+                        RenderInlineAsDisplay(token.Value);
+                        continue;
+                    }
+
                     try
                     {
                         var cacheID = token.CacheID;
@@ -790,6 +803,23 @@ namespace Calcpad.Core
                                     _sb.Append($"<span class=\"eq\"{eqStyle2}>{sb2Str}</span>");
                                     continue;
                                 }
+                            }
+                            catch { /* fall through to error display */ }
+                        }
+
+                        // Last-resort display-only fallback: if evaluation
+                        // failed because a variable/function in the RHS was
+                        // undefined (common inline when the user describes
+                        // a formula before binding values), route through
+                        // ParseInlineDeq which renders without evaluation.
+                        if (isOutput)
+                        {
+                            try
+                            {
+                                var startLen = _sb.Length;
+                                RenderInlineAsDisplay(token.Value);
+                                if (_sb.Length > startLen)
+                                    continue;
                             }
                             catch { /* fall through to error display */ }
                         }
