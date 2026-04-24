@@ -1,0 +1,14 @@
+"Test variable export Python → Calcpad
+
+"1. Simple export
+#python
+x = 42.5
+print(f"CALCPAD:x_val={x}")
+print(f"x = {x}")
+#end python
+
+'Resultado de x_val:
+x_val
+
+"2. Math con variable exportada
+y = x_val*2

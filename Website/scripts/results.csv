@@ -1,0 +1,716 @@
+-1|Mathematics/Newton's method animated.cpd|NO_OUTPUT
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0|Demos/Beam design with Markdown.cpd|
+0|Demos/Bolt 3D Model.cpd|
+0|Demos/Custom units/Currency units.cpd|
+0|Demos/Custom units/Information units.cpd|
+0|Demos/Double Interpolation.cpd|
+0|Demos/Frame Viewer.cpd|
+0|Demos/Functions of Multiple Parameters.cpd|
+0|Demos/Html UI.cpd|
+0|Demos/Interactive Chart.cpd|
+0|Demos/Interpolation.cpd|
+0|Demos/Markdown.cpd|
+0|Demos/Multiline functions/Cubic roots function.cpd|
+0|Demos/Multiline functions/Fibonacci numbers.cpd|
+0|Demos/Multiline functions/Greatest common divisor - Euclid algorithm.cpd|
+0|Demos/Multiline functions/Quadratic roots function.cpd|
+0|Demos/Optimization of foundation pad dimensions.cpd|
+0|Demos/Page header with logo/Page header with logo.cpd|
+0|Demos/Parametric 3D Drawing of RC Beam.cpd|
+0|Demos/Plot with attributes.cpd|
+0|Demos/Plotly.cpd|
+0|Demos/Plotting Easter Egg in 2D and 3D.cpd|
+0|Demos/Rounding and formatting.cpd|
+0|Demos/TT Panel.cpd|
+0|Demos/svg_drawing.cpd|
+0|Demos/toc.cpd|
+0|Finite Elements/4. PORTICO DE 3 NIVELES CON EXTREMOS RIGIDOS.cpd|
+0|Finite Elements/Clase 04_Ensamblaje.cpd|
+0|Finite Elements/Curvatura y Radio.cpd|
+0|Finite Elements/De epsilon a Momento.cpd|
+0|Finite Elements/FEM Historia 1744 Euler.cpd|
+0|Finite Elements/FEM Historia 1877 Rayleigh.cpd|
+0|Finite Elements/FEM Historia Cap1 - Origenes.cpd|
+0|Finite Elements/FEM Tutorial - From Frames to Plates.cpd|
+0|Finite Elements/Frame Analysis/01_Plane_Frame_2_Elements.cpd|
+0|Finite Elements/Frame Analysis/02_Cantilever_Beam.cpd|
+0|Finite Elements/Funciones de Forma Explicadas.cpd|
+0|Finite Elements/Shape Functions/01_Linear_Bar_Element.cpd|
+0|Finite Elements/Shape Functions/02_Hermite_Beam_Element.cpd|
+0|Finite Elements/Shape Functions/03_Q4_Bilinear_Element.cpd|
+0|Finite Elements/Stiffness Matrices/01_Axial_Stiffness.cpd|
+0|Finite Elements/Stiffness Matrices/02_Beam_Stiffness.cpd|
+0|Finite Elements/Stiffness Matrices/03_Torsion_Stiffness.cpd|
+0|Finite Elements/Stiffness Matrices/04_Shear_Timoshenko.cpd|
+0|Finite Elements/Stiffness Matrices/05_Membrane_Q4.cpd|
+0|Finite Elements/Stiffness Matrices/06_Shell_Lateral_Load.cpd|
+0|Finite Elements/Tutorial C3D8 - Solido 3D Paso a Paso.cpd|
+0|Finite Elements/Tutorial Contacto Placas - Paso a Paso.cpd|
+0|Finite Elements/Tutorial FEM Paso a Paso.cpd|
+0|Finite Elements/Tutorial Layered Shell - Paso a Paso.cpd|
+0|Finite Elements/Tutorial MITC4 - Placa Gruesa Paso a Paso.cpd|
+0|Finite Elements/epsilon_explicado.cpd|
+0|Finite Elements/epsilon_zoom.cpd|
+0|Finite Elements/test_deq_derivadas.cpd|
+0|Finite Elements/test_draw.cpd|
+0|Finite Elements/test_function_basic.cpd|
+0|Finite Elements/test_minimal_svg.cpd|
+0|Finite Elements/test_struct_simple.cpd|
+0|Finite Elements/test_svg.cpd|
+0|Finite Elements/test_svg2.cpd|
+0|Finite Elements/test_svg_cad.cpd|
+0|Finite Elements/test_tutorial.cpd|
+0|Finite Elements/test_viga_flexion.cpd|
+0|Loops/01. Vectores en bucles.cpd|
+0|Loops/02. Matrices en bucles.cpd|
+0|Loops/03. Bucles anidados y condicionales.cpd|
+0|Loops/04. Repeat inline y tablas.cpd|
+0|Loops/05. Portico plano 3 niveles.cpd|
+0|Mathematics/Areas/Circle.cpd|
+0|Mathematics/Areas/Ellipse.cpd|
+0|Mathematics/Areas/Equilateral Triangle.cpd|
+0|Mathematics/Areas/Parabola.cpd|
+0|Mathematics/Areas/Polygon.cpd|
+0|Mathematics/Areas/Rectangle.cpd|
+0|Mathematics/Areas/Right Triangle.cpd|
+0|Mathematics/Areas/Sector (angle).cpd|
+0|Mathematics/Areas/Sector (chord).cpd|
+0|Mathematics/Areas/Segment (angle).cpd|
+0|Mathematics/Areas/Segment (chord).cpd|
+0|Mathematics/Areas/Square.cpd|
+0|Mathematics/Areas/Trapezoid.cpd|
+0|Mathematics/Areas/Triangle (height).cpd|
+0|Mathematics/Areas/Triangle.cpd|
+0|Mathematics/Bitwise operations.cpd|
+0|Mathematics/Combinatorics.cpd|
+0|Mathematics/Cubic Equation.cpd|
+0|Mathematics/FFT.cpd|
+0|Mathematics/Fourier Series.cpd|
+0|Mathematics/Fractals/Koch Snowflake Animation.cpd|
+0|Mathematics/Fractals/Koch Snowflake.cpd|
+0|Mathematics/Fractals/Kochwave Animation.cpd|
+0|Mathematics/Fractals/Kochwave Snowflake Animation.cpd|
+0|Mathematics/Fractals/Mandelbrot Set.cpd|
+0|Mathematics/Fractals/Sierpinski Christmas Tree.cpd|
+0|Mathematics/Heart Function Animation.cpd|
+0|Mathematics/High performance/Matrices/Least squares.cpd|
+0|Mathematics/High performance/Matrices/Matrix creational functions.cpd|
+0|Mathematics/High performance/Matrices/Matrix data functions.cpd|
+0|Mathematics/High performance/Matrices/Matrix initialization and indexing.cpd|
+0|Mathematics/High performance/Matrices/Matrix operators.cpd|
+0|Mathematics/High performance/Matrices/Matrix structural functions.cpd|
+0|Mathematics/High performance/Matrices/Rayleigh quotient iteration.cpd|
+0|Mathematics/High performance/Vectors/Vector data functions.cpd|
+0|Mathematics/High performance/Vectors/Vector structural functions.cpd|
+0|Mathematics/Least Squares Fitting.cpd|
+0|Mathematics/Matrices/Matrix creational functions.cpd|
+0|Mathematics/Matrices/Matrix data functions.cpd|
+0|Mathematics/Matrices/Matrix initialization and indexing.cpd|
+0|Mathematics/Matrices/Matrix operators.cpd|
+0|Mathematics/Matrices/Matrix structural functions.cpd|
+0|Mathematics/Monte Carlo Pi.cpd|
+0|Mathematics/Numerical Integration.cpd|
+0|Mathematics/Parametric Curves/Cornu Spiral.cpd|
+0|Mathematics/Parametric Curves/Epicycloid.cpd|
+0|Mathematics/Parametric Curves/Hypocycloid.cpd|
+0|Mathematics/Parametric Curves/Lissajous Curve.cpd|
+0|Mathematics/Parametric Curves/Rose Curve.cpd|
+0|Mathematics/Quadratic Equation.cpd|
+0|Mathematics/Rayleigh Quotient Iteration.cpd|
+0|Mathematics/Solution of a triangle.cpd|
+0|Mathematics/Vectors/Vector data functions.cpd|
+0|Mathematics/Vectors/Vector structural functions.cpd|
+0|Mathematics/Volumes/Cone.cpd|
+0|Mathematics/Volumes/Cube.cpd|
+0|Mathematics/Volumes/Cylinder.cpd|
+0|Mathematics/Volumes/Ellipsoid.cpd|
+0|Mathematics/Volumes/Rectangular Frustum.cpd|
+0|Mathematics/Volumes/Rectangular Prism.cpd|
+0|Mathematics/Volumes/Rectangular Pyramid.cpd|
+0|Mathematics/Volumes/Right Polygonal Prism.cpd|
+0|Mathematics/Volumes/Sphere.cpd|
+0|Mathematics/Volumes/Spherical Cap.cpd|
+0|Mathematics/Volumes/Spherical Segment.cpd|
+0|Mathematics/Volumes/Tetrahedron.cpd|
+0|Mathematics/Volumes/Triangular Frustum.cpd|
+0|Mathematics/Volumes/Triangular Pyramid.cpd|
+0|Mathematics/Volumes/Triangular prism.cpd|
+0|Mechanics/Elastic analysis/Deep Beam.cpd|
+0|Mechanics/Elastic analysis/Rectangular Slab.cpd|
+0|Mechanics/Elastic analysis/Saint-Venant Torsion.cpd|
+0|Mechanics/Finite Elements/Awatif Plate - MITC4.cpd|
+0|Mechanics/Finite Elements/Cantilever Wall Q4 Membrane.cpd|
+0|Mechanics/Finite Elements/Deep Beam FEA.cpd|
+0|Mechanics/Finite Elements/Dos Zapatas Sin Viga - Shell Thick Mindlin.cpd|
+0|Mechanics/Finite Elements/Elemento Cuadrilatero Q4 - Membrana.cpd|
+0|Mechanics/Finite Elements/Flat Slab FEA Optimized.cpd|
+0|Mechanics/Finite Elements/Flat Slab FEA.cpd|
+0|Mechanics/Finite Elements/Placa Base - HSS Tubular DKQ.cpd|
+0|Mechanics/Finite Elements/Placa Base - Shell Thin DKQ.cpd|
+0|Mechanics/Finite Elements/Plate Theory - Drilling DOF.cpd|
+0|Mechanics/Finite Elements/Plate Theory - Kirchhoff Love.cpd|
+0|Mechanics/Finite Elements/Plate Theory - Membrane Q4.cpd|
+0|Mechanics/Finite Elements/Plate Theory - Reissner.cpd|
+0|Mechanics/Finite Elements/Plate Theory - Shell Q4.cpd|
+0|Mechanics/Finite Elements/Plate Theory - Shell Thin Q4.cpd|
+0|Mechanics/Finite Elements/Test Mesh.cpd|
+0|Mechanics/Finite Elements/Validation SAP2000/01_Membrane_8x6.cpd|
+0|Mechanics/Finite Elements/Validation SAP2000/02_Plate_Thin_6x4.cpd|
+0|Mechanics/Finite Elements/Validation SAP2000/03_Plate_Thick_6x4.cpd|
+0|Mechanics/Finite Elements/Validation SAP2000/04_Shell_Thick_8x6.cpd|
+0|Mechanics/Finite Elements/Validation SAP2000/07_Placa_Base_e50.cpd|
+0|Mechanics/Finite Elements/Validation SAP2000/07_Placa_Base_e50_DKQ_regular.cpd|
+0|Mechanics/Finite Elements/Validation SAP2000/07_Placa_Base_e50_ShellThin.cpd|
+0|Mechanics/Finite Elements/Winkler - Area Spring.cpd|
+0|Mechanics/Finite Elements/Winkler Springs - Joint vs Area.cpd|
+0|Mechanics/Finite Elements/Zapata Aislada - Shell Thick Mindlin.cpd|
+0|Mechanics/Finite Elements/Zapata Esquinera - Shell Thick Mindlin.cpd|
+0|Mechanics/Finite Elements/Zapata L - Shell Thick Mindlin.cpd|
+0|Mechanics/Finite Elements/Zapata L Invertida - Shell Thick Mindlin.cpd|
+0|Mechanics/Finite Elements/Zapata Lateral - Shell Thick Mindlin.cpd|
+0|Mechanics/Finite Elements/Zapata Lindero - 1 Frame + Joint Spring.cpd|
+0|Mechanics/Finite Elements/Zapata Lindero - 2 Frame + Area Spring.cpd|
+0|Mechanics/Finite Elements/Zapata Lindero - 3 Layered + Joint Spring.cpd|
+0|Mechanics/Finite Elements/Zapata Lindero - 4 Layered + Area Spring.cpd|
+0|Mechanics/Finite Elements/Zapata Lindero Vivienda - Area Spring.cpd|
+0|Mechanics/Finite Elements/Zapata Lindero Vivienda - Frame Beam.cpd|
+0|Mechanics/Finite Elements/Zapata Medianera con Viga - Shell Thick Mindlin.cpd|
+0|Mechanics/Finite Elements/Zapata Medianera con Viga Linea - Shell Thick Mindlin.cpd|
+0|Mechanics/Finite Elements/test_plotmap.cpd|
+0|Mechanics/Finite Elements/test_plotmap_debug.cpd|
+0|Mechanics/Finite Elements/test_table.cpd|
+0|Mechanics/Geometrical Properties/Angle Section.cpd|
+0|Mechanics/Geometrical Properties/Channel Section.cpd|
+0|Mechanics/Geometrical Properties/Circle.cpd|
+0|Mechanics/Geometrical Properties/Circlular Pipe.cpd|
+0|Mechanics/Geometrical Properties/Double Tee Section.cpd|
+0|Mechanics/Geometrical Properties/Ellipse.cpd|
+0|Mechanics/Geometrical Properties/Elliptical Pipe .cpd|
+0|Mechanics/Geometrical Properties/Equilateral Triangle.cpd|
+0|Mechanics/Geometrical Properties/Half Circle.cpd|
+0|Mechanics/Geometrical Properties/Hexagon.cpd|
+0|Mechanics/Geometrical Properties/Polygon.cpd|
+0|Mechanics/Geometrical Properties/Quarter Circle.cpd|
+0|Mechanics/Geometrical Properties/Rectangle.cpd|
+0|Mechanics/Geometrical Properties/Rectangular Tube.cpd|
+0|Mechanics/Geometrical Properties/Rhombus (square).cpd|
+0|Mechanics/Geometrical Properties/Rhombus.cpd|
+0|Mechanics/Geometrical Properties/Right Triangle.cpd|
+0|Mechanics/Geometrical Properties/Sector.cpd|
+0|Mechanics/Geometrical Properties/Segment.cpd|
+0|Mechanics/Geometrical Properties/Square.cpd|
+0|Mechanics/Geometrical Properties/Tee Section.cpd|
+0|Mechanics/Geometrical Properties/Trapezoid.cpd|
+0|Mechanics/Geometrical Properties/Zed Section.cpd|
+0|Mechanics/Soil Mechanics/Soil stress and deformations.cpd|
+0|Mechanics/Structural Analysis/Cantilevers/Concentrated Force.cpd|
+0|Mechanics/Structural Analysis/Cantilevers/Concentrated Moment.cpd|
+0|Mechanics/Structural Analysis/Cantilevers/Linearly Distributed Load.cpd|
+0|Mechanics/Structural Analysis/Cantilevers/Partially Distributed Load.cpd|
+0|Mechanics/Structural Analysis/Cantilevers/Uniformly Distributed Load.cpd|
+0|Mechanics/Structural Analysis/Continuous beam/Continuous beam.cpd|
+0|Mechanics/Structural Analysis/Deflections/Cantilever with Concentrated Load.cpd|
+0|Mechanics/Structural Analysis/Deflections/Cantilever with Unifrom Load.cpd|
+0|Mechanics/Structural Analysis/Deflections/Simply Supported Beam with Concentrated Load.cpd|
+0|Mechanics/Structural Analysis/Deflections/Simply Supported Beam with Unifrom Load.cpd|
+0|Mechanics/Structural Analysis/Frames/svg_drawing.cpd|
+0|Mechanics/Structural Analysis/Fully Restrained Beams/Concentrated Force.cpd|
+0|Mechanics/Structural Analysis/Fully Restrained Beams/Concentrated Moment.cpd|
+0|Mechanics/Structural Analysis/Fully Restrained Beams/Linearly Distributed Load.cpd|
+0|Mechanics/Structural Analysis/Fully Restrained Beams/Partially Distributed Load.cpd|
+0|Mechanics/Structural Analysis/Fully Restrained Beams/Uniformly Distributed Load.cpd|
+0|Mechanics/Structural Analysis/Nonlinear/Material and geometric nonlinear analysis of prestressed asymmetric Biot truss.cpd|
+0|Mechanics/Structural Analysis/Nonlinear/Nonlinear analysis of a Von-Mises truss.cpd|
+0|Mechanics/Structural Analysis/Nonlinear/Third order geometric nonlinearity analysis of a double-strut Biot system.cpd|
+0|Mechanics/Structural Analysis/Nonlinear/svg_drawing.cpd|
+0|Mechanics/Structural Analysis/Propped Cantilevers/Concentrated Force.cpd|
+0|Mechanics/Structural Analysis/Propped Cantilevers/Concentrated Moment.cpd|
+0|Mechanics/Structural Analysis/Propped Cantilevers/Linearly Distributed Load.cpd|
+0|Mechanics/Structural Analysis/Propped Cantilevers/Partially Distributed Load.cpd|
+0|Mechanics/Structural Analysis/Propped Cantilevers/Uniformly Distributed Load.cpd|
+0|Mechanics/Structural Analysis/Simply Supported Beams/Concentrated Force.cpd|
+0|Mechanics/Structural Analysis/Simply Supported Beams/Concentrated Moment.cpd|
+0|Mechanics/Structural Analysis/Simply Supported Beams/Linearly Distributed Load.cpd|
+0|Mechanics/Structural Analysis/Simply Supported Beams/Partially Distributed Load.cpd|
+0|Mechanics/Structural Analysis/Simply Supported Beams/Uniformly Distributed Load.cpd|
+0|Mechanics/Structural Dynamics/Beam Impact Analysis Animated.cpd|
+0|Mechanics/Structural Dynamics/Free Vibrations of Steel Pole Animation Plotly.cpd|
+0|Mechanics/Structural Dynamics/Free Vibrations of Steel Pole Animation.cpd|
+0|Mechanics/Structural Dynamics/Free Vibrations of Steel Pole.cpd|
+0|Mechanics/Structural Dynamics/svg_drawing.cpd|
+0|Physics/Pendulums/Comparison of different methods for analysis of simple undamped pendulum.cpd|
+0|Physics/Pendulums/Double damped pendulum simulation by RK4 method ver 2.cpd|
+0|Physics/Pendulums/Double damped pendulum simulation by RK4 method.cpd|
+0|Physics/Pendulums/Elastic damped pendulum simulation by RK4 method.cpd|
+0|Physics/Pendulums/Simple damped pendulum simulation by RK4 method.cpd|
+0|Physics/Pendulums/Simple undamped pendulum animatation by RK4 method.cpd|
+0|Physics/Pendulums/svg_drawing.cpd|
+0|Physics/Waves/DiffractionOfLightOnSingleSlitGeneralView.cpd|
+0|Physics/Waves/DiffractionOfLightOnSingleSlitScreenView.cpd|
+0|Physics/Waves/InterferenceOfLight2SlitsGeneralView.cpd|
+0|Physics/Waves/InterferenceOfLight2SlitsScreenView.cpd|
+0|Physics/Waves/InterferenceOfLight4SlitsGeneralView.cpd|
+0|Physics/Waves/InterferenceOfLight4SlitsScreenView.cpd|
+0|Physics/Waves/InterferenceOfLight6SlitsGeneralView.cpd|
+0|Physics/Waves/InterferenceOfLight6SlitsScreenView.cpd|
+0|Physics/Waves/Waves2DOnWatterInterference.cpd|
+0|Physics/Waves/Waves2DOnWatterInterferenceAnimated.cpd|
+0|Python Blocks/Install Python Libraries.cpd|
+0|Python Blocks/Python Variable Export.cpd|
+0|Python Blocks/Python and OpenSeesPy.cpd|
+0|Structural Analysis/Dinamico_Newmark_Function.cpd|
+0|Structural Analysis/Metodos_Matriciales_Herrera.cpd|
+0|Structural Analysis/Paz_Ch13_SpaceFrame.cpd|
+0|Structural Analysis/Portico_Plano_Function.cpd|
+0|Structural Analysis/User Defined Function.cpd|
+0|Structural Design/Loads/Snow Drift.cpd|
+0|Structural Design/Loads/Snow Load.cpd|
+0|Structural Design/Loads/Wind Load.cpd|
+0|Structural Design/Reinforced Concrete/Areas of Reinforcement Bars.cpd|
+0|Structural Design/Reinforced Concrete/Bending Capacity of Tee Section.cpd|
+0|Structural Design/Reinforced Concrete/Bending Design of Rectangular Section.cpd|
+0|Structural Design/Reinforced Concrete/Bending Design of Tee Section.cpd|
+0|Structural Design/Reinforced Concrete/Column Design for Biaxial Bending and Axial Force (with units).cpd|
+0|Structural Design/Reinforced Concrete/Column Design for Biaxial Bending and Axial Force.cpd|
+0|Structural Design/Reinforced Concrete/Combined Bending, Shear and Torsion.cpd|
+0|Structural Design/Reinforced Concrete/Interaction Diagram of RC section.cpd|
+0|Structural Design/Reinforced Concrete/Punching/Internal Column.cpd|
+0|Structural Design/Reinforced Concrete/RC Plates/Fully Restrained Slab Panel.cpd|
+0|Structural Design/Reinforced Concrete/RC Plates/Restrained Adjacent Edges.cpd|
+0|Structural Design/Reinforced Concrete/RC Plates/Restrained Both Longer Edges.cpd|
+0|Structural Design/Reinforced Concrete/RC Plates/Restrained Both Shorter Edges.cpd|
+0|Structural Design/Reinforced Concrete/RC Plates/Restrained Longer Edge.cpd|
+0|Structural Design/Reinforced Concrete/RC Plates/Restrained Panel with Unrestrained Longer Edge.cpd|
+0|Structural Design/Reinforced Concrete/RC Plates/Restrained Panel with Unrestrained Shorter Edge.cpd|
+0|Structural Design/Reinforced Concrete/RC Plates/Restrained Shorter Edge.cpd|
+0|Structural Design/Reinforced Concrete/RC Plates/Simply Supported Slab Panel.cpd|
+0|Structural Design/Reinforced Concrete/SLS Design of Beam with Rectangular Section.cpd|
+0|Structural Design/Reinforced Concrete/SLS Design of Beam with Tee Section.cpd|
+0|Structural Design/Reinforced Concrete/Seismic Detailing/Column Detailing for DCM.cpd|
+0|Structural Design/Reinforced Concrete/Seismic Detailing/Shear Wall Detailing for DCM.cpd|
+0|Structural Design/Reinforced Concrete/Shear Design of Rectangular Section.cpd|
+0|Structural Design/Steel/I section properties and drawing.cpd|
+0|Structural Design/Steel/I section properties.cpd|
+0|Structural Design/Steel/Placa Base con Pernos de Anclaje.cpd|
+0|Structural Design/Steel/svg_drawing.cpd|
+0|Symbolic/01_Derivatives_and_Integrals.cpd|
+0|Symbolic/02_Algebra_and_Equations.cpd|
+0|Symbolic/03_Vector_Calculus_FEM.cpd|
+0|Symbolic/04_Laplace_and_ODE.cpd|
+0|Symbolic/05_Matrix_Symbolic.cpd|
+0|Symbolic/06_Display_Equations.cpd|
+0|Symbolic/07_User_Functions.cpd|
+0|Symbolic/08_Python_SymPy.cpd|
+0|Symbolic/09_Python_OpenSeesPy.cpd|
+0|Symbolic/10_Maxima_CAS.cpd|
+0|Symbolic/11_Sym_Block_Mode.cpd|
+0|Symbolic/12_FEM_Shape_Functions.cpd|
+0|Symbolic/13_Unit_Arrays.cpd|
+0|Symbolic/14_Frame_Stiffness_Units.cpd|
+0|Symbolic/15_Fem2D_Truss.cpd|
+0|Symbolic/16_Fem3D_Frame.cpd|
+0|Symbolic/18_Mesh_Results.cpd|
+0|Symbolic/19_Complete_FEM_Workflow.cpd|
+0|Symbolic/Hermite Shape Functions.cpd|
+0|Symbolic/Stiffness Matrix Derivation.cpd|
+0|Symbolic/Symbolic Block Mode.cpd|
+0|Symbolic/Symbolic Expanded Demo.cpd|
+0|Symbolic/Symbolic FEM Derivation.cpd|
+0|Symbolic/Symbolic Math Basics.cpd|
+0|Tests/Himmelblau function.cpd|
+0|Tests/Root finding tests.cpd|
+0|Tests/test_ampersand.cpd|
+0|Tests/test_fem_units.cpd|
+0|Tests/test_modal_units.cpd|
+0|Tests/test_syntax.cpd|
+110|Symbolic/17_Chart_Interactive.cpd|
+11|Demos/Units and Ampersand Operator.cpd|Error in "v_2 = [10; 20; 30] kN" on line [
+11|Finite Elements/Derivacion Ke portico 3D simbolico.cpd|line 1:3 token recognition error at: &#39;_&#39;
+11|Mechanics/Finite Elements/Cantilever Wall Q4.cpd|Error in "kN/m&#178;" on line [
+11|Mechanics/Finite Elements/Mindlin-Reissner Plate FEA.cpd|Error in "kN/m&#178;" on line [
+12|Finite Elements/test_fem_hex8.cpd|Error in "u = fem_hex8(nodes; elems; Ep; νp; specs)" on line [
+13|Finite Elements/Clase 06_Ensamblaje_Placas_gruesas.cpd|Error in "dN(ξ; η) = " on line [
+13|Finite Elements/Ensamblaje_Placas.cpd|Error in "dN(ξ; η) = " on line [
+15|Finite Elements/Modos de vibracion.cpd|Error in "exacta" on line [
+15|Finite Elements/Tutorial Suelo C3D8 - Paso a Paso.cpd|Error in "," on line [
+15|Structural Analysis/Space_Frame_Stiffness.cpd|Error in "u = lsolve(K_R; F)" on line [
+17|Finite Elements/Bulbo presiones Serquen SF-70.cpd|Error in "nodes = mesh_hex8_nodes(params_dims)" on line [
+17|Finite Elements/test_fem_hex8_rect_bulbo.cpd|Error in "nodes = mesh_hex8_nodes(params_dims)" on line [
+1|Demos/Css Classes.cpd|fail
+1|Demos/Design Check.cpd|The check is NOT satisfied ✖
+1|Finite Elements/2w0lx0ur.cpd|Error in "vmax = 5*q*L/" on line [
+1|Finite Elements/Ejemplo Rigidez con Draw.cpd|
+1|Mathematics/Collatz Check.cpd|
+1|Mathematics/Fourier Series + FFT.cpd|
+1|Mathematics/Strong Motion FFT.cpd|
+1|Mechanics/Finite Elements/Placa Base - Mindlin Reissner FEA.cpd|Error in "K.(j; j) = K.(j; j) + k_node" on line [
+1|Mechanics/Finite Elements/Rectangular Slab FEA.cpd|
+1|Mechanics/Structural Analysis/Simply Supported Beams/Concentrated Forces.cpd|Error in "n%2 ≡ 0" on line [
+1|Structural Design/Reinforced Concrete/Punching/Corner Column.cpd|Distance exceeds the maximum value.
+1|Structural Design/Reinforced Concrete/Punching/Edge Column.cpd|Distance exceeds the maximum value.
+1|Structural Design/Reinforced Concrete/Seismic Detailing/Beam Detailing for DCM.cpd| 
+1|Structural Design/Steel/I section properties Excel.cpd|
+1|Tests/Integration tests.cpd|
+20|Demos/Units - Vectors and Matrices.cpd|Error in "K_2 = [200; -100|-100; 300] kN/m" on line [
+20|Mechanics/Structural Analysis/Frames/Frame.cpd|Error in "EI(e) = E.e_M.e*I.e_S.e" on line [
+21|Finite Elements/11. ESTRUCTURA 3D SENCILLA.cpd|Error in "l = 1; 2 : N_b" on line [
+21|Finite Elements/12. EDIFICIO 3 NIVELES DIAFRAGMA FLEXIBLE.cpd|Error in "l = 1; 2 : N_b" on line [
+22|Finite Elements/test_fem_hex8_soil_fast.cpd|Error in "nodes = mesh_hex8_nodes(params_dims)" on line [
+29|Mechanics/Structural Analysis/Frames/Frame-var.cpd|Error in "EI(e; x) = E.e_M.e*I(x/l(e))" on line [
+2|Finite Elements/0eshkf1j.cpd|Error in "x + y = r" on line [
+2|Finite Elements/test_fem_hex8_suelo.cpd|Error in "u = fem_hex8(nodes; elems; Es; νs; specs)" on line [
+2|Mathematics/Fractals/Julia Set.cpd|Error in "c = -0.4 + 0.6i" on line [
+2|Mathematics/System of nonlinear equations.cpd|
+2|Mechanics/Finite Elements/Cantilever Wall Q4 Shell Thick.cpd|Error in "kN/m&#178;" on line [
+2|Mechanics/Finite Elements/Integration - Direct vs Gauss.cpd|Error in " d_ij &gt; diff_max" on line [
+2|Mechanics/Finite Elements/Plate Theory - DKQ Shell Thin.cpd|Error in "β_x(ξ; η) = Σ(N_i)*β_x,i + Σ(N_k+4)*Δβ_x,k" on line [
+2|Structural Design/Reinforced Concrete/Column Design for Bending and Axial Force.cpd|Error in "EI(N) = (K_c(N)*E_cd*I_c + K_s*E_s*I_s)" on line [
+30|Finite Elements/CLASE 05_Placas delgadas - copia.cpd|Error in "C = [1; -a; -b; a^2; a*b; b^2; -a^3; -a^2*b; -a*b^2; -b^3; a^3*b; a*b^3|0; 1; 0; -2a; -b; 0; 3a^2; 2*a*b; b^2;
+31|Finite Elements/Clase 06 Analisis_modal_portico.cpd|Error in "x = 0; 0.1 : l.1" on line [
+39|Finite Elements/Clase 06_Shell_local_global.cpd|Error in "l_13 = ?^(1/(X_g.1 - X_g.3)^2 + (Y_g.1 - Y_g.3)^2 + (Z_g.1 - Z_g.3)^2)" on line [
+3|Finite Elements/Frame Analysis/03_Wall_Q4_Lateral.cpd|File &quot;C:\Users\j-b-j\AppData\Local\Temp\tmp.q3oJDJmXeE\calcpad_python_a229b05f.py&quot;, line 13
+3|Mathematics/Numerical Differentiation.cpd|Approx.
+3|Mathematics/Special functions.cpd|+∞
+3|Mechanics/Finite Elements/Plate Theory - Mindlin Reissner.cpd|Error in "q(x; y) = k_w*w(x; y)" on line [
+3|Mechanics/Finite Elements/Plate Theory - Mindlin.cpd|Error in "q(x; y) = k_w*w(x; y)" on line [
+3|Mechanics/Finite Elements/Validation Rectangular Slab.cpd|Error in "kN/m&#178;" on line [
+3|Mechanics/Finite Elements/Winkler - Joint Spring.cpd|Error in "k_nodo = k_s*d_e^2" on line [
+3|Symbolic/Slab Element Derivation.cpd|Error in "`Elemento Q4 bilineal en coordenadas naturales (ξ, η) → (a, b)" on line [
+40|Finite Elements/CLASE 05_Placas gruesas - copia.cpd|Error in "J(ξ; η) = dN(ξ; η)*XY" on line [
+41|Finite Elements/13. EDIFICIO CON DIAFRAGMA RIGIDO.cpd|Error in "i = 1 : N_pisos" on line [
+4|Demos/Interpolation of Functions.cpd|
+4|Mathematics/High performance/Vectors/Vector math functions.cpd|+∞
+4|Mathematics/Vectors/Vector math functions.cpd|+∞
+4|Symbolic/Symbolic Full Demo.cpd|Error in "`Ra&#237;ces reales distintas: #sym ode2(5; 6)" on line [
+5|Finite Elements/Solucion de una ecuacion diferencial.cpd|Error in "M*" on line [
+6|Mathematics/Matrices/Matrix math functions.cpd|+∞
+6|Mathematics/Parametric Curves/Common Spirals.cpd|
+6|Mechanics/Structural Analysis/Frames/Multi-Story Frame.cpd|Error in "EI(e) = E.e_M.e*I.e_S.e" on line [
+7|Structural Design/Zapata Aislada.cpd| Undefined 
+8|Mathematics/High performance/Vectors/Vector Initialization, indexing and operators.cpd|+∞
+8|Mathematics/Vectors/Vector Initialization, indexing and operators.cpd|+∞
+9|Mathematics/High performance/Matrices/Matrix math functions.cpd|+∞

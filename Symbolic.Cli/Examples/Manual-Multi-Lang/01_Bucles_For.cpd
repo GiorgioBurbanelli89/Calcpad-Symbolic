@@ -1,0 +1,92 @@
+"Manual Multi-Lenguaje — Bucles FOR
+'Comparación paralela entre MATLAB / Calcpad-Symbolic / Fortran / C++
+
+"Ejemplo 1 — Imprimir números del 1 al 5
+
+'<table class="bordered" style="width:100%;font-family:Consolas,monospace;font-size:11px">
+'<tr><th style="width:25%;background:#f59e0b;color:#fff">MATLAB</th><th style="width:25%;background:#0ea5e9;color:#fff">Calcpad-Symbolic</th><th style="width:25%;background:#8b5cf6;color:#fff">Fortran</th><th style="width:25%;background:#10b981;color:#fff">C++</th></tr>
+'<tr>
+'<td><pre style="margin:0">for i = 1:5<br>&nbsp;&nbsp;disp(i)<br>end</pre></td>
+'<td><pre style="margin:0">#for i = 1 : 5<br>&nbsp;&nbsp;&nbsp;i<br>#loop</pre></td>
+'<td><pre style="margin:0">DO I=1,5<br>&nbsp;&nbsp;WRITE(*,*) I<br>END DO</pre></td>
+'<td><pre style="margin:0">for(int i=1; i&lt;=5; ++i)<br>&nbsp;&nbsp;cout &lt;&lt; i;</pre></td>
+'</tr></table>
+
+"Ejemplo ejecutado en Calcpad-Symbolic:
+#for i = 1 : 5
+    i
+#loop
+
+"Ejemplo 2 — Suma de 1 a 10
+
+'<table class="bordered" style="width:100%;font-family:Consolas,monospace;font-size:11px">
+'<tr><th style="width:25%;background:#f59e0b;color:#fff">MATLAB</th><th style="width:25%;background:#0ea5e9;color:#fff">Calcpad-Symbolic</th><th style="width:25%;background:#8b5cf6;color:#fff">Fortran</th><th style="width:25%;background:#10b981;color:#fff">C++</th></tr>
+'<tr>
+'<td><pre style="margin:0">s = 0;<br>for i = 1:10<br>&nbsp;&nbsp;s = s + i;<br>end<br>disp(s)</pre></td>
+'<td><pre style="margin:0">s = 0<br>#for i = 1 : 10<br>&nbsp;&nbsp;s = s + i<br>#loop<br>s</pre></td>
+'<td><pre style="margin:0">INTEGER :: S, I<br>S = 0<br>DO I = 1, 10<br>&nbsp;&nbsp;S = S + I<br>END DO<br>WRITE(*,*) S</pre></td>
+'<td><pre style="margin:0">int s = 0;<br>for(int i=1; i&lt;=10; ++i)<br>&nbsp;&nbsp;s += i;<br>cout &lt;&lt; s;</pre></td>
+'</tr></table>
+
+"Ejemplo ejecutado en Calcpad-Symbolic:
+s_1 = 0
+#for i = 1 : 10
+    s_1 = s_1 + i
+#loop
+s_1
+
+"Ejemplo 3 — Factorial 5!
+
+'<table class="bordered" style="width:100%;font-family:Consolas,monospace;font-size:11px">
+'<tr><th style="width:25%;background:#f59e0b;color:#fff">MATLAB</th><th style="width:25%;background:#0ea5e9;color:#fff">Calcpad-Symbolic</th><th style="width:25%;background:#8b5cf6;color:#fff">Fortran</th><th style="width:25%;background:#10b981;color:#fff">C++</th></tr>
+'<tr>
+'<td><pre style="margin:0">f = 1;<br>for i = 1:5<br>&nbsp;&nbsp;f = f * i;<br>end<br>disp(f)</pre></td>
+'<td><pre style="margin:0">f = 1<br>#for i = 1 : 5<br>&nbsp;&nbsp;f = f*i<br>#loop<br>f</pre></td>
+'<td><pre style="margin:0">INTEGER :: F, I<br>F = 1<br>DO I = 1, 5<br>&nbsp;&nbsp;F = F * I<br>END DO<br>WRITE(*,*) F</pre></td>
+'<td><pre style="margin:0">int f = 1;<br>for(int i=1; i&lt;=5; ++i)<br>&nbsp;&nbsp;f *= i;<br>cout &lt;&lt; f;</pre></td>
+'</tr></table>
+
+"Ejemplo ejecutado en Calcpad-Symbolic:
+fact = 1
+#for i = 1 : 5
+    fact = fact*i
+#loop
+fact
+
+"Ejemplo 4 — Bucle anidado (matriz i×j, 3×3)
+
+'<table class="bordered" style="width:100%;font-family:Consolas,monospace;font-size:11px">
+'<tr><th style="width:25%;background:#f59e0b;color:#fff">MATLAB</th><th style="width:25%;background:#0ea5e9;color:#fff">Calcpad-Symbolic</th><th style="width:25%;background:#8b5cf6;color:#fff">Fortran</th><th style="width:25%;background:#10b981;color:#fff">C++</th></tr>
+'<tr>
+'<td><pre style="margin:0">M = zeros(3,3);<br>for i = 1:3<br>&nbsp;&nbsp;for j = 1:3<br>&nbsp;&nbsp;&nbsp;&nbsp;M(i,j) = i*j;<br>&nbsp;&nbsp;end<br>end</pre></td>
+'<td><pre style="margin:0">M = matrix(3; 3)<br>#for i = 1 : 3<br>&nbsp;&nbsp;#for j = 1 : 3<br>&nbsp;&nbsp;&nbsp;&nbsp;M.(i; j) = i*j<br>&nbsp;&nbsp;#loop<br>#loop</pre></td>
+'<td><pre style="margin:0">REAL :: M(3,3)<br>DO I = 1, 3<br>&nbsp;&nbsp;DO J = 1, 3<br>&nbsp;&nbsp;&nbsp;&nbsp;M(I,J) = I*J<br>&nbsp;&nbsp;END DO<br>END DO</pre></td>
+'<td><pre style="margin:0">double M[3][3];<br>for(int i=0;i&lt;3;++i)<br>&nbsp;for(int j=0;j&lt;3;++j)<br>&nbsp;&nbsp;M[i][j]=(i+1)*(j+1);</pre></td>
+'</tr></table>
+
+"Ejemplo ejecutado en Calcpad-Symbolic:
+Mult = matrix(3; 3)
+#for i = 1 : 3
+    #for j = 1 : 3
+        Mult.(i; j) = i*j
+    #loop
+#loop
+Mult
+
+"Tabla resumen de diferencias
+
+'<table class="bordered" style="width:100%;font-family:Arial;font-size:13px">
+'<tr><th style="background:#1e293b;color:#fff">Aspecto</th><th style="background:#f59e0b;color:#fff">MATLAB</th><th style="background:#0ea5e9;color:#fff">Calcpad</th><th style="background:#8b5cf6;color:#fff">Fortran</th><th style="background:#10b981;color:#fff">C++</th></tr>
+'<tr><td><b>Índice base</b></td><td>1</td><td>1</td><td>1</td><td>0</td></tr>
+'<tr><td><b>Fin bucle</b></td><td>end</td><td>#loop</td><td>END DO</td><td>llave }</td></tr>
+'<tr><td><b>Comentario</b></td><td>%</td><td>&apos;</td><td>!</td><td>//</td></tr>
+'<tr><td><b>Declarar var</b></td><td>auto</td><td>auto</td><td>INTEGER/REAL</td><td>int/double</td></tr>
+'<tr><td><b>Print</b></td><td>disp(x)</td><td>x (solo)</td><td>WRITE(*,*) X</td><td>cout &lt;&lt; x</td></tr>
+'<tr><td><b>Paso custom</b></td><td>a:step:b</td><td>multiplicar</td><td>DO I=a,b,step</td><td>i+=step</td></tr>
+'</table>
+
+"Notas importantes
+'• <b>Calcpad-Symbolic:</b> el bucle siempre incrementa de 1. Para otros pasos, usar una variable auxiliar (p.ej. <code>v = 2*i</code>).
+'• <b>Fortran:</b> las variables se declaran al inicio del programa o subrutina.
+'• <b>C++:</b> índices 0-based — cuidado al convertir algoritmos MATLAB.
+'• <b>MATLAB:</b> sintaxis más compacta pero menos explícita (tipos inferidos).

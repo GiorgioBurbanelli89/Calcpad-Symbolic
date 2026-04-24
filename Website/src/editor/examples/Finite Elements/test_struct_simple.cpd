@@ -1,0 +1,16 @@
+"Test $Struct — Dibujos sin HTML
+
+"1. Un resorte:
+$Struct{fixed,0,0 : spring,0,0,4,0,k=500 : node,0,0,A : node,4,0,B : force,4,0,right,F=25 @ title=Resorte simple : w=500 : h=160}
+
+"2. Una barra:
+$Struct{fixed,0,0 : bar,0,0,5,0,Acero : node,0,0,1 : node,5,0,2 : force,5,0,right,P=50 kN : dim,0,0,5,0,L=2m @ title=Barra de acero : w=500 : h=180}
+
+"3. Viga en voladizo:
+$Struct{fixed,0,0 : beam,0,0,6,0,EI : node,0,0,1 : node,6,0,2 : force,6,0,down,P=10 kN @ title=Voladizo : w=500 : h=200}
+
+"4. Viga simplemente apoyada:
+$Struct{pin,0,0 : roller,6,0 : beam,0,0,6,0,EI : node,0,0,1 : node,3,0,2 : node,6,0,3 : force,3,0,down,P=20 kN @ title=Viga SA : w=500 : h=200}
+
+"5. Portico:
+$Struct{fixed,0,0 : fixed,6,0 : beam,0,0,0,4,Col : beam,6,0,6,4,Col : beam,0,4,6,4,Viga : node,0,0,1 : node,6,0,2 : node,0,4,3 : node,6,4,4 : force,0,4,right,F=10 @ title=Portico plano : w=500 : h=300}

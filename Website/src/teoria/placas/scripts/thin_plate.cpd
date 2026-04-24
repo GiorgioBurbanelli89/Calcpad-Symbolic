@@ -1,0 +1,74 @@
+"Placa Delgada — Teoría Clásica (Kirchhoff / CPT)
+'Hipótesis de Kirchhoff:
+'  (1) Normales a la superficie media permanecen rectas tras la deformación.
+'  (2) Las normales permanecen perpendiculares a la superficie media.
+'  (3) El espesor no varía (epsilon_z = 0).
+
+"Campo de desplazamientos
+'De las hipotesis (1) y (2), los desplazamientos u, v se expresan en funcion
+'de los giros de la normal, iguales a las pendientes de la superficie media:
+#deq u(x; y; z) = -z*dw/dx
+#deq v(x; y; z) = -z*dw/dy
+#deq w(x; y; z) = w(x; y)
+
+"Deformaciones
+'Las componentes no nulas son las de flexión en el plano:
+#deq ε_x = du/dx = -z*d2w/dx2
+#deq ε_y = dv/dy = -z*d2w/dy2
+#deq γ_xy = du/dy + dv/dx = -2*z*d2w/dxdy
+
+'Las deformaciones de corte transversal son nulas por hipotesis (2):
+#deq γ_xz = 0
+#deq γ_yz = 0
+
+"Curvaturas
+'Vector de curvaturas k:
+#deq κ_x = -d2w/dx2
+#deq κ_y = -d2w/dy2
+#deq κ_xy = -2*d2w/dxdy
+
+'Relacion deformacion-curvatura:
+#deq ε = z*κ
+
+"Rigidez a flexion
+'Material isótropo, espesor t:
+E = 200000
+ν = 0.3
+t = 0.1
+D = E*t^3/(12*(1 - ν^2))
+'Poisson y modulo constantes a traves del espesor.
+
+"Matriz constitutiva para placa isótropa
+D_mat = [D; ν*D; 0 | ν*D; D; 0 | 0; 0; (1-ν)*D/2]
+
+"Momentos internos
+'M = D*kappa, con M_xy = 2*D_xy*d2w/dxdy:
+#deq M_x = -D*(d2w/dx2 + ν*d2w/dy2)
+#deq M_y = -D*(d2w/dy2 + ν*d2w/dx2)
+#deq M_xy = -D*(1 - ν)*d2w/dxdy
+
+"Ecuacion de gobierno de Kirchhoff
+'Para carga transversal q(x, y):
+#deq D*(d4w/dx4 + 2*d4w/dx2dy2 + d4w/dy4) = q
+
+"Ejemplo simbolico — forma sinusoidal
+'w(x, y) = w0*sin(pi*x/a)*sin(pi*y/b) — placa simplemente apoyada.
+'La segunda derivada respecto a x:
+#sym
+diff(sin(π*x/a)*sin(π*y/b); x; 2)
+#end sym
+
+'Y respecto a y:
+#sym
+diff(sin(π*x/a)*sin(π*y/b); y; 2)
+#end sym
+
+'Sustituyendo en la ecuacion de gobierno y resolviendo para carga q0*sin*sin:
+'w_max = q0 / (D*pi^4*(1/a^2 + 1/b^2)^2).
+
+"Valores numericos
+a = 2
+b = 2
+q_0 = 10
+w_max = q_0/(D*π^4*(1/a^2 + 1/b^2)^2)
+'Flecha maxima en el centro de la placa cuadrada.

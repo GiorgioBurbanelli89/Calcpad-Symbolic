@@ -1,0 +1,195 @@
+"Integracion Directa vs Gauss - Rigidez de Elemento Q4 Membrana
+
+"1. Teoria
+'La rigidez del elemento Q4 se calcula integrando:
+#noc
+K_e = $Area{$Area{B^T*D*B*det(J) @ ξ = -1 : 1} @ η = -1 : 1}
+#equ
+'Hay dos formas de evaluar esta integral doble:
+
+"1.1 Integracion directa (analitica)
+'Para elementos rectangulares, B tiene terminos lineales en ξ y η.
+'B^T*D*B tiene terminos cuadraticos → se puede integrar exactamente.
+'Calcpad usa $Area{} que aplica Simpson o cuadratura adaptativa.
+
+"1.2 Integracion de Gauss (numerica)
+'Usa puntos y pesos de Gauss para aproximar la integral:
+#noc
+K_e = w_1*w_1*f(ξ_1; η_1) + w_1*w_2*f(ξ_1; η_2) + w_2*w_1*f(ξ_2; η_1) + w_2*w_2*f(ξ_2; η_2)
+#equ
+'Donde f(ξ;η) = B^T·D·B·det(J) y los puntos de Gauss son:
+'1x1 (1 punto): ξ=0, η=0, w=2 → integracion REDUCIDA
+'2x2 (4 puntos): ξ=±1/√3, η=±1/√3, w=1 → integracion COMPLETA
+'3x3 (9 puntos): ξ=±√(3/5),0 η=±√(3/5),0 → integracion EXTRA
+
+"2. Ejemplo comparativo
+
+"2.1 Datos del elemento
+'Dimensiones del elemento -'a_e = 0.625'm, 'b_e = 0.5'm
+'Espesor -'t_e = 0.2'm
+'Modulo de elasticidad -'E = 25000 MPa
+'Relacion de Poisson -'ν = 0.2
+'Adimensionalizar:
+E_a = E/(1 kN/m^2)
+a_a = a_e/(1 m)
+b_a = b_e/(1 m)
+t_a = t_e/(1 m)
+
+"2.2 Funciones de forma Q4
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+'Derivadas:
+dN_1ξ(η) = -(1 - η)/4
+dN_2ξ(η) = (1 - η)/4
+dN_3ξ(η) = (1 + η)/4
+dN_4ξ(η) = -(1 + η)/4
+dN_1η(ξ) = -(1 - ξ)/4
+dN_2η(ξ) = -(1 + ξ)/4
+dN_3η(ξ) = (1 + ξ)/4
+dN_4η(ξ) = (1 - ξ)/4
+
+"2.3 Matriz constitutiva D (plane stress)
+D = E_a*t_a/(1 - ν^2)*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+D
+
+"2.4 Jacobiano (elemento rectangular)
+J_11 = a_a/2
+J_22 = b_a/2
+det_J = J_11*J_22
+
+"2.5 Funcion B(ξ;η) para integracion
+B_e(ξ; η) = [dN_1ξ(η)/J_11; 0; dN_2ξ(η)/J_11; 0; dN_3ξ(η)/J_11; 0; dN_4ξ(η)/J_11; 0 | _
+             0; dN_1η(ξ)/J_22; 0; dN_2η(ξ)/J_22; 0; dN_3η(ξ)/J_22; 0; dN_4η(ξ)/J_22 | _
+             dN_1η(ξ)/J_22; dN_1ξ(η)/J_11; dN_2η(ξ)/J_22; dN_2ξ(η)/J_11; dN_3η(ξ)/J_22; dN_3ξ(η)/J_11; dN_4η(ξ)/J_22; dN_4ξ(η)/J_11]
+
+"3. METODO A: Integracion Directa ($Area de Calcpad)
+'Calcpad evalua la integral doble numericamente con $Area{}:
+BTDB(i; j; ξ; η) = transp(B_e(ξ; η))*D*B_e(j; η)
+#hide
+K_direct = utriang(8)
+Precision = 10^-4
+#show
+K_ij(i; j) = det_J*$Area{$Area{BTDB(i; j; ξ; η) @ η = -1 : 1} @ ξ = -1 : 1}
+$Repeat{$Repeat{K_direct.(i; j) = K_ij(i; j) @ j = i : 8} @ i = 1 : 8}
+'K_e (integracion directa):
+K_direct
+
+"4. METODO B: Gauss 2x2 (integracion completa)
+'4 puntos de Gauss en ξ=±1/√3, η=±1/√3, pesos=1:
+g = 1/sqr(3)
+#hide
+K_gauss = symmetric(8)
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g','η_g = -g
+	#else if ig ≡ 2
+		ξ_g = g','η_g = -g
+	#else if ig ≡ 3
+		ξ_g = g','η_g = g
+	#else
+		ξ_g = -g','η_g = g
+	#end if
+	dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+	dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+	dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+	dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+	B_g = [dNdx_1; 0; dNdx_2; 0; dNdx_3; 0; dNdx_4; 0 | _
+	       0; dNdy_1; 0; dNdy_2; 0; dNdy_3; 0; dNdy_4 | _
+	       dNdy_1; dNdx_1; dNdy_2; dNdx_2; dNdy_3; dNdx_3; dNdy_4; dNdx_4]
+	BtDB_g = transp(B_g)*D*B_g*det_J
+	#for i = 1 : 8
+		#for j = i : 8
+			K_gauss.(i; j) = K_gauss.(i; j) + BtDB_g.(i; j)
+		#loop
+	#loop
+#loop
+#show
+'K_e (Gauss 2x2):
+K_gauss
+
+"5. METODO C: Gauss 1x1 (integracion reducida)
+'1 punto de Gauss en ξ=0, η=0, peso=2x2=4:
+#hide
+K_reduced = symmetric(8)
+ξ_g = 0','η_g = 0
+dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+B_r = [dNdx_1; 0; dNdx_2; 0; dNdx_3; 0; dNdx_4; 0 | _
+       0; dNdy_1; 0; dNdy_2; 0; dNdy_3; 0; dNdy_4 | _
+       dNdy_1; dNdx_1; dNdy_2; dNdx_2; dNdy_3; dNdx_3; dNdy_4; dNdx_4]
+BtDB_r = transp(B_r)*D*B_r*det_J*4
+#for i = 1 : 8
+	#for j = i : 8
+		K_reduced.(i; j) = K_reduced.(i; j) + BtDB_r.(i; j)
+	#loop
+#loop
+#show
+'K_e (Gauss 1x1, reducida):
+K_reduced
+
+"6. Comparacion
+'Diferencia Gauss 2x2 vs Directa:
+#hide
+diff_max = 0
+#for i = 1 : 8
+	#for j = i : 8
+		d_ij = abs(K_gauss.(i; j) - K_direct.(i; j))
+		#if d_ij > diff_max
+			diff_max = d_ij
+		#end if
+	#loop
+#loop
+#show
+'Diferencia maxima Gauss 2x2 vs Directa:'diff_max'kN/m
+'(Deben ser IGUALES porque 2x2 Gauss es exacto para Q4 bilineal)
+
+'Diferencia maxima Gauss 1x1 vs 2x2:
+#hide
+diff_red = 0
+#for i = 1 : 8
+	#for j = i : 8
+		d_ij = abs(K_reduced.(i; j) - K_gauss.(i; j))
+		#if d_ij > diff_red
+			diff_red = d_ij
+		#end if
+	#loop
+#loop
+#show
+diff_red'kN/m
+'(Gauss 1x1 es DIFERENTE → menos rigido → puede tener modos hourglass)
+
+"7. Visualizacion de puntos de Gauss
+#svg 350 200
+.text 175 15 "Puntos_de_Gauss_en_elemento_Q4" 10 navy middle bold
+.rect 25 30 130 130 lightyellow 0.3 black 1
+.text 90 175 "1x1_(reducida)" 9 red middle
+.circle 90 95 5 red 0.8
+.text 95 90 "w=4" 7 red start
+.rect 195 30 130 130 lightyellow 0.3 black 1
+.text 260 175 "2x2_(completa)" 9 blue middle
+.circle 232 62 4 blue 0.8
+.circle 288 62 4 blue 0.8
+.circle 288 128 4 blue 0.8
+.circle 232 128 4 blue 0.8
+.text 235 57 "w=1" 6 blue start
+.text 25 30 "-1,-1" 7 gray start
+.text 130 30 "1,-1" 7 gray start
+.text 130 165 "1,1" 7 gray start
+.text 25 165 "-1,1" 7 gray start
+.text 195 30 "-1,-1" 7 gray start
+.text 300 30 "1,-1" 7 gray start
+.text 300 165 "1,1" 7 gray start
+.text 195 165 "-1,1" 7 gray start
+#end svg
+
+"8. Resumen
+'Gauss 2x2 = Integracion directa (exacta para Q4 rectangular)
+'Gauss 1x1 = Sub-integra → menos rigido → posibles modos hourglass
+'Gauss 3x3 = Sobre-integra → identico a 2x2 para Q4 (no agrega precision)
+'Para Mindlin: se usa integracion SELECTIVA:
+'  - Flexion: 2x2 (completa)
+'  - Corte: 1x1 (reducida, evita shear locking)

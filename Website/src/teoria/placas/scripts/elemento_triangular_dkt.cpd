@@ -1,0 +1,113 @@
+"Elemento Triangular Placa-Cáscara — Moita §5.3
+'CPT (Kirchhoff) con superposicion:
+'  K = K_M (membrana) + K_B (flexion) + K_θz (rotacion drilling)
+'Total: 3 nodos × 6 GDL = 18 GDL por elemento.
+
+"Geometria del triangulo (ejemplo Moita §5.3.2)
+x_1 = 0
+y_1 = 0
+x_2 = 4
+y_2 = 0
+x_3 = 2
+y_3 = 3
+
+"Area total
+A = abs(x_1*(y_2 - y_3) + x_2*(y_3 - y_1) + x_3*(y_1 - y_2))/2
+
+"Coeficientes para coordenadas de area (Moita p. 84)
+a_1 = x_2*y_3 - x_3*y_2
+b_1 = y_2 - y_3
+c_1 = x_3 - x_2
+a_2 = x_3*y_1 - x_1*y_3
+b_2 = y_3 - y_1
+c_2 = x_1 - x_3
+a_3 = x_1*y_2 - x_2*y_1
+b_3 = y_1 - y_2
+c_3 = x_2 - x_1
+
+"Coordenadas de area
+'L_i = A_i / A, con L_1 + L_2 + L_3 = 1:
+#deq L_1 = (a_1 + b_1*x + c_1*y)/(2*A)
+#deq L_2 = (a_2 + b_2*x + c_2*y)/(2*A)
+#deq L_3 = (a_3 + b_3*x + c_3*y)/(2*A)
+
+"Derivadas — constantes en todo el triangulo
+#deq dL_1/dx = b_1/(2*A)
+#deq dL_1/dy = c_1/(2*A)
+
+"Coordenadas naturales (Moita p. 86)
+'ξ, η varian entre 0 y 1:
+#deq L_1 = 1 - ξ - η
+#deq L_2 = ξ
+#deq L_3 = η
+
+"Funciones de forma de membrana (CST) — lineales
+#deq N_i^m = L_i    i = 1, 2, 3
+'Componentes: u_0 = Σ L_i*u_0i, v_0 = Σ L_i*v_0i
+
+"Funciones de forma de flexion (DKT) — cuadraticas en L
+'w_0 = Σ [₁N_i  ₂N_i  ₃N_i] · {w_0i; θ_xi; θ_yi}
+'Donde (Moita p. 85):
+#deq N1_1 = L_1 + L_1^2*L_2 + L_1^2*L_3 - L_1*L_2^2 - L_1*L_3^2
+'Similar para N1_2, N1_3 (intercambiando subindices ciclicamente).
+
+"Derivacion simbolica de B^m (matriz deformacion-desplazamiento MEMBRANA)
+'ε_xx^m = du_0/dx,  ε_yy^m = dv_0/dy,  γ_xy^m = du_0/dy + dv_0/dx
+'B_i^m (3x6) por nodo, bloque:
+#deq B_i_m = [dL_i/dx; 0 | 0; dL_i/dy | dL_i/dy; dL_i/dx]
+
+"Ensamble de B^m numerica (para el triangulo ejemplo)
+B_m = (1/(2*A))*[b_1; 0; b_2; 0; b_3; 0 | 0; c_1; 0; c_2; 0; c_3 | c_1; b_1; c_2; b_2; c_3; b_3]
+
+"Matriz constitutiva — tension plana
+E = 30000000
+ν = 0.3
+t = 0.1
+d_11 = E/(1 - ν^2)
+d_12 = ν*E/(1 - ν^2)
+d_33 = E/(2*(1 + ν))
+D_m = [d_11; d_12; 0 | d_12; d_11; 0 | 0; 0; d_33]
+
+"Rigidez elemental — parte MEMBRANA (K_M)
+K_M = t*A*transp(B_m)*D_m*B_m
+n_rows(K_M)
+n_cols(K_M)
+
+"Componentes de flexion
+'B^b surge de segundas derivadas de w_0:
+'ε_xx^b = -z*dθ_y/dx, ε_yy^b = z*dθ_x/dy, γ_xy^b = z*(-dθ_y/dy + dθ_x/dx)
+'(con signo segun Moita p. 86)
+
+"Rigidez total del elemento
+'K_total = K_M (18x18, pero en la parte u,v)
+'        + K_B (18x18, en la parte w, θ_x, θ_y)
+'        + K_θz (18x18, en la parte θ_z — DRILLING — penalizacion)
+'La superposicion es diagonal por bloques (no hay acoplamiento en material isotropo).
+
+"Verificacion Kronecker
+'Cada L_i vale 1 en su nodo y 0 en los demas:
+L_1_en_nodo_1 = (a_1 + b_1*x_1 + c_1*y_1)/(2*A)
+L_1_en_nodo_2 = (a_1 + b_1*x_2 + c_1*y_2)/(2*A)
+L_1_en_nodo_3 = (a_1 + b_1*x_3 + c_1*y_3)/(2*A)
+'Deben dar 1, 0, 0 respectivamente.
+
+"Derivacion SIMBÓLICA de las coordenadas de area
+'Demostrar que dL_1/dx = b_1/(2*A):
+#sym
+diff((a_1 + b_1*x + c_1*y)/(2*A); x)
+#end sym
+#sym
+diff((a_1 + b_1*x + c_1*y)/(2*A); y)
+#end sym
+
+"Derivacion simbolica de funcion DKT de primer grupo
+'1N_1 = L_1 + L_1^2*L_2 + L_1^2*L_3 - L_1*L_2^2 - L_1*L_3^2 (Moita p. 85)
+'Derivando respecto a L_1:
+#sym
+diff(L_1 + L_1^2*L_2 + L_1^2*L_3 - L_1*L_2^2 - L_1*L_3^2; L_1)
+#end sym
+
+"Segunda derivada — para curvatura
+#sym
+diff(L_1^2*L_2; L_1; 2)
+#end sym

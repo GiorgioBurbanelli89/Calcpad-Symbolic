@@ -1,0 +1,138 @@
+"Diseno de Zapata Aislada - ACI 318
+
+"1. Datos de entrada
+"1.1 Cargas en la base de la columna
+'Carga axial -'P_u = 800'kN
+'Momento -'M_u = 120'kN·m
+
+"1.2 Materiales
+'Resistencia del concreto -'f_c = 28'MPa
+'Fluencia del acero -'f_y = 420'MPa
+
+"1.3 Columna
+'Dimension de columna -'c_1 = 0.4'm
+'Dimension de columna -'c_2 = 0.4'm
+
+"1.4 Suelo
+'Capacidad portante admisible -'q_adm = 200'kN/m²
+
+"2. Dimensionamiento de la zapata
+
+"2.1 Area requerida
+'Factor de carga promedio (servicio) -'f_s = 1.4
+'Carga de servicio -'P_s = P_u/f_s
+'Area requerida -'A_req = P_s/q_adm
+'Lado de la zapata (cuadrada, redondeado a 0.1m) -
+B_calc = sqr(A_req)
+B = floor(B_calc*10 + 1)/10
+'Area real -'A_z = B^2
+'Excentricidad -'e = M_u/P_u
+'Verificacion e < B/6:'e'm < 'B/6'm
+
+"2.2 Presiones en el suelo
+q_max = P_s/A_z + 6*M_u/(f_s*B^3)
+q_min = P_s/A_z - 6*M_u/(f_s*B^3)
+'Presion maxima -'q_max'kN/m²
+'Presion minima -'q_min'kN/m²
+'Verificacion q_max < q_adm:'q_max'< 'q_adm' ✓
+
+"2.3 Peralte de la zapata
+'Peralte efectivo inicial -'d = 0.45'm
+'Recubrimiento -'r = 0.075'm
+'Altura total -'h_z = d + r + 0.02
+
+"2.4 Visualizacion
+#equ
+#hide
+sc = 200
+ks = sc/B
+ds = 30
+ws = sc + 2*ds
+hs = sc + 2*ds + 60
+cx = ds + sc/2
+cy = ds + 30 + sc/2
+c1s = c_1*ks
+c2s = c_2*ks
+#show
+#svg ws hs
+.text cx ds+15 "Vista_en_planta_-_Zapata_B_x_B" 10 navy middle bold
+.rect ds ds+30 sc sc lightyellow 0.5 gray 1
+.rect cx-c1s/2 cy-c2s/2 c1s c2s lightgray 0.8 black 1.5
+.text cx cy "Col" 10 black middle bold
+.line ds cy-sc/2-8+30 ds+sc cy-sc/2-8+30 black 0.5
+.text cx cy-sc/2-15+30 B 11 blue middle
+.line ds-8 cy-sc/2 ds-8 cy+sc/2 black 0.5
+.text ds-18 cy B 11 blue middle
+.dashed cx-c1s/2-d*ks/2 cy-c2s/2-d*ks/2 cx+c1s/2+d*ks/2 cy-c2s/2-d*ks/2 red 1 4
+.dashed cx+c1s/2+d*ks/2 cy-c2s/2-d*ks/2 cx+c1s/2+d*ks/2 cy+c2s/2+d*ks/2 red 1 4
+.dashed cx+c1s/2+d*ks/2 cy+c2s/2+d*ks/2 cx-c1s/2-d*ks/2 cy+c2s/2+d*ks/2 red 1 4
+.dashed cx-c1s/2-d*ks/2 cy+c2s/2+d*ks/2 cx-c1s/2-d*ks/2 cy-c2s/2-d*ks/2 red 1 4
+.text cx+c1s/2+d*ks/2+5 cy "Punzon." 8 red start
+.dashed ds cy-c2s/2-d*ks+30 ds+sc cy-c2s/2-d*ks+30 blue 0.8 4
+.text cx cy-c2s/2-d*ks+22 "Cortante_1-way" 8 blue middle
+.arrow cx cy-30 cx cy-2 darkgreen 1.5
+.text cx+8 cy-20 "P" 11 darkgreen start bold
+#end svg
+
+"3. Verificacion por punzonamiento (ACI 318-19, 22.6)
+
+"3.1 Perimetro critico
+'Perimetro de punzonamiento (a d/2 de la cara) -
+b_0 = 2*(c_1 + d) + 2*(c_2 + d)
+'Area de punzonamiento -
+A_0 = (c_1 + d)*(c_2 + d)
+
+"3.2 Esfuerzo de corte por punzonamiento
+'Presion ultima neta (factorizada) -'q_u = P_u/A_z
+'Fuerza de punzonamiento -
+V_u = P_u - q_u*A_0
+'Esfuerzo actuante -
+v_u = V_u/(b_0*d)*1000
+
+"3.3 Resistencia al punzonamiento
+'Factor β (relacion de lados de columna) -'β_c = c_1/c_2
+'Factor α (columna interior = 40) -'α_s = 40
+v_c1 = 0.33*sqr(f_c)
+v_c2 = 0.17*(1 + 2/β_c)*sqr(f_c)
+v_c3 = 0.083*(α_s*d/(b_0/1000) + 2)*sqr(f_c)
+'Resistencia al punzonamiento (minimo de 3 criterios):
+v_c = min(v_c1; min(v_c2; v_c3))
+'φ -'φ_v = 0.75
+'φ·v_c ='φ_v*v_c'MPa
+'v_u ='v_u'MPa
+'Verificacion: v_u < φ·v_c → 'v_u'< 'φ_v*v_c' ✓
+
+"4. Verificacion por cortante unidireccional (ACI 318-19, 22.5)
+'Seccion critica a d de la cara de la columna:
+'Vuelo de la zapata -'L_v = (B - c_1)/2
+'Fuerza cortante -
+V_u1 = q_u*B*(L_v - d)
+'Esfuerzo cortante -
+v_u1 = V_u1/(B*d)*1000
+'Resistencia -'v_c1way = 0.17*sqr(f_c)
+'φ·v_c ='φ_v*v_c1way'MPa
+'v_u ='v_u1'MPa
+'Verificacion: v_u < φ·v_c → 'v_u1'< 'φ_v*v_c1way' ✓
+
+"5. Diseno a flexion (ACI 318-19, 22.2)
+'Seccion critica en la cara de la columna:
+'Momento ultimo en la seccion critica -
+M_u1 = q_u*B*L_v^2/2
+'Factor -
+R_n = M_u1/(0.9*B*d^2)*1000
+'Cuantia requerida -
+rho = 0.85*f_c/f_y*(1 - sqr(1 - 2*R_n/(0.85*f_c)))
+'Cuantia minima -'rho_min = 0.0018
+'Cuantia de diseno -'rho_d = max(rho; rho_min)
+'Area de acero requerida -
+A_s = rho_d*B*d*10000
+'Usando varillas φ16 (A=2.01 cm²):
+'Area por varilla -'A_b = 2.01'cm²
+'Numero de varillas -'n_b = floor(A_s/A_b + 1)
+'Area de acero provista -'A_sp = n_b*A_b'cm²
+'Separacion -'s_b = (B - 2*r)/(n_b - 1)*100'cm
+
+"6. Resumen
+'Zapata cuadrada: 'B' x 'B' x 'h_z'm
+'Acero inferior en ambas direcciones: 'n_b'φ16 @ 's_b'cm
+'Presion maxima en el suelo: 'q_max'kN/m² < 'q_adm'kN/m²

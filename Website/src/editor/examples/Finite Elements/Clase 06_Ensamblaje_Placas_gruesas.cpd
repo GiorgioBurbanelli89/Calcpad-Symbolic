@@ -1,0 +1,192 @@
+'Fuente: Calculo de estructuras por el método de los elementos finitos (Oñate)
+
+"Modulo de Elasticidad:
+E = 2.535
+
+"Coeficiente de Poisson:
+ν = 0.20
+
+"Modulo de Elasticidad a corte:
+G = E/(2*(1 + ν))
+
+"Espesor de la placa:
+d = 250
+
+"Coeficiente de corrección por corte:
+κ = 5/6
+
+"Matriz constitutiva a flexión:
+D_f = E*d^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; 1 - ν/2]
+
+"Matriz constitutiva a corte:
+D_s = κ*G*d*[1; 0|0; 1]
+
+"Funciones de interpolación:
+N_1(ξ; η) = 1/4*(1 - ξ)*(1 - η)
+N_3(ξ; η) = 1/4*(1 + ξ)*(1 + η)
+N_2(ξ; η) = 1/4*(1 + ξ)*(1 - η)
+N_4(ξ; η) = 1/4*(1 - ξ)*(1 + η)
+N(ξ; η) = [N_1(ξ; η); N_2(ξ; η); N_3(ξ; η); N_4(ξ; η)]
+
+"Derivadas de las funciones de interpolación:
+dN(ξ; η) = '[symEval]
+
+"Coordenadas del elemento:
+L1 = 3000
+L2 = 1500
+X = [0; L1; L1; 0]
+Y = [0; 0; L2; L2]
+XY = augment(X; Y)
+
+"Jacobiano:
+J(ξ; η) = '[symEval]
+
+"Derivadas de las funciones de interpolación con respecto al sistema original:
+d'N(ξ; η) = '[symEval]
+
+"Construcción de la matriz de deformación para flexión:
+f(i; j) = 0
+B_b(ξ; η) = '[symEval]
+
+"Construcción de la matriz de deformación por corte:
+B_s(ξ; η) = '[symEval]
+
+"Puntos de integración:
+ξ' = [-1/?^(1/3); -(1/?^(1/3)); 1/?^(1/3); 1/?^(1/3)]
+η' = [-1/?^(1/3); 1/?^(1/3); -(1/?^(1/3)); 1/?^(1/3)]
+W = [1; 1; 1; 1]
+
+"Matrices aumentadas para integración reducida:
+D_f = stack(augment(D_f; matrix(3; 2; f)); matrix(2; 5; f))
+D_f
+D_s = stack(matrix(3; 5; f); augment(matrix(2; 3; f); D_s))
+B_b(ξ; η) = stack(B_b(ξ; η); matrix(2; 12; f))
+D_s
+B_s(ξ; η) = stack(matrix(3; 12; f); B_s(ξ; η))
+
+"Matriz de rigidez:
+j = 1 : 4
+Φ.j = transp((B_b(ξ'.j; η'.j)))*D_f*(B_b(ξ'.j; η'.j))*det(J(ξ'.j; η'.j))*W.j
+K_b = sum(Φ.j; 1; 4)
+K_s = 2*2*transp((B_s(0; 0)))*D_s*(B_s(0; 0))*det(J(0; 0))
+K_T = K_b + K_s
+K_b
+K_s
+K_T
+K_red = submatrix(K_T; 7; 12; 7; 12)
+P = 3
+I = L1*d^3/12
+Q = [P; 0; 0; P; 0; 0]
+D = (K_red^(-1))*Q
+D_exac = (L1^3/(3*E*I))*2P
+
+"ALGORITMO PARA ENSAMBLAR LA MATRIZ DE RIGIDEZ GLOBAL:
+Lx = 3000
+Ly = 3000
+
+"Coordenadas:
+
+"Reacciones:
+
+"Conectividad:
+Nudo = [1; 2; 3; 4; 5; 6]
+X = [0; 0; 0.5*Lx; 0.5*Lx; Lx; Lx]
+Y = [0; Ly; Ly; 0; Ly; 0]
+Apoyo = [1; 2]
+Rw = [1; 1]
+Rθx = [1; 1]
+Rθy = [1; 1]
+Ele = [1; 2]
+Ini = [1; 4]
+Int = [2; 3]
+Int' = [3; 5]
+Fin = [4; 6]
+
+"Numero de nudos:
+N_nud = len(Nudo)
+
+"Numero de grados por nudo:
+n_nudo = 3
+
+"Numero de grados de libertad:
+N_gl = N_nud*n_nudo
+
+"Numero de apoyos:
+N_apo = len(Apoyo)
+
+"Numero de reacciones:
+N_r = sum(Rw.i; 1; N_apo) + sum(Rθx.i; 1; N_apo) + sum(Rθy.i; 1; N_apo)
+
+"Numero de elementos:
+N_ele = len(Ele)
+i = 1 : N_ele
+
+"Función para crear matrices nulas:
+f(i; j) = 0
+
+"Matriz que identifica las reacciones en los nudos:
+''Mre:
+Mre = matrix(N_nud; n_nudo; f)
+#for i = 1 : N_apo
+    Mre.Apoyo.i; 1 = Rw.i
+    Mre.Apoyo.i; 2 = Rθx.i
+    Mre.Apoyo.i; 3 = Rθy.i
+#loop
+Mre
+
+"Matriz que asigna los grados de libertad a cada nudo:
+''Mgl:
+i = N_gl + 1
+j = 0
+#for k = 1 : N_nud
+    #for l = 1 : n_nudo
+            i = i - 1
+            Mgl.k; l = i
+        #else
+            j = j + 1
+            Mgl.k; l = j
+        #end if
+    #loop
+#loop
+Mgl
+
+"Matriz que asigna los grados de libertad a cada elemento:
+''a:
+#for i = 1 : N_ele
+    #for j = 1 : n_nudo
+        a.j; i = (transp(Mgl)).j; (Ini).i
+        a.j + n_nudo; i = (transp(Mgl)).j; (Int).i
+        a.j + n_nudo*2; i = (transp(Mgl)).j; (Int').i
+        a.j + n_nudo*3; i = (transp(Mgl)).j; (Fin).i
+    #loop
+#loop
+K' = K_T
+K.i = K'
+
+"Numero de vértices del elemento:
+nv = 4
+n_nudo*nv
+
+"Ensamblaje de la matriz de rigidez de toda la estructura:
+''K_g.i:
+'[function] = 0
+K_g.i = matrix(N_gl; N_gl; f)
+#for j = 1; 2 : n_nudo*nv
+    EG = ('matcol(a; i)).j
+    #for k = 1; 2 : n_nudo*nv
+        CG = ('matcol(a; i)).k
+        (K_g.i).EG; CG = (K.i).j; k
+    #loop
+#loop
+K_g.i
+K_g.1
+K_g.2
+
+"Matriz de rigidez total:
+K_G = sum(K_g.i; 1; N_ele)
+K_G
+
+"Matriz reducida y resolución del sistema Q=KD
+k_red = submatrix(K_G; 1; 12; 1; 12)
+Q = [0; 0; 0; 0; 0; 0; 3; 0; 0; 3; 0; 0]
+D = (k_red^(-1))*Q

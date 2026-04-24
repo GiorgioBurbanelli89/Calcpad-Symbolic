@@ -1,0 +1,61 @@
+"Placa Delgada — Teoría Clásica (Kirchhoff / CPT)
+'Rango: t/L < 1/20. Corte transversal despreciable.
+
+'<b>Paso 1 — Hipótesis</b>
+'  (1) Normal recta a superficie media
+'  (2) Normal perpendicular (γ_xz = γ_yz = 0)
+'  (3) ε_z = 0
+
+'<b>Paso 2 — Campo de desplazamientos</b>
+#deq u = -z*dw/dx
+#deq v = -z*dw/dy
+#deq w = w(x; y)
+
+'<b>Paso 3 — Deformaciones (curvaturas)</b>
+#deq ε_x = -z*d2w/dx2
+#deq ε_y = -z*d2w/dy2
+#deq γ_xy = -2*z*d2w/dxdy
+
+'<b>Paso 4 — Datos material (acero)</b>
+E_mod = 200000
+ν = 0.3
+t = 10
+'unidades: MPa y mm
+
+'<b>Paso 5 — Rigidez a flexión</b>
+#deq D = E*t^3/(12*(1 - ν^2))
+D = E_mod*t^3/(12*(1 - ν^2))
+D
+
+'<b>Paso 6 — Matriz constitutiva [D_b]</b>
+D_b = [D; ν*D; 0 | ν*D; D; 0 | 0; 0; (1-ν)*D/2]
+D_b
+
+'<b>Paso 7 — Momentos internos</b>
+#deq M_x = -D*(d2w/dx2 + ν*d2w/dy2)
+#deq M_y = -D*(d2w/dy2 + ν*d2w/dx2)
+#deq M_xy = -D*(1-ν)*d2w/dxdy
+
+'<b>Paso 8 — Ecuación de gobierno</b>
+#deq D*(d4w/dx4 + 2*d4w/dx2dy2 + d4w/dy4) = q
+
+'<b>Paso 9 — Ejemplo: placa cuadrada simplemente apoyada (Navier)</b>
+a_pl = 1000
+q_0 = 0.01
+'Flecha máxima (serie primer término m=n=1):
+w_max = 16*q_0/(π^6*D*(1/a_pl^2 + 1/a_pl^2)^2)
+w_max
+
+'<b>Paso 10 — Derivación simbólica de curvatura</b>
+'Para w(x,y) = w₀·sin(πx/a)·sin(πy/a):
+#sym
+diff(sin(π*x/a_pl)*sin(π*y/a_pl); x; 2)
+#end sym
+#sym
+diff(sin(π*x/a_pl)*sin(π*y/a_pl); y; 2)
+#end sym
+
+'<b>Resumen — comparación con teorías</b>
+'  Plate thin (CPT):        γ = 0, u,v lineales en z, necesita C¹.
+'  Plate thick (FSDT):      γ = cte, necesita k = 5/6, solo C⁰.
+'  HSDT (Reddy):            γ parabólica, sin k, cúbica en z.

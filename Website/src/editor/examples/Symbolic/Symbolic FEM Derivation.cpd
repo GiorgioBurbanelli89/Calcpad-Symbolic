@@ -1,0 +1,62 @@
+"#sym — Cálculo Vectorial y Elementos Finitos
+'<hr/>
+"1. Derivadas Parciales (∂)
+#sym pdiff(x^2*y + y^3; x)
+#sym pdiff(x^2*y + y^3; y)
+#sym pdiff(x^2*y^2 + sin(x*y); x; 2)
+
+'<hr/>
+"2. Gradiente (∇f)
+'<p>f(x,y) = x² + y² + x·y</p>
+#sym gradient(x^2 + y^2 + x*y; x; y)
+'<p>f(x,y,z) = x²·y + y·z² + z³</p>
+#sym gradient(x^2*y + y*z^2 + z^3; x; y; z)
+
+'<hr/>
+"3. Divergencia (∇·F)
+'<p>F = [x²; y²; z²]</p>
+#sym divergence(x^2; y^2; z^2; x; y; z)
+'<p>F = [x·y; y·z; z·x]</p>
+#sym divergence(x*y; y*z; z*x; x; y; z)
+
+'<hr/>
+"4. Rotacional (∇×F)
+'<p>F = [y·z; x·z; x·y]</p>
+#sym curl(y*z; x*z; x*y; x; y; z)
+'<p>F = [x²; y²; z²]</p>
+#sym curl(x^2; y^2; z^2; x; y; z)
+
+'<hr/>
+"5. Laplaciano (∇²f)
+'<p>f = x² + y² + z²</p>
+#sym laplacian(x^2 + y^2 + z^2; x; y; z)
+'<p>f = sin(x)·sin(y)</p>
+#sym laplacian(sin(x)*sin(y); x; y)
+
+'<hr/>
+"6. Jacobiano
+'<p>Funciones de forma: N1 = 1-ξ-η, N2 = ξ, N3 = η</p>
+'<p>Transformación: x = N1·x1 + N2·x2 + N3·x3</p>
+#sym jacobian(x1*(1-a-b)+x2*a+x3*b; y1*(1-a-b)+y2*a+y3*b; a; b)
+
+'<hr/>
+"7. Hessiano
+'<p>f(x,y) = x³ + x·y² − 3·x</p>
+#sym hessian(x^3 + x*y^2 - 3*x; x; y)
+
+'<hr/>
+"8. Funciones de forma — Elemento Q4
+'<p>N₁(ξ,η) = (1-ξ)(1-η)/4</p>
+#sym pdiff((1-a)*(1-b)/4; a)
+#sym pdiff((1-a)*(1-b)/4; b)
+'<p>N₂(ξ,η) = (1+ξ)(1-η)/4</p>
+#sym pdiff((1+a)*(1-b)/4; a)
+#sym pdiff((1+a)*(1-b)/4; b)
+
+'<hr/>
+"9. Ecuación de Navier-Stokes (componente x, incompresible)
+'<p>∂u/∂t + u·∂u/∂x + v·∂u/∂y = -∂p/∂x + ν·∇²u</p>
+'<p>Término convectivo u·∂u/∂x:</p>
+#sym pdiff(u_0*sin(x)*cos(y); x)
+'<p>Laplaciano de u:</p>
+#sym laplacian(u_0*sin(x)*cos(y); x; y)

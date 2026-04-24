@@ -1,0 +1,19 @@
+"Shear Stiffness — Timoshenko Beam
+'Constant shear deformation (Logan Ch.4)
+
+"Shear deformation
+#deq γ = dw/dx - θ
+
+"B Matrix
+#sym diff(1-t; t)
+#sym diff(t; t)
+
+"Stiffness Matrix
+#deq K_shear = G*A_s/L*[1; -1 | -1; 1]
+
+"Numerical
+G = 80000MPa
+A_s = 40cm^2
+L = 3m
+K_s = G*A_s/L*[1; -1 | -1; 1]
+K_s|[kN/m; kN/m | kN/m; kN/m]

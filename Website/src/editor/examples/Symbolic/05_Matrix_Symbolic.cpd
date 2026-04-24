@@ -1,0 +1,19 @@
+"Symbolic Matrix Operations (#sym)
+
+"Determinant 2x2
+#sym det(a; b; c; d)
+
+"Determinant numeric
+#sym det(4; -2; -2; 4)
+
+"Inverse 2x2
+#sym inv(a; b; c; d)
+
+"Eigenvalues 2x2
+#sym eigen(a; b; c; d)
+
+"Eigenvalues numeric
+#sym eigen(4; -2; -2; 4)
+
+"Transpose
+#sym transp(a; b; c; d)

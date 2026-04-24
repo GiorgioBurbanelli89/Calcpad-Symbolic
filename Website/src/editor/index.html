@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calcpad-Symbolic Web</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; background: #f4f4f4; color: #222; }
+    #header {
+      background: #1e293b; color: #fff; padding: 10px 16px;
+      display: flex; align-items: center; gap: 12px;
+      border-bottom: 2px solid #0ea5e9;
+    }
+    #header .logo { font-weight: 700; font-size: 18px; }
+    #header .subtitle { font-size: 12px; color: #94a3b8; }
+    #header .spacer { flex: 1; }
+    #header button, #header select {
+      background: #334155; color: #fff; border: 1px solid #475569;
+      padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;
+    }
+    #header button:hover, #header select:hover { background: #475569; }
+    #header button.primary { background: #0ea5e9; border-color: #0ea5e9; }
+    #header button.primary:hover { background: #0284c7; }
+    #main { display: flex; height: calc(100vh - 50px - 26px); }
+    #left-col { flex: 1; min-width: 320px; border-right: 1px solid #cbd5e1; background: #fff; display: flex; flex-direction: column; }
+    #editor-header { background: #e2e8f0; padding: 6px 12px; font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; }
+    #editor {
+      flex: 1; resize: none; border: none; outline: none; padding: 12px;
+      font-family: Consolas, 'Courier New', monospace; font-size: 13px;
+      line-height: 1.5; background: #fafafa;
+    }
+    #output-panel { flex: 1.3; background: #fff; overflow: auto; }
+    #output-header { background: #e2e8f0; padding: 6px 12px; font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; position: sticky; top: 0; }
+    #output { padding: 16px; }
+    #output .err { color: #b91c1c; background: #fee2e2; padding: 4px 8px; border-radius: 3px; font-family: monospace; margin: 4px 0; }
+    #output .var-line { padding: 4px 0; border-bottom: 1px solid #f1f5f9; font-family: monospace; font-size: 13px; }
+    #output .comment { color: #64748b; font-style: italic; font-family: sans-serif; margin: 8px 0; }
+    #output .heading { font-weight: 700; font-size: 15px; color: #0f172a; margin: 14px 0 6px; border-bottom: 2px solid #0ea5e9; padding-bottom: 2px; }
+    #output .value { color: #0284c7; }
+    /* Matrix styles come from template-calcpad.css (Calcpad desktop template) */
+    #status {
+      background: #334155; color: #cbd5e1; padding: 4px 16px;
+      font-size: 11px; display: flex; gap: 16px; border-top: 1px solid #475569;
+    }
+    #canvas-wrapper { margin: 8px 0; display: inline-block; }
+  </style>
+  <script type="module" crossorigin src="/editor/assets/index-DxmWTFZj.js"></script>
+</head>
+<body>
+  <div id="header">
+    <span class="logo">Calcpad-Symbolic</span>
+    <span class="subtitle">Web — FEM + Sparse Solver</span>
+    <div class="spacer"></div>
+    <button class="primary" id="btn-run" title="Ejecutar (Ctrl+Enter)">▶ Ejecutar</button>
+    <button id="btn-autorun" class="active" title="Autorun ON/OFF">⚡ Autorun</button>
+    <button id="btn-open" title="Abrir archivo .cpd">📁 Abrir</button>
+    <button id="btn-save" title="Guardar como .cpd">💾 Guardar</button>
+    <button id="btn-clear">Limpiar</button>
+    <button id="btn-functions" title="Ver y llamar funciones #function definidas en tu script">ƒ(x) Funciones <span id="btn-functions-badge" style="background:#0ea5e9;color:#fff;border-radius:10px;padding:1px 6px;margin-left:4px;font-size:11px;display:none;">0</span></button>
+    <select id="example-select">
+      <option value="">📂 Ejemplos (390+)</option>
+    </select>
+    <button id="btn-help">?</button>
+  </div>
+
+  <!-- User-functions modal -->
+  <div id="functions-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:8px;padding:20px 24px;min-width:520px;max-width:760px;max-height:85vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;border-bottom:2px solid #0ea5e9;padding-bottom:8px;">
+        <h2 style="margin:0;color:#0f172a;font-size:18px;">ƒ(x) Funciones del usuario</h2>
+        <div>
+          <button id="btn-fn-new" style="background:#0ea5e9;color:#fff;border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:13px;margin-right:6px;">＋ Nueva función</button>
+          <button id="btn-functions-close" style="background:#e2e8f0;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:14px;">✕</button>
+        </div>
+      </div>
+      <div id="functions-list" style="font-family:Consolas,Monaco,monospace;font-size:13px;"></div>
+
+      <!-- Inline form for creating a new function -->
+      <div id="fn-form" style="display:none;margin-top:16px;padding:12px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;">
+        <h3 style="margin:0 0 10px 0;font-size:14px;color:#0f172a;">Crear nueva función</h3>
+        <div style="display:grid;grid-template-columns:110px 1fr;gap:8px;align-items:center;">
+          <label style="font-size:12px;color:#475569;">Nombre:</label>
+          <input id="fn-name" type="text" placeholder="miFuncion" style="padding:5px 8px;border:1px solid #cbd5e1;border-radius:4px;font-family:Consolas,monospace;font-size:13px;">
+          <label style="font-size:12px;color:#475569;">Parámetros:</label>
+          <input id="fn-params" type="text" placeholder="p1; p2; p3" style="padding:5px 8px;border:1px solid #cbd5e1;border-radius:4px;font-family:Consolas,monospace;font-size:13px;">
+          <label style="font-size:12px;color:#475569;align-self:start;padding-top:5px;">Cuerpo:</label>
+          <textarea id="fn-body" rows="6" placeholder="' escribe el código aquí
+' usa los parámetros y asigna el resultado al nombre de la función:
+result = p1 + p2" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:4px;font-family:Consolas,monospace;font-size:13px;resize:vertical;"></textarea>
+        </div>
+        <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:6px;">
+          <button id="btn-fn-cancel" style="background:#e2e8f0;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:13px;">Cancelar</button>
+          <button id="btn-fn-save" style="background:#16a34a;color:#fff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:13px;">Guardar en script</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;padding-top:8px;border-top:1px solid #cbd5e1;font-size:11px;color:#64748b;">
+        Define funciones con <code>#function nombre(p1; p2) ... #end function</code> o usa
+        <b>＋ Nueva función</b>. Clic en cualquier fila → inserta <code>nombre(…)</code> al final del editor.
+      </div>
+    </div>
+  </div>
+  <div id="main">
+    <div id="left-col">
+      <div id="editor-header">CALCPAD SCRIPT</div>
+      <textarea id="editor" spellcheck="false" placeholder="' Calcpad-Symbolic Web — escribe tu script aquí
+' Ejemplo:
+Lx = 1000
+Ly = 1000
+Lz = 1000
+Ec = 22000
+nuc = 0.2
+'..."></textarea>
+    </div>
+    <div id="output-panel">
+      <div id="output-header">OUTPUT</div>
+      <div id="output"></div>
+    </div>
+  </div>
+  <div id="status">
+    <span id="status-lines">0 lineas</span>
+    <span id="status-time">0 ms</span>
+    <span id="status-vars">0 vars</span>
+    <span>Calcpad-Symbolic Web v0.1</span>
+  </div>
+</body>
+</html>

@@ -1,0 +1,64 @@
+"Membrana — Estado Plano de Tensión (Q4/CST)
+'Placa delgada cargada SOLO en su plano. Sin flexión.
+
+'<b>Paso 1 — Hipótesis</b>
+'  (1) Espesor t << dimensiones en plano
+'  (2) Cargas paralelas al plano
+'  (3) σ_z = τ_xz = τ_yz = 0
+
+'<b>Paso 2 — GDL: solo u, v (sin w, sin giros)</b>
+#deq ε_x = du/dx
+#deq ε_y = dv/dy
+#deq γ_xy = du/dy + dv/dx
+
+'<b>Paso 3 — Datos material</b>
+E_mod = 200000
+ν = 0.3
+t = 10
+
+'<b>Paso 4 — Matriz constitutiva [D] (tensión plana)</b>
+d_11 = E_mod/(1 - ν^2)
+d_12 = ν*E_mod/(1 - ν^2)
+d_33 = E_mod/(2*(1 + ν))
+D = [d_11; d_12; 0 | d_12; d_11; 0 | 0; 0; d_33]
+D
+
+'<b>Paso 5 — Geometría del triángulo CST (ejemplo)</b>
+x_1 = 0
+y_1 = 0
+x_2 = 400
+y_2 = 0
+x_3 = 200
+y_3 = 300
+
+'<b>Paso 6 — Coeficientes coordenadas de área</b>
+b_1 = y_2 - y_3
+c_1 = x_3 - x_2
+b_2 = y_3 - y_1
+c_2 = x_1 - x_3
+b_3 = y_1 - y_2
+c_3 = x_2 - x_1
+A_e = abs(x_1*(y_2-y_3) + x_2*(y_3-y_1) + x_3*(y_1-y_2))/2
+A_e
+
+'<b>Paso 7 — Matriz [B] del CST (3x6)</b>
+B = (1/(2*A_e))*[b_1;0;b_2;0;b_3;0 | 0;c_1;0;c_2;0;c_3 | c_1;b_1;c_2;b_2;c_3;b_3]
+B
+
+'<b>Paso 8 — Rigidez elemental K_e = t·A·Bᵀ·D·B</b>
+K_e = t*A_e*transp(B)*D*B
+n_rows(K_e)
+n_cols(K_e)
+
+'<b>Paso 9 — Diferencia tensión plana vs deformación plana</b>
+'  Tensión plana (ésta):  σ_z = 0      → placas delgadas en su plano
+'  Deformación plana:     ε_z = 0      → túneles, presas, muros
+'  La matriz [D] cambia:
+'    Deformación plana:   d_11 = E(1-ν)/((1+ν)(1-2ν))
+d_11_pe = E_mod*(1 - ν)/((1 + ν)*(1 - 2*ν))
+d_11_pe
+
+'<b>Paso 10 — Derivación simbólica dN/dx</b>
+#sym
+diff((b_1*x + c_1*y)/(2*A_e); x)
+#end sym

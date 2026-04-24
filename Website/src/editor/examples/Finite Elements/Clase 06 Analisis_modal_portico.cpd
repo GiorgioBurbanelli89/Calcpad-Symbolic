@@ -1,0 +1,187 @@
+'Sea el siguiente campo de desplazamiento admisible en un elemento viga:
+'Es posible demostrar imponiendo las condiciones de frontera con los parámetros nodales que las funciones de forma para este elemento son:
+'Donde 1 y 3 están relacionados a los desplazamientos verticales en los extremos y 2 y 4 a las rotaciones.
+'Longitudes de cada barra:
+l = [3; 4; 3]
+N_1(x; i) = 1 - 3*x^2/l.i^2 + 2*x^3/l.i^3
+N_2(x; i) = x*(1 - x/l.i)^2
+N_3(x; i) = 3*x^2/l.i^2 - 2*x^3/l.i^3
+N_4(x; i) = x^2/l.i*(x/l.i - 1)
+'Por ejemplo para el elemento 1 del primer ejemplo:
+x = 0; 0.1 : l.1
+Y.1 = N_1(x; 1)
+X.1 = x
+X.2 = x
+Y.2 = N_2(x; 1)
+X.3 = x
+Y.3 = N_3(x; 1)
+X.4 = x
+Y.4 = N_4(x; 1)
+'Como vimos en el método de los elementos finitos estas funciones de forma nos permite obtener la matriz de rigidez de un elemento y las fuerzas nodales equivalentes:
+'Con estas expresiones podemos deducir la misma matriz de rigidez del elemento viga deducida según la teoría del análisis estructural aplicando desplazamientos unitarios y calculando las fuerzas que producen dichos desplazamientos.
+
+"Porque obtenemos los mismo valores de la matriz de rigidez?
+
+"Podemos usar las mismas funciones de forma para interpolar los desplazamientos internos para cualquier condición de carga de forma exacta?
+'Incluyendo las deformación axiales, se deduce la matriz de masa para un elemento columna en 2D:
+N_0(x; i) = 1 - x/l.i
+N_5(x; i) = x/l.i
+'Por ejemplo para la columna del ejemplo, suponiendo que es de concreto y de sección 30x50cm
+'Masa del elemento:
+m_e.1 = (0.3*0.5*2.4)*l.1
+ton
+'Masa distribuida por unidad de longitud:
+m'_e.1 = m_e.1/l.1
+ton/m^2
+N(x) = [1 - x/l.1; 1 - 3*x^2/l.1^2 + 2*x^3/l.1^3; x*(1 - x/l.1)^2; x/l.1; 3*x^2/l.1^2 - 2*x^3/l.1^3; x^2/l.1*(x/l.1 - 1)]
+M_11 = integral(m'_e.1*(N(x)).1*(N(x)).1; 0; l.1)
+M_22 = integral(m'_e.1*(N(x)).2*(N(x)).2; 0; l.1)
+M_33 = integral(m'_e.1*(N(x)).3*(N(x)).3; 0; l.1)
+M_ele = m_e.1/420*[140; 0; 0; 70; 0; 0|0; 156; 22*l.1; 0; 54; -13*l.1|0; 22*l.1; 4*l.1^2; 0; 13*l.1; -3*l.1^2|70; 0; 0; 140; 0; 0|0; 54; 13*l.1; 0; 156; -22*l.1|0; -13*l.1; -3*l.1^2; 0; -22*l.1; 4*l.1^2]
+M_ele
+'La matriz de masa en el sistema global se puede ensamblar similar a la matriz de rigidez, ahora que conocemos la masa y rigidez del sistema es posible estudiar el comportamiento dinámico.
+'Densidad del concreto:
+γ_c = 2.4*tonf/m^3
+'Secciones:
+Elemento = ["Columna Izq."; "Viga"; "Columna Der."]
+b = [0.3; 0.3; 0.3]m
+h = [0.3; 0.3; 0.3]m
+L = [5; 5; 5]m
+'Contador:
+i = 1; 2 : 3
+'Desarrollo:
+'Resistencia del Concreto:
+f'_c = 210kgf/cm^2
+'Modulo de Elasticidad del Concreto según E-060:
+E = 15000*?^(1/f'_c*kgf/cm^2)
+'Inercia de las secciones:
+I.i = b.i*h.i^3/12
+L'.i = L.i/m
+E' = E/(tonf/m^2)
+I' = I/m^4
+'La matriz de las barras 1 y 3 en el sistema local será:
+K_ele.1 = E'*I'.1/L'.1*[12/L'.1^2; -6/L'.1|-6/L'.1; 4]
+K_ele.3 = E'*I'.3/L'.3*[12/L'.3^2; -6/L'.3|-6/L'.3; 4]
+'La matriz de las barras 2 en el sistema local será:
+K_ele.2 = E'*I'.2/L'.2*[4; 2|2; 4]
+'Como convertimos estas matrices al sistema global?
+[D1; D2; D3]
+[D1; D2; D3]
+[D1; D2; D3]
+a.1 = [1; 0; 0|0; 1; 0]
+a.2 = [0; 1; 0|0; 0; 1]
+a.3 = [1; 0; 0|0; 0; 1]
+'Matriz de rigidez del pórtico:
+K = sum((transp(a.i)*K_ele.i*a.i); 1; 3)
+'Funciones de forma y sus derivadas:
+N_3(x; i) = 3*x^2/L'.i^2 - 2*x^3/L'.i^3
+N_2(x; i) = x*(1 - x/L'.i)^2
+N_4(x; i) = x^2/L'.i*(x/L'.i - 1)
+N3'(x; i) = 6*x/L'.i^2 - 6*x^2/L'.i^3
+N2'(x; i) = 3*x^2/L'.i^2 - 4*x/L'.i + 1
+N4'(x; i) = 3*x^2/L'.i^2 - 2*x/L'.i
+N3''(x; i) = 6/L'.i^2 - 12*x/L'.i^3
+N2''(x; i) = 6*x/L'.i^2 - 4/L'.i
+N4''(x; i) = 6*x/L'.i^2 - 2/L'.i
+'Comprobando los términos de la matriz de rigidez del elemento 1 y 3:
+integral(E'*I'.1*N3''(x; 1)*N3''(x; 1); 0; L'.1)
+integral(E'*I'.1*N3''(x; 1)*N4''(x; 1); 0; L'.1)
+integral(E'*I'.1*N4''(x; 1)*N4''(x; 1); 0; L'.1)
+'Comprobando los términos de la matriz de rigidez del elemento 2:
+integral(E'*I'.2*N2''(x; 2)*N2''(x; 2); 0; L'.2)
+integral(E'*I'.2*N2''(x; 2)*N4''(x; 2); 0; L'.2)
+integral(E'*I'.2*N4''(x; 2)*N4''(x; 2); 0; L'.2)
+'Masa del elemento:
+A.i = b.i*h.i
+m_e.i = A.i*γ_c*L.i/tonf
+'Masa distribuida por unidad de longitud:
+m'_e.i = m_e.i/L'.i
+'Matriz de masa consistente en coordenadas locales para los elementos 1 y 3:
+M_22.i = integral(m'_e.i*N_3(x; i)*N_3(x; i); 0; L'.i)
+M_24.i = integral(m'_e.i*N_3(x; i)*N_4(x; i); 0; L'.i)
+M_44.i = integral(m'_e.i*N_4(x; i)*N_4(x; i); 0; L'.i)
+'Matriz de masa consistente en coordenadas locales para el elemento 2:
+M_22.2 = integral(m'_e.2*N_2(x; 2)*N_2(x; 2); 0; L'.2)
+M_24.2 = integral(m'_e.2*N_2(x; 2)*N_4(x; 2); 0; L'.2)
+M_44.2 = integral(m'_e.2*N_4(x; 2)*N_4(x; 2); 0; L'.2)
+clear(M_ele)
+M_ele.i = [M_22.i; M_24.i|M_24.i; M_44.i]
+M_ele
+M_est = sum((transp(a.i)*M_ele.i*a.i); 1; 3)
+'Verificación con el libro:
+m_e.1*312/420
+m_e.1*-22*L'.1/420
+m_e.1*8*L'.1^2/420
+m_e.1*-3*L'.1^2/420
+'Verificación del elemento 1 local:
+M_ele.1
+m_e.1/420*156
+(m_e.1/420*-22)*L'.1
+m_e.1/420*4*L'.1^2
+'Solución del problema característico:
+λ = (M_est^(-1))*K
+w2 = sort(eigenvalues(λ))
+'Frecuencias y periodos:
+clear(ϕ)
+clear(ϕ_n)
+ω_n = ?^(1/w2)
+T_e = 2*π/ω_n
+j = 1 : 3
+'matcol(ϕ; j) = eigenvec(λ; w2.j)
+ϕ
+'matcol(ϕ_n; j) = 'matcol(ϕ; j)/?^(1/transp(('matcol(ϕ; j)))*M_est*'matcol(ϕ; j))
+ϕ_n
+'Amplitud de carga armónica:
+p_o = 10tonf
+'Frecuencia de carga armónica:
+Ω = 5rad/s
+F(t) = p_o*sin(Ω*t)
+N_2(x; i) = x*(1 - x/L.i)^2
+N_4(x; i) = x^2/L.i*(x/L.i - 1)
+'Vector de cargas nodales equivalentes:
+x' = 2/3*L.2
+F_θ1 = N_2(x'; 2)*p_o
+F_θ1 = p_o*x'*(L.2 - x')^2/L.2^2
+F_θ2 = N_4(x'; 2)*p_o
+F_θ2 = -p_o*x'^2*(L.2 - x')/L.2^2
+F = [0; F_θ1/(tonf*m); F_θ2/(tonf*m)]
+'Carga armónica variable en el tiempo:
+f(t) = sin(Ω*t)
+P(t) = F*f(t)
+P_1(t) = transp(('matcol(ϕ_n; j)))*F.1*f(t)
+'Respuesta armónica de cada grado de libertad:
+'Razón de amortiguamiento para cada modo:
+ξ = [0.05; 0.05; 0.05]
+'Relación de frecuencias:
+β.j = Ω/ω_n.j*s
+'Coeficientes para grado de libertad:
+C.j = F.j/ω_n.j^2*(1 - β.j^2/((1 - β.j^2)^2 + (2*ξ.j*β.j)^2))
+D.j = F.j/ω_n.j^2*-2*ξ.j*β.j/((1 - β.j^2)^2 + (2*ξ.j*β.j)^2)
+'Respuesta estacionaria de cada coordenada modal:
+u1(t) = C.1*sin(Ω*t) + D.1*cos(Ω*t)
+u2(t) = C.2*sin(Ω*t) + D.2*cos(Ω*t)
+u3(t) = C.3*sin(Ω*t) + D.3*cos(Ω*t)
+t = 0s; 0.01s : 15s
+X.1 = t
+Y.1 = u1(t)*1000
+X.2 = t
+Y.2 = u2(t)*1000
+X.3 = t
+Y.3 = u3(t)*1000
+'Respuesta estacionaria total:
+ut(t) = ('matcol(ϕ_n; 1))*u1(t) + ('matcol(ϕ_n; 2))*u2(t) + ('matcol(ϕ_n; 3))*u3(t)
+'Respuesta estacionaria del primer grado de libertad:
+ut1(t) = (ϕ_n.1; 1)*u1(t) + (ϕ_n.1; 2)*u2(t) + (ϕ_n.1; 3)*u3(t)
+X.1 = t
+Y.1 = ut1(t)*1000
+'Respuesta estacionaria del segundo grado de libertad:
+ut2(t) = (ϕ_n.2; 1)*u1(t) + (ϕ_n.2; 2)*u2(t) + (ϕ_n.2; 3)*u3(t)
+X.1 = t
+Y.1 = ut2(t)
+'Respuesta estacionaria del tercer grado de libertad:
+ut3(t) = (ϕ_n.3; 1)*u1(t) + (ϕ_n.3; 2)*u2(t) + (ϕ_n.3; 3)*u3(t)
+X.1 = t
+Y.1 = ut3(t)
+'Porque la rotación en el nudo mas cercano a la carga armónica es menor?
+ut(5s)
+'Trace el diagrama de cortante y momento flector del pórtico en el instante t=5s:

@@ -1,0 +1,59 @@
+"Cáscara Delgada — Teoría de Kirchhoff-Love
+'Una cáscara (shell) combina:
+'  • Comportamiento de MEMBRANA (cargas en el plano)
+'  • Comportamiento de PLACA DELGADA (flexión fuera del plano, Kirchhoff)
+'Es decir: 5 GDL por nodo (u, v, w, phi_x, phi_y) — pero phi's son dependientes
+'de w en Kirchhoff-Love (no independientes como en Mindlin).
+
+"Hipótesis
+'  (1) Espesor t pequeño comparado con el radio de curvatura.
+'  (2) Normales a la superficie media permanecen rectas y perpendiculares.
+'  (3) tau_13 = tau_23 = 0 (sin deformacion cortante transversal).
+
+"Campo de desplazamientos
+#deq u_alfa = u_alfa0 + z*θ_alfa
+'donde theta_alfa = -dw/dx_alfa (rotacion de la normal).
+
+"Deformaciones y curvaturas
+'Deformaciones de membrana (constantes en el espesor):
+#deq ε_alfa_mem = du_alfa0/dx_beta
+
+'Curvaturas (lineales en z):
+#deq κ_alfa_beta = -d2w/dx_alfa_dx_beta
+
+'Deformacion total:
+#deq ε = ε_mem + z*κ
+
+"Matriz constitutiva desacoplada
+'Para material isótropo, membrana y flexión están DESACOPLADAS:
+E = 200000
+ν = 0.3
+t = 0.01
+
+'Matriz de membrana:
+C_m = E*t/(1 - ν^2)
+D_m = [C_m; ν*C_m; 0 | ν*C_m; C_m; 0 | 0; 0; (1-ν)*C_m/2]
+
+'Matriz de flexion (identica a placa delgada):
+D_f = E*t^3/(12*(1 - ν^2))
+D_b = [D_f; ν*D_f; 0 | ν*D_f; D_f; 0 | 0; 0; (1-ν)*D_f/2]
+
+"Acoplamiento membrana-flexion
+'En materiales isótropos NO hay acoplamiento: [B_mf] = 0.
+'En laminados asimetricos SI existe — origina la matriz B = -Ez*D_b.
+
+"Energia de deformacion total
+#deq U = 0.5*integral((ε_mem^T*D_m*ε_mem + κ^T*D_b*κ)*dA)
+
+"Ecuaciones de gobierno (Koiter, Novozhilov)
+'Sistema acoplado en {u0, v0, w} — dos ecuaciones de equilibrio de membrana
+'más una ecuacion biarmonica modificada de flexion. Se resuelven por FEM.
+
+"Elementos finitos comunes
+'• Shell triangular DKT + CST (flexion + membrana)
+'• Shell cuadrilatero DKQ + Q4
+'• Ambos evitan el shear locking al despreciar el cortante transversal.
+
+"Limitacion
+'No valida para cascaras gruesas (t/R > 1/20): usar Mindlin-Reissner.
+'Ver: /teoria/placas/shell-thick.html

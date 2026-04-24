@@ -1,0 +1,56 @@
+"Placa Gruesa — Mindlin-Reissner (FSDT)
+'Rango: t/L > 1/10. Incluye deformación por corte transversal.
+
+'<b>Paso 1 — Hipótesis</b>
+'  (1) Normal recta (NO perpendicular)
+'  (2) Giros independientes φ_x, φ_y (no iguales a -dw/dx, -dw/dy)
+'  (3) ε_z = 0
+
+'<b>Paso 2 — Campo de desplazamientos</b>
+#deq u = z*φ_x(x; y)
+#deq v = z*φ_y(x; y)
+#deq w = w(x; y)
+
+'<b>Paso 3 — Deformaciones de flexión</b>
+#deq ε_x = z*dφ_x/dx
+#deq ε_y = z*dφ_y/dy
+#deq γ_xy = z*(dφ_x/dy + dφ_y/dx)
+
+'<b>Paso 4 — Deformación por corte transversal (NUEVA)</b>
+#deq γ_xz = φ_x + dw/dx
+#deq γ_yz = φ_y + dw/dy
+
+'<b>Paso 5 — Datos material</b>
+E_mod = 200000
+ν = 0.3
+t = 50
+'(t = 50 mm → placa gruesa)
+
+'<b>Paso 6 — Rigidez a flexión [D_b]</b>
+D = E_mod*t^3/(12*(1 - ν^2))
+D_b = [D; ν*D; 0 | ν*D; D; 0 | 0; 0; (1-ν)*D/2]
+D_b
+
+'<b>Paso 7 — Rigidez de corte transversal [D_s]</b>
+G = E_mod/(2*(1 + ν))
+k_s = 5/6
+'Factor de corrección rectangular: k=5/6
+D_s = [k_s*G*t; 0 | 0; k_s*G*t]
+D_s
+
+'<b>Paso 8 — Energía total</b>
+#deq U = (1/2)*integral(κ^T*D_b*κ + γ^T*D_s*γ)*dA
+
+'<b>Paso 9 — Sistema global</b>
+'3 GDL por nodo: w, φ_x, φ_y → elementos Q4, MITC4, DKQ
+#deq K*q = F    (q = [w_i; φ_xi; φ_yi])
+
+'<b>Paso 10 — Shear locking y soluciones</b>
+'  MITC4:    Mixed Interpolation of Tensorial Components
+'  DKQ:      Discrete Kirchhoff Quadrilateral
+'  RI + SRI: Reduced / Selective Reduced Integration
+
+'<b>Paso 11 — Ejemplo: D de acero t=50mm</b>
+D
+G*t*k_s
+'Valores finales para ensamble numérico.
