@@ -1,0 +1,130 @@
+#margen 20
+#md on
+"Test continuo — texto y math INLINE en la misma linea
+
+# Viga en voladizo — flujo continuo
+
+'La viga tiene longitud -'L = 5 m', espesor -'t = 0.20 m'y ancho -'b = 0.30 m'. El area transversal es'A = b*t'y la inercia respecto al eje fuerte es'I = b*t^3/12'. El material es hormigon con -'E = 25 GPa'y coeficiente de Poisson -'ν = 0.20', de forma que la rigidez a flexion resulta'EI = E*I'(en unidades SI).
+
+'Si se aplica una carga puntual -'P = 10 kN'en el extremo libre, la deflexion maxima por la teoria de Euler-Bernoulli es'δ = P*L^3/(3*E*I)', que convertida a milimetros es'δ_mm = δ | mm'. El momento maximo en el empotramiento es'M_max = P*L'y la reaccion vertical por equilibrio es simplemente'R = P'.
+
+'Las mismas formulas, presentadas como ecuaciones display:
+
+#deq I = (b·t^3)/12
+#deq EI = E·I
+#deq δ = (P·L^3)/(3·E·I)
+
+'Simbolicamente, la expansion del cuadrado de un binomio:
+
+#sym (a + b)^2
+
+'la derivada del polinomio x^3 + 2·x^2 + x:
+
+#sym diff(x^3 + 2*x^2 + x; x)
+
+'y la integral indefinida de x^2:
+
+#sym integrate(x^2; x)
+
+'son resultados simbolicos que el motor devuelve sin evaluar numericamente.
+
+'Para graficar momento y deflexion a lo largo del eje, definimos versiones numericas (sin unidades) de las variables:
+
+L_num = L/m
+P_num = P/kN
+EI_num = EI/(kN*m^2)
+
+'El momento flector es -'M(x) = P_num*(L_num - x)'(x en metros, resultado en kN·m) y la deflexion escalada'w_times_EI(x) = P_num*x^2*(3*L_num - x)/6'(en kN·m^3). Ambas curvas superpuestas:
+
+$Plot { M(x) & w_times_EI(x) @ x = 0 : L_num }
+
+'donde se aprecia la linealidad del momento y la forma cubica de la deflexion.
+
+# Placa de Kirchhoff
+
+'La misma logica se extiende a placas delgadas. La rigidez flexional de placa es'D_f = E*t^3/(12*(1 - ν^2))'y el modulo de corte es'G = E/(2*(1 + ν))'. En forma display:
+
+#deq D_f = (E·t^3)/(12·(1 - ν^2))
+#deq G = E/(2·(1 + ν))
+
+'La ecuacion gobernante es la biharmonica:
+
+#deq d^4w/dx^4 + 2·d^4w/dx^2dy^2 + d^4w/dy^4 = q/D_f
+
+'con curvaturas asociadas:
+
+#deq χ_1 = -d^2w/dx^2
+#deq χ_2 = -d^2w/dy^2
+#deq χ_12 = -2·d^2w/dxdy
+
+'y el tensor constitutivo isotropo:
+
+#deq D = (E·t^3)/(12·(1 - ν^2)) · [1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]
+
+'que numericamente evaluado queda:
+
+D_mat = (E*t^3/(12*(1 - ν^2)))*[1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]
+D_mat
+
+'Para una placa cuadrada simplemente apoyada de lado -'a = 4 m'con carga uniforme -'q_load = -10 kN/m^2'y coeficiente adimensional de Navier -'w_bar = 0.00406'(Ferreira Tabla 12.1), la deflexion central es'w_centro = w_bar*q_load*a^4/D_f'que en milimetros resulta'w_centro_mm = w_centro | mm'. Para visualizar el campo completo usamos la primera armonica:
+
+a_num = a/m
+w_c_num = w_centro/m
+w_field(x; y) = w_c_num*sin(π*x/a_num)*sin(π*y/a_num)
+$Map { w_field(x; y) @ x = 0 : a_num & y = 0 : a_num }
+
+'donde se observa la concentracion al centro.
+
+# Motor numerico — serie de Basilea
+
+'Para chequear el motor numerico corremos la suma parcial'lim_S = π^2/6'(valor teorico) via un loop:
+
+S = 0
+#for k = 1 : 10
+    S = S + 1/k^2
+#loop
+S
+
+'con error residual'err = π^2/6 - S', del orden de 1/N como corresponde a esa convergencia.
+
+# Bloques — inline y bloque
+
+'El inline permite declarar varias variables en una linea:
+
+#inl k_1 = 100 ; k_2 = 200 ; k_3 = k_1 + k_2 ; 'tres rigideces en serie
+
+'y despues del bloque persisten:
+
+total = k_1 + k_2 + k_3
+
+'Resumen completo del analisis:
+
+#blk
+L        ; 'longitud
+t        ; 'espesor
+A        ; 'area transversal
+I        ; 'inercia
+EI       ; 'rigidez flexional
+D_f      ; 'rigidez flexional placa
+G        ; 'modulo de corte
+P        ; 'carga puntual
+δ        ; 'deflexion viga
+δ_mm     ; 'deflexion en mm
+w_centro ; 'deflexion placa (SI)
+w_centro_mm ; 'deflexion placa (mm)
+S        ; 'suma parcial Basilea
+err      ; 'error Basilea
+#end blk
+
+# Cierre
+
+'El parser soporta texto y asignaciones math alternados en la misma linea via apostrofes, bloques declarativos, operaciones simbolicas, ecuaciones display con matrices y derivadas de orden arbitrario, loops, y graficas inline. Todo enganchado por dependencias transitivas entre variables con unidades fisicas coherentes.
+
+#pgb
+
+# Pagina 2 — mapa del test
+
+'- Viga voladizo (Euler-Bernoulli): deflexion cubica'δ
+'- Placa Kirchhoff (biharmonica): campo 2D `w_field(x; y)`
+'- Serie de Basilea: convergencia'S'hacia'lim_S = π^2/6
+'- Bloques: inline via `#inl` y bloque via `#blk`
