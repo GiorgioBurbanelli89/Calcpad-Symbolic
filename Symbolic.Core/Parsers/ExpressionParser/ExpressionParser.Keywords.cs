@@ -1701,6 +1701,53 @@ namespace Calcpad.Core
             finally { _renderDeqScalarDepth--; }
         }
 
+        /// <summary>Like RenderDeqScalar but skips the outer-paren-strip step
+        /// so the caller can render an already-unwrapped expression. Used to
+        /// render the content INSIDE preserved parens.</summary>
+        private string RenderDeqScalarRaw(string expr)
+        {
+            if (string.IsNullOrWhiteSpace(expr)) return "";
+            if (++_renderDeqScalarDepth > 32)
+            {
+                _renderDeqScalarDepth--;
+                return DeqRenderVar(expr);
+            }
+            try
+            {
+                return RenderDeqScalarNoStrip(expr);
+            }
+            finally { _renderDeqScalarDepth--; }
+        }
+
+        private string RenderDeqScalarNoStrip(string expr)
+        {
+            // Copy of RenderDeqScalarInner but without the outer-paren strip.
+            // Top-level add/sub
+            if (HasTopLevelAddSub(expr))
+            {
+                var sb = new System.Text.StringBuilder();
+                int depth = 0; int start = 0;
+                for (int i = 0; i < expr.Length; i++)
+                {
+                    var c = expr[i];
+                    if (c == '(' || c == '[') depth++;
+                    else if (c == ')' || c == ']') depth--;
+                    else if ((c == '+' || c == '-') && depth == 0 && i > 0
+                             && expr[i - 1] != 'e' && expr[i - 1] != 'E')
+                    {
+                        var term = expr.Substring(start, i - start).Trim();
+                        if (term.Length > 0) sb.Append(RenderDeqScalar(term));
+                        sb.Append(c == '+' ? " + " : " &minus; ");
+                        start = i + 1;
+                    }
+                }
+                var last = expr.Substring(start).Trim();
+                if (last.Length > 0) sb.Append(RenderDeqScalar(last));
+                return sb.ToString();
+            }
+            return RenderDeqScalar(expr);
+        }
+
         private string RenderDeqScalarInner(string expr)
         {
             expr = expr.Trim();
@@ -1708,7 +1755,13 @@ namespace Calcpad.Core
             var sp = TryRenderDeqSpecial(expr);
             if (!string.IsNullOrEmpty(sp)) return sp;
 
-            // Strip redundant outer parens in-place (not via recursion to avoid loops)
+            // Strip outer parens in-place, BUT only if doing so won't change
+            // the semantic precedence. We keep the parens when the inner
+            // expression has top-level '+' or '-' AND is used as a factor
+            // in a larger expression (caller can wrap). Here we just strip
+            // always, but later we re-add parens if needed at the caller
+            // level (see multiplication split below).
+            bool hadOuterParens = false;
             while (expr.Length > 1 && expr[0] == '(' && expr[^1] == ')')
             {
                 int dp = 0;
@@ -1718,8 +1771,19 @@ namespace Calcpad.Core
                     if (expr[i] == '(') dp++;
                     else if (expr[i] == ')') { dp--; if (dp == 0) { ok = false; break; } }
                 }
-                if (ok) expr = expr.Substring(1, expr.Length - 2).Trim();
+                if (ok)
+                {
+                    expr = expr.Substring(1, expr.Length - 2).Trim();
+                    hadOuterParens = true;
+                }
                 else break;
+            }
+            // If we stripped outer parens AND the inner expression still has
+            // top-level '+' or '-', restore the parens before rendering so
+            // the grouping is preserved in output (e.g., "12·(1-ν²)").
+            if (hadOuterParens && HasTopLevelAddSub(expr))
+            {
+                return $"&nbsp;(&nbsp;{RenderDeqScalarRaw(expr)}&nbsp;)&nbsp;";
             }
 
             // 1. Top-level addition/subtraction → render terms and join
@@ -1756,19 +1820,45 @@ namespace Calcpad.Core
             }
 
             // 3. Top-level multiplication → a · b · c
-            if (expr.IndexOfAny(new[] { '·', '*', '×', '⋅' }) >= 0)
+            //    Also handles IMPLICIT multiplication like "12(1-v^2)" or
+            //    "(a+b)(c+d)" → inserts the '·' at the boundary so each side
+            //    is rendered separately and joined with middle-dot.
+            if (expr.IndexOfAny(new[] { '·', '*', '×', '⋅' }) >= 0
+                || System.Text.RegularExpressions.Regex.IsMatch(expr, @"[\w\)]\s*\(|\)\s*[a-zA-Zα-ωΑ-Ω_]"))
             {
                 var parts = new List<string>();
                 int depth = 0; int start = 0;
                 for (int i = 0; i < expr.Length; i++)
                 {
                     var c = expr[i];
-                    if (c == '(' || c == '[') depth++;
+                    if (c == '(' || c == '[')
+                    {
+                        // Implicit multiplication: digit/letter/close-paren followed by '('
+                        if (c == '(' && depth == 0 && i > 0)
+                        {
+                            var prev = expr[i - 1];
+                            if (char.IsDigit(prev) || char.IsLetter(prev) || prev == ')' || prev == ']')
+                            {
+                                var chunk = expr.Substring(start, i - start).Trim();
+                                if (chunk.Length > 0) parts.Add(chunk);
+                                start = i;
+                            }
+                        }
+                        depth++;
+                    }
                     else if (c == ')' || c == ']') depth--;
                     else if (depth == 0 && (c == '·' || c == '*' || c == '×' || c == '⋅'))
                     {
                         parts.Add(expr.Substring(start, i - start).Trim());
                         start = i + 1;
+                    }
+                    // Implicit multiplication: ')' followed by letter (new factor starts)
+                    else if (c != ' ' && depth == 0 && i > 0 && expr[i - 1] == ')'
+                             && (char.IsLetter(c) || char.IsDigit(c)))
+                    {
+                        var chunk = expr.Substring(start, i - start).Trim();
+                        if (chunk.Length > 0) parts.Add(chunk);
+                        start = i;
                     }
                 }
                 parts.Add(expr.Substring(start).Trim());
