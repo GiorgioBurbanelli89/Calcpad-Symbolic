@@ -1322,7 +1322,7 @@ namespace Calcpad.Core
             //      "κ_x = -∂θ_y/∂x" is split earlier by '=', so this sees "-∂θ_y/∂x" alone
             // Split by top-level +/- and render each term, then join with operators.
             bool hasDeriv = part.Contains('∂') || part.Contains("d/d") ||
-                 System.Text.RegularExpressions.Regex.IsMatch(part, @"\bd[a-zA-Zα-ωΑ-Ω_]+/d[a-zA-Zα-ωΑ-Ω_]");
+                 System.Text.RegularExpressions.Regex.IsMatch(part, @"[d∂]\d*[a-zA-Zα-ωΑ-Ω_]+\s*/\s*[d∂][a-zA-Zα-ωΑ-Ω_]");
             if (hasDeriv && HasTopLevelAddSub(part))
             {
                 var multiTermHtml = TryRenderMultiTermDerivative(part);
@@ -1343,7 +1343,7 @@ namespace Calcpad.Core
             // Acepta signo opcional  -  al inicio: -∂^2w/∂x^2, -df/dx, etc.
             // También acepta factor multiplicativo al inicio: 2*∂^2w/∂x∂y, 3*d^2v/dx^2
             var leibnizMatch = System.Text.RegularExpressions.Regex.Match(part,
-                @"^(-?)((?:\d+(?:\.\d+)?\*)?)([d∂](?:\^(\d+))?)(\w+)\s*/\s*([d∂])(\w)(?:\^(\d+))?(?:([d∂])(\w)(?:\^(\d+))?)?$");
+                @"^(-?)((?:\d+(?:\.\d+)?[·*])?)([d∂](?:\^(\d+))?)(\w+)\s*/\s*([d∂])(\w)(?:\^(\d+))?(?:([d∂])(\w)(?:\^(\d+))?)?$");
             if (leibnizMatch.Success)
             {
                 var signPrefix = leibnizMatch.Groups[1].Value; // "" o "-"
@@ -1386,7 +1386,7 @@ namespace Calcpad.Core
                 if (!string.IsNullOrEmpty(factPrefix))
                 {
                     // quitar el * final y mostrar el número (ej. "2*" → "2·")
-                    var numStr = factPrefix.TrimEnd('*');
+                    var numStr = factPrefix.TrimEnd('*', '·');
                     prefix.Append(numStr);
                     prefix.Append("·");
                 }
@@ -1956,7 +1956,7 @@ namespace Calcpad.Core
                         anyDeriv = true;
                 }
                 else if (term.Contains('∂') || term.Contains("d/d")
-                         || System.Text.RegularExpressions.Regex.IsMatch(term, @"\bd[a-zA-Zα-ωΑ-Ω_]+/d[a-zA-Zα-ωΑ-Ω_]"))
+                         || System.Text.RegularExpressions.Regex.IsMatch(term, @"[d∂]\d*[a-zA-Zα-ωΑ-Ω_]+\s*/\s*[d∂][a-zA-Zα-ωΑ-Ω_]"))
                 {
                     // Term has a derivative + multiplicative factors: split by ·/*
                     termHtml = RenderMultiplicativeFactors(term);
