@@ -1,0 +1,204 @@
+#margen 20
+#md on
+"Test — #svg embebido (masa-resorte 1 GDL)
+
+# Modelo masa-resorte clásico
+
+'Modelo de un grado de libertad con la ecuación gobernante:
+
+#deq m·d^2x/dt^2 + c·dx/dt + k·x = F(t)
+
+'Parámetros:
+
+m_kg = 10
+k_Nm = 1000
+c_Nsm = 5
+
+ω_n = sqrt(k_Nm/m_kg)
+T_n = 2*π/ω_n
+ξ = c_Nsm/(2*sqrt(k_Nm*m_kg))
+
+#blk
+m_kg ; 'masa
+k_Nm ; 'rigidez
+c_Nsm ; 'amortiguamiento
+ω_n  ; 'frecuencia natural rad/s
+T_n  ; 'periodo s
+ξ    ; 'razón de amortiguamiento
+#end blk
+
+# 1. Modelo masa-resorte horizontal (con pared)
+
+'Componentes dibujados:
+'  - pared izquierda con hatch
+'  - resorte (zigzag con loop #for)
+'  - masa (rectángulo con etiqueta m)
+'  - flecha de desplazamiento x(t)
+'  - cota L del resorte
+
+x_pared = 30
+y_centro = 110
+x_masa_ini = 270
+ancho_masa = 80
+alto_masa = 70
+L_resorte = x_masa_ini - x_pared
+n_vueltas = 8
+amp_resorte = 18
+
+'Pre-cálculo de los puntos del zigzag (alternancia con (-1)^i)
+'#hide ... #show suprime las asignaciones del loop en el render.
+
+#hide
+n_pts = 2*n_vueltas + 2
+xz = vector(n_pts)
+yz = vector(n_pts)
+xz.(1) = x_pared
+yz.(1) = y_centro
+xz.(2) = x_pared + 8
+yz.(2) = y_centro
+#for i = 1 : 2*n_vueltas
+    xz.(i+2) = x_pared + 8 + i*(L_resorte - 16)/(2*n_vueltas)
+    yz.(i+2) = y_centro + amp_resorte*(-1)^i
+#loop
+xz.(n_pts) = x_masa_ini
+yz.(n_pts) = y_centro
+#show
+
+#svg 500 240
+.rect 0 0 500 240 #fafafa 1 lightgray 0.5
+.text 250 22 Masa-resorte_horizontal_1_GDL 14 black middle bold
+
+'Pared (línea + 6 hatches)
+.line x_pared 50 x_pared 170 black 2.5
+#for ih = 0 : 5
+    .line x_pared-12 60+ih*16 x_pared 70+ih*16 black 1
+#loop
+
+'Piso (línea + hatches)
+.line 30 170 470 170 black 1.5
+#for jp = 0 : 18
+    .line 40+jp*22 170 30+jp*22 185 black 0.7
+#loop
+
+'Resorte (líneas entre puntos pre-calculados)
+#for k = 1 : n_pts - 1
+    .line xz.(k) yz.(k) xz.(k+1) yz.(k+1) #888888 2
+#loop
+.text x_pared+L_resorte/2 y_centro-32 k 14 #444 middle italic
+
+'Masa (rectángulo con etiqueta m)
+.rect x_masa_ini y_centro-alto_masa/2 ancho_masa alto_masa #ffd966 0.8 black 2
+.text x_masa_ini+ancho_masa/2 y_centro+5 m 18 black middle bold
+
+'Flecha de desplazamiento x(t)
+.arrow x_masa_ini+ancho_masa+5 y_centro x_masa_ini+ancho_masa+60 y_centro red 2
+.text x_masa_ini+ancho_masa+30 y_centro-12 x(t) 13 red middle bold
+
+'Cota L del resorte
+.line x_pared 215 x_masa_ini 215 #555 0.7
+.text (x_pared+x_masa_ini)/2 210 L_resorte 10 #555 middle
+#end svg
+
+# 2. Oscilación libre — 4 instantes (t = 0, T/4, T/2, 3T/4)
+
+'x(t) = A·cos(ω_n·t)
+
+A_amp = 50
+
+#svg 520 360
+.rect 0 0 520 360 #f0f8ff 1 gray 0.5
+.text 260 22 Oscilacion_libre_x(t)=A·cos(ω_n·t) 13 black middle bold
+
+#for f = 0 : 3
+    y_off = 65 + f*72
+    fase = f*π/2
+    x_off = A_amp*cos(fase)
+    'pared con 4 hatches
+    .line 30 y_off-25 30 y_off+25 black 2
+    .line 18 y_off-15 30 y_off-5 black 1
+    .line 18 y_off-5 30 y_off+5 black 1
+    .line 18 y_off+5 30 y_off+15 black 1
+    'resorte simplificado (línea continua)
+    .line 30 y_off 220+x_off y_off #aaa 2
+    'masa
+    .rect 220+x_off y_off-22 50 44 #ffd966 0.8 black 1.5
+    .text 245+x_off y_off+5 m 13 black middle bold
+    'etiqueta de fase
+    .text 380 y_off-3 t=f·T/4 11 #333 start
+    .text 380 y_off+12 x_off 10 #999 start
+#loop
+#end svg
+
+# 3. Diagrama de cuerpo libre (DCL)
+
+'Fuerzas sobre la masa: -k·x (resorte), -c·ẋ (amortiguador), F(t) externa
+
+#svg 480 280
+.rect 0 0 480 280 #fff8f0 1 #ddd 1
+.text 240 22 Diagrama_de_cuerpo_libre 13 black middle bold
+
+'Masa en el centro
+.rect 200 110 80 80 #ffd966 0.8 black 2
+.text 240 155 m 24 black middle bold
+
+'Fuerzas:
+'-k·x (a la izquierda, restitutiva)
+.arrow 200 150 110 150 #1f77b4 2.5
+.text 155 138 -k·x 13 #1f77b4 middle bold
+
+'-c·dx/dt (parte superior, amortiguador)
+.arrow 240 110 240 50 #2ca02c 2.5
+.text 250 80 -c·dx/dt 13 #2ca02c start bold
+
+'F(t) externa (a la derecha)
+.arrow 280 150 380 150 #d62728 2.5
+.text 360 138 F(t) 14 #d62728 middle bold
+
+'-m·d^2x/dt^2 (inercia, abajo)
+.arrow 240 190 240 250 #9467bd 2.5
+.text 250 230 -m·d^2x/dt^2 12 #9467bd start
+
+#end svg
+
+# 4. Resumen de la teoría
+
+'Por la 2da ley de Newton:
+
+#deq Σ F = m·d^2x/dt^2
+
+'Sustituyendo las fuerzas del DCL:
+
+#deq -k·x - c·dx/dt + F(t) = m·d^2x/dt^2
+
+'Reorganizando:
+
+#deq m·d^2x/dt^2 + c·dx/dt + k·x = F(t)
+
+'Forma adimensional con ω_n = sqrt(k/m) y ξ = c/(2·sqrt(k·m)):
+
+#deq d^2x/dt^2 + 2·ξ·ω_n·dx/dt + ω_n^2·x = F(t)/m
+
+'Solución libre (F=0) sub-amortiguada (ξ < 1):
+
+#deq x(t) = A·exp(-ξ·ω_n·t)·cos(ω_d·t + φ)
+
+'donde la frecuencia amortiguada es:
+
+#deq ω_d = ω_n·sqrt(1 - ξ^2)
+
+ω_d = ω_n*sqrt(1 - ξ^2)
+
+#blk
+ω_n ; 'frecuencia natural sin amortiguamiento
+ω_d ; 'frecuencia amortiguada
+ξ   ; 'razón de amortiguamiento
+T_n ; 'periodo natural
+#end blk
+
+# Cierre
+
+'Demostrado: #svg soporta loops #for con cálculos in-line
+'(zigzag del resorte), variables Calcpad (n_vueltas, amp_resorte),
+'mezcla con #deq simbólico para la teoría, y composición de
+'múltiples primitivas (rect, line, arrow, text) para diagramas
+'completos de mecánica.
