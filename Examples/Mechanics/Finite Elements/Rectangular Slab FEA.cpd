@@ -80,40 +80,36 @@ d = 20
 h = b/a*w
 r = 0.04*k
 #show
-'<svg viewbox="'-d' '-d' 'w + 2*d' 'h + 2*d'" xmlns="http://www.w3.org/2000/svg" version="1.1" style=" font-family: Segoe UI; font-size:10px; width:'w'pt; height:'h'pt">
-'<style>.joint{fill:orangeRed;} .support{stroke:red; stroke-width:1; fill:lightpink;} .element{stroke:seaGreen; stroke-width:1; fill:lime; fill-opacity:0.1; stroke-opacity:0.5}</style>
-'<rect x="'0'" y="'0'" width="'w'" height="'h'" style="fill:yellow; fill-opacity:0.2" />
+'En #svg el `y` del .text es la BASELINE (estándar SVG), así que para
+'centrar verticalmente sumamos size/3 al y. font-size = 10 → offset ~3.
+
+#svg w+2*d h+2*d
+.rect 0 0 w h yellow 0.2 goldenRod 0.5
 #for e = 1 : n_e
-	#hide
 	x = x_c(e)*k
-	y = y_c(e)*k
-	#show
-	'<text x="'x'" y="'h - y'" text-anchor="middle">'e'</text>
-	'<rect x="'x - a_1/2*k'" y="'h - y - b_1/2*k'" width="'a_1*k'" height="'b_1*k'" class="element" />
+	y = h - y_c(e)*k
+	.rect x-a_1/2*k y-b_1/2*k a_1*k b_1*k lime 0.1 seaGreen 1
+	.text x y+3 e 10 black middle
 #loop
 #for i = 1 : n_s
 	j = s_j.i
-	#hide
 	x = x_j.j*k
 	y = h - y_j.j*k
-	#show
 	#if y_j.j ≡ 0 ∨ y_j.j ≡ b
-		'<line x1="'x - 4*r'" y1="'y'" x2="'x + 4*r'" y2="'y'" class="support"/>
+		.line x-4*r y x+4*r y red 1
 	#end if
 	#if x_j.j ≡ 0 ∨ x_j.j ≡ a
-		'<line x1="'x'" y1="'y - 4*r'" x2="'x'" y2="'y + 4*r'" class="support"/>
+		.line x y-4*r x y+4*r red 1
 	#end if
-	'<circle cx="'x'" cy="'y'" r="'2*r'" class="support"/>
+	.circle x y 2*r lightpink 1 red 1
 #loop
 #for j = 1 : n_j
-	#hide
 	x = x_j.j*k
 	y = h - y_j.j*k
-	#show
-	'<circle cx="'x'" cy="'y'" r="'r'" class="joint" />
-	'<text x="'x + 2*r'" y="'y - r'" text-anchor="start">'j'</text>
+	.circle x y r orangeRed 1
+	.text x+2*r y-r j 9 navy start
 #loop
-'</svg>
+#end svg
 #equ
 '<h4>Finite element formulation</h4>
 '<p><b>Shape functions</b></p>
