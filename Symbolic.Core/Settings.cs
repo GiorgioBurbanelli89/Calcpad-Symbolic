@@ -56,7 +56,12 @@ namespace Calcpad.Core
             Substitute = true;
             FormatEquations = true;
             ZeroSmallMatrixElements = true;
-            MaxOutputCount = 20;
+            // Default agresivo: truncar vectores/matrices con más de 5
+            // elementos. Esto evita que un vector de 200 elementos genere
+            // un render que se desborde de la página o del margen, y
+            // mantiene los HTMLs/PDFs compactos. El usuario puede subirlo
+            // hasta 100 desde la UI si necesita ver más elementos.
+            MaxOutputCount = 5;
         }
     }
 
