@@ -97,6 +97,30 @@ Inline math between apostrophes now accepts **display-only constructs** that pre
 Also fixed in v1.3:
 - `#sym` now normalizes Unicode ops (`·`, `×`, `⋅`) → ASCII `*` before dispatching to AngouriMath.
 - Depth guard (16 levels) in `TryRenderDeqSpecial` prevents stack overflow on pathological recursive inputs like `ε_ij = (∂u_i/∂x_j + ∂u_j/∂x_i)/2`.
+- `#deq` Leibniz regex extended to accept `d^n` with caret, Greek letters, multi-char identifiers with subscripts (e.g. `d^2φ_i/dx_j`).
+- Multi-term derivative renderer handles biharmonic `d^4w/dx^4 + 2·d^4w/dx^2dy^2 + d^4w/dy^4 = q/D` correctly.
+- Inline matrix `=` is vertically centered (inline-flex + align-items:center).
+
+#### 🆕 v1.3.1 — `#sym` output cleanup + explicit subscripts only
+
+- **Maxima/AngouriMath artifact cleanup** in `#sym` results: `%e` → `e`,
+  `log(e)` → `1` before re-parsing through Calcpad's HTML formatter.
+  Without this, `#sym integrate(x^2·e^x; x)` returned the unsimplified
+  Maxima string `((log(e)^2·x^2 − 2·log(e)·x + 2)·%e^(log(e)·x))/log(e)^3`
+  which rendered as plain text. Now it renders as a proper formula.
+- **Auto-subscript disabled**: `s1`, `s2`, `u1` no longer get silently
+  rewritten to `s_1`, `s_2`, `u_1`. The user must use the explicit
+  underscore notation (`s_1`) to get a subscript. `s1` stays as a
+  literal identifier — both forms are valid Calcpad variables.
+
+#### Comprehensive parser test
+
+`Examples/Tests/test_PARSER_COMPLETO.cpd` exercises 30 sections covering
+every directive in both inline and block form (identities, derivatives
+with Greek letters and subscripts, integrals, matrices, `#sym`, `#inl`,
+`#blk`, `#for`, `#if`, `#while`, `$Plot`, `$Map`, `$Sum`, `$Product`,
+`$Integral`, `$Derivative`, `$Root`, `$Find`, cell arrays, units,
+conversions). Renders with **0 errors**.
 
 ### 5c. Cell Arrays — `cells(n)` (Matlab-style)
 

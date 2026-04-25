@@ -3286,8 +3286,29 @@ namespace Calcpad.Core
             if (expr.Contains('\u2202'))
                 return RenderPartialSymbol(expr);
 
-            // Convert variable names like "u1" to "u_1" so digits render as subscript
-            expr = ConvertDigitSuffixToSubscript(expr);
+            // Clean Maxima / AngouriMath artifacts that confuse Calcpad's parser:
+            //   %e            → Maxima's literal Euler number constant
+            //   log(e)        → AngouriMath leaves this unsimplified when `e`
+            //                   is treated as a free variable; mathematically
+            //                   it equals 1 (natural log of Euler's number).
+            //   log(e)·X      → simplifies to X (since log(e) = 1).
+            // Without these substitutions, integrate(x^2·e^x; x) returns
+            // "((log(e)^2·x^2 − 2·log(e)·x + 2)·%e^(log(e)·x))/log(e)^3"
+            // which renders as plain text because Calcpad doesn't know %e.
+            expr = expr.Replace("%e", "e");
+            // Collapse log(e) → 1 (e here is Euler's constant). Use a simple
+            // string replace; downstream the parser can simplify 1·X → X.
+            if (expr.Contains("log(e)"))
+            {
+                expr = System.Text.RegularExpressions.Regex.Replace(expr,
+                    @"\blog\(e\)", "1");
+            }
+
+            // NOTE: previous versions converted "s1" → "s_1" automatically so
+            // a trailing digit rendered as subscript. The user prefers the
+            // explicit notation (`s_1`, `s_2`) and "s1" must stay as "s1"
+            // (Calcpad already accepts s1, s2 as valid identifiers).
+            // The auto-conversion is intentionally DISABLED here.
 
             // Pre-define variable names found in the expression so MathParser
             // doesn't interpret them as units (e.g. "u" as atomic mass unit).
