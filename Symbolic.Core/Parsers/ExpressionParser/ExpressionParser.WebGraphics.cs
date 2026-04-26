@@ -109,11 +109,28 @@ namespace Calcpad.Core
         }
 
 
-        /// <summary>Capture a line of content into the active web-graphic buffer.</summary>
+        /// <summary>Capture a line of content into the active web-graphic buffer.
+        /// Restaura los operadores ASCII que el lexer de Calcpad había
+        /// sustituido a Unicode (≤ ≥ ≡ ≢ ≠) — sino el JS/JSON queda roto.</summary>
         internal void ProcessWebGraphicLine(string line)
         {
             if (_webGraphicBuffer is null || !_webGraphicSavedVisible) return;
-            _webGraphicBuffer.AppendLine(line);
+            _webGraphicBuffer.AppendLine(RestoreAsciiOperators(line));
+        }
+
+        /// <summary>Reverse Calcpad's Unicode operator substitutions back to ASCII
+        /// for embedding raw JS/JSON in browser-side scripts.
+        /// Calcpad lexer hace: <= → ≤  ;  >= → ≥  ;  == → ≡  ;  != → ≢  ;  &lt;&gt; → ≠
+        /// Acá revertimos cada char Unicode al par ASCII original.</summary>
+        private static string RestoreAsciiOperators(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            return s
+                .Replace("\u2264", "<=")
+                .Replace("\u2265", ">=")
+                .Replace("\u2261", "==")
+                .Replace("\u2262", "!=")
+                .Replace("\u2260", "!=");
         }
 
 
@@ -172,8 +189,13 @@ namespace Calcpad.Core
             sb.Append("border:1px solid #ccc;background:#fafafa\"></div>\n");
             sb.Append(LoadLibrary(WebGraphicKind.Three));
             sb.Append("<script type=\"module\">\n");
-            sb.Append("import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';\n");
-            sb.Append("import {OrbitControls} from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';\n");
+            // Three.js usa el bare specifier 'three' internamente (OrbitControls
+            // hace `import * as THREE from 'three'`). Sin importmap el browser
+            // tira "Failed to resolve module specifier 'three'". Inyectamos el
+            // map una sola vez (LoadLibrary se encarga). Acá importamos como
+            // THREE y OrbitControls usando el alias.
+            sb.Append("import * as THREE from 'three';\n");
+            sb.Append("import {OrbitControls} from 'three/addons/controls/OrbitControls.js';\n");
             sb.Append("(function(){\n");
             sb.Append($"  const container = document.getElementById('{id}');\n");
             sb.Append($"  const width = {_webGraphicWidth};\n");
@@ -274,8 +296,19 @@ namespace Calcpad.Core
                 WebGraphicKind.Plotly =>
                     "<script src=\"https://cdn.plot.ly/plotly-2.35.2.min.js\"></script>\n",
 
-                WebGraphicKind.Three => "",
-                // Three.js usa import-map directamente desde unpkg (ver RenderThree)
+                WebGraphicKind.Three =>
+                    // Importmap para que el bare specifier 'three' resuelva
+                    // a la URL real desde unpkg. Lo inyectamos UNA SOLA VEZ
+                    // por documento. Tiene que ir ANTES de cualquier <script
+                    // type="module"> que use 'three'.
+                    "<script type=\"importmap\">\n" +
+                    "{\n" +
+                    "  \"imports\": {\n" +
+                    "    \"three\": \"https://unpkg.com/three@0.160.0/build/three.module.js\",\n" +
+                    "    \"three/addons/\": \"https://unpkg.com/three@0.160.0/examples/jsm/\"\n" +
+                    "  }\n" +
+                    "}\n" +
+                    "</script>\n",
 
                 WebGraphicKind.Mermaid =>
                     "<script type=\"module\">\n" +

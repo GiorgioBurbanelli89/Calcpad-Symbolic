@@ -8885,9 +8885,17 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p>&nbsp;</p>
 <div>
 <div id="three_3" style="width:700px;height:500px;border:1px solid #ccc;background:#fafafa"></div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 <script type="module">
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import {OrbitControls} from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 (function(){
   const container = document.getElementById('three_3');
   const width = 700;
@@ -9020,10 +9028,10 @@ ctx.stroke();
 ctx.beginPath();
 ctx.strokeStyle = '#1f77b4';
 ctx.lineWidth = 2.5;
-for (let x = 0; x ≤ 500; x += 5) {
+for (let x = 0; x <= 500; x += 5) {
     const px = 50 + x;
     const py = 150 + 80 * Math.sin(x * 2 * Math.PI / 250);
-    if (x ≡= 0) ctx.moveTo(px, py);
+    if (x === 0) ctx.moveTo(px, py);
     else ctx.lineTo(px, py);
 }
 ctx.stroke();
