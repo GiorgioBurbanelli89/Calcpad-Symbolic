@@ -177,12 +177,15 @@ camera.lookAt(0, Np*Hp/2, 0);
 '  → 0 en los demás nodos,
 '  → varía suavemente entre medio (lineal, cuadrática, etc.).
 
-'Para un Q4 bilineal (la base más usada en placas):
+'Para un Q4 bilineal (la base más usada en placas), las **4 funciones
+'de forma bilineales** se definen así:
 
-#deq N_1(ξ; η) = (1 - ξ)(1 - η)/4
-#deq N_2(ξ; η) = (1 + ξ)(1 - η)/4
-#deq N_3(ξ; η) = (1 + ξ)(1 + η)/4
-#deq N_4(ξ; η) = (1 - ξ)(1 + η)/4
+#math
+N_1(\xi, \eta) = \tfrac{1}{4}(1 - \xi)(1 - \eta)
+N_2(\xi, \eta) = \tfrac{1}{4}(1 + \xi)(1 - \eta)
+N_3(\xi, \eta) = \tfrac{1}{4}(1 + \xi)(1 + \eta)
+N_4(\xi, \eta) = \tfrac{1}{4}(1 - \xi)(1 + \eta)
+#end math
 
 '**Verificación simbólica** — la suma debe valer **1** (partición de la unidad):
 
@@ -329,12 +332,15 @@ L_bar ; 'longitud
 
 'Funciones de forma 1D:
 
-#deq N_1(ξ) = (1 - ξ)/2
-#deq N_2(ξ) = (1 + ξ)/2
+#math
+N_1(\xi) = \tfrac{1-\xi}{2} \qquad N_2(\xi) = \tfrac{1+\xi}{2}
+#end math
 
 'Mapeo isoparamétrico:
 
-#deq x(ξ) = N_1(ξ)·x_1 + N_2(ξ)·x_2 = (1-ξ)/2·x_1 + (1+ξ)/2·x_2
+#math
+x(\xi) = N_1(\xi)\, x_1 + N_2(\xi)\, x_2 = \tfrac{1-\xi}{2}\, x_1 + \tfrac{1+\xi}{2}\, x_2
+#end math
 
 '**Cálculo simbólico del Jacobiano:**
 
@@ -364,8 +370,9 @@ b   ; 'lado Y
 
 'Para este caso el mapeo se simplifica a:
 
-#deq x(ξ) = a/2·(ξ + 1)
-#deq y(η) = b/2·(η + 1)
+#math
+x(\xi) = \tfrac{a}{2}(\xi + 1) \qquad y(\eta) = \tfrac{b}{2}(\eta + 1)
+#end math
 
 '**Las 4 derivadas del Jacobiano:**
 

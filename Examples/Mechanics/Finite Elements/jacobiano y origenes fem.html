@@ -9004,12 +9004,29 @@ camera.lookAt(0, Np*Hp/2, 0);
 <p>→ 0 en los demás nodos,</p>
 <p>→ varía suavemente entre medio (lineal, cuadrática, etc.).</p>
 <p>&nbsp;</p>
-<p>Para un Q4 bilineal (la base más usada en placas):</p>
+<p>Para un Q4 bilineal (la base más usada en placas), las **4 funciones</p>
+<p>de forma bilineales** se definen así:</p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=33 --><p><span class="eq"><var>N</var><sub>1</sub> · <var>ξ; η</var> = <var>(1 - ξ)(1 - η)/4</var></span></p>
-<!-- FORMEQ CALLED: len=33 --><p><span class="eq"><var>N</var><sub>2</sub> · <var>ξ; η</var> = <var>(1 + ξ)(1 - η)/4</var></span></p>
-<!-- FORMEQ CALLED: len=33 --><p><span class="eq"><var>N</var><sub>3</sub> · <var>ξ; η</var> = <var>(1 + ξ)(1 + η)/4</var></span></p>
-<!-- FORMEQ CALLED: len=33 --><p><span class="eq"><var>N</var><sub>4</sub> · <var>ξ; η</var> = <var>(1 - ξ)(1 + η)/4</var></span></p>
+<div>
+<div id="math_4" style="max-width:700px;"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script>
+(function(){
+  const el = document.getElementById('math_4');
+  const latex = "N_1(\\xi, \\eta) = \\tfrac{1}{4}(1 - \\xi)(1 - \\eta)\nN_2(\\xi, \\eta) = \\tfrac{1}{4}(1 + \\xi)(1 - \\eta)\nN_3(\\xi, \\eta) = \\tfrac{1}{4}(1 + \\xi)(1 + \\eta)\nN_4(\\xi, \\eta) = \\tfrac{1}{4}(1 - \\xi)(1 + \\eta)";
+  // KaTeX render display: cada línea no vacía es un display math separado.
+  const lines = latex.split('\n').filter(l => l.trim().length > 0);
+  lines.forEach(line => {
+    const div = document.createElement('div');
+    div.style.margin = '0.6em 0';
+    try { katex.render(line, div, {displayMode:true, throwOnError:false}); }
+    catch(e) { div.textContent = e.message; div.style.color='#c33'; }
+    el.appendChild(div);
+  });
+})();
+</script>
+</div>
 <p>&nbsp;</p>
 <p><strong>Verificación simbólica</strong> — la suma debe valer <strong>1</strong> (partición de la unidad):</p>
 <p>&nbsp;</p>
@@ -9018,7 +9035,7 @@ camera.lookAt(0, Np*Hp/2, 0);
 <p><strong>Verificación gráfica</strong> — visualizamos N_1(ξ, η):</p>
 <p>&nbsp;</p>
 <div>
-<div id="plotly_4" style="width:700px;height:450px"></div>
+<div id="plotly_5" style="width:700px;height:450px"></div>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <script>
 (function(){
@@ -9051,7 +9068,7 @@ camera.lookAt(0, Np*Hp/2, 0);
 };
   var data = spec.data || [];
   var layout = spec.layout || {};
-  Plotly.newPlot('plotly_4', data, layout, {responsive:true});
+  Plotly.newPlot('plotly_5', data, layout, {responsive:true});
 })();
 </script>
 </div>
@@ -9062,12 +9079,10 @@ camera.lookAt(0, Np*Hp/2, 0);
 <p>funciones N_i que se usan para los desplazamientos:</p>
 <p>&nbsp;</p>
 <div>
-<div id="math_5" style="max-width:700px;"></div>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<div id="math_6" style="max-width:700px;"></div>
 <script>
 (function(){
-  const el = document.getElementById('math_5');
+  const el = document.getElementById('math_6');
   const latex = "x(\\xi, \\eta) = \\sum_{i=1}^{4} N_i(\\xi, \\eta)\\, x_i = N_1\\, x_1 + N_2\\, x_2 + N_3\\, x_3 + N_4\\, x_4\ny(\\xi, \\eta) = \\sum_{i=1}^{4} N_i(\\xi, \\eta)\\, y_i = N_1\\, y_1 + N_2\\, y_2 + N_3\\, y_3 + N_4\\, y_4";
   // KaTeX render display: cada línea no vacía es un display math separado.
   const lines = latex.split('\n').filter(l => l.trim().length > 0);
@@ -9087,12 +9102,12 @@ camera.lookAt(0, Np*Hp/2, 0);
 <p>elemento:</p>
 <p>&nbsp;</p>
 <div>
-<div id="jsx_6" class="jxgbox" style="width:500px;height:500px;border:1px solid #ccc"></div>
+<div id="jsx_7" class="jxgbox" style="width:500px;height:500px;border:1px solid #ccc"></div>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsxgraph@1.10.0/distrib/jsxgraph.css">
 <script src="https://cdn.jsdelivr.net/npm/jsxgraph@1.10.0/distrib/jsxgraphcore.min.js"></script>
 <script>
 (function(){
-  const JSXBOARD = 'jsx_6';
+  const JSXBOARD = 'jsx_7';
   // ─ user code ─
 const board = JXG.JSXGraph.initBoard(JSXBOARD, {
     boundingbox:[-1, 6, 6, -1], axis:true,
@@ -9136,10 +9151,10 @@ board.create('text', [0.3, 5.5,
 <p>La regla matemática dice:</p>
 <p>&nbsp;</p>
 <div>
-<div id="math_7" style="max-width:700px;"></div>
+<div id="math_8" style="max-width:700px;"></div>
 <script>
 (function(){
-  const el = document.getElementById('math_7');
+  const el = document.getElementById('math_8');
   const latex = "\\boxed{\\iint_{\\Omega^e} f(x, y)\\, dx\\, dy = \\int_{-1}^{+1}\\!\\int_{-1}^{+1} f(x(\\xi,\\eta), y(\\xi,\\eta))\\, |\\det J|\\, d\\xi\\, d\\eta}";
   // KaTeX render display: cada línea no vacía es un display math separado.
   const lines = latex.split('\n').filter(l => l.trim().length > 0);
@@ -9158,10 +9173,10 @@ board.create('text', [0.3, 5.5,
 <p>recoge las derivadas del mapeo:</p>
 <p>&nbsp;</p>
 <div>
-<div id="math_8" style="max-width:700px;"></div>
+<div id="math_9" style="max-width:700px;"></div>
 <script>
 (function(){
-  const el = document.getElementById('math_8');
+  const el = document.getElementById('math_9');
   const latex = "J = \\begin{bmatrix} \\dfrac{\\partial x}{\\partial \\xi} & \\dfrac{\\partial y}{\\partial \\xi} \\\\[6pt] \\dfrac{\\partial x}{\\partial \\eta} & \\dfrac{\\partial y}{\\partial \\eta} \\end{bmatrix}\n\\det J = \\dfrac{\\partial x}{\\partial \\xi}\\,\\dfrac{\\partial y}{\\partial \\eta} - \\dfrac{\\partial x}{\\partial \\eta}\\,\\dfrac{\\partial y}{\\partial \\xi}";
   // KaTeX render display: cada línea no vacía es un display math separado.
   const lines = latex.split('\n').filter(l => l.trim().length > 0);
@@ -9208,12 +9223,45 @@ board.create('text', [0.3, 5.5,
 <p>&nbsp;</p>
 <p>Funciones de forma 1D:</p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=23 --><p><span class="eq"><var>N</var><sub>1</sub> · <var>ξ</var> = <var>(1 - ξ)/2</var></span></p>
-<!-- FORMEQ CALLED: len=23 --><p><span class="eq"><var>N</var><sub>2</sub> · <var>ξ</var> = <var>(1 + ξ)/2</var></span></p>
+<div>
+<div id="math_10" style="max-width:700px;"></div>
+<script>
+(function(){
+  const el = document.getElementById('math_10');
+  const latex = "N_1(\\xi) = \\tfrac{1-\\xi}{2} \\qquad N_2(\\xi) = \\tfrac{1+\\xi}{2}";
+  // KaTeX render display: cada línea no vacía es un display math separado.
+  const lines = latex.split('\n').filter(l => l.trim().length > 0);
+  lines.forEach(line => {
+    const div = document.createElement('div');
+    div.style.margin = '0.6em 0';
+    try { katex.render(line, div, {displayMode:true, throwOnError:false}); }
+    catch(e) { div.textContent = e.message; div.style.color='#c33'; }
+    el.appendChild(div);
+  });
+})();
+</script>
+</div>
 <p>&nbsp;</p>
 <p>Mapeo isoparamétrico:</p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=63 --><p><span class="eq"><var>x</var> · <var>ξ</var> = <var>N</var><sub>1</sub> · <var>ξ</var> · <var>x</var><sub>1</sub> + <var>N</var><sub>2</sub> · <var>ξ</var> · <var>x</var><sub>2</sub> = <var>(1-ξ)/2·x</var><sub>1</sub> + <var>(1+ξ)/2·x</var><sub>2</sub></span></p>
+<div>
+<div id="math_11" style="max-width:700px;"></div>
+<script>
+(function(){
+  const el = document.getElementById('math_11');
+  const latex = "x(\\xi) = N_1(\\xi)\\, x_1 + N_2(\\xi)\\, x_2 = \\tfrac{1-\\xi}{2}\\, x_1 + \\tfrac{1+\\xi}{2}\\, x_2";
+  // KaTeX render display: cada línea no vacía es un display math separado.
+  const lines = latex.split('\n').filter(l => l.trim().length > 0);
+  lines.forEach(line => {
+    const div = document.createElement('div');
+    div.style.margin = '0.6em 0';
+    try { katex.render(line, div, {displayMode:true, throwOnError:false}); }
+    catch(e) { div.textContent = e.message; div.style.color='#c33'; }
+    el.appendChild(div);
+  });
+})();
+</script>
+</div>
 <p>&nbsp;</p>
 <p><strong>Cálculo simbólico del Jacobiano:</strong></p>
 <p>&nbsp;</p>
@@ -9243,16 +9291,32 @@ board.create('text', [0.3, 5.5,
 <p>&nbsp;</p>
 <p>Para este caso el mapeo se simplifica a:</p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=23 --><p><span class="eq"><var>x</var> · <var>ξ</var> = <span class="dvc"><var>a</var><span class="dvl"></span>2 · &nbsp;(&nbsp;<var>ξ</var> + 1&nbsp;)&nbsp;</span></span></p>
-<!-- FORMEQ CALLED: len=23 --><p><span class="eq"><var>y</var> · <var>η</var> = <span class="dvc"><var>b</var><span class="dvl"></span>2 · &nbsp;(&nbsp;<var>η</var> + 1&nbsp;)&nbsp;</span></span></p>
+<div>
+<div id="math_12" style="max-width:700px;"></div>
+<script>
+(function(){
+  const el = document.getElementById('math_12');
+  const latex = "x(\\xi) = \\tfrac{a}{2}(\\xi + 1) \\qquad y(\\eta) = \\tfrac{b}{2}(\\eta + 1)";
+  // KaTeX render display: cada línea no vacía es un display math separado.
+  const lines = latex.split('\n').filter(l => l.trim().length > 0);
+  lines.forEach(line => {
+    const div = document.createElement('div');
+    div.style.margin = '0.6em 0';
+    try { katex.render(line, div, {displayMode:true, throwOnError:false}); }
+    catch(e) { div.textContent = e.message; div.style.color='#c33'; }
+    el.appendChild(div);
+  });
+})();
+</script>
+</div>
 <p>&nbsp;</p>
 <p><strong>Las 4 derivadas del Jacobiano:</strong></p>
 <p>&nbsp;</p>
 <div>
-<div id="math_9" style="max-width:700px;"></div>
+<div id="math_13" style="max-width:700px;"></div>
 <script>
 (function(){
-  const el = document.getElementById('math_9');
+  const el = document.getElementById('math_13');
   const latex = "\\dfrac{\\partial x}{\\partial \\xi} = \\dfrac{a}{2}, \\quad \\dfrac{\\partial x}{\\partial \\eta} = 0\n\\dfrac{\\partial y}{\\partial \\xi} = 0, \\quad \\dfrac{\\partial y}{\\partial \\eta} = \\dfrac{b}{2}";
   // KaTeX render display: cada línea no vacía es un display math separado.
   const lines = latex.split('\n').filter(l => l.trim().length > 0);
@@ -9270,10 +9334,10 @@ board.create('text', [0.3, 5.5,
 <p><strong>El Jacobiano queda DIAGONAL:</strong></p>
 <p>&nbsp;</p>
 <div>
-<div id="math_10" style="max-width:700px;"></div>
+<div id="math_14" style="max-width:700px;"></div>
 <script>
 (function(){
-  const el = document.getElementById('math_10');
+  const el = document.getElementById('math_14');
   const latex = "J = \\begin{bmatrix} a/2 & 0 \\\\ 0 & b/2 \\end{bmatrix}, \\quad \\det J = \\dfrac{a}{2} \\cdot \\dfrac{b}{2} = \\dfrac{a\\,b}{4}";
   // KaTeX render display: cada línea no vacía es un display math separado.
   const lines = latex.split('\n').filter(l => l.trim().length > 0);
@@ -9312,7 +9376,7 @@ board.create('text', [0.3, 5.5,
 <p>visualizamos en el dominio natural:</p>
 <p>&nbsp;</p>
 <div>
-<div id="plotly_11" style="width:700px;height:450px"></div>
+<div id="plotly_15" style="width:700px;height:450px"></div>
 <script>
 (function(){
   var spec = {
@@ -9351,7 +9415,7 @@ board.create('text', [0.3, 5.5,
 };
   var data = spec.data || [];
   var layout = spec.layout || {};
-  Plotly.newPlot('plotly_11', data, layout, {responsive:true});
+  Plotly.newPlot('plotly_15', data, layout, {responsive:true});
 })();
 </script>
 </div>
@@ -9362,10 +9426,10 @@ board.create('text', [0.3, 5.5,
 <p>escala del <strong>volumen</strong> local (no del área):</p>
 <p>&nbsp;</p>
 <div>
-<div id="math_12" style="max-width:700px;"></div>
+<div id="math_16" style="max-width:700px;"></div>
 <script>
 (function(){
-  const el = document.getElementById('math_12');
+  const el = document.getElementById('math_16');
   const latex = "J = \\begin{bmatrix} \\partial x/\\partial \\xi & \\partial y/\\partial \\xi & \\partial z/\\partial \\xi \\\\ \\partial x/\\partial \\eta & \\partial y/\\partial \\eta & \\partial z/\\partial \\eta \\\\ \\partial x/\\partial \\zeta & \\partial y/\\partial \\zeta & \\partial z/\\partial \\zeta \\end{bmatrix}\ndV_{\\text{físico}} = \\det J \\cdot d\\xi\\, d\\eta\\, d\\zeta";
   // KaTeX render display: cada línea no vacía es un display math separado.
   const lines = latex.split('\n').filter(l => l.trim().length > 0);
@@ -9389,10 +9453,10 @@ board.create('text', [0.3, 5.5,
 <p><strong>de Gauss</strong> (ξ_g, η_g):</p>
 <p>&nbsp;</p>
 <div>
-<div id="math_13" style="max-width:700px;"></div>
+<div id="math_17" style="max-width:700px;"></div>
 <script>
 (function(){
-  const el = document.getElementById('math_13');
+  const el = document.getElementById('math_17');
   const latex = "\\iint_{-1}^{+1}\\!\\!f(\\xi,\\eta)\\, d\\xi\\, d\\eta \\;\\approx\\; \\sum_{g=1}^{n_g} f(\\xi_g, \\eta_g)\\cdot w_g";
   // KaTeX render display: cada línea no vacía es un display math separado.
   const lines = latex.split('\n').filter(l => l.trim().length > 0);
@@ -9421,10 +9485,10 @@ board.create('text', [0.3, 5.5,
 <p><strong>Visualización de los 4 puntos de Gauss en el cuadrado natural:</strong></p>
 <p>&nbsp;</p>
 <div>
-<canvas id="canvas_14" width="500" height="500" style="border:1px solid #ccc;background:#fafafa"></canvas>
+<canvas id="canvas_18" width="500" height="500" style="border:1px solid #ccc;background:#fafafa"></canvas>
 <script>
 (function(){
-  const canvas = document.getElementById('canvas_14');
+  const canvas = document.getElementById('canvas_18');
   const ctx = canvas.getContext('2d');
   const width = 500;
   const height = 500;
@@ -9487,10 +9551,10 @@ ctx.fillText('(±1/√3, ±1/√3) ≈ (±0.5774, ±0.5774), pesos w = 1', 250, 
 <p>Aplicado al cálculo de la matriz de rigidez de un elemento:</p>
 <p>&nbsp;</p>
 <div>
-<div id="math_15" style="max-width:700px;"></div>
+<div id="math_19" style="max-width:700px;"></div>
 <script>
 (function(){
-  const el = document.getElementById('math_15');
+  const el = document.getElementById('math_19');
   const latex = "\\boxed{K^e = \\sum_{g=1}^{4} B^T(\\xi_g, \\eta_g) \\cdot D \\cdot B(\\xi_g, \\eta_g) \\cdot \\det J(\\xi_g, \\eta_g) \\cdot w_g}";
   // KaTeX render display: cada línea no vacía es un display math separado.
   const lines = latex.split('\n').filter(l => l.trim().length > 0);
@@ -9508,7 +9572,7 @@ ctx.fillText('(±1/√3, ±1/√3) ≈ (±0.5774, ±0.5774), pesos w = 1', 250, 
 <h1>&#167;12. Cu&#225;ndo te aparece como ingeniero — warning Jacobiano negativo</h1>
 <p>&nbsp;</p>
 <div>
-<div id="mermaid_16" class="mermaid" style="max-width:700px">
+<div id="mermaid_20" class="mermaid" style="max-width:700px">
 flowchart TD
     M[Modelar geometría en ETABS/SAP] --> A[Mallar la losa/muro]
     A --> CHK{Forma de los Q4?}
@@ -9530,7 +9594,7 @@ flowchart TD
 <h1>&#167;13. Resumen visual — del problema f&#237;sico al c&#225;lculo num&#233;rico</h1>
 <p>&nbsp;</p>
 <div>
-<div id="dot_17" style="max-width:700px;text-align:center"></div>
+<div id="dot_21" style="max-width:700px;text-align:center"></div>
 <script type="module">
 import { instance } from 'https://unpkg.com/@viz-js/viz@3.7.0/lib/viz-standalone.mjs';
 window.__vizPromise = instance();
@@ -9539,7 +9603,7 @@ window.__vizPromise = instance();
 (async function(){
   const viz = await window.__vizPromise;
   const dot = "digraph G {\n    rankdir=TB;\n    node [shape=box, style=\"rounded,filled\", fontname=\"Arial\", fontsize=11];\n\n    P [label=\"Problema físico\\\\nplaca, viga, sólido\", fillcolor=lightgreen];\n    M [label=\"Discretizar\\\\nelementos finitos\", fillcolor=white];\n    K [label=\"Para cada elemento\\\\nintegral en (x, y)\", fillcolor=white];\n    NAT [label=\"Cambiar a (ξ, η)\\\\n¿cómo? → Jacobiano\", fillcolor=gold];\n    G [label=\"Integral de Gauss\\\\nen (ξ, η)\", fillcolor=white];\n    KE [label=\"K^e = Σ B^T D B · det(J) · w\", fillcolor=lightcoral];\n    KGLOB [label=\"Ensamblar K global\\\\nResolver K·u = F\", fillcolor=lightblue];\n\n    P -> M -> K -> NAT -> G -> KE -> KGLOB;\n}\n";
-  const el = document.getElementById('dot_17');
+  const el = document.getElementById('dot_21');
   el.appendChild(viz.renderSVGElement(dot));
 })();
 </script>
@@ -9568,10 +9632,10 @@ window.__vizPromise = instance();
 <p>cada integral numérica.</p>
 <p>&nbsp;</p>
 <div>
-<div id="math_18" style="max-width:700px;"></div>
+<div id="math_22" style="max-width:700px;"></div>
 <script>
 (function(){
-  const el = document.getElementById('math_18');
+  const el = document.getElementById('math_22');
   const latex = "\\boxed{K^e = \\sum_g B^T D\\, B\\,\\det(J)\\,w_g}\n\\boxed{F^e = \\sum_g N^T \\mathbf{f}\\,\\det(J)\\,w_g}\n\\boxed{M^e = \\sum_g \\rho\\,N^T N\\,\\det(J)\\,w_g}";
   // KaTeX render display: cada línea no vacía es un display math separado.
   const lines = latex.split('\n').filter(l => l.trim().length > 0);
