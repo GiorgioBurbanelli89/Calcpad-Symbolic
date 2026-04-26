@@ -975,6 +975,17 @@ namespace Calcpad.Core
 
                 if (i > 0) sb2.Append(_lastDeqSeparator);
 
+                // PRIORIDAD: si la parte es una llamada a función literal
+                // tipo "f(x;y)" o "N_1(ξ;η)" o "x(ξ)", renderizarla como
+                // función display, no como producto. Antes este patrón
+                // se interpretaba como N_1·ξ·η por el tokenizer normal.
+                var fnCallHtml = TryRenderFunctionCallSignature(part);
+                if (fnCallHtml != null)
+                {
+                    sb2.Append(fnCallHtml);
+                    continue;
+                }
+
                 // Try special rendering for derivatives, primes, matrices
                 var specialHtml = TryRenderDeqSpecial(part);
                 if (specialHtml != null)
@@ -2294,6 +2305,51 @@ namespace Calcpad.Core
             '∂' or '\u2202' => "∂",
             _ => c.ToString()
         };
+
+        /// <summary>
+        /// Detecta si la cadena es una llamada a función "literal" tipo
+        /// <c>f(x; y)</c>, <c>N_1(ξ; η)</c>, <c>v_x(t)</c>. Renderiza como
+        /// función display con argumentos, sin tratar de evaluar.
+        /// Retorna null si no matchea el patrón.
+        /// </summary>
+        /// <remarks>
+        /// El patrón es: identificador (opcionalmente con _subscript)
+        /// seguido de '(' + lista de args separados por ; o , + ')',
+        /// y el string completo termina en ')'. No matchea expresiones
+        /// como <c>(1+ξ)(1-η)</c> ni <c>N_1(ξ)·x_1 + ...</c> porque ahí
+        /// el primer carácter no es una letra y/o hay tokens después
+        /// del paréntesis cierre.
+        /// </remarks>
+        private static string TryRenderFunctionCallSignature(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return null;
+            // Regex: id (con sub) ( contenido sin paréntesis anidados )
+            // OJO: esto solo cubre el caso simple — sin paréntesis anidados
+            // dentro de los argumentos. Casos como f(g(x)) no matchearían.
+            var m = System.Text.RegularExpressions.Regex.Match(
+                s.Trim(),
+                @"^([a-zA-Zα-ωΑ-Ω][a-zA-Zα-ωΑ-Ω0-9_]*)\s*\(\s*([^()]+?)\s*\)$");
+            if (!m.Success) return null;
+
+            var fnName = m.Groups[1].Value;
+            var argsRaw = m.Groups[2].Value;
+
+            // Args separados por ; o ,
+            var argList = argsRaw.Split(new[] { ';', ',' },
+                StringSplitOptions.RemoveEmptyEntries);
+
+            var fnHtml = DeqRenderVar(fnName);
+            // Cada argumento se renderiza por separado con DeqRenderVar
+            // (soporta letras griegas, subscripts).
+            var argsHtml = string.Join(", ",
+                argList.Select(a => DeqRenderVar(a.Trim())));
+
+            // Notar: el separador visual de argumentos en notación
+            // matemática estándar es la coma (no el punto y coma).
+            // Calcpad usa ';' por sintaxis interna pero al renderizar
+            // queda más natural mostrar ',' (como N_1(ξ, η) en libros).
+            return $"{fnHtml}({argsHtml})";
+        }
 
         // ─── #svg W H / #end svg — Inline SVG drawing block ──────────────────
         // Lines starting with . are SVG primitives; other lines evaluate normally
