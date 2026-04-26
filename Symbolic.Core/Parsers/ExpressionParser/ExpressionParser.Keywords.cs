@@ -70,7 +70,17 @@ namespace Calcpad.Core
             Pip,
             SkipLine,
             Svg,
-            End_Svg
+            End_Svg,
+            // Web graphics blocks — el código fuente embed la lib desde CDN
+            // y wrap el contenido del bloque sin que el user escriba HTML.
+            Plotly,
+            End_Plotly,
+            Three,
+            End_Three,
+            Mermaid,
+            End_Mermaid,
+            Canvas,
+            End_Canvas
         }
         private enum KeywordResult  
         {
@@ -274,6 +284,30 @@ namespace Calcpad.Core
                     return KeywordResult.Continue;
                 case Keyword.End_Svg:
                     ParseKeywordEndSvg();
+                    return KeywordResult.Continue;
+                case Keyword.Plotly:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Plotly);
+                    return KeywordResult.Continue;
+                case Keyword.End_Plotly:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Plotly);
+                    return KeywordResult.Continue;
+                case Keyword.Three:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Three);
+                    return KeywordResult.Continue;
+                case Keyword.End_Three:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Three);
+                    return KeywordResult.Continue;
+                case Keyword.Mermaid:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Mermaid);
+                    return KeywordResult.Continue;
+                case Keyword.End_Mermaid:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Mermaid);
+                    return KeywordResult.Continue;
+                case Keyword.Canvas:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Canvas);
+                    return KeywordResult.Continue;
+                case Keyword.End_Canvas:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Canvas);
                     return KeywordResult.Continue;
                 case Keyword.NoSub:
                     _parser.VariableSubstitution = MathParser.VariableSubstitutionOptions.VariablesOnly;

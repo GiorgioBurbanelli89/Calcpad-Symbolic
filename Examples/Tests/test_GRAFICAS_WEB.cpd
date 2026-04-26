@@ -1,0 +1,185 @@
+#margen 20
+#md on
+"Test — gráficas web sin HTML inline (#plotly, #three, #mermaid, #canvas)
+
+# §1. Plotly — gráfica científica interactiva
+
+'Sintaxis: el contenido es un objeto JS con `data` y `layout`. El parser
+'inyecta el `<div>`, el script de Plotly desde CDN y la llamada a
+'`Plotly.newPlot` automáticamente.
+
+#plotly 700 400
+{
+  data: [{
+    x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    y: [1, 4, 9, 16, 25, 36, 49, 64, 81, 100],
+    type: 'scatter',
+    mode: 'lines+markers',
+    line: {color: '#1f77b4', width: 3},
+    marker: {size: 8, color: '#c33'},
+    name: 'y = x²'
+  }],
+  layout: {
+    title: 'Función cuadrática (Plotly)',
+    xaxis: {title: 'x'},
+    yaxis: {title: 'y = x²'},
+    margin: {t: 50, b: 50, l: 60, r: 30}
+  }
+}
+#end plotly
+
+# §2. Plotly — superficie 3D
+
+#plotly 700 500
+{
+  data: [{
+    type: 'surface',
+    z: [
+      [1, 2, 3, 4, 5],
+      [2, 5, 8, 5, 2],
+      [3, 8, 15, 8, 3],
+      [2, 5, 8, 5, 2],
+      [1, 2, 3, 4, 5]
+    ],
+    colorscale: 'Viridis'
+  }],
+  layout: {
+    title: 'Superficie 3D — momento Mxx en una placa',
+    scene: {xaxis:{title:'x'}, yaxis:{title:'y'}, zaxis:{title:'Mxx'}}
+  }
+}
+#end plotly
+
+# §3. Three.js — geometría 3D rotable
+
+'Sintaxis: el contenido es código JS con acceso a `scene`, `camera`,
+'`renderer`, `THREE`, `width`, `height`. Tiene OrbitControls automático.
+
+#three 700 500
+const cube = new THREE.Mesh(
+    new THREE.BoxGeometry(2, 2, 2),
+    new THREE.MeshStandardMaterial({color: 0xffd966})
+);
+scene.add(cube);
+
+const wireframe = new THREE.Mesh(
+    new THREE.BoxGeometry(2, 2, 2),
+    new THREE.MeshBasicMaterial({color: 0x000000, wireframe: true})
+);
+scene.add(wireframe);
+
+const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(10, 10),
+    new THREE.MeshStandardMaterial({color: 0xeeeeee, side: THREE.DoubleSide})
+);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -1.5;
+scene.add(ground);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+dir.position.set(3, 5, 4);
+scene.add(dir);
+
+camera.position.set(5, 4, 6);
+camera.lookAt(0, 0, 0);
+#end three
+
+# §4. Mermaid — diagrama de flujo (combinaciones de carga)
+
+'Sintaxis: DSL Mermaid puro. El parser carga la lib desde CDN.
+
+#mermaid
+flowchart TD
+  D[Carga Muerta D] --> C1[1.4·D]
+  D --> C2[1.2·D + 1.6·L]
+  L[Carga Viva L] --> C2
+  D --> C3[1.2·D + 1.0·L + 1.0·E]
+  L --> C3
+  E[Sismo E] --> C3
+  C1 --> M{Combo gobernante?}
+  C2 --> M
+  C3 --> M
+  M --> R[Diseño con esa combinación]
+
+  style D fill:#c8e6c9
+  style L fill:#b3d9ff
+  style E fill:#ffd966
+  style R fill:#ffcdd2
+#end mermaid
+
+# §5. Mermaid — diagrama secuencia (proceso de análisis FEM)
+
+#mermaid
+sequenceDiagram
+  participant U as Usuario
+  participant E as ETABS
+  participant S as Solver
+
+  U->>E: Define geometría + cargas
+  E->>S: Genera matriz K
+  E->>S: Genera vector F
+  S->>S: Resuelve K·u = F
+  S->>E: Devuelve u (desplazamientos)
+  E->>E: Calcula σ = D·B·u
+  E->>U: Muestra resultados
+#end mermaid
+
+# §6. Canvas HTML5 — dibujo 2D directo
+
+'Sintaxis: código JS con acceso a `ctx` (CanvasRenderingContext2D),
+'`canvas`, `width`, `height`. Sin librería externa, API nativa del browser.
+
+#canvas 600 300
+// Fondo
+ctx.fillStyle = '#fafafa';
+ctx.fillRect(0, 0, width, height);
+
+// Título
+ctx.fillStyle = '#333';
+ctx.font = 'bold 16px sans-serif';
+ctx.textAlign = 'center';
+ctx.fillText('Diagrama dibujado con HTML5 Canvas', width/2, 30);
+
+// Eje X
+ctx.beginPath();
+ctx.moveTo(50, 250);
+ctx.lineTo(550, 250);
+ctx.strokeStyle = '#333';
+ctx.lineWidth = 2;
+ctx.stroke();
+
+// Curva senoidal
+ctx.beginPath();
+ctx.strokeStyle = '#1f77b4';
+ctx.lineWidth = 2.5;
+for (let x = 0; x <= 500; x += 5) {
+    const px = 50 + x;
+    const py = 150 + 80 * Math.sin(x * 2 * Math.PI / 250);
+    if (x === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+}
+ctx.stroke();
+
+ctx.fillStyle = '#1f77b4';
+ctx.font = '14px sans-serif';
+ctx.textAlign = 'left';
+ctx.fillText('y = sin(x)', 460, 100);
+#end canvas
+
+# Cierre
+
+'**Nuevas directivas implementadas en el parser:**
+'
+'- `#plotly` ... `#end plotly` — gráficas científicas interactivas
+'- `#three`  ... `#end three`  — visualización 3D con OrbitControls
+'- `#mermaid` ... `#end mermaid` — diagramas (flow, sequence, gantt, ...)
+'- `#canvas` ... `#end canvas` — dibujo 2D nativo HTML5
+'
+'**El usuario NO escribe ningún `<>` HTML.** El parser inyecta:
+'  1. El contenedor `<div>` con id único
+'  2. El script de la librería desde CDN (una sola vez por documento)
+'  3. La llamada a la API correspondiente
+'
+'Sintaxis del primer argumento opcional `#xxx W H` para fijar tamaño.
+'Si no se especifica, defaults: 700×400 (700×500 para Three).

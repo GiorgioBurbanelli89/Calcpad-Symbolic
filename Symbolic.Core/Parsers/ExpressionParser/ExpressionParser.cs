@@ -86,6 +86,35 @@ namespace Calcpad.Core
                         ParseKeywordContinue();
                         continue;
                     }
+
+                    // Dentro de #plotly/#three/#mermaid/#canvas, capturamos
+                    // la línea cruda. Detectamos el cierre por TEXTO crudo
+                    // porque el cache puede tener keyword=None aún para "#end xxx".
+                    if (_insideWebGraphicBlock)
+                    {
+                        var wgStart = lines[_currentLine];
+                        var wgEnd = lines[_currentLine + 1];
+                        var wgRaw = code[wgStart..wgEnd];
+                        var wgEol = wgRaw.IndexOf('\v');
+                        if (wgEol > -1) wgRaw = wgRaw[..wgEol];
+                        var wgTxt = wgRaw.ToString().TrimEnd('\n', '\r').TrimStart();
+                        // Detectar el #end <kind>
+                        string expectedEnd = _webGraphicKind switch
+                        {
+                            WebGraphicKind.Plotly => "#end plotly",
+                            WebGraphicKind.Three => "#end three",
+                            WebGraphicKind.Mermaid => "#end mermaid",
+                            WebGraphicKind.Canvas => "#end canvas",
+                            _ => ""
+                        };
+                        if (wgTxt.StartsWith(expectedEnd, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ParseKeywordEndWebGraphic(_webGraphicKind);
+                            continue;
+                        }
+                        ProcessWebGraphicLine(wgRaw.ToString().TrimEnd('\n', '\r'));
+                        continue;
+                    }
                     if (currentLineCache.IsCached && keyword == Keyword.None)
                     {
                         // Inside #svg block: don't use cache for dot-primitives — must re-evaluate
@@ -99,6 +128,13 @@ namespace Calcpad.Core
                             }
                             // Non-dot cached lines: evaluate but discard HTML
                             _svgSbPositionBeforeLine = _sb.Length;
+                        }
+                        // Inside #plotly/#three/#mermaid/#canvas block: bypass
+                        // cache y captura tal cual.
+                        if (_insideWebGraphicBlock)
+                        {
+                            ProcessWebGraphicLine(textSpan.ToString());
+                            continue;
                         }
                         if (IsEnabled())
                         {
@@ -277,6 +313,16 @@ namespace Calcpad.Core
                         }
                         // Non-dot lines: evaluate (so variables get assigned) but discard generated HTML
                         _svgSbPositionBeforeLine = _sb.Length;
+                    }
+
+                    // #plotly / #three / #mermaid / #canvas block mode:
+                    // capturar la línea TAL CUAL en el buffer del bloque
+                    // (sin evaluarla por el parser de Calcpad). El contenido
+                    // es DSL/JS de la librería web, no math de Calcpad.
+                    if (_insideWebGraphicBlock && keyword == Keyword.None)
+                    {
+                        ProcessWebGraphicLine(textSpan.ToString());
+                        continue;
                     }
 
                     // Check for user-defined function call: "K = MyFunc(args)"
