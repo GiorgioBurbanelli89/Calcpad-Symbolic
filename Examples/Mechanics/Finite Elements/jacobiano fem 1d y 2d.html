@@ -8811,254 +8811,233 @@ uniform ${Mr} ${Ar} u_${Qr};
         document.oncontextmenu = function () { contextMenu = true; };
         document.onmousedown = function () { contextMenu = false; };
     </script><div style="margin:0 auto;padding:5mm 20mm;max-width:calc(190mm - 20mm - 20mm);text-align:justify;line-height:160%">
-<h3>Jacobiano en Elementos Finitos — explicación gráfica 1D y 2D</h3>
+<h3>Jacobiano en FEM — explicación práctica para placas y elementos 1D/2D</h3>
 <p>&nbsp;</p>
-<h1>&#167;1. &#191;Por qu&#233; existe el Jacobiano?</h1>
+<h1>&#167;1. Lo que NO es el Jacobiano</h1>
 <p>&nbsp;</p>
-<p>En FEM trabajamos con DOS espacios al mismo tiempo:</p>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-<div><svg viewBox="0 0 720 200" width="720" height="200" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="720" height="200" fill="#f5f5f5" fill-opacity="1" stroke="#888" stroke-width="1"/><text x="360" y="22" text-anchor="middle" fill="black" font-size="14" font-weight="bold">0</text><text x="150" y="60" text-anchor="middle" fill="black" font-size="13" font-weight="bold">0</text><rect x="60" y="80" width="200" height="90" fill="#ffe699" fill-opacity="0.4" stroke="#b58900" stroke-width="2"/><line x1="50" y1="100" x2="60" y2="95" stroke="black" stroke-width="1"/><line x1="50" y1="120" x2="60" y2="115" stroke="black" stroke-width="1"/><line x1="50" y1="140" x2="60" y2="135" stroke="black" stroke-width="1"/><line x1="50" y1="160" x2="60" y2="155" stroke="black" stroke-width="1"/><text x="160" y="130" text-anchor="middle" fill="black" font-size="12" font-weight="italic">0</text><text x="160" y="175" text-anchor="middle" fill="#555" font-size="10" font-weight="normal">0</text><line x1="280" y1="125" x2="440" y2="125" stroke="red" stroke-width="3"/><polygon points="440,125 429.608,131 429.608,119" fill="red"/><text x="360" y="110" text-anchor="middle" fill="#c33" font-size="13" font-weight="bold">0</text><text x="360" y="145" text-anchor="middle" fill="#c33" font-size="11" font-weight="italic">0</text><text x="580" y="60" text-anchor="middle" fill="black" font-size="13" font-weight="bold">0</text><rect x="480" y="80" width="200" height="90" fill="#b3d9ff" fill-opacity="0.4" stroke="#0d47a1" stroke-width="2"/><text x="580" y="130" text-anchor="middle" fill="black" font-size="12" font-weight="italic">0</text><text x="580" y="175" text-anchor="middle" fill="#555" font-size="10" font-weight="normal">0</text></svg></div>
-<p>&nbsp;</p>
-<p>El <strong>Jacobiano</strong> mide cuánto se &quot;estira&quot; el espacio al pasar de uno al</p>
-<p>otro. Si integramos en el espacio natural debemos compensar ese</p>
-<p>estiramiento — por eso aparece |J| en las integrales numéricas.</p>
-<p>&nbsp;</p>
-<p>Regla básica del cambio de variables:</p>
-<p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=62 --><p><span class="eq"><span class="dvr"><small><var>b</var></small><span class="nary">∫</span><small><var>a</var></small></span><var>f</var>  ( <var>x</var> )  <var>d</var><var>x</var> = <span class="dvr"><small><var>1</var></small><span class="nary">∫</span><small><var>-1</var></small></span><var>f(x(ξ))·|J|</var> <var>d</var><var>ξ</var></span></p>
-<p>&nbsp;</p>
-<p>donde |J| = dx/dξ en 1D, y det(J) en 2D/3D.</p>
-<p>&nbsp;</p>
-<h1>&#167;2. Jacobiano 1D — elemento barra</h1>
-<p>&nbsp;</p>
-<p>Una barra de longitud L que va del nodo 1 (en x = x_1) al nodo 2 (en</p>
-<p>x = x_2). En el espacio natural ξ va de −1 a +1:</p>
+<p>Cuando aplicás una fuerza P a una placa y resolvés su deformación, hay</p>
+<p>TRES problemas distintos. El Jacobiano es UNO de ellos — y el más</p>
+<p>invisible, porque no tiene significado físico, es solo plomería del</p>
+<p>cálculo numérico.</p>
 <p>&nbsp;</p>
 <p>&nbsp;</p>
 <p>&nbsp;</p>
 <p>&nbsp;</p>
-<div><svg viewBox="0 0 720 280" width="720" height="280" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="720" height="280" fill="#fafafa" fill-opacity="1" stroke="#ccc" stroke-width="1"/><text x="360" y="22" text-anchor="middle" fill="black" font-size="14" font-weight="bold">0</text><text x="100" y="70" text-anchor="middle" fill="black" font-size="12" font-weight="bold">0</text><line x1="100" y1="100" x2="600" y2="100" stroke="#b58900" stroke-width="4"/><circle cx="100" cy="100" r="8" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="600" cy="100" r="8" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><text x="100" y="130" text-anchor="middle" fill="black" font-size="11" font-weight="normal">0</text><text x="600" y="130" text-anchor="middle" fill="black" font-size="11" font-weight="normal">0</text><text x="350" y="90" text-anchor="middle" fill="#555" font-size="12" font-weight="italic">0</text><line x1="350" y1="150" x2="350" y2="195" stroke="red" stroke-width="3"/><polygon points="350,195 344,184.608 356,184.608" fill="red"/><text x="380" y="175" text-anchor="start" fill="#c33" font-size="13" font-weight="bold">0</text><text x="100" y="220" text-anchor="middle" fill="black" font-size="12" font-weight="bold">0</text><line x1="200" y1="245" x2="500" y2="245" stroke="#0d47a1" stroke-width="4"/><circle cx="200" cy="245" r="8" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="500" cy="245" r="8" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><text x="200" y="270" text-anchor="middle" fill="black" font-size="11" font-weight="normal">0</text><text x="350" y="235" text-anchor="middle" fill="#555" font-size="11" font-weight="italic">0</text><text x="500" y="270" text-anchor="middle" fill="black" font-size="11" font-weight="normal">0</text></svg></div>
 <p>&nbsp;</p>
-<h2>§2.1 Derivación de x(ξ)</h2>
-
+<div><svg viewBox="0 0 720 240" width="720" height="240" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="720" height="240" fill="#fff8e1" fill-opacity="1" stroke="#d4a017" stroke-width="1"/><text x="360" y="25" text-anchor="middle" fill="black" font-size="14" font-weight="bold">Tres problemas DISTINTOS al analizar una placa</text><rect x="30" y="60" width="210" height="150" fill="#b3d9ff" fill-opacity="0.4" stroke="#0d47a1" stroke-width="2"/><text x="135" y="85" text-anchor="middle" fill="black" font-size="12" font-weight="bold">1. Aplicar la fuerza</text><text x="135" y="110" text-anchor="middle" fill="#0d47a1" font-size="11" font-weight="normal">Vector de cargas F</text><text x="135" y="130" text-anchor="middle" fill="black" font-size="10" font-weight="italic">F i = integral N i q dA</text><text x="135" y="165" text-anchor="middle" fill="#555" font-size="9" font-weight="normal">(integral del producto</text><text x="135" y="178" text-anchor="middle" fill="#555" font-size="9" font-weight="normal">carga x funcion de forma)</text><rect x="255" y="60" width="210" height="150" fill="#c8e6c9" fill-opacity="0.5" stroke="#2e7d32" stroke-width="2"/><text x="360" y="85" text-anchor="middle" fill="black" font-size="12" font-weight="bold">2. Continuidad entre</text><text x="360" y="100" text-anchor="middle" fill="black" font-size="12" font-weight="bold">placas vecinas</text><text x="360" y="125" text-anchor="middle" fill="#2e7d32" font-size="11" font-weight="normal">Conformidad C^0 / C^1</text><text x="360" y="145" text-anchor="middle" fill="#555" font-size="10" font-weight="normal">(nodos compartidos en</text><text x="360" y="158" text-anchor="middle" fill="#555" font-size="10" font-weight="normal">el lado comun)</text><text x="360" y="185" text-anchor="middle" fill="#555" font-size="9" font-weight="normal">Mismo grado de</text><text x="360" y="198" text-anchor="middle" fill="#555" font-size="9" font-weight="normal">interpolacion</text><rect x="480" y="60" width="210" height="150" fill="#ffe699" fill-opacity="0.6000000000000001" stroke="#b58900" stroke-width="2"/><text x="585" y="85" text-anchor="middle" fill="black" font-size="12" font-weight="bold">3. Calcular K e</text><text x="585" y="100" text-anchor="middle" fill="black" font-size="12" font-weight="bold">del elemento</text><text x="585" y="125" text-anchor="middle" fill="#c33" font-size="11" font-weight="bold">JACOBIANO = factor</text><text x="585" y="145" text-anchor="middle" fill="#c33" font-size="11" font-weight="bold">de escala para la</text><text x="585" y="160" text-anchor="middle" fill="#c33" font-size="11" font-weight="bold">integral numerica</text><text x="585" y="185" text-anchor="middle" fill="#555" font-size="9" font-weight="normal">(plomeria del codigo,</text><text x="585" y="198" text-anchor="middle" fill="#555" font-size="9" font-weight="normal">no hay significado fisico)</text></svg></div>
 <p>&nbsp;</p>
-<p>Usamos las funciones de forma lineales N_1, N_2 (Lagrange grado 1):</p>
+<p>Vamos a centrarnos en el problema <strong>3 (Jacobiano)</strong>, porque los otros</p>
+<p>son fenómenos físicos directos (la fuerza se aplica, los nodos</p>
+<p>comparten desplazamiento), pero el Jacobiano es invisible al ingeniero</p>
+<p>que diseña, y muy importante para el que programa el solver.</p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=23 --><p><span class="eq"><var>N</var><sub>1</sub> · <var>ξ</var> = <var>(1 - ξ)/2</var></span></p>
-<!-- FORMEQ CALLED: len=23 --><p><span class="eq"><var>N</var><sub>2</sub> · <var>ξ</var> = <var>(1 + ξ)/2</var></span></p>
+<h1>&#167;2. Por qu&#233; necesitamos el Jacobiano</h1>
 <p>&nbsp;</p>
-<p>Verificación simbólica de que suman 1 (partición de la unidad):</p>
+<p>Imaginá que querés calcular el área de Ecuador. Tenés un mapa en</p>
+<p>escala 1:5.000.000 que mide 26 cm × 22 cm en tu hoja:</p>
 <p>&nbsp;</p>
-<p><span class="eq"><span class="dvc">1 − <var>ξ</var><span class="dvl"></span>2</span> + <span class="dvc">1 + <var>ξ</var><span class="dvl"></span>2</span> = 1</span></p>
 <p>&nbsp;</p>
-<p>Verificación de los valores en los nodos:</p>
 <p>&nbsp;</p>
-<p><span class="eq">0,5 ·  ( 1 −  ( -1 )  )  + 0,5 ·  ( 1 +  ( -1 )  )  = 1</span></p>
-<p><span class="eq"><var>0.5*(1-(+1)) + 0.5*(1+(+1))</var> = 1</span></p>
 <p>&nbsp;</p>
-<p>Mapeo isoparamétrico:</p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=63 --><p><span class="eq"><var>x</var> · <var>ξ</var> = <var>N</var><sub>1</sub> · <var>ξ</var> · <var>x</var><sub>1</sub> + <var>N</var><sub>2</sub> · <var>ξ</var> · <var>x</var><sub>2</sub> = <var>(1-ξ)/2·x</var><sub>1</sub> + <var>(1+ξ)/2·x</var><sub>2</sub></span></p>
+<div><svg viewBox="0 0 720 280" width="720" height="280" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="720" height="280" fill="#fafafa" fill-opacity="1" stroke="#ccc" stroke-width="1"/><text x="360" y="22" text-anchor="middle" fill="black" font-size="14" font-weight="bold">Analogia: area de Ecuador desde un mapa</text><text x="130" y="60" text-anchor="middle" fill="black" font-size="12" font-weight="bold">MAPA en hoja</text><rect x="70" y="80" width="140" height="120" fill="#b3d9ff" fill-opacity="0.30000000000000004" stroke="#0d47a1" stroke-width="2"/><text x="140" y="145" text-anchor="middle" fill="#0d47a1" font-size="11" font-weight="normal">26 x 22 cm</text><text x="140" y="165" text-anchor="middle" fill="#0d47a1" font-size="11" font-weight="bold">= 572 cm^2</text><text x="140" y="220" text-anchor="middle" fill="#555" font-size="10" font-weight="normal">(facil de medir</text><text x="140" y="235" text-anchor="middle" fill="#555" font-size="10" font-weight="normal">con regla)</text><line x1="240" y1="140" x2="380" y2="140" stroke="red" stroke-width="3"/><polygon points="380,140 369.608,146 369.608,134" fill="red"/><text x="310" y="125" text-anchor="middle" fill="#c33" font-size="12" font-weight="bold">factor 5.000.000^2</text><text x="310" y="160" text-anchor="middle" fill="#c33" font-size="11" font-weight="italic">= 25 x 10^12</text><text x="580" y="60" text-anchor="middle" fill="black" font-size="12" font-weight="bold">REALIDAD geografica</text><rect x="420" y="80" width="280" height="120" fill="#ffd966" fill-opacity="0.4" stroke="#b58900" stroke-width="2"/><text x="560" y="130" text-anchor="middle" fill="#b58900" font-size="12" font-weight="bold">Ecuador real</text><text x="560" y="150" text-anchor="middle" fill="#b58900" font-size="12" font-weight="bold">= 256 mil km^2</text><text x="560" y="175" text-anchor="middle" fill="#b58900" font-size="11" font-weight="normal">= 2.56 x 10^15 cm^2</text><text x="560" y="220" text-anchor="middle" fill="#555" font-size="10" font-weight="normal">(imposible medir</text><text x="560" y="235" text-anchor="middle" fill="#555" font-size="10" font-weight="normal">con regla en mano)</text><text x="360" y="268" text-anchor="middle" fill="#2e7d32" font-size="11" font-weight="italic">Area real = 572 cm^2 x 25e12 = 14.3e15 cm^2 (orden correcto)</text></svg></div>
 <p>&nbsp;</p>
-<h2>§2.2 Cálculo del Jacobiano J = dx/dξ</h2>
-
+<p><strong>Esa misma idea es FEM:</strong></p>
+<p><ul>
+<li>En vez de hacer la integral directamente sobre cada placa real</li>
+</ul>
+</p>
+<p>(que tiene esquinas en posiciones raras), hacés la integral sobre</p>
+<p>un cuadrado de referencia (siempre de −1 a +1).</p>
+<p><ul>
+<li><strong>El Jacobiano es ese factor de escala</strong> que dice cuánto se &quot;estira&quot;</li>
+</ul>
+</p>
+<p>el cuadrado de referencia cuando lo &quot;imprimís&quot; sobre la placa real.</p>
 <p>&nbsp;</p>
-<p>Derivamos x(ξ) respecto a ξ:</p>
+<h1>&#167;3. Donde aparece en el c&#243;digo</h1>
 <p>&nbsp;</p>
-<p><span class="eq"><span class="dvc"><var>d</var><span class="dvl"></span><var>dξ</var></span> <span class="b1">(</span><span class="dvc">1 − <var>ξ</var><span class="dvl"></span>2</span> · <var>x</var><sub>1</sub> + <span class="dvc">1 + <var>ξ</var><span class="dvl"></span>2</span> · <var>x</var><sub>2</sub><span class="b1">)</span> = <span class="dvc"><var>x</var><sub>2</sub><span class="dvl"></span>2</span> − <span class="dvc"><var>x</var><sub>1</sub><span class="dvl"></span>2</span></span></p>
+<p>En cualquier librería de FEM (yo lo uso en C++ con Eigen, pero igual</p>
+<p>en Python o MATLAB) la matriz de rigidez de un elemento se calcula así:</p>
 <p>&nbsp;</p>
-<p>Resultado: J = (x₂ − x₁)/2 = <strong>L/2</strong>.</p>
+<!-- FORMEQ CALLED: len=71 --><p><span class="eq"><var>K</var><sub>e</sub> = <var>Σ</var><sub>g B</sub><sup><var>T</var></sup> · <var>ξ</var><sub>g; η_g</sub> · <var>D</var> · <var>B</var> · <var>ξ</var><sub>g; η_g</sub> · <var>det</var> · <var>J</var> · <var>ξ</var><sub>g; η_g</sub> · <var>w</var><sub>g</sub></span></p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=39 --><p><span class="eq"><var>J</var><sub>1D</sub> = <span class="dvc"><i>d</i><var>x</var><span class="dvl"></span><i>d</i><var>ξ</var></span> = <var>(x</var><sub>2 - x_1)/2</sub> = <span class="dvc"><var>L</var><span class="dvl"></span>2</span></span></p>
+<p>Pseudo-código del solver:</p>
 <p>&nbsp;</p>
-<h2>§2.3 Caso numérico</h2>
-
+<p><pre><code></code></pre>
+</p>
+<p>K_e = matrix.zeros(8, 8)              // matriz 8x8 para Q4</p>
+<p>for g in puntos_de_Gauss:</p>
+<p><pre><code>xi, eta = g.coords
+</code></pre>
+</p>
+<p><pre><code>J = jacobiano(xi, eta, x_nodos, y_nodos)    // matriz 2x2
+</code></pre>
+</p>
+<p><pre><code>detJ = J(0,0)*J(1,1) - J(0,1)*J(1,0)        // ESTO es el Jacobiano (escalar)
+</code></pre>
+</p>
+<p><pre><code>B = matriz_strain(xi, eta, J_inv)
+</code></pre>
+</p>
+<p><pre><code>K_e += B.T * D * B * detJ * g.peso          // &lt;-- sin detJ los numeros estarían mal
+</code></pre>
+</p>
+<p><pre><code></code></pre>
+</p>
 <p>&nbsp;</p>
-<p><span class="eq"><var>x</var><sub>1</sub> = 0</span></p>
-<p><span class="eq"><var>x</var><sub>2</sub> = 4</span></p>
-<p><span class="eq"><var>L</var><sub>bar</sub> = <var>x</var><sub>2</sub> − <var>x</var><sub>1</sub> = 4 − 0 = 4</span></p>
+<p>**Sin el <code>detJ</code> el sistema sigue compilando y resolviendo, pero da</p>
+<p>resultados con dimensiones equivocadas.** Por eso es plomería: no</p>
+<p>aporta física nueva, pero si lo omitís el solver es basura.</p>
+<p>&nbsp;</p>
+<h1>&#167;4. Caso 1D — barra (el m&#225;s simple)</h1>
+<p>&nbsp;</p>
+<p>Una barra elástica entre dos nodos:</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div><svg viewBox="0 0 720 220" width="720" height="220" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="720" height="220" fill="#fafafa" fill-opacity="1" stroke="#ccc" stroke-width="1"/><text x="360" y="22" text-anchor="middle" fill="black" font-size="13" font-weight="bold">Barra 1D: mapeo del cuadrado natural a la barra real</text><text x="130" y="60" text-anchor="middle" fill="black" font-size="12" font-weight="bold">BARRA REAL</text><line x1="100" y1="100" x2="600" y2="100" stroke="#b58900" stroke-width="5"/><circle cx="100" cy="100" r="8" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="600" cy="100" r="8" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><text x="100" y="130" text-anchor="middle" fill="black" font-size="11" font-weight="normal">x = 0</text><text x="600" y="130" text-anchor="middle" fill="black" font-size="11" font-weight="normal">x = L</text><text x="350" y="88" text-anchor="middle" fill="#555" font-size="11" font-weight="italic">longitud L = 4 metros</text><line x1="350" y1="145" x2="350" y2="175" stroke="red" stroke-width="3"/><polygon points="350,175 345.5,167.206 354.5,167.206" fill="red"/><text x="380" y="165" text-anchor="start" fill="#c33" font-size="13" font-weight="bold">J = L/2 = 2</text><text x="130" y="195" text-anchor="middle" fill="black" font-size="12" font-weight="bold">REFERENCIA NATURAL</text><line x1="250" y1="200" x2="450" y2="200" stroke="#0d47a1" stroke-width="5"/><circle cx="250" cy="200" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="450" cy="200" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><text x="220" y="200" text-anchor="end" fill="black" font-size="10" font-weight="normal">xi = -1</text><text x="460" y="200" text-anchor="start" fill="black" font-size="10" font-weight="normal">xi = +1</text></svg></div>
+<p>&nbsp;</p>
+<p><strong>Lectura:</strong> el cuadrado natural mide 2 unidades (de −1 a +1). La barra</p>
+<p>real mide L = 4 m. Para &quot;imprimir&quot; el natural sobre la real, lo</p>
+<p>estiramos por <strong>L/2 = 2</strong>. Ese es el Jacobiano 1D.</p>
+<p>&nbsp;</p>
+<p><span class="eq"><var>L</var><sub>bar</sub> = 4</span></p>
 <p><span class="eq"><var>J</var><sub>1D</sub> = <span class="dvc"><var>L</var><sub>bar</sub><span class="dvl"></span>2</span> = <span class="dvc">4<span class="dvl"></span>2</span> = 2</span></p>
 <p>&nbsp;</p>
 <div class="col-blk-wrap">
-<div class="col-blk"><div class="col-cell"><span class="eq"><var>x</var><sub>1</sub> = 0</span></div><div class="col-cell"><span>coordenada nodo 1 (m)</span></div></div>
-<div class="col-blk"><div class="col-cell"><span class="eq"><var>x</var><sub>2</sub> = 4</span></div><div class="col-cell"><span>coordenada nodo 2 (m)</span></div></div>
-<div class="col-blk"><div class="col-cell"><span class="eq"><var>L</var><sub>bar</sub> = 4</span></div><div class="col-cell"><span>longitud física</span></div></div>
-<div class="col-blk"><div class="col-cell"><span class="eq"><var>J</var><sub>1D</sub> = 2</span></div><div class="col-cell"><span>Jacobiano = L/2</span></div></div>
+<div class="col-blk"><div class="col-cell"><span class="eq"><var>L</var><sub>bar</sub> = 4</span></div><div class="col-cell"><span>longitud física de la barra (m)</span></div></div>
+<div class="col-blk"><div class="col-cell"><span class="eq"><var>J</var><sub>1D</sub> = 2</span></div><div class="col-cell"><span>Jacobiano = L/2 (escalar)</span></div></div>
 </div>
 <p>&nbsp;</p>
-<h2>§2.4 Integral numérica con J</h2>
+<p>Verificación con derivación simbólica (mapeo lineal x(ξ) = (L/2)(ξ+1)):</p>
+<p>&nbsp;</p>
+<p><span class="eq"><span class="dvc"><var>d</var><span class="dvl"></span><var>dxi</var></span>  ( 2 ·  ( <var>xi</var> + 1 )  )  = 2</span></p>
+<p>&nbsp;</p>
+<p><strong>Resultado: J = 2</strong> (constante). Coincide con L/2 = 4/2 = 2. ✓</p>
+<p>&nbsp;</p>
+<h1>&#167;5. Caso 2D — placa cuadril&#225;tera Q4</h1>
+<p>&nbsp;</p>
+<p>Ahora la placa real puede tener esquinas en cualquier posición. El</p>
+<p>mapeo &quot;cuadrado natural → cuadrilátero real&quot; puede estirar y rotar.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div><svg viewBox="0 0 720 360" width="720" height="360" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="720" height="360" fill="#fafafa" fill-opacity="1" stroke="#ccc" stroke-width="1"/><text x="360" y="22" text-anchor="middle" fill="black" font-size="13" font-weight="bold">Placa Q4: mapeo de cuadrado natural a cuadrilatero real</text><text x="170" y="55" text-anchor="middle" fill="black" font-size="12" font-weight="bold">PLACA REAL</text><line x1="70" y1="280" x2="280" y2="320" stroke="#b58900" stroke-width="3"/><line x1="280" y1="320" x2="310" y2="130" stroke="#b58900" stroke-width="3"/><line x1="310" y1="130" x2="90" y2="100" stroke="#b58900" stroke-width="3"/><line x1="90" y1="100" x2="70" y2="280" stroke="#b58900" stroke-width="3"/><circle cx="70" cy="280" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="280" cy="320" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="310" cy="130" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="90" cy="100" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><text x="60" y="290" text-anchor="end" fill="black" font-size="12" font-weight="bold">1</text><text x="290" y="332" text-anchor="start" fill="black" font-size="12" font-weight="bold">2</text><text x="320" y="130" text-anchor="start" fill="black" font-size="12" font-weight="bold">3</text><text x="80" y="95" text-anchor="end" fill="black" font-size="12" font-weight="bold">4</text><text x="175" y="220" text-anchor="middle" fill="#555" font-size="10" font-weight="italic">esquinas en</text><text x="175" y="235" text-anchor="middle" fill="#555" font-size="10" font-weight="italic">posiciones raras</text><line x1="360" y1="220" x2="480" y2="220" stroke="red" stroke-width="3"/><polygon points="480,220 469.608,226 469.608,214" fill="red"/><text x="420" y="200" text-anchor="middle" fill="#c33" font-size="13" font-weight="bold">J(xi, eta)</text><text x="420" y="240" text-anchor="middle" fill="#c33" font-size="11" font-weight="italic">matriz 2x2</text><text x="580" y="55" text-anchor="middle" fill="black" font-size="12" font-weight="bold">REFERENCIA NATURAL</text><rect x="510" y="130" width="160" height="160" fill="#b3d9ff" fill-opacity="0.30000000000000004" stroke="#0d47a1" stroke-width="3"/><circle cx="510" cy="290" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="670" cy="290" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="670" cy="130" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="510" cy="130" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><text x="500" y="305" text-anchor="end" fill="black" font-size="11" font-weight="bold">1</text><text x="680" y="305" text-anchor="start" fill="black" font-size="11" font-weight="bold">2</text><text x="680" y="125" text-anchor="start" fill="black" font-size="11" font-weight="bold">3</text><text x="500" y="125" text-anchor="end" fill="black" font-size="11" font-weight="bold">4</text><text x="590" y="220" text-anchor="middle" fill="#555" font-size="10" font-weight="italic">siempre el</text><text x="590" y="235" text-anchor="middle" fill="#555" font-size="10" font-weight="italic">mismo cuadrado</text><text x="360" y="340" text-anchor="middle" fill="#2e7d32" font-size="11" font-weight="italic">Cada placa real es DISTINTA, pero todas se mapean al MISMO cuadrado de referencia</text></svg></div>
+<p>&nbsp;</p>
+<h2>§5.1 La matriz Jacobiana en 2D</h2>
 
 <p>&nbsp;</p>
-<p>La rigidez axial K = EA/L se obtiene integrando B^T·D·B:</p>
-<p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=69 --><p><span class="eq"><var>K</var> = <span class="dvr"><small><var>L</var></small><span class="nary">∫</span><small><var>0</var></small></span><var>B</var><sup><var>T</var></sup> · <var>D</var> · <var>B</var> <var>d</var><var>x</var> = <span class="dvr"><small><var>1</var></small><span class="nary">∫</span><small><var>-1</var></small></span><var>B^T·D·B·|J|</var> <var>d</var><var>ξ</var></span></p>
-<p>&nbsp;</p>
-<p>En 1D, la matriz B = [-1/L; 1/L] (contiene 1/L que VIENE del Jacobiano).</p>
-<p>Sin |J| en la integral natural, los resultados saldrían escalados mal.</p>
-<p>&nbsp;</p>
-<p>Comprobación: ∫₋₁¹ |J| dξ = J · [ξ]₋₁¹ = J · 2 = L (recupera la longitud física).</p>
-<p>&nbsp;</p>
-<p><span class="eq"><var>L</var><sub>check</sub> = 2 · <var>J</var><sub>1D</sub> = 2 · 2 = 4</span></p>
-<p>Resultado debe coincidir con L_bar: <span class="eq"><var>L</var><sub>check</sub></span>  L_check <span class="eq"><i>m</i> = 1 <i>m</i></span></p>
-<p>&nbsp;</p>
-<h1>&#167;3. Jacobiano 2D — elemento Q4</h1>
-<p>&nbsp;</p>
-<p>Un cuadrilátero con 4 nodos en (xᵢ, yᵢ) se mapea desde un cuadrado</p>
-<p>unitario natural (ξ, η) ∈ [−1, +1]²:</p>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-<div><svg viewBox="0 0 720 380" width="720" height="380" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="720" height="380" fill="#fafafa" fill-opacity="1" stroke="#ccc" stroke-width="1"/><text x="360" y="22" text-anchor="middle" fill="black" font-size="14" font-weight="bold">0</text><text x="170" y="60" text-anchor="middle" fill="black" font-size="12" font-weight="bold">0</text><line x1="60" y1="280" x2="280" y2="320" stroke="#b58900" stroke-width="3"/><line x1="280" y1="320" x2="310" y2="130" stroke="#b58900" stroke-width="3"/><line x1="310" y1="130" x2="80" y2="100" stroke="#b58900" stroke-width="3"/><line x1="80" y1="100" x2="60" y2="280" stroke="#b58900" stroke-width="3"/><circle cx="60" cy="280" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="280" cy="320" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="310" cy="130" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="80" cy="100" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><text x="50" y="290" text-anchor="end" fill="black" font-size="10" font-weight="normal">0</text><text x="290" y="330" text-anchor="start" fill="black" font-size="10" font-weight="normal">0</text><text x="320" y="130" text-anchor="start" fill="black" font-size="10" font-weight="normal">0</text><text x="70" y="95" text-anchor="end" fill="black" font-size="10" font-weight="normal">0</text><line x1="350" y1="200" x2="470" y2="200" stroke="red" stroke-width="3"/><polygon points="470,200 459.608,206 459.608,194" fill="red"/><text x="410" y="185" text-anchor="middle" fill="#c33" font-size="13" font-weight="bold">0</text><text x="410" y="215" text-anchor="middle" fill="#c33" font-size="10" font-weight="italic">0</text><text x="580" y="60" text-anchor="middle" fill="black" font-size="12" font-weight="bold">0</text><rect x="500" y="130" width="160" height="160" fill="#b3d9ff" fill-opacity="0.30000000000000004" stroke="#0d47a1" stroke-width="3"/><circle cx="500" cy="290" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="660" cy="290" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="660" cy="130" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="500" cy="130" r="7" fill="#c33" fill-opacity="1" stroke="none" stroke-width="1"/><text x="490" y="305" text-anchor="end" fill="black" font-size="9" font-weight="normal">0</text><text x="670" y="305" text-anchor="start" fill="black" font-size="9" font-weight="normal">0</text><text x="670" y="125" text-anchor="start" fill="black" font-size="9" font-weight="normal">0</text><text x="490" y="125" text-anchor="end" fill="black" font-size="9" font-weight="normal">0</text><text x="580" y="220" text-anchor="middle" fill="black" font-size="11" font-weight="italic">0</text><line x1="660" y1="290" x2="700" y2="290" stroke="#888" stroke-width="2"/><polygon points="700,290 689.608,296 689.608,284" fill="#888"/><text x="705" y="295" text-anchor="start" fill="#888" font-size="12" font-weight="bold">0</text><line x1="500" y1="130" x2="500" y2="90" stroke="#888" stroke-width="2"/><polygon points="500,90 506,100.392 494,100.392" fill="#888"/><text x="495" y="85" text-anchor="end" fill="#888" font-size="12" font-weight="bold">0</text></svg></div>
-<p>&nbsp;</p>
-<h2>§3.1 Funciones de forma Q4</h2>
-
-<p>&nbsp;</p>
-<p>Cuatro funciones bilineales:</p>
-<p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=30 --><p><span class="eq"><var>N</var><sub>1</sub> · <var>ξ; η</var> = <var>(1-ξ)·(1-η)/4</var></span></p>
-<!-- FORMEQ CALLED: len=30 --><p><span class="eq"><var>N</var><sub>2</sub> · <var>ξ; η</var> = <var>(1+ξ)·(1-η)/4</var></span></p>
-<!-- FORMEQ CALLED: len=30 --><p><span class="eq"><var>N</var><sub>3</sub> · <var>ξ; η</var> = <var>(1+ξ)·(1+η)/4</var></span></p>
-<!-- FORMEQ CALLED: len=30 --><p><span class="eq"><var>N</var><sub>4</sub> · <var>ξ; η</var> = <var>(1-ξ)·(1+η)/4</var></span></p>
-<p>&nbsp;</p>
-<p>Verificación simbólica de partición de unidad:</p>
-<p>&nbsp;</p>
-<p><span class="eq"><span class="dvc"> ( 1 − <var>ξ</var> )  ·  ( 1 − <var>η</var> ) <span class="dvl"></span>4</span> + <span class="dvc"> ( 1 + <var>ξ</var> )  ·  ( 1 − <var>η</var> ) <span class="dvl"></span>4</span> + <span class="dvc"> ( 1 + <var>ξ</var> )  ·  ( 1 + <var>η</var> ) <span class="dvl"></span>4</span> + <span class="dvc"> ( 1 − <var>ξ</var> )  ·  ( 1 + <var>η</var> ) <span class="dvl"></span>4</span> = 1</span></p>
-<p>&nbsp;</p>
-<h2>§3.2 Mapeo isoparamétrico</h2>
-
-<p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=52 --><p><span class="eq"><var>x</var> · <var>ξ; η</var> = <var>N</var><sub>1</sub> · <var>x</var><sub>1</sub> + <var>N</var><sub>2</sub> · <var>x</var><sub>2</sub> + <var>N</var><sub>3</sub> · <var>x</var><sub>3</sub> + <var>N</var><sub>4</sub> · <var>x</var><sub>4</sub></span></p>
-<!-- FORMEQ CALLED: len=52 --><p><span class="eq"><var>y</var> · <var>ξ; η</var> = <var>N</var><sub>1</sub> · <var>y</var><sub>1</sub> + <var>N</var><sub>2</sub> · <var>y</var><sub>2</sub> + <var>N</var><sub>3</sub> · <var>y</var><sub>3</sub> + <var>N</var><sub>4</sub> · <var>y</var><sub>4</sub></span></p>
-<p>&nbsp;</p>
-<h2>§3.3 Matriz Jacobiana 2x2</h2>
-
-<p>&nbsp;</p>
-<p>Por la regla de la cadena, las derivadas de cualquier función se relacionan:</p>
-<p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=72 --><p><span class="eq" style="display:inline-flex;align-items:center;flex-wrap:nowrap;gap:0 0.3em;"><var>[∂N/∂ξ ; ∂N/∂η]</var> = <span class="matrix matwrap"><span class="tr"><span class="td"></span><span class="td"><span class="dvc"><i>∂</i><var>x</var><span class="dvl"></span><i>∂</i><var>ξ</var></span></span><span class="td"><span class="dvc"><i>∂</i><var>y</var><span class="dvl"></span><i>∂</i><var>ξ</var></span></span><span class="td">&nbsp;</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td"><span class="dvc"><i>∂</i><var>x</var><span class="dvl"></span><i>∂</i><var>η</var></span></span><span class="td"><var>∂y/∂η] · [∂N/∂x</var></span><span class="td"><span class="dvc"><i>∂</i><var>N</var><span class="dvl"></span><i>∂</i><var>y</var></span></span><span class="td"></span></span></span></span></p>
-<p>&nbsp;</p>
-<p>La matriz que aparece es el <strong>JACOBIANO</strong>:</p>
+<p>Para cualquier punto (ξ, η) dentro del cuadrado natural, hay que saber</p>
+<p>a qué punto (x, y) le corresponde en la placa real. La matriz J recoge</p>
+<p>las &quot;tasas de cambio&quot; de esa correspondencia:</p>
 <p>&nbsp;</p>
 <!-- FORMEQ CALLED: len=40 --><p><span class="eq" style="display:inline-flex;align-items:center;flex-wrap:nowrap;gap:0 0.3em;"><var>J</var> = <span class="matrix matwrap"><span class="tr"><span class="td"></span><span class="td"><span class="dvc"><i>∂</i><var>x</var><span class="dvl"></span><i>∂</i><var>ξ</var></span></span><span class="td"><span class="dvc"><i>∂</i><var>y</var><span class="dvl"></span><i>∂</i><var>ξ</var></span></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td"><span class="dvc"><i>∂</i><var>x</var><span class="dvl"></span><i>∂</i><var>η</var></span></span><span class="td"><span class="dvc"><i>∂</i><var>y</var><span class="dvl"></span><i>∂</i><var>η</var></span></span><span class="td"></span></span></span></span></p>
 <p>&nbsp;</p>
-<p>Sus 4 componentes se calculan aplicando ∂/∂ξ y ∂/∂η a x(ξ;η) e y(ξ;η):</p>
+<p><strong>Significado de cada componente:</strong></p>
+<p><ul>
+<li>∂x/∂ξ: cuánto se estira la placa en X cuando me muevo 1 unidad de ξ</li>
+</ul>
+</p>
+<p><ul>
+<li>∂y/∂η: cuánto se estira la placa en Y cuando me muevo 1 unidad de η</li>
+</ul>
+</p>
+<p><ul>
+<li>∂x/∂η, ∂y/∂ξ: términos de &quot;torsión&quot; (ROTACIÓN) del mapeo</li>
+</ul>
+</p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=74 --><p><span class="eq"><span class="dvc"><i>∂</i><var>x</var><span class="dvl"></span><i>∂</i><var>ξ</var></span> = <var>(-N</var><sub>1·x_1 + N_2·x_2 + N_3·x_3 - N_4·x_4) (con factores 1±η)/4</sub></span></p>
-<!-- FORMEQ CALLED: len=74 --><p><span class="eq"><span class="dvc"><i>∂</i><var>y</var><span class="dvl"></span><i>∂</i><var>η</var></span> = <var>(-N</var><sub>1·y_1 - N_2·y_2 + N_3·y_3 + N_4·y_4) (con factores 1±ξ)/4</sub></span></p>
-<p>&nbsp;</p>
-<h2>§3.4 Caso numérico — cuadrilátero rectangular axis-aligned</h2>
+<h2>§5.2 El número que importa: det(J)</h2>
 
 <p>&nbsp;</p>
-<p>Para simplificar, tomamos un rectángulo a×b alineado con los ejes:</p>
-<p>Nodo 1 = (0, 0), Nodo 2 = (a, 0), Nodo 3 = (a, b), Nodo 4 = (0, b).</p>
-<p>&nbsp;</p>
-<p><span class="eq"><var>a</var><sub>rect</sub> = 4</span></p>
-<p><span class="eq"><var>b</var><sub>rect</sub> = 3</span></p>
-<p>&nbsp;</p>
-<p>Para este caso particular el mapeo es lineal y SEPARABLE:</p>
-<p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=23 --><p><span class="eq"><var>x</var> · <var>ξ</var> = <span class="dvc"><var>a</var><span class="dvl"></span>2 · &nbsp;(&nbsp;<var>ξ</var> + 1&nbsp;)&nbsp;</span></span></p>
-<!-- FORMEQ CALLED: len=23 --><p><span class="eq"><var>y</var> · <var>η</var> = <span class="dvc"><var>b</var><span class="dvl"></span>2 · &nbsp;(&nbsp;<var>η</var> + 1&nbsp;)&nbsp;</span></span></p>
-<p>&nbsp;</p>
-<p>El Jacobiano queda <strong>DIAGONAL</strong> y constante:</p>
-<p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=28 --><p><span class="eq" style="display:inline-flex;align-items:center;flex-wrap:nowrap;gap:0 0.3em;"><var>J</var> = <span class="matrix matwrap"><span class="tr"><span class="td"></span><span class="td"><span class="dvc"><var>a</var><span class="dvl"></span>2</span></span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"><span class="dvc"><var>b</var><span class="dvl"></span>2</span></span><span class="td"></span></span></span></span></p>
-<p>&nbsp;</p>
-<p><span class="eq" style="display:inline-flex;align-items:center;flex-wrap:nowrap;gap:0 0.3em;"><var>J</var><sub>2D</sub> = <span class="matrix matwrap"><span class="tr"><span class="td"></span><span class="td"><span class="dvc"><var>a</var><sub>rect</sub><span class="dvl"></span>2</span></span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"><span class="dvc"><var>b</var><sub>rect</sub><span class="dvl"></span>2</span></span><span class="td"></span></span></span></span></p>
-<p><span class="eq"><var>J</var><sub>2D</sub> = 0</span></p>
-<p>&nbsp;</p>
-<h2>§3.5 Determinante y área</h2>
-
-<p>&nbsp;</p>
-<p>Para cualquier Q4:</p>
+<p><strong>det(J) = factor de escala del ÁREA local</strong>, en el punto (ξ, η).</p>
 <p>&nbsp;</p>
 <!-- FORMEQ CALLED: len=43 --><p><span class="eq"><var>det</var> · <var>J</var> = <span class="dvc"><i>∂</i><var>x</var><span class="dvl"></span><i>∂</i><var>ξ</var></span> · <span class="dvc"><i>∂</i><var>y</var><span class="dvl"></span><i>∂</i><var>η</var></span> &minus; <span class="dvc"><i>∂</i><var>x</var><span class="dvl"></span><i>∂</i><var>η</var></span> · <span class="dvc"><i>∂</i><var>y</var><span class="dvl"></span><i>∂</i><var>ξ</var></span></span></p>
 <p>&nbsp;</p>
-<p>En el rectángulo:</p>
+<p>Significado: 1 unidad cuadrada del cuadrado natural ocupa det(J)</p>
+<p>unidades cuadradas en la placa real.</p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=39 --><p><span class="eq"><var>det</var> · <var>J</var> = <span class="dvc"><var>a</var><span class="dvl"></span>2</span> · <span class="dvc"><var>b</var><span class="dvl"></span>2</span> − 0 · 0 = <span class="dvc"><var>a</var> · <var>b</var><span class="dvl"></span>4</span></span></p>
-<p>&nbsp;</p>
-<p><span class="eq"><var>det</var><sub>J</sub> = <span class="dvc"><var>a</var><sub>rect</sub> · <var>b</var><sub>rect</sub><span class="dvl"></span>4</span> = <span class="dvc">4 · 3<span class="dvl"></span>4</span> = 3</span></p>
-<p>&nbsp;</p>
-<p><strong>Significado físico:</strong> det(J) es el factor de escala del área —</p>
-<p>1 unidad de área en el espacio natural (dξ·dη) ocupa det(J) unidades</p>
-<p>en el espacio físico (dx·dy):</p>
-<p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=37 --><p><span class="eq"><var>dA</var><sub>físico</sub> = <var>dx</var> · <var>dy</var> = <var>det</var> · <var>J</var> · <var>dξ</var> · <var>dη</var></span></p>
-<p>&nbsp;</p>
-<p>Verificación: el área total física debe ser a·b.</p>
-<p>&nbsp;</p>
-<p><span class="eq"><var>A</var><sub>natural</sub> = 4</span></p>
-<p><span class="eq"><var>A</var><sub>fisica_check</sub> = <var>det</var><sub>J</sub> · <var>A</var><sub>natural</sub> = 3 · 4 = 12</span></p>
-<p>&nbsp;</p>
-<div class="col-blk-wrap">
-<div class="col-blk"><div class="col-cell"><span class="eq"><var>a</var><sub>rect</sub> = 4</span></div><div class="col-cell"><span>lado X del rectángulo</span></div></div>
-<div class="col-blk"><div class="col-cell"><span class="eq"><var>b</var><sub>rect</sub> = 3</span></div><div class="col-cell"><span>lado Y del rectángulo</span></div></div>
-<div class="col-blk"><div class="col-cell"><span class="eq"><var>det</var><sub>J</sub> = 3</span></div><div class="col-cell"><span>det(J) = a·b/4</span></div></div>
-<div class="col-blk"><div class="col-cell"><span class="eq"><var>A</var><sub>natural</sub> = 4</span></div><div class="col-cell"><span>área del cuadrado natural [-1,1]² = 4</span></div></div>
-<div class="col-blk"><div class="col-cell"><span class="eq"><var>A</var><sub>fisica_check</sub> = 12</span></div><div class="col-cell"><span>det(J) · A_natural = a·b ✓</span></div></div>
-</div>
-<p>&nbsp;</p>
-<h2>§3.6 Integración por Gauss usando el Jacobiano</h2>
+<h2>§5.3 Caso simple: rectángulo a×b alineado a los ejes</h2>
 
 <p>&nbsp;</p>
-<p>Una integral en el dominio físico se transforma así:</p>
+<p><span class="eq"><var>a</var> = 4</span></p>
+<p><span class="eq"><var>b</var> = 3</span></p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=115 --><p><span class="eq"><span class="dvr"><small><var>b</var></small><span class="nary">∫</span><small><var>0</var></small></span><span class="dvr"><small><var>a</var></small><span class="nary">∫</span><small><var>0</var></small></span><var>f</var>  ( <var>x</var>; <var>y</var> )  <var>d</var><var>x</var> <var>d</var><var>y</var> = <span class="dvr"><small><var>1</var></small><span class="nary">∫</span><small><var>-1</var></small></span><span class="dvr"><small><var>1</var></small><span class="nary">∫</span><small><var>-1</var></small></span><var>f</var>  ( <var>x</var>  ( <var>ξ</var>; <var>η</var> ) ; <var>y</var>  ( <var>ξ</var>; <var>η</var> )  )  · |<var>J</var>| <var>d</var><var>ξ</var> <var>d</var><var>η</var></span></p>
+<p>Para un rectángulo de a=4 m × b=3 m, el mapeo es separable:</p>
+<p>x(ξ) = (a/2)·(ξ+1)</p>
+<p>y(η) = (b/2)·(η+1)</p>
 <p>&nbsp;</p>
-<p>En FEM la cuadratura de Gauss aproxima la integral natural:</p>
+<p>Las derivadas son constantes (no dependen de ξ ni η):</p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=45 --><p><span class="eq"><var>K</var><sub>e</sub> = <var>Σᵢ Σⱼ B</var><sup><var>T</var></sup> · <var>D</var> · <var>B</var> · <var>det</var> · <var>J</var> · <var>ξᵢ; ηⱼ</var> · <var>wᵢ</var> · <var>wⱼ</var></span></p>
+<!-- FORMEQ CALLED: len=28 --><p><span class="eq" style="display:inline-flex;align-items:center;flex-wrap:nowrap;gap:0 0.3em;"><var>J</var> = <span class="matrix matwrap"><span class="tr"><span class="td"></span><span class="td"><span class="dvc"><var>a</var><span class="dvl"></span>2</span></span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"><span class="dvc"><var>b</var><span class="dvl"></span>2</span></span><span class="td"></span></span></span></span></p>
 <p>&nbsp;</p>
-<p>donde (ξᵢ, ηⱼ) son los puntos de Gauss y wᵢ los pesos.</p>
+<p><span class="eq" style="display:inline-flex;align-items:center;flex-wrap:nowrap;gap:0 0.3em;"><var>J</var><sub>2D</sub> = <span class="matrix matwrap"><span class="tr"><span class="td"></span><span class="td"><span class="dvc"><var>a</var><span class="dvl"></span>2</span></span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td"><span class="dvc"><var>b</var><span class="dvl"></span>2</span></span><span class="td"></span></span></span></span></p>
+<p><span class="eq"><var>J</var><sub>2D</sub> = 0</span></p>
 <p>&nbsp;</p>
-<p>Para Q4 con integración 2×2 Gauss:</p>
-<p>&nbsp;</p>
-<p><span class="eq"><var>ξ</var><sub>g</sub> = <span class="dvc">1<span class="dvl"></span>&ensp;&hairsp;&hairsp;<span class="o0"><span class="r">√</span>&hairsp;3</span></span> = 0,5773503</span></p>
-<p><span class="eq"><var>w</var><sub>g</sub> = 1</span></p>
+<p><span class="eq"><var>det</var><sub>J</sub> = <span class="dvc"><var>a</var> · <var>b</var><span class="dvl"></span>4</span> = <span class="dvc">4 · 3<span class="dvl"></span>4</span> = 3</span></p>
 <p>&nbsp;</p>
 <div class="col-blk-wrap">
-<div class="col-blk"><div class="col-cell"><span class="eq"><var>ξ</var><sub>g</sub> = 0,5773503</span></div><div class="col-cell"><span>coordenada de Gauss = 1/√3 ≈ 0.5774</span></div></div>
-<div class="col-blk"><div class="col-cell"><span class="eq"><var>w</var><sub>g</sub> = 1</span></div><div class="col-cell"><span>peso de Gauss (4 puntos × peso 1 = 4)</span></div></div>
+<div class="col-blk"><div class="col-cell"><span class="eq"><var>a</var> = 4</span></div><div class="col-cell"><span>lado X de la placa</span></div></div>
+<div class="col-blk"><div class="col-cell"><span class="eq"><var>b</var> = 3</span></div><div class="col-cell"><span>lado Y de la placa</span></div></div>
+<div class="col-blk"><div class="col-cell"><span class="eq"><var>det</var><sub>J</sub> = 3</span></div><div class="col-cell"><span>det(J) = a*b/4 (factor de área local, constante para rectángulo)</span></div></div>
 </div>
 <p>&nbsp;</p>
-<h1>&#167;4. Resumen visual — comparaci&#243;n 1D vs 2D</h1>
+<p><strong>Comprobación:</strong> el cuadrado natural [−1,+1]² tiene área 2×2 = 4.</p>
+<p>Entonces el área de la placa real es:</p>
+<p>&nbsp;</p>
+<p><span class="eq"><var>A</var><sub>natural</sub> = 4</span></p>
+<p><span class="eq"><var>A</var><sub>placa</sub> = <var>det</var><sub>J</sub> · <var>A</var><sub>natural</sub> = 3 · 4 = 12</span></p>
+<p>&nbsp;</p>
+<div class="col-blk-wrap">
+<div class="col-blk"><div class="col-cell"><span class="eq"><var>A</var><sub>natural</sub> = 4</span></div><div class="col-cell"><span>área del cuadrado de referencia (siempre 4)</span></div></div>
+<div class="col-blk"><div class="col-cell"><span class="eq"><var>A</var><sub>placa</sub> = 12</span></div><div class="col-cell"><span>área real = det(J) × 4 = a × b ✓</span></div></div>
+</div>
+<p>&nbsp;</p>
+<h2>§5.4 ¿Y si la placa es distorsionada?</h2>
+
+<p>&nbsp;</p>
+<p>Si los nodos NO forman un rectángulo perfecto, det(J) **varía punto</p>
+<p>a punto** dentro del elemento. Por eso en FEM se calcula en cada</p>
+<p>punto de Gauss (4 puntos para Q4 con integración 2×2):</p>
+<p>&nbsp;</p>
+<!-- FORMEQ CALLED: len=55 --><p><span class="eq"><var>K</var><sub>e</sub> = <var>Σ</var><sub>g_</sub> = <var>_1_a_4 B</var><sup><var>T</var></sup> · <var>D</var> · <var>B</var> · <var>det</var> · <var>J</var> · <var>ξ</var><sub>g; η_g</sub> · <var>w</var><sub>g</sub></span></p>
+<p>&nbsp;</p>
+<p><strong>Si det(J) sale 0 o negativo → el elemento está degenerado</strong> (esquinas</p>
+<p>colineales o invertidas). Esa es una de las advertencias clásicas que</p>
+<p>tira ETABS / SAP / Hekatan: &quot;Element has zero or negative Jacobian&quot;.</p>
+<p>&nbsp;</p>
+<h1>&#167;6. Resumen — para cu&#225;ndo te sirve esto</h1>
 <p>&nbsp;</p>
 <p>&nbsp;</p>
 <p>&nbsp;</p>
+<div><svg viewBox="0 0 720 220" width="720" height="220" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="720" height="220" fill="#f0f8ff" fill-opacity="1" stroke="#888" stroke-width="1"/><text x="360" y="22" text-anchor="middle" fill="black" font-size="14" font-weight="bold">Cuando importa el Jacobiano</text><text x="60" y="60" text-anchor="start" fill="#0d47a1" font-size="12" font-weight="bold">Si SOLO usas el solver:</text><text x="80" y="82" text-anchor="start" fill="black" font-size="11" font-weight="normal">* No te tienes que enterar — el codigo lo maneja solo.</text><text x="80" y="100" text-anchor="start" fill="black" font-size="11" font-weight="normal">* Solo veras el efecto si la malla esta MUY deformada</text><text x="80" y="115" text-anchor="start" fill="black" font-size="11" font-weight="normal">  (warnings de &#39;negative Jacobian&#39; = elemento invertido).</text><text x="60" y="145" text-anchor="start" fill="#0d47a1" font-size="12" font-weight="bold">Si programas FEM (C++ / Python):</text><text x="80" y="167" text-anchor="start" fill="black" font-size="11" font-weight="normal">* Es tu pieza central. detJ aparece en TODAS las integrales</text><text x="80" y="182" text-anchor="start" fill="black" font-size="11" font-weight="normal">  numericas (rigidez K e, vector cargas F e, masa M e).</text><text x="80" y="197" text-anchor="start" fill="black" font-size="11" font-weight="normal">* Olvidarlo o calcularlo mal = numeros sin sentido fisico.</text></svg></div>
 <p>&nbsp;</p>
-<div><svg viewBox="0 0 720 280" width="720" height="280" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><rect x="0" y="0" width="720" height="280" fill="#fff8e1" fill-opacity="1" stroke="#d4a017" stroke-width="1"/><text x="360" y="22" text-anchor="middle" fill="black" font-size="14" font-weight="bold">0</text><rect x="30" y="50" width="320" height="220" fill="#ffe699" fill-opacity="0.5" stroke="#b58900" stroke-width="2"/><rect x="370" y="50" width="320" height="220" fill="#b3d9ff" fill-opacity="0.4" stroke="#0d47a1" stroke-width="2"/><text x="190" y="70" text-anchor="middle" fill="black" font-size="14" font-weight="bold">0</text><text x="530" y="70" text-anchor="middle" fill="black" font-size="14" font-weight="bold">0</text><text x="190" y="100" text-anchor="middle" fill="black" font-size="12" font-weight="normal">0</text><text x="190" y="125" text-anchor="middle" fill="#c33" font-size="13" font-weight="bold">0</text><text x="190" y="155" text-anchor="middle" fill="black" font-size="11" font-weight="normal">0</text><text x="190" y="185" text-anchor="middle" fill="black" font-size="11" font-weight="normal">0</text><text x="190" y="215" text-anchor="middle" fill="black" font-size="11" font-weight="italic">0</text><text x="190" y="245" text-anchor="middle" fill="#555" font-size="10" font-weight="normal">0</text><text x="530" y="100" text-anchor="middle" fill="black" font-size="12" font-weight="normal">0</text><text x="530" y="125" text-anchor="middle" fill="#c33" font-size="10" font-weight="bold">0</text><text x="530" y="155" text-anchor="middle" fill="black" font-size="11" font-weight="normal">0</text><text x="530" y="185" text-anchor="middle" fill="black" font-size="11" font-weight="normal">0</text><text x="530" y="215" text-anchor="middle" fill="black" font-size="11" font-weight="italic">0</text><text x="530" y="245" text-anchor="middle" fill="#555" font-size="10" font-weight="normal">0</text></svg></div>
-<p>&nbsp;</p>
-<h1>&#167;5. Cierre</h1>
-<p>&nbsp;</p>
-<p><strong>Tres cosas que recordar del Jacobiano:</strong></p>
+<p><strong>Lo más importante para el ingeniero estructural:</strong></p>
 <p></p>
-<p><ol>
-<li>Es la &quot;tasa de cambio&quot; entre coordenadas físicas y naturales.</li>
-</ol>
+<p><ul>
+<li>El Jacobiano NO es una propiedad de la placa (como E, ν, espesor).</li>
+</ul>
 </p>
-<p><ol start="2">
-<li>En 1D es el escalar L/2; en 2D es una matriz 2x2 cuyo determinante</li>
-</ol>
+<p><ul>
+<li>NO es una carga ni una reacción.</li>
+</ul>
 </p>
-<p>da el factor de área.</p>
-<p><ol start="3">
-<li>**Sin él la integración numérica daría resultados con dimensiones</li>
-</ol>
+<p><ul>
+<li>NO afecta la respuesta física (el desplazamiento real no cambia).</li>
+</ul>
 </p>
-<p>equivocadas** — todas las integrales en el espacio natural deben</p>
-<p>multiplicarse por |J| (1D) o det(J) (2D/3D) para recuperar el</p>
-<p>significado físico correcto.</p>
+<p><ul>
+<li>ES una herramienta del programador para que la integral numérica</li>
+</ul>
+</p>
+<p>produzca el número correcto.</p>
 <p></p>
-<p>En la implementación FEM (C++/Python/MATLAB) el Jacobiano se calcula</p>
-<p>en cada punto de Gauss porque para elementos distorsionados depende</p>
-<p>de (ξ, η). Para elementos rectangulares es constante y se puede</p>
-<p>pre-calcular una sola vez.</p>
+<p><strong>Cuándo te aparece como ingeniero:</strong> cuando tu malla tiene elementos</p>
+<p>distorsionados con esquinas casi colineales, det(J) tiende a 0 y el</p>
+<p>solver te tira el warning de Jacobiano negativo. La solución entonces</p>
+<p>es <strong>mejorar la calidad de la malla</strong> (no tocar nada del solver).</p>
  </body></html>

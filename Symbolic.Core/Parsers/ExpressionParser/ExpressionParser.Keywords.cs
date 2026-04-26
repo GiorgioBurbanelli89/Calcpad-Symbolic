@@ -2385,7 +2385,35 @@ namespace Calcpad.Core
         // Parse args, evaluating Calcpad expressions for numeric values
         private string[] SvgSplitArgs(string s)
         {
-            return s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            // Split por espacios pero RESPETANDO comillas dobles, así el
+            // user puede pasar  .text 100 50 "varias palabras juntas" 14 ...
+            // como un solo token. Antes split('') las rompía en 3 tokens
+            // y los textos quedaban como "0" porque "varias se evaluaba
+            // como expresión sin matchear y devolvía 0.
+            var parts = new System.Collections.Generic.List<string>();
+            var cur = new System.Text.StringBuilder();
+            bool inQuotes = false;
+            foreach (var c in s)
+            {
+                if (c == '"')
+                {
+                    inQuotes = !inQuotes;
+                    cur.Append(c);     // mantener las comillas (SvgText las usa de marker)
+                }
+                else if (c == ' ' && !inQuotes)
+                {
+                    if (cur.Length > 0)
+                    {
+                        parts.Add(cur.ToString());
+                        cur.Clear();
+                    }
+                }
+                else
+                    cur.Append(c);
+            }
+            if (cur.Length > 0)
+                parts.Add(cur.ToString());
+            return parts.ToArray();
         }
 
         private double EvalSvgExpr(string expr)

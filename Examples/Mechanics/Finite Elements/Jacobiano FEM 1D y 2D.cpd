@@ -1,340 +1,310 @@
 #margen 20
 #md on
-"Jacobiano en Elementos Finitos — explicación gráfica 1D y 2D
+"Jacobiano en FEM — explicación práctica para placas y elementos 1D/2D
 
-# §1. ¿Por qué existe el Jacobiano?
+# §1. Lo que NO es el Jacobiano
 
-'En FEM trabajamos con DOS espacios al mismo tiempo:
+'Cuando aplicás una fuerza P a una placa y resolvés su deformación, hay
+'TRES problemas distintos. El Jacobiano es UNO de ellos — y el más
+'invisible, porque no tiene significado físico, es solo plomería del
+'cálculo numérico.
 
-#svg 720 200
-.rect 0 0 720 200 #f5f5f5 1 #888 1
-.text 360 22 Mapeo_entre_dos_espacios 14 black middle bold
+#svg 720 240
+.rect 0 0 720 240 #fff8e1 1 #d4a017 1
+.text 360 25 "Tres problemas DISTINTOS al analizar una placa" 14 black middle bold
 
-'Espacio FÍSICO (izquierda)
-.text 150 60 ESPACIO_FISICO_x,y 13 black middle bold
-.rect 60 80 200 90 #ffe699 0.4 #b58900 2
-.line 50 100 60 95 black 1
-.line 50 120 60 115 black 1
-.line 50 140 60 135 black 1
-.line 50 160 60 155 black 1
-.text 160 130 elemento_real 12 black middle italic
-.text 160 175 (geometría_distorsionada) 10 #555 middle
+'Caja 1: aplicar fuerza
+.rect 30 60 210 150 #b3d9ff 0.4 #0d47a1 2
+.text 135 85 "1. Aplicar la fuerza" 12 black middle bold
+.text 135 110 "Vector de cargas F" 11 #0d47a1 middle
+.text 135 130 "F_i = integral N_i q dA" 10 black middle italic
+.text 135 165 "(integral del producto" 9 #555 middle
+.text 135 178 "carga x funcion de forma)" 9 #555 middle
 
-'Flecha del mapeo
-.arrow 280 125 440 125 red 3
-.text 360 110 N_i(ξ;η) 13 #c33 middle bold
-.text 360 145 isoparamétrico 11 #c33 middle italic
+'Caja 2: continuidad entre elementos
+.rect 255 60 210 150 #c8e6c9 0.5 #2e7d32 2
+.text 360 85 "2. Continuidad entre" 12 black middle bold
+.text 360 100 "placas vecinas" 12 black middle bold
+.text 360 125 "Conformidad C^0 / C^1" 11 #2e7d32 middle
+.text 360 145 "(nodos compartidos en" 10 #555 middle
+.text 360 158 "el lado comun)" 10 #555 middle
+.text 360 185 "Mismo grado de" 9 #555 middle
+.text 360 198 "interpolacion" 9 #555 middle
 
-'Espacio NATURAL (derecha)
-.text 580 60 ESPACIO_NATURAL_ξ,η 13 black middle bold
-.rect 480 80 200 90 #b3d9ff 0.4 #0d47a1 2
-.text 580 130 cuadrado_unitario 12 black middle italic
-.text 580 175 ξ,η_∈_[-1,_+1] 10 #555 middle
+'Caja 3: Jacobiano
+.rect 480 60 210 150 #ffe699 0.6 #b58900 2
+.text 585 85 "3. Calcular K_e" 12 black middle bold
+.text 585 100 "del elemento" 12 black middle bold
+.text 585 125 "JACOBIANO = factor" 11 #c33 middle bold
+.text 585 145 "de escala para la" 11 #c33 middle bold
+.text 585 160 "integral numerica" 11 #c33 middle bold
+.text 585 185 "(plomeria del codigo," 9 #555 middle
+.text 585 198 "no hay significado fisico)" 9 #555 middle
 
 #end svg
 
-'El **Jacobiano** mide cuánto se "estira" el espacio al pasar de uno al
-'otro. Si integramos en el espacio natural debemos compensar ese
-'estiramiento — por eso aparece |J| en las integrales numéricas.
+'Vamos a centrarnos en el problema **3 (Jacobiano)**, porque los otros
+'son fenómenos físicos directos (la fuerza se aplica, los nodos
+'comparten desplazamiento), pero el Jacobiano es invisible al ingeniero
+'que diseña, y muy importante para el que programa el solver.
 
-'Regla básica del cambio de variables:
+# §2. Por qué necesitamos el Jacobiano
 
-#deq integral(f(x); x; a; b) = integral(f(x(ξ))·|J|; ξ; -1; 1)
-
-'donde |J| = dx/dξ en 1D, y det(J) en 2D/3D.
-
-# §2. Jacobiano 1D — elemento barra
-
-'Una barra de longitud L que va del nodo 1 (en x = x_1) al nodo 2 (en
-'x = x_2). En el espacio natural ξ va de −1 a +1:
+'Imaginá que querés calcular el área de Ecuador. Tenés un mapa en
+'escala 1:5.000.000 que mide 26 cm × 22 cm en tu hoja:
 
 #svg 720 280
 .rect 0 0 720 280 #fafafa 1 #ccc 1
-.text 360 22 Mapeo_1D_barra:_x(ξ) 14 black middle bold
+.text 360 22 "Analogia: area de Ecuador desde un mapa" 14 black middle bold
 
-'Espacio físico (arriba)
-.text 100 70 ESPACIO_FISICO 12 black middle bold
-.line 100 100 600 100 #b58900 4
-.circle 100 100 8 #c33 1
-.circle 600 100 8 #c33 1
-.text 100 130 nodo_1_(x=x₁) 11 black middle
-.text 600 130 nodo_2_(x=x₂) 11 black middle
-.text 350 90 L_=_x₂_−_x₁ 12 #555 middle italic
+'Mapa (izquierda)
+.text 130 60 "MAPA en hoja" 12 black middle bold
+.rect 70 80 140 120 #b3d9ff 0.3 #0d47a1 2
+.text 140 145 "26 x 22 cm" 11 #0d47a1 middle
+.text 140 165 "= 572 cm^2" 11 #0d47a1 middle bold
+.text 140 220 "(facil de medir" 10 #555 middle
+.text 140 235 "con regla)" 10 #555 middle
 
-'Flecha: mapeo
-.arrow 350 150 350 195 red 3
-.text 380 175 J_=_dx/dξ 13 #c33 start bold
+'Flecha
+.arrow 240 140 380 140 red 3
+.text 310 125 "factor 5.000.000^2" 12 #c33 middle bold
+.text 310 160 "= 25 x 10^12" 11 #c33 middle italic
 
-'Espacio natural (abajo)
-.text 100 220 ESPACIO_NATURAL 12 black middle bold
-.line 200 245 500 245 #0d47a1 4
-.circle 200 245 8 #c33 1
-.circle 500 245 8 #c33 1
-.text 200 270 ξ_=_−1 11 black middle
-.text 350 235 (longitud_natural_=_2) 11 #555 middle italic
-.text 500 270 ξ_=_+1 11 black middle
+'Realidad (derecha)
+.text 580 60 "REALIDAD geografica" 12 black middle bold
+.rect 420 80 280 120 #ffd966 0.4 #b58900 2
+.text 560 130 "Ecuador real" 12 #b58900 middle bold
+.text 560 150 "= 256 mil km^2" 12 #b58900 middle bold
+.text 560 175 "= 2.56 x 10^15 cm^2" 11 #b58900 middle
+.text 560 220 "(imposible medir" 10 #555 middle
+.text 560 235 "con regla en mano)" 10 #555 middle
+
+'Conclusion
+.text 360 268 "Area_real = 572 cm^2 x 25e12 = 14.3e15 cm^2 (orden correcto)" 11 #2e7d32 middle italic
 #end svg
 
-'## §2.1 Derivación de x(ξ)
+'**Esa misma idea es FEM:**
+'- En vez de hacer la integral directamente sobre cada placa real
+'  (que tiene esquinas en posiciones raras), hacés la integral sobre
+'  un cuadrado de referencia (siempre de −1 a +1).
+'- **El Jacobiano es ese factor de escala** que dice cuánto se "estira"
+'  el cuadrado de referencia cuando lo "imprimís" sobre la placa real.
 
-'Usamos las funciones de forma lineales N_1, N_2 (Lagrange grado 1):
+# §3. Donde aparece en el código
 
-#deq N_1(ξ) = (1 - ξ)/2
-#deq N_2(ξ) = (1 + ξ)/2
+'En cualquier librería de FEM (yo lo uso en C++ con Eigen, pero igual
+'en Python o MATLAB) la matriz de rigidez de un elemento se calcula así:
 
-'Verificación simbólica de que suman 1 (partición de la unidad):
+#deq K_e = Σ_g B^T(ξ_g; η_g) · D · B(ξ_g; η_g) · det(J(ξ_g; η_g)) · w_g
 
-#sym (1-ξ)/2 + (1+ξ)/2
+'Pseudo-código del solver:
 
-'Verificación de los valores en los nodos:
+'```
+'K_e = matrix.zeros(8, 8)              // matriz 8x8 para Q4
+'for g in puntos_de_Gauss:
+'    xi, eta = g.coords
+'    J = jacobiano(xi, eta, x_nodos, y_nodos)    // matriz 2x2
+'    detJ = J(0,0)*J(1,1) - J(0,1)*J(1,0)        // ESTO es el Jacobiano (escalar)
+'    B = matriz_strain(xi, eta, J_inv)
+'    K_e += B.T * D * B * detJ * g.peso          // <-- sin detJ los numeros estarían mal
+'```
 
-#sym 0.5*(1-(-1)) + 0.5*(1+(-1))
-#sym 0.5*(1-(+1)) + 0.5*(1+(+1))
+'**Sin el `detJ` el sistema sigue compilando y resolviendo, pero da
+'resultados con dimensiones equivocadas.** Por eso es plomería: no
+'aporta física nueva, pero si lo omitís el solver es basura.
 
-'Mapeo isoparamétrico:
+# §4. Caso 1D — barra (el más simple)
 
-#deq x(ξ) = N_1(ξ)·x_1 + N_2(ξ)·x_2 = (1-ξ)/2·x_1 + (1+ξ)/2·x_2
+'Una barra elástica entre dos nodos:
 
-'## §2.2 Cálculo del Jacobiano J = dx/dξ
+#svg 720 220
+.rect 0 0 720 220 #fafafa 1 #ccc 1
+.text 360 22 "Barra 1D: mapeo del cuadrado natural a la barra real" 13 black middle bold
 
-'Derivamos x(ξ) respecto a ξ:
+'Barra real arriba
+.text 130 60 "BARRA REAL" 12 black middle bold
+.line 100 100 600 100 #b58900 5
+.circle 100 100 8 #c33 1
+.circle 600 100 8 #c33 1
+.text 100 130 "x = 0" 11 black middle
+.text 600 130 "x = L" 11 black middle
+.text 350 88 "longitud L = 4 metros" 11 #555 middle italic
 
-#sym diff((1-ξ)/2*x_1 + (1+ξ)/2*x_2; ξ)
+'Flecha mapeo
+.arrow 350 145 350 175 red 3
+.text 380 165 "J = L/2 = 2" 13 #c33 start bold
 
-'Resultado: J = (x₂ − x₁)/2 = **L/2**.
+'Cuadrado natural abajo (acá es solo una línea, 1D)
+.text 130 195 "REFERENCIA NATURAL" 12 black middle bold
+.line 250 200 450 200 #0d47a1 5
+.circle 250 200 7 #c33 1
+.circle 450 200 7 #c33 1
+.text 220 200 "xi = -1" 10 black end
+.text 460 200 "xi = +1" 10 black start
+#end svg
 
-#deq J_1D = dx/dξ = (x_2 - x_1)/2 = L/2
+'**Lectura:** el cuadrado natural mide 2 unidades (de −1 a +1). La barra
+'real mide L = 4 m. Para "imprimir" el natural sobre la real, lo
+'estiramos por **L/2 = 2**. Ese es el Jacobiano 1D.
 
-'## §2.3 Caso numérico
-
-x_1 = 0
-x_2 = 4
-L_bar = x_2 - x_1
+L_bar = 4
 J_1D = L_bar/2
 
 #blk
-x_1   ; 'coordenada nodo 1 (m)
-x_2   ; 'coordenada nodo 2 (m)
-L_bar ; 'longitud física
-J_1D  ; 'Jacobiano = L/2
+L_bar  ; 'longitud física de la barra (m)
+J_1D   ; 'Jacobiano = L/2 (escalar)
 #end blk
 
-'## §2.4 Integral numérica con J
+'Verificación con derivación simbólica (mapeo lineal x(ξ) = (L/2)(ξ+1)):
 
-'La rigidez axial K = EA/L se obtiene integrando B^T·D·B:
+#sym diff(2*(xi+1); xi)
 
-#deq K = integral(B^T·D·B; x; 0; L) = integral(B^T·D·B·|J|; ξ; -1; 1)
+'**Resultado: J = 2** (constante). Coincide con L/2 = 4/2 = 2. ✓
 
-'En 1D, la matriz B = [-1/L; 1/L] (contiene 1/L que VIENE del Jacobiano).
-'Sin |J| en la integral natural, los resultados saldrían escalados mal.
+# §5. Caso 2D — placa cuadrilátera Q4
 
-'Comprobación: ∫₋₁¹ |J| dξ = J · [ξ]₋₁¹ = J · 2 = L (recupera la longitud física).
+'Ahora la placa real puede tener esquinas en cualquier posición. El
+'mapeo "cuadrado natural → cuadrilátero real" puede estirar y rotar.
 
-L_check = 2*J_1D
-'Resultado debe coincidir con L_bar:'L_check =' L_check'm
+#svg 720 360
+.rect 0 0 720 360 #fafafa 1 #ccc 1
+.text 360 22 "Placa Q4: mapeo de cuadrado natural a cuadrilatero real" 13 black middle bold
 
-# §3. Jacobiano 2D — elemento Q4
-
-'Un cuadrilátero con 4 nodos en (xᵢ, yᵢ) se mapea desde un cuadrado
-'unitario natural (ξ, η) ∈ [−1, +1]²:
-
-#svg 720 380
-.rect 0 0 720 380 #fafafa 1 #ccc 1
-.text 360 22 Mapeo_2D_Q4:_(x,y)(ξ,η) 14 black middle bold
-
-'Espacio físico (izquierda) — cuadrilátero distorsionado
-.text 170 60 ESPACIO_FISICO_(x,y) 12 black middle bold
-
-'4 esquinas físicas (cuadrilátero general no rectangular):
-'  N1=(60, 280), N2=(280, 320), N3=(310, 130), N4=(80, 100)
-'Dibujo el polígono con líneas
-.line 60 280 280 320 #b58900 3
+'Placa real (izquierda) — cuadrilátero distorsionado
+.text 170 55 "PLACA REAL" 12 black middle bold
+.line 70 280 280 320 #b58900 3
 .line 280 320 310 130 #b58900 3
-.line 310 130 80 100 #b58900 3
-.line 80 100 60 280 #b58900 3
-'fill aproximado con un rect rotado no funciona, dejo solo el contorno
-.circle 60 280 7 #c33 1
+.line 310 130 90 100 #b58900 3
+.line 90 100 70 280 #b58900 3
+.circle 70 280 7 #c33 1
 .circle 280 320 7 #c33 1
 .circle 310 130 7 #c33 1
-.circle 80 100 7 #c33 1
-.text 50 290 1_(x₁,y₁) 10 black end
-.text 290 330 2_(x₂,y₂) 10 black start
-.text 320 130 3_(x₃,y₃) 10 black start
-.text 70 95 4_(x₄,y₄) 10 black end
+.circle 90 100 7 #c33 1
+.text 60 290 "1" 12 black end bold
+.text 290 332 "2" 12 black start bold
+.text 320 130 "3" 12 black start bold
+.text 80 95 "4" 12 black end bold
+.text 175 220 "esquinas en" 10 #555 middle italic
+.text 175 235 "posiciones raras" 10 #555 middle italic
 
 'Flecha del mapeo
-.arrow 350 200 470 200 red 3
-.text 410 185 N_i(ξ;η) 13 #c33 middle bold
-.text 410 215 mapeo_inverso 10 #c33 middle italic
+.arrow 360 220 480 220 red 3
+.text 420 200 "J(xi, eta)" 13 #c33 middle bold
+.text 420 240 "matriz 2x2" 11 #c33 middle italic
 
-'Espacio natural (derecha) — cuadrado unitario perfecto
-.text 580 60 ESPACIO_NATURAL_(ξ,η) 12 black middle bold
-.rect 500 130 160 160 #b3d9ff 0.3 #0d47a1 3
-.circle 500 290 7 #c33 1
-.circle 660 290 7 #c33 1
-.circle 660 130 7 #c33 1
-.circle 500 130 7 #c33 1
-.text 490 305 (-1,-1) 9 black end
-.text 670 305 (+1,-1) 9 black start
-.text 670 125 (+1,+1) 9 black start
-.text 490 125 (-1,+1) 9 black end
-.text 580 220 cuadrado_unitario 11 black middle italic
+'Cuadrado natural perfecto (derecha)
+.text 580 55 "REFERENCIA NATURAL" 12 black middle bold
+.rect 510 130 160 160 #b3d9ff 0.3 #0d47a1 3
+.circle 510 290 7 #c33 1
+.circle 670 290 7 #c33 1
+.circle 670 130 7 #c33 1
+.circle 510 130 7 #c33 1
+.text 500 305 "1" 11 black end bold
+.text 680 305 "2" 11 black start bold
+.text 680 125 "3" 11 black start bold
+.text 500 125 "4" 11 black end bold
+.text 590 220 "siempre el" 10 #555 middle italic
+.text 590 235 "mismo cuadrado" 10 #555 middle italic
 
-'ejes ξ, η
-.arrow 660 290 700 290 #888 2
-.text 705 295 ξ 12 #888 start bold
-.arrow 500 130 500 90 #888 2
-.text 495 85 η 12 #888 end bold
+'pie
+.text 360 340 "Cada placa real es DISTINTA, pero todas se mapean al MISMO cuadrado de referencia" 11 #2e7d32 middle italic
 #end svg
 
-'## §3.1 Funciones de forma Q4
+'## §5.1 La matriz Jacobiana en 2D
 
-'Cuatro funciones bilineales:
-
-#deq N_1(ξ; η) = (1-ξ)·(1-η)/4
-#deq N_2(ξ; η) = (1+ξ)·(1-η)/4
-#deq N_3(ξ; η) = (1+ξ)·(1+η)/4
-#deq N_4(ξ; η) = (1-ξ)·(1+η)/4
-
-'Verificación simbólica de partición de unidad:
-
-#sym (1-ξ)*(1-η)/4 + (1+ξ)*(1-η)/4 + (1+ξ)*(1+η)/4 + (1-ξ)*(1+η)/4
-
-'## §3.2 Mapeo isoparamétrico
-
-#deq x(ξ; η) = N_1·x_1 + N_2·x_2 + N_3·x_3 + N_4·x_4
-#deq y(ξ; η) = N_1·y_1 + N_2·y_2 + N_3·y_3 + N_4·y_4
-
-'## §3.3 Matriz Jacobiana 2x2
-
-'Por la regla de la cadena, las derivadas de cualquier función se relacionan:
-
-#deq [∂N/∂ξ ; ∂N/∂η] = [∂x/∂ξ ; ∂y/∂ξ | ∂x/∂η ; ∂y/∂η] · [∂N/∂x ; ∂N/∂y]
-
-'La matriz que aparece es el **JACOBIANO**:
+'Para cualquier punto (ξ, η) dentro del cuadrado natural, hay que saber
+'a qué punto (x, y) le corresponde en la placa real. La matriz J recoge
+'las "tasas de cambio" de esa correspondencia:
 
 #deq J = [∂x/∂ξ ; ∂y/∂ξ | ∂x/∂η ; ∂y/∂η]
 
-'Sus 4 componentes se calculan aplicando ∂/∂ξ y ∂/∂η a x(ξ;η) e y(ξ;η):
+'**Significado de cada componente:**
+'- ∂x/∂ξ: cuánto se estira la placa en X cuando me muevo 1 unidad de ξ
+'- ∂y/∂η: cuánto se estira la placa en Y cuando me muevo 1 unidad de η
+'- ∂x/∂η, ∂y/∂ξ: términos de "torsión" (ROTACIÓN) del mapeo
 
-#deq ∂x/∂ξ = (-N_1·x_1 + N_2·x_2 + N_3·x_3 - N_4·x_4) (con factores 1±η)/4
-#deq ∂y/∂η = (-N_1·y_1 - N_2·y_2 + N_3·y_3 + N_4·y_4) (con factores 1±ξ)/4
+'## §5.2 El número que importa: det(J)
 
-'## §3.4 Caso numérico — cuadrilátero rectangular axis-aligned
-
-'Para simplificar, tomamos un rectángulo a×b alineado con los ejes:
-'  Nodo 1 = (0, 0), Nodo 2 = (a, 0), Nodo 3 = (a, b), Nodo 4 = (0, b).
-
-a_rect = 4
-b_rect = 3
-
-'Para este caso particular el mapeo es lineal y SEPARABLE:
-
-#deq x(ξ) = a/2·(ξ + 1)
-#deq y(η) = b/2·(η + 1)
-
-'El Jacobiano queda **DIAGONAL** y constante:
-
-#deq J = [a/2 ; 0 | 0 ; b/2]
-
-J_2D = [a_rect/2; 0 | 0; b_rect/2]
-J_2D
-
-'## §3.5 Determinante y área
-
-'Para cualquier Q4:
+'**det(J) = factor de escala del ÁREA local**, en el punto (ξ, η).
 
 #deq det(J) = ∂x/∂ξ · ∂y/∂η - ∂x/∂η · ∂y/∂ξ
 
-'En el rectángulo:
+'Significado: 1 unidad cuadrada del cuadrado natural ocupa det(J)
+'unidades cuadradas en la placa real.
 
-#deq det(J) = (a/2)·(b/2) - 0·0 = a·b/4
+'## §5.3 Caso simple: rectángulo a×b alineado a los ejes
 
-det_J = a_rect*b_rect/4
+a = 4
+b = 3
 
-'**Significado físico:** det(J) es el factor de escala del área —
-'1 unidad de área en el espacio natural (dξ·dη) ocupa det(J) unidades
-'en el espacio físico (dx·dy):
+'Para un rectángulo de a=4 m × b=3 m, el mapeo es separable:
+'  x(ξ) = (a/2)·(ξ+1)
+'  y(η) = (b/2)·(η+1)
 
-#deq dA_físico = dx·dy = det(J)·dξ·dη
+'Las derivadas son constantes (no dependen de ξ ni η):
 
-'Verificación: el área total física debe ser a·b.
+#deq J = [a/2 ; 0 | 0 ; b/2]
+
+J_2D = [a/2; 0 | 0; b/2]
+J_2D
+
+det_J = a*b/4
+
+#blk
+a       ; 'lado X de la placa
+b       ; 'lado Y de la placa
+det_J   ; 'det(J) = a*b/4 (factor de área local, constante para rectángulo)
+#end blk
+
+'**Comprobación:** el cuadrado natural [−1,+1]² tiene área 2×2 = 4.
+'Entonces el área de la placa real es:
 
 A_natural = 4
-A_fisica_check = det_J*A_natural
+A_placa = det_J*A_natural
 
 #blk
-a_rect           ; 'lado X del rectángulo
-b_rect           ; 'lado Y del rectángulo
-det_J            ; 'det(J) = a·b/4
-A_natural        ; 'área del cuadrado natural [-1,1]² = 4
-A_fisica_check   ; 'det(J) · A_natural = a·b ✓
+A_natural   ; 'área del cuadrado de referencia (siempre 4)
+A_placa     ; 'área real = det(J) × 4 = a × b ✓
 #end blk
 
-'## §3.6 Integración por Gauss usando el Jacobiano
+'## §5.4 ¿Y si la placa es distorsionada?
 
-'Una integral en el dominio físico se transforma así:
+'Si los nodos NO forman un rectángulo perfecto, det(J) **varía punto
+'a punto** dentro del elemento. Por eso en FEM se calcula en cada
+'punto de Gauss (4 puntos para Q4 con integración 2×2):
 
-#deq integral(integral(f(x;y); x; 0; a); y; 0; b) = integral(integral(f(x(ξ;η);y(ξ;η))·det(J); ξ; -1; 1); η; -1; 1)
+#deq K_e = Σ_g_=_1_a_4 B^T·D·B · det(J(ξ_g; η_g)) · w_g
 
-'En FEM la cuadratura de Gauss aproxima la integral natural:
+'**Si det(J) sale 0 o negativo → el elemento está degenerado** (esquinas
+'colineales o invertidas). Esa es una de las advertencias clásicas que
+'tira ETABS / SAP / Hekatan: "Element has zero or negative Jacobian".
 
-#deq K_e = Σᵢ Σⱼ B^T·D·B·det(J(ξᵢ; ηⱼ))·wᵢ·wⱼ
+# §6. Resumen — para cuándo te sirve esto
 
-'donde (ξᵢ, ηⱼ) son los puntos de Gauss y wᵢ los pesos.
+#svg 720 220
+.rect 0 0 720 220 #f0f8ff 1 #888 1
+.text 360 22 "Cuando importa el Jacobiano" 14 black middle bold
 
-'Para Q4 con integración 2×2 Gauss:
+.text 60 60 "Si SOLO usas el solver:" 12 #0d47a1 start bold
+.text 80 82 "* No te tienes que enterar — el codigo lo maneja solo." 11 black start
+.text 80 100 "* Solo veras el efecto si la malla esta MUY deformada" 11 black start
+.text 80 115 "  (warnings de 'negative Jacobian' = elemento invertido)." 11 black start
 
-ξ_g = 1/sqrt(3)
-w_g = 1.0
-
-#blk
-ξ_g  ; 'coordenada de Gauss = 1/√3 ≈ 0.5774
-w_g  ; 'peso de Gauss (4 puntos × peso 1 = 4)
-#end blk
-
-# §4. Resumen visual — comparación 1D vs 2D
-
-#svg 720 280
-.rect 0 0 720 280 #fff8e1 1 #d4a017 1
-.text 360 22 Resumen_Jacobiano_1D_vs_2D 14 black middle bold
-
-'Cabeceras
-.rect 30 50 320 220 #ffe699 0.5 #b58900 2
-.rect 370 50 320 220 #b3d9ff 0.4 #0d47a1 2
-.text 190 70 1D_(barra) 14 black middle bold
-.text 530 70 2D_(Q4) 14 black middle bold
-
-'1D
-.text 190 100 J_es_un_ESCALAR 12 black middle
-.text 190 125 J_=_L/2 13 #c33 middle bold
-.text 190 155 |J|_=_L/2 11 black middle
-.text 190 185 dx_=_(L/2)·dξ 11 black middle
-.text 190 215 ∫f_dx_=_∫f·(L/2)_dξ 11 black middle italic
-.text 190 245 (factor_de_estiramiento) 10 #555 middle
-
-'2D
-.text 530 100 J_es_una_MATRIZ_2x2 12 black middle
-.text 530 125 det(J)_=_∂x/∂ξ·∂y/∂η_-_∂x/∂η·∂y/∂ξ 10 #c33 middle bold
-.text 530 155 det(J)_=_a·b/4_(rectángulo) 11 black middle
-.text 530 185 dA_=_det(J)·dξ·dη 11 black middle
-.text 530 215 ∫∫f_dA_=_∫∫f·det(J)_dξ_dη 11 black middle italic
-.text 530 245 (factor_de_estiramiento_de_área) 10 #555 middle
+.text 60 145 "Si programas FEM (C++ / Python):" 12 #0d47a1 start bold
+.text 80 167 "* Es tu pieza central. detJ aparece en TODAS las integrales" 11 black start
+.text 80 182 "  numericas (rigidez K_e, vector cargas F_e, masa M_e)." 11 black start
+.text 80 197 "* Olvidarlo o calcularlo mal = numeros sin sentido fisico." 11 black start
 #end svg
 
-# §5. Cierre
-
-'**Tres cosas que recordar del Jacobiano:**
+'**Lo más importante para el ingeniero estructural:**
 '
-'1. Es la "tasa de cambio" entre coordenadas físicas y naturales.
-'2. En 1D es el escalar L/2; en 2D es una matriz 2x2 cuyo determinante
-'   da el factor de área.
-'3. **Sin él la integración numérica daría resultados con dimensiones
-'   equivocadas** — todas las integrales en el espacio natural deben
-'   multiplicarse por |J| (1D) o det(J) (2D/3D) para recuperar el
-'   significado físico correcto.
+'- El Jacobiano NO es una propiedad de la placa (como E, ν, espesor).
+'- NO es una carga ni una reacción.
+'- NO afecta la respuesta física (el desplazamiento real no cambia).
+'- ES una herramienta del programador para que la integral numérica
+'  produzca el número correcto.
 '
-'En la implementación FEM (C++/Python/MATLAB) el Jacobiano se calcula
-'en cada punto de Gauss porque para elementos distorsionados depende
-'de (ξ, η). Para elementos rectangulares es constante y se puede
-'pre-calcular una sola vez.
+'**Cuándo te aparece como ingeniero:** cuando tu malla tiene elementos
+'distorsionados con esquinas casi colineales, det(J) tiende a 0 y el
+'solver te tira el warning de Jacobiano negativo. La solución entonces
+'es **mejorar la calidad de la malla** (no tocar nada del solver).
