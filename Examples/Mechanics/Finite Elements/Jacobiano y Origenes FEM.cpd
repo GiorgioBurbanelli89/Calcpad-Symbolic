@@ -113,50 +113,56 @@ camera.lookAt(0, Np*Hp/2, 0);
 'Para evitar trabajar con N geometrías distintas, mapeamos cada elemento
 'a un dominio de **referencia universal** llamado **coordenadas naturales**:
 
-#svg 720 280
-.rect 0 0 720 280 #fafafa 1 #ccc 1
-.text 360 22 "Cada elemento real se mapea al MISMO dominio natural" 13 black middle bold
+#svg 760 360
+.rect 0 0 760 360 #fafafa 1 #ccc 1
+.text 380 25 "Cada elemento real se mapea al MISMO dominio natural" 13 black middle bold
 
 'Tres elementos físicos diferentes (izquierda)
 .text 150 60 "ELEMENTOS FISICOS" 12 black middle bold
-'rect 1
+'rect 1 (Q4 raro)
 .line 50 100 130 110 #b58900 2
 .line 130 110 140 180 #b58900 2
 .line 140 180 60 175 #b58900 2
 .line 60 175 50 100 #b58900 2
 .text 95 145 "Q4 raro" 10 black middle italic
-'rect 2
+'rect 2 (Q4 normal)
 .line 180 100 260 95 #b58900 2
 .line 260 95 270 180 #b58900 2
 .line 270 180 175 185 #b58900 2
 .line 175 185 180 100 #b58900 2
 .text 220 145 "Q4 normal" 10 black middle italic
-'rect 3
+'rect 3 (Q4 alargado)
 .line 50 210 270 215 #b58900 2
 .line 270 215 270 250 #b58900 2
 .line 270 250 50 245 #b58900 2
 .line 50 245 50 210 #b58900 2
 .text 160 230 "Q4 alargado" 10 black middle italic
 
-'Flechas
-.arrow 290 165 460 165 red 3
-.text 375 150 "TODOS al mismo" 12 #c33 middle bold
-.text 375 180 "cuadrado natural" 12 #c33 middle italic
+'Flechas y texto del proceso
+.arrow 290 175 440 175 red 3
+.text 365 160 "TODOS al mismo" 12 #c33 middle bold
+.text 365 195 "cuadrado natural" 11 #c33 middle italic
 
-'El cuadrado natural (derecha)
-.rect 500 90 180 180 #b3d9ff 0.4 #0d47a1 3
-.circle 500 270 6 #c33 1
-.circle 680 270 6 #c33 1
-.circle 680 90 6 #c33 1
-.circle 500 90 6 #c33 1
-.text 490 285 "(-1,-1)" 10 black end
-.text 690 285 "(+1,-1)" 10 black start
-.text 690 85 "(+1,+1)" 10 black start
-.text 490 85 "(-1,+1)" 10 black end
-.arrow 680 270 715 270 #888 2
-.text 720 275 "ξ" 12 #888 start bold
-.arrow 500 90 500 60 #888 2
-.text 495 55 "η" 12 #888 end bold
+'El cuadrado natural (derecha) — ahora con MUCHO margen para etiquetas
+.rect 500 110 170 170 #b3d9ff 0.4 #0d47a1 3
+'esquinas
+.circle 500 280 6 #c33 1
+.circle 670 280 6 #c33 1
+.circle 670 110 6 #c33 1
+.circle 500 110 6 #c33 1
+'etiquetas de coordenadas (con espacio: y=305 abajo, y=98 arriba)
+.text 490 305 "(-1, -1)" 10 black end
+.text 680 305 "(+1, -1)" 10 black start
+.text 680 100 "(+1, +1)" 10 black start
+.text 490 100 "(-1, +1)" 10 black end
+'eje ξ (cabe holgado dentro del viewport 760)
+.arrow 670 280 720 280 #888 2
+.text 730 285 "ξ" 13 #888 start bold
+'eje η (con margen arriba)
+.arrow 500 110 500 75 #888 2
+.text 495 65 "η" 13 #888 end bold
+'pie del subgrupo natural
+.text 585 335 "cuadrado de referencia universal" 10 #555 middle italic
 #end svg
 
 'Convención:
@@ -275,26 +281,32 @@ J = \begin{bmatrix} \dfrac{\partial x}{\partial \xi} & \dfrac{\partial y}{\parti
 'del cuadrado natural (1 × 1) ocupa det(J) unidades cuadradas en el
 'elemento físico:
 
-#svg 720 200
-.rect 0 0 720 200 #fafafa 1 #ccc 1
-.text 360 22 "det(J) = factor de escala area" 13 black middle bold
+#svg 720 260
+.rect 0 0 720 260 #fafafa 1 #ccc 1
+.text 360 25 "det(J) = factor de escala del area local" 13 black middle bold
 
-'Cuadrado natural pequeño
-.rect 60 80 80 80 #b3d9ff 0.5 #0d47a1 2
-.text 100 165 "1 x 1 = 1" 11 #0d47a1 middle italic
-.text 100 60 "natural" 10 black middle
+'Cuadrado natural pequeño (izquierda)
+.text 100 70 "natural (1 x 1)" 11 black middle bold
+.rect 60 90 80 80 #b3d9ff 0.5 #0d47a1 2
+.text 100 175 "Area = 1" 11 #0d47a1 middle italic
+.text 100 195 "(referencia)" 10 #555 middle italic
 
-'Flecha
-.arrow 200 120 380 120 red 3
-.text 290 105 "x det(J)" 13 #c33 middle bold
+'Flecha del mapeo
+.arrow 200 130 380 130 red 3
+.text 290 110 "multiplicar por det(J)" 12 #c33 middle bold
+.text 290 152 "(factor de escala)" 11 #c33 middle italic
 
-'Cuadrilátero físico distorsionado más grande
-.line 440 80 600 100 #b58900 2
-.line 600 100 590 180 #b58900 2
-.line 590 180 460 170 #b58900 2
-.line 460 170 440 80 #b58900 2
-.text 520 130 "Area = det(J)" 11 #b58900 middle italic
-.text 520 60 "fisico" 10 black middle
+'Cuadrilátero físico distorsionado (derecha)
+.text 520 70 "fisico (distorsionado)" 11 black middle bold
+.line 440 90 620 115 #b58900 2.5
+.line 620 115 605 200 #b58900 2.5
+.line 605 200 455 185 #b58900 2.5
+.line 455 185 440 90 #b58900 2.5
+.text 525 145 "Area = det(J)" 12 #b58900 middle bold
+.text 525 215 "(unidades cuadradas reales)" 10 #555 middle italic
+
+'Pie
+.text 360 240 "Sin el factor det(J), las integrales darian numeros con dimension equivocada" 11 #2e7d32 middle italic
 #end svg
 
 'Si det(J) > 0 → mapeo orientado correctamente.
