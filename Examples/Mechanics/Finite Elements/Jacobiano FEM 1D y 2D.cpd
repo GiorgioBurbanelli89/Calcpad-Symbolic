@@ -1,0 +1,340 @@
+#margen 20
+#md on
+"Jacobiano en Elementos Finitos — explicación gráfica 1D y 2D
+
+# §1. ¿Por qué existe el Jacobiano?
+
+'En FEM trabajamos con DOS espacios al mismo tiempo:
+
+#svg 720 200
+.rect 0 0 720 200 #f5f5f5 1 #888 1
+.text 360 22 Mapeo_entre_dos_espacios 14 black middle bold
+
+'Espacio FÍSICO (izquierda)
+.text 150 60 ESPACIO_FISICO_x,y 13 black middle bold
+.rect 60 80 200 90 #ffe699 0.4 #b58900 2
+.line 50 100 60 95 black 1
+.line 50 120 60 115 black 1
+.line 50 140 60 135 black 1
+.line 50 160 60 155 black 1
+.text 160 130 elemento_real 12 black middle italic
+.text 160 175 (geometría_distorsionada) 10 #555 middle
+
+'Flecha del mapeo
+.arrow 280 125 440 125 red 3
+.text 360 110 N_i(ξ;η) 13 #c33 middle bold
+.text 360 145 isoparamétrico 11 #c33 middle italic
+
+'Espacio NATURAL (derecha)
+.text 580 60 ESPACIO_NATURAL_ξ,η 13 black middle bold
+.rect 480 80 200 90 #b3d9ff 0.4 #0d47a1 2
+.text 580 130 cuadrado_unitario 12 black middle italic
+.text 580 175 ξ,η_∈_[-1,_+1] 10 #555 middle
+
+#end svg
+
+'El **Jacobiano** mide cuánto se "estira" el espacio al pasar de uno al
+'otro. Si integramos en el espacio natural debemos compensar ese
+'estiramiento — por eso aparece |J| en las integrales numéricas.
+
+'Regla básica del cambio de variables:
+
+#deq integral(f(x); x; a; b) = integral(f(x(ξ))·|J|; ξ; -1; 1)
+
+'donde |J| = dx/dξ en 1D, y det(J) en 2D/3D.
+
+# §2. Jacobiano 1D — elemento barra
+
+'Una barra de longitud L que va del nodo 1 (en x = x_1) al nodo 2 (en
+'x = x_2). En el espacio natural ξ va de −1 a +1:
+
+#svg 720 280
+.rect 0 0 720 280 #fafafa 1 #ccc 1
+.text 360 22 Mapeo_1D_barra:_x(ξ) 14 black middle bold
+
+'Espacio físico (arriba)
+.text 100 70 ESPACIO_FISICO 12 black middle bold
+.line 100 100 600 100 #b58900 4
+.circle 100 100 8 #c33 1
+.circle 600 100 8 #c33 1
+.text 100 130 nodo_1_(x=x₁) 11 black middle
+.text 600 130 nodo_2_(x=x₂) 11 black middle
+.text 350 90 L_=_x₂_−_x₁ 12 #555 middle italic
+
+'Flecha: mapeo
+.arrow 350 150 350 195 red 3
+.text 380 175 J_=_dx/dξ 13 #c33 start bold
+
+'Espacio natural (abajo)
+.text 100 220 ESPACIO_NATURAL 12 black middle bold
+.line 200 245 500 245 #0d47a1 4
+.circle 200 245 8 #c33 1
+.circle 500 245 8 #c33 1
+.text 200 270 ξ_=_−1 11 black middle
+.text 350 235 (longitud_natural_=_2) 11 #555 middle italic
+.text 500 270 ξ_=_+1 11 black middle
+#end svg
+
+'## §2.1 Derivación de x(ξ)
+
+'Usamos las funciones de forma lineales N_1, N_2 (Lagrange grado 1):
+
+#deq N_1(ξ) = (1 - ξ)/2
+#deq N_2(ξ) = (1 + ξ)/2
+
+'Verificación simbólica de que suman 1 (partición de la unidad):
+
+#sym (1-ξ)/2 + (1+ξ)/2
+
+'Verificación de los valores en los nodos:
+
+#sym 0.5*(1-(-1)) + 0.5*(1+(-1))
+#sym 0.5*(1-(+1)) + 0.5*(1+(+1))
+
+'Mapeo isoparamétrico:
+
+#deq x(ξ) = N_1(ξ)·x_1 + N_2(ξ)·x_2 = (1-ξ)/2·x_1 + (1+ξ)/2·x_2
+
+'## §2.2 Cálculo del Jacobiano J = dx/dξ
+
+'Derivamos x(ξ) respecto a ξ:
+
+#sym diff((1-ξ)/2*x_1 + (1+ξ)/2*x_2; ξ)
+
+'Resultado: J = (x₂ − x₁)/2 = **L/2**.
+
+#deq J_1D = dx/dξ = (x_2 - x_1)/2 = L/2
+
+'## §2.3 Caso numérico
+
+x_1 = 0
+x_2 = 4
+L_bar = x_2 - x_1
+J_1D = L_bar/2
+
+#blk
+x_1   ; 'coordenada nodo 1 (m)
+x_2   ; 'coordenada nodo 2 (m)
+L_bar ; 'longitud física
+J_1D  ; 'Jacobiano = L/2
+#end blk
+
+'## §2.4 Integral numérica con J
+
+'La rigidez axial K = EA/L se obtiene integrando B^T·D·B:
+
+#deq K = integral(B^T·D·B; x; 0; L) = integral(B^T·D·B·|J|; ξ; -1; 1)
+
+'En 1D, la matriz B = [-1/L; 1/L] (contiene 1/L que VIENE del Jacobiano).
+'Sin |J| en la integral natural, los resultados saldrían escalados mal.
+
+'Comprobación: ∫₋₁¹ |J| dξ = J · [ξ]₋₁¹ = J · 2 = L (recupera la longitud física).
+
+L_check = 2*J_1D
+'Resultado debe coincidir con L_bar:'L_check =' L_check'm
+
+# §3. Jacobiano 2D — elemento Q4
+
+'Un cuadrilátero con 4 nodos en (xᵢ, yᵢ) se mapea desde un cuadrado
+'unitario natural (ξ, η) ∈ [−1, +1]²:
+
+#svg 720 380
+.rect 0 0 720 380 #fafafa 1 #ccc 1
+.text 360 22 Mapeo_2D_Q4:_(x,y)(ξ,η) 14 black middle bold
+
+'Espacio físico (izquierda) — cuadrilátero distorsionado
+.text 170 60 ESPACIO_FISICO_(x,y) 12 black middle bold
+
+'4 esquinas físicas (cuadrilátero general no rectangular):
+'  N1=(60, 280), N2=(280, 320), N3=(310, 130), N4=(80, 100)
+'Dibujo el polígono con líneas
+.line 60 280 280 320 #b58900 3
+.line 280 320 310 130 #b58900 3
+.line 310 130 80 100 #b58900 3
+.line 80 100 60 280 #b58900 3
+'fill aproximado con un rect rotado no funciona, dejo solo el contorno
+.circle 60 280 7 #c33 1
+.circle 280 320 7 #c33 1
+.circle 310 130 7 #c33 1
+.circle 80 100 7 #c33 1
+.text 50 290 1_(x₁,y₁) 10 black end
+.text 290 330 2_(x₂,y₂) 10 black start
+.text 320 130 3_(x₃,y₃) 10 black start
+.text 70 95 4_(x₄,y₄) 10 black end
+
+'Flecha del mapeo
+.arrow 350 200 470 200 red 3
+.text 410 185 N_i(ξ;η) 13 #c33 middle bold
+.text 410 215 mapeo_inverso 10 #c33 middle italic
+
+'Espacio natural (derecha) — cuadrado unitario perfecto
+.text 580 60 ESPACIO_NATURAL_(ξ,η) 12 black middle bold
+.rect 500 130 160 160 #b3d9ff 0.3 #0d47a1 3
+.circle 500 290 7 #c33 1
+.circle 660 290 7 #c33 1
+.circle 660 130 7 #c33 1
+.circle 500 130 7 #c33 1
+.text 490 305 (-1,-1) 9 black end
+.text 670 305 (+1,-1) 9 black start
+.text 670 125 (+1,+1) 9 black start
+.text 490 125 (-1,+1) 9 black end
+.text 580 220 cuadrado_unitario 11 black middle italic
+
+'ejes ξ, η
+.arrow 660 290 700 290 #888 2
+.text 705 295 ξ 12 #888 start bold
+.arrow 500 130 500 90 #888 2
+.text 495 85 η 12 #888 end bold
+#end svg
+
+'## §3.1 Funciones de forma Q4
+
+'Cuatro funciones bilineales:
+
+#deq N_1(ξ; η) = (1-ξ)·(1-η)/4
+#deq N_2(ξ; η) = (1+ξ)·(1-η)/4
+#deq N_3(ξ; η) = (1+ξ)·(1+η)/4
+#deq N_4(ξ; η) = (1-ξ)·(1+η)/4
+
+'Verificación simbólica de partición de unidad:
+
+#sym (1-ξ)*(1-η)/4 + (1+ξ)*(1-η)/4 + (1+ξ)*(1+η)/4 + (1-ξ)*(1+η)/4
+
+'## §3.2 Mapeo isoparamétrico
+
+#deq x(ξ; η) = N_1·x_1 + N_2·x_2 + N_3·x_3 + N_4·x_4
+#deq y(ξ; η) = N_1·y_1 + N_2·y_2 + N_3·y_3 + N_4·y_4
+
+'## §3.3 Matriz Jacobiana 2x2
+
+'Por la regla de la cadena, las derivadas de cualquier función se relacionan:
+
+#deq [∂N/∂ξ ; ∂N/∂η] = [∂x/∂ξ ; ∂y/∂ξ | ∂x/∂η ; ∂y/∂η] · [∂N/∂x ; ∂N/∂y]
+
+'La matriz que aparece es el **JACOBIANO**:
+
+#deq J = [∂x/∂ξ ; ∂y/∂ξ | ∂x/∂η ; ∂y/∂η]
+
+'Sus 4 componentes se calculan aplicando ∂/∂ξ y ∂/∂η a x(ξ;η) e y(ξ;η):
+
+#deq ∂x/∂ξ = (-N_1·x_1 + N_2·x_2 + N_3·x_3 - N_4·x_4) (con factores 1±η)/4
+#deq ∂y/∂η = (-N_1·y_1 - N_2·y_2 + N_3·y_3 + N_4·y_4) (con factores 1±ξ)/4
+
+'## §3.4 Caso numérico — cuadrilátero rectangular axis-aligned
+
+'Para simplificar, tomamos un rectángulo a×b alineado con los ejes:
+'  Nodo 1 = (0, 0), Nodo 2 = (a, 0), Nodo 3 = (a, b), Nodo 4 = (0, b).
+
+a_rect = 4
+b_rect = 3
+
+'Para este caso particular el mapeo es lineal y SEPARABLE:
+
+#deq x(ξ) = a/2·(ξ + 1)
+#deq y(η) = b/2·(η + 1)
+
+'El Jacobiano queda **DIAGONAL** y constante:
+
+#deq J = [a/2 ; 0 | 0 ; b/2]
+
+J_2D = [a_rect/2; 0 | 0; b_rect/2]
+J_2D
+
+'## §3.5 Determinante y área
+
+'Para cualquier Q4:
+
+#deq det(J) = ∂x/∂ξ · ∂y/∂η - ∂x/∂η · ∂y/∂ξ
+
+'En el rectángulo:
+
+#deq det(J) = (a/2)·(b/2) - 0·0 = a·b/4
+
+det_J = a_rect*b_rect/4
+
+'**Significado físico:** det(J) es el factor de escala del área —
+'1 unidad de área en el espacio natural (dξ·dη) ocupa det(J) unidades
+'en el espacio físico (dx·dy):
+
+#deq dA_físico = dx·dy = det(J)·dξ·dη
+
+'Verificación: el área total física debe ser a·b.
+
+A_natural = 4
+A_fisica_check = det_J*A_natural
+
+#blk
+a_rect           ; 'lado X del rectángulo
+b_rect           ; 'lado Y del rectángulo
+det_J            ; 'det(J) = a·b/4
+A_natural        ; 'área del cuadrado natural [-1,1]² = 4
+A_fisica_check   ; 'det(J) · A_natural = a·b ✓
+#end blk
+
+'## §3.6 Integración por Gauss usando el Jacobiano
+
+'Una integral en el dominio físico se transforma así:
+
+#deq integral(integral(f(x;y); x; 0; a); y; 0; b) = integral(integral(f(x(ξ;η);y(ξ;η))·det(J); ξ; -1; 1); η; -1; 1)
+
+'En FEM la cuadratura de Gauss aproxima la integral natural:
+
+#deq K_e = Σᵢ Σⱼ B^T·D·B·det(J(ξᵢ; ηⱼ))·wᵢ·wⱼ
+
+'donde (ξᵢ, ηⱼ) son los puntos de Gauss y wᵢ los pesos.
+
+'Para Q4 con integración 2×2 Gauss:
+
+ξ_g = 1/sqrt(3)
+w_g = 1.0
+
+#blk
+ξ_g  ; 'coordenada de Gauss = 1/√3 ≈ 0.5774
+w_g  ; 'peso de Gauss (4 puntos × peso 1 = 4)
+#end blk
+
+# §4. Resumen visual — comparación 1D vs 2D
+
+#svg 720 280
+.rect 0 0 720 280 #fff8e1 1 #d4a017 1
+.text 360 22 Resumen_Jacobiano_1D_vs_2D 14 black middle bold
+
+'Cabeceras
+.rect 30 50 320 220 #ffe699 0.5 #b58900 2
+.rect 370 50 320 220 #b3d9ff 0.4 #0d47a1 2
+.text 190 70 1D_(barra) 14 black middle bold
+.text 530 70 2D_(Q4) 14 black middle bold
+
+'1D
+.text 190 100 J_es_un_ESCALAR 12 black middle
+.text 190 125 J_=_L/2 13 #c33 middle bold
+.text 190 155 |J|_=_L/2 11 black middle
+.text 190 185 dx_=_(L/2)·dξ 11 black middle
+.text 190 215 ∫f_dx_=_∫f·(L/2)_dξ 11 black middle italic
+.text 190 245 (factor_de_estiramiento) 10 #555 middle
+
+'2D
+.text 530 100 J_es_una_MATRIZ_2x2 12 black middle
+.text 530 125 det(J)_=_∂x/∂ξ·∂y/∂η_-_∂x/∂η·∂y/∂ξ 10 #c33 middle bold
+.text 530 155 det(J)_=_a·b/4_(rectángulo) 11 black middle
+.text 530 185 dA_=_det(J)·dξ·dη 11 black middle
+.text 530 215 ∫∫f_dA_=_∫∫f·det(J)_dξ_dη 11 black middle italic
+.text 530 245 (factor_de_estiramiento_de_área) 10 #555 middle
+#end svg
+
+# §5. Cierre
+
+'**Tres cosas que recordar del Jacobiano:**
+'
+'1. Es la "tasa de cambio" entre coordenadas físicas y naturales.
+'2. En 1D es el escalar L/2; en 2D es una matriz 2x2 cuyo determinante
+'   da el factor de área.
+'3. **Sin él la integración numérica daría resultados con dimensiones
+'   equivocadas** — todas las integrales en el espacio natural deben
+'   multiplicarse por |J| (1D) o det(J) (2D/3D) para recuperar el
+'   significado físico correcto.
+'
+'En la implementación FEM (C++/Python/MATLAB) el Jacobiano se calcula
+'en cada punto de Gauss porque para elementos distorsionados depende
+'de (ξ, η). Para elementos rectangulares es constante y se puede
+'pre-calcular una sola vez.
