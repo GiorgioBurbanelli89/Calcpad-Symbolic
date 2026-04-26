@@ -122,6 +122,118 @@ with Greek letters and subscripts, integrals, matrices, `#sym`, `#inl`,
 `$Integral`, `$Derivative`, `$Root`, `$Find`, cell arrays, units,
 conversions). Renders with **0 errors**.
 
+#### 🆕 v1.3.2 — `$DrawStruct` con primitivas de mecánica
+
+Alias de `$Struct` (ambos nombres funcionan) — utility de **dibujo**
+estructural con primitivas pre-renderizadas estilo libro de texto.
+**No calcula nada**, solo dibuja. Para análisis usar `#sym`/`#deq`/`lsolve`.
+
+Primitivas:
+- **Estructurales:** `spring` (zigzag auto), `bar` (con hatches),
+  `beam`, **`damper`** (cilindro pistón, nuevo), **`mass`** (rectángulo
+  amarillo con borde grueso, nuevo), **`wall`** (línea + hatches, nuevo)
+- **Apoyos:** `fixed`, `pin`, `roller`
+- **Cargas:** `force` (flecha SALE del nodo, no entra),
+  `moment` (arco curvo)
+- **Anotación:** `node`, `label`, `dim`
+
+Ejemplo masa-resorte 1 GDL completo:
+
+```
+$DrawStruct{
+  fixed,0,0
+  : spring,0,0,4,0,k=1000
+  : mass,4.6,0,0.7,m
+  : force,5.0,0,right,F(t)
+  : dim,0,-1,5,-1,L_total
+  @ title=Masa-resorte 1 GDL : w=700 : h=260
+}
+```
+
+Sistema masa-resorte-amortiguador (k y c en paralelo):
+
+```
+$DrawStruct{
+  fixed,0,0
+  : spring,0,0.5,4,0.5,k
+  : damper,0,-0.5,4,-0.5,c
+  : mass,4.6,0,0.7,m
+  : force,5.0,0,right,F(t)
+  @ title=Masa-resorte-amortiguador : w=750 : h=320
+}
+```
+
+Ver `Examples/Tests/test_GRAFICAS_DRAW.cpd` para 11 ejemplos
+(funciones 1D, mapas 2D, charts, masa-resorte, viga simple, pórtico).
+
+#### 🆕 v1.3.2 — `#svg` para diagramas didácticos con flujo de control
+
+Bloque `#svg <w> <h>` ... `#end svg` con primitivas píxel-por-píxel:
+
+- `.rect x y w h fillColor fillOpacity strokeColor strokeWidth`
+- `.line x1 y1 x2 y2 color width`
+- `.circle x y r color`
+- `.arrow x1 y1 x2 y2 color width`
+- `.text x y label size color align [style]`
+- `.arc x y r startAngle endAngle color width`
+
+Soporta variables Calcpad y **estructuras de control** (`#for`, `#if`)
+dentro del bloque. Ejemplo de zigzag con loop:
+
+```
+#svg 480 160
+.rect 0 0 480 160 #f5f5f5 1 #888 1
+#for k = 0 : 12
+    x1 = 60 + k*20
+    y1 = 80 + 20*(-1)^k
+    x2 = 60 + (k+1)*20
+    y2 = 80 + 20*(-1)^(k+1)
+    .line x1 y1 x2 y2 #555 2.5
+#loop
+#end svg
+```
+
+Cuándo usar cada uno:
+
+| Querés... | Usá |
+|---|---|
+| Esquema estructural ya hecho (resorte, masa, viga, apoyo, fuerza) | `$DrawStruct{...}` |
+| Diagrama didáctico con control píxel-por-píxel | `#svg ... #end svg` |
+| CAD interactivo con pan/zoom | `$Draw{...}` |
+| Funciones / vectores / curvas | `$Plot`, `$Map`, `$Chart` |
+
+Ejemplos relacionados — los archivos FEA refactorizados a `#svg` con `#for`/`#if`:
+- `Examples/Mechanics/Finite Elements/Rectangular Slab FEA.cpd`
+- `Examples/Mechanics/Finite Elements/Flat Slab FEA.cpd`
+- `Examples/Mechanics/Finite Elements/Deep Beam FEA.cpd`
+
+#### 🆕 v1.3.3 — Truncado agresivo de vectores y matrices largos
+
+`MathSettings.MaxOutputCount` ahora tiene **default 5** (antes 20).
+Vectores/matrices con más elementos se truncan automáticamente:
+
+- Vectores **siempre horizontales** cuando son largos (antes una columna
+  de 200 elementos generaba 200 líneas verticales que se salían del
+  margen y saltaban de página)
+- Truncado: muestra los primeros 5 + `⋯` + el **último** elemento, con
+  tooltip `"N elementos saltados (vector de M elementos)"`
+- Matrices: filas con `⋮`, columnas con `⋯`, esquina con `⋱`
+
+```
+                            antes (maxCount=20)    ahora (maxCount=5)
+v_5    (5 elementos)         completo               completo
+v_15   (15)                  completo               5 + ⋯ + último
+v_50   (50)                  20 + ⋯ + último        5 + ⋯ + último
+v_200  (200)                 20 + ⋯ + último        5 + ⋯ + último
+M_50×50                      20×20 + ⋮⋯              5×5 + ⋮⋯
+```
+
+Cualquier vector ≥ 6 ocupa exactamente la misma altura visual, sin
+importar si tiene 6 o 6 millones de elementos. Configurable entre 5 y
+100 desde Settings → MaxOutputCount si necesitás ver más detalle.
+
+Ver `Examples/Tests/test_vectores_largos.cpd`.
+
 ### 5c. Cell Arrays — `cells(n)` (Matlab-style)
 
 Store multiple matrices in a single indexed container. Natively integrated with `#for` loops for FEM element assembly workflows.
