@@ -9007,10 +9007,10 @@ camera.lookAt(0, Np*Hp/2, 0);
 <p>Para un Q4 bilineal (la base más usada en placas), las **4 funciones</p>
 <p>de forma bilineales** se definen así:</p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=34 --><p><span class="eq"><var>N</var><sub>1</sub>(<var>ξ</var>, <var>η</var>) = <var>(1 - ξ)·(1 - η)/4</var></span></p>
-<!-- FORMEQ CALLED: len=34 --><p><span class="eq"><var>N</var><sub>2</sub>(<var>ξ</var>, <var>η</var>) = <var>(1 + ξ)·(1 - η)/4</var></span></p>
-<!-- FORMEQ CALLED: len=34 --><p><span class="eq"><var>N</var><sub>3</sub>(<var>ξ</var>, <var>η</var>) = <var>(1 + ξ)·(1 + η)/4</var></span></p>
-<!-- FORMEQ CALLED: len=34 --><p><span class="eq"><var>N</var><sub>4</sub>(<var>ξ</var>, <var>η</var>) = <var>(1 - ξ)·(1 + η)/4</var></span></p>
+<!-- FORMEQ CALLED: len=34 --><p><span class="eq"><var>N</var><sub>1</sub>(<var>ξ</var>, <var>η</var>) = <span class="dvc">&nbsp;(&nbsp;1 &minus; <var>ξ</var>&nbsp;)&nbsp; · &nbsp;(&nbsp;1 &minus; <var>η</var>&nbsp;)&nbsp;<span class="dvl"></span>4</span></span></p>
+<!-- FORMEQ CALLED: len=34 --><p><span class="eq"><var>N</var><sub>2</sub>(<var>ξ</var>, <var>η</var>) = <span class="dvc">&nbsp;(&nbsp;1 + <var>ξ</var>&nbsp;)&nbsp; · &nbsp;(&nbsp;1 &minus; <var>η</var>&nbsp;)&nbsp;<span class="dvl"></span>4</span></span></p>
+<!-- FORMEQ CALLED: len=34 --><p><span class="eq"><var>N</var><sub>3</sub>(<var>ξ</var>, <var>η</var>) = <span class="dvc">&nbsp;(&nbsp;1 + <var>ξ</var>&nbsp;)&nbsp; · &nbsp;(&nbsp;1 + <var>η</var>&nbsp;)&nbsp;<span class="dvl"></span>4</span></span></p>
+<!-- FORMEQ CALLED: len=34 --><p><span class="eq"><var>N</var><sub>4</sub>(<var>ξ</var>, <var>η</var>) = <span class="dvc">&nbsp;(&nbsp;1 &minus; <var>ξ</var>&nbsp;)&nbsp; · &nbsp;(&nbsp;1 + <var>η</var>&nbsp;)&nbsp;<span class="dvl"></span>4</span></span></p>
 <p>&nbsp;</p>
 <p><strong>Verificación simbólica</strong> — la suma debe valer <strong>1</strong> (partición de la unidad):</p>
 <p>&nbsp;</p>
@@ -9209,12 +9209,12 @@ board.create('text', [0.3, 5.5,
 <p>&nbsp;</p>
 <p>Funciones de forma 1D:</p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=23 --><p><span class="eq"><var>N</var><sub>1</sub>(<var>ξ</var>) = <var>(1 - ξ)/2</var></span></p>
-<!-- FORMEQ CALLED: len=23 --><p><span class="eq"><var>N</var><sub>2</sub>(<var>ξ</var>) = <var>(1 + ξ)/2</var></span></p>
+<!-- FORMEQ CALLED: len=23 --><p><span class="eq"><var>N</var><sub>1</sub>(<var>ξ</var>) = <span class="dvc">&nbsp;(&nbsp;1 &minus; <var>ξ</var>&nbsp;)&nbsp;<span class="dvl"></span>2</span></span></p>
+<!-- FORMEQ CALLED: len=23 --><p><span class="eq"><var>N</var><sub>2</sub>(<var>ξ</var>) = <span class="dvc">&nbsp;(&nbsp;1 + <var>ξ</var>&nbsp;)&nbsp;<span class="dvl"></span>2</span></span></p>
 <p>&nbsp;</p>
 <p>Mapeo isoparamétrico:</p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=63 --><p><span class="eq"><var>x</var>(<var>ξ</var>) = <var>N</var><sub>1</sub> · <var>ξ</var> · <var>x</var><sub>1</sub> + <var>N</var><sub>2</sub> · <var>ξ</var> · <var>x</var><sub>2</sub> = <var>(1-ξ)/2·x</var><sub>1</sub> + <var>(1+ξ)/2·x</var><sub>2</sub></span></p>
+<!-- FORMEQ CALLED: len=63 --><p><span class="eq"><var>x</var>(<var>ξ</var>) = <var>N</var><sub>1</sub> · <var>ξ</var> · <var>x</var><sub>1</sub> + <var>N</var><sub>2</sub> · <var>ξ</var> · <var>x</var><sub>2</sub> = <span class="dvc">&nbsp;(&nbsp;1 &minus; <var>ξ</var>&nbsp;)&nbsp;<span class="dvl"></span>2 · <var>x</var><sub>1</sub></span> + <span class="dvc">&nbsp;(&nbsp;1 + <var>ξ</var>&nbsp;)&nbsp;<span class="dvl"></span>2 · <var>x</var><sub>2</sub></span></span></p>
 <p>&nbsp;</p>
 <p><strong>Cálculo simbólico del Jacobiano:</strong></p>
 <p>&nbsp;</p>
@@ -9222,7 +9222,7 @@ board.create('text', [0.3, 5.5,
 <p>&nbsp;</p>
 <p>Resultado: J = 2 (escalar). Como L = 4, el Jacobiano es L/2 = 2 ✓</p>
 <p>&nbsp;</p>
-<!-- FORMEQ CALLED: len=39 --><p><span class="eq"><var>J</var><sub>1D</sub> = <span class="dvc"><i>d</i><var>x</var><span class="dvl"></span><i>d</i><var>ξ</var></span> = <var>(x</var><sub>2 - x_1)/2</sub> = <span class="dvc"><var>L</var><span class="dvl"></span>2</span></span></p>
+<!-- FORMEQ CALLED: len=39 --><p><span class="eq"><var>J</var><sub>1D</sub> = <span class="dvc"><i>d</i><var>x</var><span class="dvl"></span><i>d</i><var>ξ</var></span> = <span class="dvc">&nbsp;(&nbsp;<var>x</var><sub>2</sub> &minus; <var>x</var><sub>1</sub>&nbsp;)&nbsp;<span class="dvl"></span>2</span> = <span class="dvc"><var>L</var><span class="dvl"></span>2</span></span></p>
 <p>&nbsp;</p>
 <p><span class="eq"><var>J</var><sub>1D</sub> = <span class="dvc"><var>L</var><sub>bar</sub><span class="dvl"></span>2</span> = <span class="dvc">4<span class="dvl"></span>2</span> = 2</span></p>
 <p>&nbsp;</p>

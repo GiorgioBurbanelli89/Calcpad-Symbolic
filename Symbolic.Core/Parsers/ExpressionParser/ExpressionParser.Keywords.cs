@@ -2074,15 +2074,27 @@ namespace Calcpad.Core
         }
 
         /// <summary>True if s contains a '+' or '-' at top-level (outside [](), depth=0) past position 0.</summary>
+        /// <remarks>
+        /// FIX: el loop arrancaba en i=1 (para saltar el signo unario inicial
+        /// como "-x + y") pero también saltaba el '(' inicial de "(1 - ξ)/2",
+        /// dejando depth=0 cuando se procesaba el '-'. Resultado: reportaba
+        /// top-level add/sub falso y RenderDeqScalar entraba en recursión
+        /// infinita hasta el depth-guard que caía a DeqRenderVar — el RHS
+        /// quedaba como "&lt;var&gt;(1 - ξ)/2&lt;/var&gt;" en texto plano.
+        /// Ahora contamos depth desde i=0 y solo NO-evaluamos el carácter
+        /// como operador cuando es signo unario (+/-) en posición 0.
+        /// </remarks>
         private static bool HasTopLevelAddSub(string s)
         {
             int depth = 0;
-            for (int i = 1; i < s.Length; i++)  // skip leading sign
+            for (int i = 0; i < s.Length; i++)
             {
                 var c = s[i];
-                if (c == '(' || c == '[') depth++;
-                else if (c == ')' || c == ']') depth--;
-                else if ((c == '+' || c == '-') && depth == 0)
+                if (c == '(' || c == '[') { depth++; continue; }
+                if (c == ')' || c == ']') { depth--; continue; }
+                // i==0 con '+' o '-' es signo unario, no operador top-level
+                if (i == 0 && (c == '+' || c == '-')) continue;
+                if ((c == '+' || c == '-') && depth == 0)
                 {
                     // Not an exponent sign like 1e-3
                     if (i > 0 && (s[i - 1] == 'e' || s[i - 1] == 'E')) continue;
