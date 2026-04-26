@@ -234,6 +234,78 @@ importar si tiene 6 o 6 millones de elementos. Configurable entre 5 y
 
 Ver `Examples/Tests/test_vectores_largos.cpd`.
 
+#### 🆕 v1.4 — 9 directivas web sin escribir HTML
+
+El parser ahora tiene 9 bloques de visualización web. El usuario escribe
+DSL puro (JSON, JS, LaTeX, DOT) entre `#<libreria>` ... `#end <libreria>`
+y el parser inyecta automáticamente el `<div>`, el script de la lib desde
+CDN (una sola vez por documento) y el wrapping JS necesario.
+
+**SIN escribir ningún `<>` HTML.**
+
+| Directiva | Librería | CDN | Para qué |
+|---|---|---|---|
+| `#plotly` | Plotly.js 2.35 | cdn.plot.ly | Gráficas científicas interactivas (3D surface, scatter, contour, hover, zoom) |
+| `#three` | Three.js 0.160 | unpkg | 3D real con OrbitControls (modelos estructurales rotables) |
+| `#mermaid` | Mermaid 10 | jsdelivr | Diagramas (flowchart, sequence, gantt, classDiagram, gitGraph, pie) |
+| `#canvas` | HTML5 nativo | — | Dibujo 2D directo con `ctx`, sin librería externa |
+| `#cyto` | Cytoscape 3 | unpkg | Grafos científicos (sparsity de matrices, networks de nodos) |
+| `#dot` | Graphviz (viz-js) | unpkg | Diagramas declarativos en sintaxis DOT |
+| `#jsx` | JSXGraph 1.10 | jsdelivr | Geometría dinámica (puntos arrastrables, áreas reactivas) |
+| `#map` | Leaflet 1.9 | unpkg | Mapas geográficos (PGA hazard, ubicación de proyectos) |
+| `#math` | KaTeX 0.16 | jsdelivr | LaTeX completo con `\boxed`, `\frac`, matrices, integrales |
+
+**Sintaxis común:**
+```
+#<libreria> [W] [H]
+   ... contenido (DSL/JSON/JS/LaTeX según librería) ...
+#end <libreria>
+```
+
+**Ejemplos rápidos:**
+
+```
+#plotly
+{ data: [{x:[1,2,3], y:[4,5,6], type:'scatter'}], layout: {title:'demo'} }
+#end plotly
+
+#mermaid
+flowchart TD
+  D[DEAD] --> C1[1.4D]
+  D --> C2[1.2D + 1.6L]
+#end mermaid
+
+#dot
+digraph G { rankdir=LR; A -> B [label="x"]; B -> C; }
+#end dot
+
+#math
+\frac{\partial^4 w}{\partial x^4} + 2\frac{\partial^4 w}{\partial x^2\partial y^2} + \frac{\partial^4 w}{\partial y^4} = \frac{q}{D}
+#end math
+
+#three
+const cube = new THREE.Mesh(
+    new THREE.BoxGeometry(2,2,2),
+    new THREE.MeshStandardMaterial({color:0xffd966}));
+scene.add(cube);
+camera.position.set(5,5,5);
+scene.add(new THREE.AmbientLight(0xffffff,1));
+#end three
+```
+
+**Notas técnicas:**
+- Los operadores ASCII (`<=`, `>=`, `==`, `!=`) que el lexer de Calcpad
+  normalmente sustituye a Unicode (`≤`, `≥`, `≡`, `≢`) son **revertidos
+  automáticamente** dentro de los bloques web — sin esto el JS quedaría roto.
+- Three.js usa **importmap** inyectado para resolver el bare specifier
+  `'three'` (necesario para que OrbitControls funcione).
+- Para abrir un HTML generado, usar `http://` (file:// bloquea iframes
+  y módulos por seguridad). Ej: `python -m http.server 8000`.
+
+Ver tests:
+- `Examples/Tests/test_GRAFICAS_WEB.cpd` — Plotly + Three + Mermaid + Canvas
+- `Examples/Tests/test_GRAFICAS_WEB_2.cpd` — Cyto + Dot + Jsx + Map + Math
+
 ### 5c. Cell Arrays — `cells(n)` (Matlab-style)
 
 Store multiple matrices in a single indexed container. Natively integrated with `#for` loops for FEM element assembly workflows.

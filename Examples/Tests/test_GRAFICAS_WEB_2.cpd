@@ -1,0 +1,137 @@
+#margen 20
+#md on
+"Test — 5 directivas web nuevas (#cyto, #dot, #jsx, #map, #math)
+
+# §1. Cytoscape — sparsity de matriz K
+
+'Útil para visualizar conectividad de una matriz de rigidez global.
+'Cada nodo es un grado de libertad, cada arista una entrada no-cero.
+
+#cyto 700 400
+{
+  elements: [
+    {data:{id:'1'}}, {data:{id:'2'}}, {data:{id:'3'}},
+    {data:{id:'4'}}, {data:{id:'5'}}, {data:{id:'6'}},
+    {data:{id:'12', source:'1', target:'2'}},
+    {data:{id:'23', source:'2', target:'3'}},
+    {data:{id:'14', source:'1', target:'4'}},
+    {data:{id:'25', source:'2', target:'5'}},
+    {data:{id:'36', source:'3', target:'6'}},
+    {data:{id:'45', source:'4', target:'5'}},
+    {data:{id:'56', source:'5', target:'6'}}
+  ],
+  style: [
+    {selector:'node', style:{
+      label:'data(id)',
+      'background-color':'#1f77b4',
+      'color':'white',
+      'text-valign':'center',
+      'text-halign':'center',
+      'width':30, 'height':30
+    }},
+    {selector:'edge', style:{
+      'width':2,
+      'line-color':'#888',
+      'curve-style':'bezier'
+    }}
+  ],
+  layout: {name:'cose', padding:30}
+}
+#end cyto
+
+# §2. Graphviz DOT — flujo de cálculo FEM
+
+#dot 700 400
+digraph G {
+  rankdir=LR;
+  node [shape=box, style=rounded, fontname="Arial"];
+
+  Geo [label="Geometría\\n(nodos + elementos)"];
+  Mat [label="Material\\n(E, ν, ρ)"];
+  Q [label="Cargas q"];
+  K [label="Matriz K", style="rounded,filled", fillcolor=lightblue];
+  F [label="Vector F", style="rounded,filled", fillcolor=lightgreen];
+  Solver [label="K·u = F", style="rounded,filled", fillcolor=gold];
+  U [label="Desplaz. u"];
+  Sigma [label="σ = D·B·u", style="rounded,filled", fillcolor=lightcoral];
+
+  Geo -> K;
+  Mat -> K;
+  Q -> F;
+  Geo -> F;
+  K -> Solver;
+  F -> Solver;
+  Solver -> U;
+  U -> Sigma;
+}
+#end dot
+
+# §3. JSXGraph — geometría dinámica del Q4
+
+'Mové los puntos A, B, C, D con el mouse y mirá cómo cambia el área
+'del cuadrilátero.
+
+#jsx 500 500
+const board = JXG.JSXGraph.initBoard(JSXBOARD, {
+    boundingbox: [-1, 6, 6, -1],
+    axis: true,
+    showCopyright: false,
+    showNavigation: false
+});
+
+const A = board.create('point', [0, 0], {name:'A', size:5, color:'#c33'});
+const B = board.create('point', [4, 0.5], {name:'B', size:5, color:'#c33'});
+const C = board.create('point', [4.5, 4], {name:'C', size:5, color:'#c33'});
+const D = board.create('point', [0.5, 3.5], {name:'D', size:5, color:'#c33'});
+
+board.create('polygon', [A, B, C, D], {
+    fillColor: '#ffd966',
+    fillOpacity: 0.4,
+    borderColor: '#b58900',
+    borderWidth: 2
+});
+
+const area = board.create('text', [0.5, 5.5,
+    () => 'Área = ' + Math.abs(0.5*((A.X()-C.X())*(B.Y()-D.Y()) - (B.X()-D.X())*(A.Y()-C.Y()))).toFixed(3)
+], {fontSize: 16, color:'#0d47a1'});
+#end jsx
+
+# §4. Leaflet — mapa de la ubicación del proyecto (Quito)
+
+#map 700 400
+const map = L.map(MAPID).setView([-0.180653, -78.467838], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 18
+}).addTo(map);
+
+L.marker([-0.180653, -78.467838]).addTo(map)
+  .bindPopup('<b>Quito - Centro</b><br>Proyecto edificio aporticado<br>PGA = 0.40g (NEC zona V)')
+  .openPopup();
+
+L.circle([-0.180653, -78.467838], {
+    color: 'red', fillColor: '#f03', fillOpacity: 0.2, radius: 1500
+}).addTo(map).bindPopup('Zona de influencia del proyecto');
+#end map
+
+# §5. KaTeX — fórmulas LaTeX completas (más potente que #deq)
+
+#math
+\frac{\partial^2 w}{\partial x^2} + 2\frac{\partial^4 w}{\partial x^2 \partial y^2} + \frac{\partial^4 w}{\partial y^4} = \frac{q(x,y)}{D}
+M_{ij} = -D \left[ \begin{array}{ccc} 1 & \nu & 0 \\ \nu & 1 & 0 \\ 0 & 0 & \frac{1-\nu}{2} \end{array} \right] \begin{bmatrix} \kappa_x \\ \kappa_y \\ \kappa_{xy} \end{bmatrix}
+\boxed{T = 2\pi\sqrt{\frac{m}{k}}}
+\sum_{i=1}^{N} F_i \cdot u_i = \int_\Omega \boldsymbol{\sigma}:\boldsymbol{\varepsilon}\,\mathrm{d}\Omega
+#end math
+
+# Cierre
+
+'**5 directivas nuevas implementadas:**
+'
+'- `#cyto`   ← Cytoscape, grafos científicos (sparsity, networks)
+'- `#dot`    ← Graphviz, diagramas declarativos DOT
+'- `#jsx`    ← JSXGraph, geometría dinámica interactiva
+'- `#map`    ← Leaflet, mapas geográficos
+'- `#math`   ← KaTeX, LaTeX completo con `\boxed`, matrices, etc.
+'
+'**Junto con las 4 anteriores (#plotly, #three, #mermaid, #canvas)
+'el parser tiene 9 directivas web sin que el user escriba `<>`.**

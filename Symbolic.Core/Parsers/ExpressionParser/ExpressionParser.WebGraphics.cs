@@ -18,7 +18,15 @@ namespace Calcpad.Core
 {
     public partial class ExpressionParser
     {
-        internal enum WebGraphicKind { Plotly, Three, Mermaid, Canvas }
+        internal enum WebGraphicKind {
+            Plotly, Three, Mermaid, Canvas,
+            // Fase 2:
+            Cyto,    // Cytoscape — grafos científicos (sparsity de matrices)
+            Dot,     // Graphviz vía viz.js — grafos declarativos DOT
+            Jsx,     // JSXGraph — geometría dinámica interactiva
+            Map,     // Leaflet — mapas geográficos
+            Math     // KaTeX — fórmulas LaTeX completas
+        }
 
         // Estado del bloque activo
         internal bool _insideWebGraphicBlock;
@@ -101,6 +109,11 @@ namespace Calcpad.Core
                     WebGraphicKind.Three => RenderThree(content),
                     WebGraphicKind.Mermaid => RenderMermaid(content),
                     WebGraphicKind.Canvas => RenderCanvas(content),
+                    WebGraphicKind.Cyto => RenderCyto(content),
+                    WebGraphicKind.Dot => RenderDot(content),
+                    WebGraphicKind.Jsx => RenderJsx(content),
+                    WebGraphicKind.Map => RenderMap(content),
+                    WebGraphicKind.Math => RenderMath(content),
                     _ => ""
                 };
                 _sb.Append(html);
@@ -318,8 +331,207 @@ namespace Calcpad.Core
 
                 WebGraphicKind.Canvas => "",   // API nativa, no requiere lib
 
+                WebGraphicKind.Cyto =>
+                    "<script src=\"https://unpkg.com/cytoscape@3/dist/cytoscape.min.js\"></script>\n",
+
+                WebGraphicKind.Dot =>
+                    // viz-js es Graphviz compilado a WASM, ~2MB pero render
+                    // de DOT bonito y rápido.
+                    "<script type=\"module\">\n" +
+                    "import { instance } from 'https://unpkg.com/@viz-js/viz@3.7.0/lib/viz-standalone.mjs';\n" +
+                    "window.__vizPromise = instance();\n" +
+                    "</script>\n",
+
+                WebGraphicKind.Jsx =>
+                    "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/jsxgraph@1.10.0/distrib/jsxgraph.css\">\n" +
+                    "<script src=\"https://cdn.jsdelivr.net/npm/jsxgraph@1.10.0/distrib/jsxgraphcore.min.js\"></script>\n",
+
+                WebGraphicKind.Map =>
+                    "<link rel=\"stylesheet\" href=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css\">\n" +
+                    "<script src=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js\"></script>\n",
+
+                WebGraphicKind.Math =>
+                    "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css\">\n" +
+                    "<script src=\"https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js\"></script>\n",
+
                 _ => ""
             };
+        }
+
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: Cytoscape — grafos científicos (sparsity matrix, networks)
+        //   #cyto 700 500
+        //   {
+        //     elements: [
+        //       {data:{id:'a'}}, {data:{id:'b'}}, {data:{id:'c'}},
+        //       {data:{id:'ab', source:'a', target:'b'}}
+        //     ],
+        //     style: [{selector:'node', style:{label:'data(id)'}}],
+        //     layout: {name:'cose'}
+        //   }
+        //   #end cyto
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderCyto(string content)
+        {
+            var id = $"cyto_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;height:{_webGraphicHeight}px;");
+            sb.Append("border:1px solid #ccc;background:#fafafa\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Cyto));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append("  var spec = ").Append(content.Trim()).Append(";\n");
+            sb.Append($"  spec.container = document.getElementById('{id}');\n");
+            sb.Append("  cytoscape(spec);\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: Graphviz DOT
+        //   #dot 600 400
+        //   digraph G {
+        //     rankdir=LR;
+        //     A -> B [label="x"];
+        //     B -> C;
+        //   }
+        //   #end dot
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderDot(string content)
+        {
+            var id = $"dot_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"max-width:{_webGraphicWidth}px;text-align:center\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Dot));
+            sb.Append("<script type=\"module\">\n");
+            sb.Append("(async function(){\n");
+            sb.Append("  const viz = await window.__vizPromise;\n");
+            sb.Append($"  const dot = ").Append(JsString(content)).Append(";\n");
+            sb.Append($"  const el = document.getElementById('{id}');\n");
+            sb.Append("  el.appendChild(viz.renderSVGElement(dot));\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: JSXGraph — geometría dinámica
+        //   #jsx 500 500
+        //     const board = JXG.JSXGraph.initBoard('JSXBOARD', {
+        //         boundingbox:[-5,5,5,-5], axis:true});
+        //     const A = board.create('point',[1,2],{name:'A'});
+        //     const B = board.create('point',[3,4],{name:'B'});
+        //     const seg = board.create('segment',[A,B]);
+        //   #end jsx
+        //
+        // El parser inyecta 'JSXBOARD' como el id del board del user.
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderJsx(string content)
+        {
+            var id = $"jsx_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" class=\"jxgbox\" style=\"width:{_webGraphicWidth}px;");
+            sb.Append($"height:{_webGraphicHeight}px;border:1px solid #ccc\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Jsx));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append($"  const JSXBOARD = '{id}';\n");
+            sb.Append("  // ─ user code ─\n");
+            sb.Append(content);
+            sb.Append("\n  // ─ end user code ─\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: Leaflet — mapas geográficos
+        //   #map 600 400
+        //     const map = L.map(MAPID).setView([-0.18, -78.47], 12);
+        //     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        //                 {attribution:'OSM'}).addTo(map);
+        //     L.marker([-0.18, -78.47]).addTo(map).bindPopup('Quito');
+        //   #end map
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderMap(string content)
+        {
+            var id = $"map_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;height:{_webGraphicHeight}px;");
+            sb.Append("border:1px solid #ccc\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Map));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append($"  const MAPID = '{id}';\n");
+            sb.Append("  // ─ user code ─\n");
+            sb.Append(content);
+            sb.Append("\n  // ─ end user code ─\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: KaTeX — LaTeX puro a math display
+        //   #math
+        //     \frac{\partial^2 w}{\partial x^2} + \frac{\partial^2 w}{\partial y^2} = \frac{q}{D}
+        //   #end math
+        //
+        // Soporta múltiples líneas, cada una se renderiza como display math.
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderMath(string content)
+        {
+            var id = $"math_{++_webGraphicCounter}";
+            var sb = new StringBuilder(1024);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"max-width:{_webGraphicWidth}px;\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Math));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append($"  const el = document.getElementById('{id}');\n");
+            sb.Append($"  const latex = ").Append(JsString(content.Trim())).Append(";\n");
+            sb.Append("  // KaTeX render display: cada línea no vacía es un display math separado.\n");
+            sb.Append("  const lines = latex.split('\\n').filter(l => l.trim().length > 0);\n");
+            sb.Append("  lines.forEach(line => {\n");
+            sb.Append("    const div = document.createElement('div');\n");
+            sb.Append("    div.style.margin = '0.6em 0';\n");
+            sb.Append("    try { katex.render(line, div, {displayMode:true, throwOnError:false}); }\n");
+            sb.Append("    catch(e) { div.textContent = e.message; div.style.color='#c33'; }\n");
+            sb.Append("    el.appendChild(div);\n");
+            sb.Append("  });\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+
+        // Helper: convertir un string C# a literal JS-safe (escape de comillas
+        // y newlines). Usado por los renderers que pasan el contenido como
+        // string a la API JS (Graphviz, KaTeX).
+        private static string JsString(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "\"\"";
+            return "\"" + s
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"")
+                .Replace("\n", "\\n")
+                .Replace("\r", "")
+                + "\"";
         }
     }
 }

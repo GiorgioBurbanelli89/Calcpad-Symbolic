@@ -105,6 +105,11 @@ namespace Calcpad.Core
                             WebGraphicKind.Three => "#end three",
                             WebGraphicKind.Mermaid => "#end mermaid",
                             WebGraphicKind.Canvas => "#end canvas",
+                            WebGraphicKind.Cyto => "#end cyto",
+                            WebGraphicKind.Dot => "#end dot",
+                            WebGraphicKind.Jsx => "#end jsx",
+                            WebGraphicKind.Map => "#end map",
+                            WebGraphicKind.Math => "#end math",
                             _ => ""
                         };
                         if (wgTxt.StartsWith(expectedEnd, StringComparison.OrdinalIgnoreCase))

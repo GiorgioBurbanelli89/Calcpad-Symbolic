@@ -80,7 +80,18 @@ namespace Calcpad.Core
             Mermaid,
             End_Mermaid,
             Canvas,
-            End_Canvas
+            End_Canvas,
+            // Fase 2: 5 librerías más
+            Cyto,
+            End_Cyto,
+            Dot,
+            End_Dot,
+            Jsx,
+            End_Jsx,
+            Map,
+            End_Map,
+            Math,
+            End_Math
         }
         private enum KeywordResult  
         {
@@ -308,6 +319,36 @@ namespace Calcpad.Core
                     return KeywordResult.Continue;
                 case Keyword.End_Canvas:
                     ParseKeywordEndWebGraphic(WebGraphicKind.Canvas);
+                    return KeywordResult.Continue;
+                case Keyword.Cyto:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Cyto);
+                    return KeywordResult.Continue;
+                case Keyword.End_Cyto:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Cyto);
+                    return KeywordResult.Continue;
+                case Keyword.Dot:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Dot);
+                    return KeywordResult.Continue;
+                case Keyword.End_Dot:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Dot);
+                    return KeywordResult.Continue;
+                case Keyword.Jsx:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Jsx);
+                    return KeywordResult.Continue;
+                case Keyword.End_Jsx:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Jsx);
+                    return KeywordResult.Continue;
+                case Keyword.Map:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Map);
+                    return KeywordResult.Continue;
+                case Keyword.End_Map:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Map);
+                    return KeywordResult.Continue;
+                case Keyword.Math:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Math);
+                    return KeywordResult.Continue;
+                case Keyword.End_Math:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Math);
                     return KeywordResult.Continue;
                 case Keyword.NoSub:
                     _parser.VariableSubstitution = MathParser.VariableSubstitutionOptions.VariablesOnly;

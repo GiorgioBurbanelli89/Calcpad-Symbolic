@@ -1,0 +1,314 @@
+#margen 20
+#md on
+"Reporte FEM completo — combinación de las 9 directivas web
+
+# §1. Ubicación del proyecto
+
+'Edificio aporticado de hormigón armado de 5 pisos en Quito, Ecuador.
+
+#map 700 350
+const map = L.map(MAPID).setView([-0.180653, -78.467838], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap', maxZoom: 18
+}).addTo(map);
+L.marker([-0.180653, -78.467838]).addTo(map)
+  .bindPopup('<b>Edificio aporticado 5 pisos</b><br>NEC zona V (PGA = 0.40g)')
+  .openPopup();
+L.circle([-0.180653, -78.467838], {
+    color:'#c33', fillColor:'#f63', fillOpacity:0.15, radius:1500
+}).addTo(map);
+#end map
+
+# §2. Parámetros del modelo
+
+n_pisos = 5
+n_vanos = 4
+L_vano = 5
+H_piso = 3
+H_total = n_pisos*H_piso
+
+#blk
+n_pisos    ; 'pisos
+n_vanos    ; 'vanos en cada dirección
+L_vano     ; 'luz típica (m)
+H_piso     ; 'altura de entrepiso (m)
+H_total    ; 'altura total (m)
+#end blk
+
+# §3. Ecuación gobernante (KaTeX)
+
+#math
+\boxed{m\,\ddot{u}(t) + c\,\dot{u}(t) + k\,u(t) = F(t)}
+T_n = 2\pi\sqrt{\frac{m}{k}}\quad\text{(período natural)}
+\xi = \frac{c}{2\sqrt{km}}\quad\text{(razón de amortiguamiento)}
+#end math
+
+# §4. Diagrama de flujo del análisis (Mermaid)
+
+#mermaid
+flowchart LR
+    A[Geometría] --> K[Matriz K]
+    M[Material E,ν,ρ] --> K
+    Q[Cargas q,P] --> F[Vector F]
+    A --> F
+    K --> S[Solver K·u=F]
+    F --> S
+    S --> U[Desplaz. u]
+    U --> SIG[σ = D·B·u]
+    SIG --> R[Reporte]
+    style K fill:#b3d9ff
+    style F fill:#c8e6c9
+    style S fill:#ffd966
+    style R fill:#ffcdd2
+#end mermaid
+
+# §5. Sparsity de la matriz K (Cytoscape)
+
+'Cada nodo es un grado de libertad. Las aristas marcan acoplamientos
+'no-cero en K. En un edificio típico la matriz tiene estructura banda
+'gracias a la conectividad nodo-elemento.
+
+#cyto 700 400
+{
+  elements: [
+    {data:{id:'p1', label:'Piso 1'}}, {data:{id:'p2', label:'Piso 2'}},
+    {data:{id:'p3', label:'Piso 3'}}, {data:{id:'p4', label:'Piso 4'}},
+    {data:{id:'p5', label:'Piso 5'}}, {data:{id:'b', label:'Base'}},
+    {data:{source:'b',  target:'p1'}},
+    {data:{source:'p1', target:'p2'}},
+    {data:{source:'p2', target:'p3'}},
+    {data:{source:'p3', target:'p4'}},
+    {data:{source:'p4', target:'p5'}}
+  ],
+  style: [
+    {selector:'node', style:{
+      label:'data(label)',
+      'background-color':'#1f77b4',
+      'color':'white', 'font-size':12,
+      'text-valign':'center', 'text-halign':'center',
+      'width':70, 'height':40, 'shape':'round-rectangle'
+    }},
+    {selector:'edge', style:{
+      'width':3, 'line-color':'#888',
+      'curve-style':'bezier',
+      'target-arrow-shape':'triangle',
+      'target-arrow-color':'#888'
+    }}
+  ],
+  layout: {name:'breadthfirst', directed:true, padding:20}
+}
+#end cyto
+
+# §6. Modelo 3D del edificio (Three.js)
+
+#three 700 500
+// Construir un edificio 5 pisos × 4 vanos × 4 vanos
+const Lv = 5, Hp = 3;
+const N = 4;
+const Np = 5;
+
+const colMat = new THREE.MeshStandardMaterial({color:0x666666});
+const beamMat = new THREE.MeshStandardMaterial({color:0x888888});
+const slabMat = new THREE.MeshStandardMaterial({color:0xffd966, transparent:true, opacity:0.4});
+
+// Columnas
+for (let ix = 0; ix <= N; ix++) {
+    for (let iy = 0; iy <= N; iy++) {
+        const col = new THREE.Mesh(
+            new THREE.BoxGeometry(0.4, Np*Hp, 0.4),
+            colMat
+        );
+        col.position.set(ix*Lv - N*Lv/2, Np*Hp/2, iy*Lv - N*Lv/2);
+        scene.add(col);
+    }
+}
+
+// Vigas X
+for (let iz = 1; iz <= Np; iz++) {
+    for (let iy = 0; iy <= N; iy++) {
+        const beam = new THREE.Mesh(
+            new THREE.BoxGeometry(N*Lv, 0.4, 0.3),
+            beamMat
+        );
+        beam.position.set(0, iz*Hp - 0.2, iy*Lv - N*Lv/2);
+        scene.add(beam);
+    }
+}
+
+// Vigas Y
+for (let iz = 1; iz <= Np; iz++) {
+    for (let ix = 0; ix <= N; ix++) {
+        const beam = new THREE.Mesh(
+            new THREE.BoxGeometry(0.3, 0.4, N*Lv),
+            beamMat
+        );
+        beam.position.set(ix*Lv - N*Lv/2, iz*Hp - 0.2, 0);
+        scene.add(beam);
+    }
+}
+
+// Losas
+for (let iz = 1; iz <= Np; iz++) {
+    const slab = new THREE.Mesh(
+        new THREE.BoxGeometry(N*Lv, 0.1, N*Lv),
+        slabMat
+    );
+    slab.position.set(0, iz*Hp - 0.05, 0);
+    scene.add(slab);
+}
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+dir.position.set(15, 25, 20);
+scene.add(dir);
+
+camera.position.set(25, 18, 25);
+camera.lookAt(0, Np*Hp/2, 0);
+#end three
+
+# §7. Períodos modales — gráfica (Plotly)
+
+#plotly 700 400
+{
+  data: [{
+    x: ['Modo 1', 'Modo 2', 'Modo 3', 'Modo 4', 'Modo 5', 'Modo 6'],
+    y: [0.6718, 0.6718, 0.5845, 0.2028, 0.2028, 0.1783],
+    type: 'bar',
+    marker: {color: ['#c33','#c33','#f90','#1f77b4','#1f77b4','#888'],
+             line: {color:'#222', width:1}},
+    text: ['Ux','Uy','Rz','Ux²','Uy²','Rz²'],
+    textposition: 'outside'
+  }],
+  layout: {
+    title: 'Períodos modales — Edificio 5 pisos × 4×4',
+    xaxis: {title: 'Modo'},
+    yaxis: {title: 'Período T (s)'},
+    margin: {t:50, b:60, l:60, r:30}
+  }
+}
+#end plotly
+
+# §8. Geometría dinámica — explorá el Q4 (JSXGraph)
+
+'Mové las esquinas del cuadrilátero con el mouse y mirá cómo cambia
+'el área. Para Q4 degenerado (esquinas casi colineales) el det(J) ≈ 0
+'y el solver tira el warning "negative Jacobian".
+
+#jsx 500 500
+const board = JXG.JSXGraph.initBoard(JSXBOARD, {
+    boundingbox:[-1, 6, 6, -1], axis:true,
+    showCopyright:false, showNavigation:false
+});
+const A = board.create('point', [0, 0],   {name:'1', size:6, color:'#c33'});
+const B = board.create('point', [4, 0.5], {name:'2', size:6, color:'#c33'});
+const C = board.create('point', [4.5, 4], {name:'3', size:6, color:'#c33'});
+const D = board.create('point', [0.5, 3.5], {name:'4', size:6, color:'#c33'});
+board.create('polygon', [A,B,C,D], {
+    fillColor:'#ffd966', fillOpacity:0.4,
+    borderColor:'#b58900', borderWidth:2
+});
+board.create('text', [0.3, 5.5,
+    () => 'Área = ' + Math.abs(0.5*((A.X()-C.X())*(B.Y()-D.Y()) - (B.X()-D.X())*(A.Y()-C.Y()))).toFixed(3)
+], {fontSize:18, color:'#0d47a1'});
+#end jsx
+
+# §9. Diagrama de combinaciones de carga (Graphviz DOT)
+
+#dot 700 350
+digraph G {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fontname="Arial", fontsize=11];
+
+    D [label="DEAD\\n(peso propio)", fillcolor=lightgreen];
+    L [label="LIVE\\n(uso)", fillcolor=lightblue];
+    E [label="EARTHQUAKE\\n(sismo)", fillcolor=gold];
+
+    C1 [label="1.4·D", fillcolor=white];
+    C2 [label="1.2·D + 1.6·L", fillcolor=white];
+    C3 [label="1.2·D + 1.0·L + 1.0·E", fillcolor=lightcoral];
+
+    Gov [label="GOBERNANTE", fillcolor="#ffcccc", shape=octagon];
+
+    D -> C1; D -> C2; D -> C3;
+    L -> C2; L -> C3;
+    E -> C3;
+    C1 -> Gov; C2 -> Gov; C3 -> Gov;
+}
+#end dot
+
+# §10. Espectro de respuesta sísmico (Canvas)
+
+'Espectro de pseudo-aceleración Sa(T) según NEC-SE-DS para zona V,
+'suelo D, importancia I=1.0.
+
+#canvas 700 350
+ctx.fillStyle = '#fafafa'; ctx.fillRect(0, 0, width, height);
+
+// Título
+ctx.fillStyle = '#222'; ctx.font = 'bold 16px sans-serif';
+ctx.textAlign = 'center';
+ctx.fillText('Espectro Sa(T) — NEC-SE-DS Quito (zona V, suelo D)', width/2, 25);
+
+// Ejes
+ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5;
+ctx.beginPath();
+ctx.moveTo(60, 50); ctx.lineTo(60, 300); ctx.lineTo(680, 300);
+ctx.stroke();
+
+// Etiquetas ejes
+ctx.fillStyle = '#444'; ctx.font = '12px sans-serif';
+ctx.textAlign = 'right';
+ctx.fillText('Sa (g)', 55, 60);
+ctx.textAlign = 'center';
+ctx.fillText('T (s)', 670, 320);
+
+// Curva del espectro NEC: To = 0.1, Tc = 0.5, η = 2.48 (zona V suelo D)
+const To = 0.1, Tc = 0.5, eta = 2.48, Z = 0.40, Fa = 1.20;
+const Sa_max = Z * Fa * eta;
+function Sa(T) {
+    if (T <= To) return Z*Fa*(1 + (eta-1)*T/To);
+    if (T <= Tc) return Sa_max;
+    return Sa_max * Tc/T;
+}
+const Tmax = 4.0;
+ctx.beginPath();
+ctx.strokeStyle = '#c33';
+ctx.lineWidth = 2.5;
+for (let i = 0; i <= 200; i++) {
+    const T = i*Tmax/200;
+    const px = 60 + T/Tmax * 620;
+    const py = 300 - Sa(T)/Sa_max * 230;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+}
+ctx.stroke();
+
+// Marcas
+ctx.fillStyle = '#0d47a1'; ctx.font = 'bold 12px sans-serif';
+ctx.textAlign = 'left';
+ctx.fillText('To = 0.1s', 75, 70);
+ctx.fillText('Tc = 0.5s', 60 + 0.5/Tmax*620 + 5, 90);
+ctx.fillText('Sa,max = ' + Sa_max.toFixed(2) + 'g', 250, 70);
+
+// Marcas de período T1 del edificio
+ctx.fillStyle = '#2e7d32';
+ctx.beginPath();
+ctx.arc(60 + 0.6718/Tmax*620, 300 - Sa(0.6718)/Sa_max*230, 5, 0, 2*Math.PI);
+ctx.fill();
+ctx.fillText('T1 edificio = 0.67s', 60 + 0.6718/Tmax*620 + 8, 300 - Sa(0.6718)/Sa_max*230 - 8);
+#end canvas
+
+# Cierre
+
+'**Reporte combinando 8 directivas web del parser:**
+'  §1 #map     ← ubicación geográfica
+'  §3 #math    ← ecuaciones LaTeX
+'  §4 #mermaid ← flujo de cálculo
+'  §5 #cyto    ← sparsity de K
+'  §6 #three   ← modelo 3D rotable
+'  §7 #plotly  ← gráfica de períodos
+'  §8 #jsx     ← Q4 dinámico
+'  §9 #dot     ← combos de carga
+'  §10 #canvas ← espectro NEC
+'
+'Ningún `<>` HTML escrito a mano. Todo el wrapping (div, script, CDN,
+'init) lo genera el parser automáticamente.
