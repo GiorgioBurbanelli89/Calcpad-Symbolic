@@ -110,6 +110,20 @@ namespace Calcpad.Core
                             WebGraphicKind.Jsx => "#end jsx",
                             WebGraphicKind.Map => "#end map",
                             WebGraphicKind.Math => "#end math",
+                            // Fase 3
+                            WebGraphicKind.Mathbox => "#end mathbox",
+                            WebGraphicKind.D3 => "#end d3",
+                            WebGraphicKind.Echarts => "#end echarts",
+                            WebGraphicKind.Vega => "#end vega",
+                            WebGraphicKind.Visnet => "#end visnet",
+                            WebGraphicKind.P5 => "#end p5",
+                            WebGraphicKind.Matter => "#end matter",
+                            WebGraphicKind.Cannon => "#end cannon",
+                            WebGraphicKind.Geogebra => "#end geogebra",
+                            WebGraphicKind.Chart => "#end chart",
+                            // Fase 4
+                            WebGraphicKind.Anime => "#end anime",
+                            WebGraphicKind.Manim => "#end manim",
                             _ => ""
                         };
                         if (wgTxt.StartsWith(expectedEnd, StringComparison.OrdinalIgnoreCase))

@@ -605,6 +605,70 @@ dotnet run --project Symbolic.Wpf
 | `fem_hex8(nodes;elems;E;nu;specs)` | Function | Solve Ku=F sparse Cholesky → u |
 | `fem_hex8_stress(nodes;elems;E;nu;u)` | Function | Nodal stress matrix (Nx6) |
 
+### Web Graphics — 22 directivas de visualización
+
+Bloques `#<lib> ... #end <lib>` que inyectan widgets interactivos desde CDN.
+
+#### Phase 1 — visualización base (10)
+| Directiva | Librería | Uso típico |
+|---|---|---|
+| `#svg` | SVG nativo | Vectores 2D declarativos (.rect, .line, .circle, .text) |
+| `#plotly` | Plotly.js 2.35 | Gráficos científicos 2D/3D (scatter, surface, heatmap) |
+| `#three` | Three.js 0.160 | Visualización 3D WebGL (geometría, FEM viewer, mesh) |
+| `#mermaid` | Mermaid 10 | Diagramas (flowchart, sequence, gantt, classDiagram) |
+| `#canvas` | HTML5 Canvas | Dibujo 2D libre (sin librería externa) |
+| `#cyto` | Cytoscape 3 | Grafos / networks (sparsity de matrices, dependencias) |
+| `#dot` | Graphviz (viz.js 3.7) | Grafos declarativos DOT |
+| `#jsx` | JSXGraph 1.10 | Geometría dinámica interactiva |
+| `#map` | Leaflet 1.9 | Mapas geográficos |
+| `#math` | KaTeX 0.16 | Fórmulas LaTeX puras |
+
+#### Phase 3 — visualización avanzada (10)
+| Directiva | Librería | Uso típico |
+|---|---|---|
+| `#mathbox` | MathBox 2.3.1 | Math viz 3D, isosurfaces, integrales triples ⭐⭐⭐ |
+| `#d3` | D3.js v7.8.5 | Custom plots data-driven (axes log-log, paramétricos) |
+| `#echarts` | Apache ECharts 5.4.3 | Sankey, parallel coords, heatmap, treemap |
+| `#vega` | Vega-Lite 5.21 | Charts declarativos JSON |
+| `#visnet` | vis-network 9.1.9 | Networks dinámicos |
+| `#p5` | p5.js 1.10 | Creative coding |
+| `#matter` | Matter.js 0.20 | Física 2D rígidos |
+| `#cannon` | Cannon-es 0.20 + Three.js | Física 3D rígidos |
+| `#geogebra` | GeoGebra | Math interactivo educativo |
+| `#chart` | Chart.js 4.4 | Gráficos simples (line, bar, doughnut) |
+
+#### Phase 4 — animaciones (2)
+| Directiva | Librería | Uso típico |
+|---|---|---|
+| `#anime` | anime.js 3.2 | Animaciones generales (DOM, SVG) |
+| `#manim` | MathBox + tema oscuro | Animaciones matemáticas estilo 3blue1brown |
+
+**Total: 22 directivas web operativas.** Cada bloque carga su CDN una sola vez por documento. Ejemplo:
+
+```calcpad
+#three 600 400
+const cube = new THREE.Mesh(
+    new THREE.BoxGeometry(2,2,2),
+    new THREE.MeshStandardMaterial({color:0x4a90e2}));
+scene.add(cube);
+scene.add(new THREE.AxesHelper(3));
+camera.position.set(4,4,4);
+#end three
+```
+
+### Operadores simbólicos en matrices/vectores
+
+`pdiff()`, `diff()`, `integrate()` ahora se traducen a los solvers nativos `$slope{...}` / `$area{...}` y se pueden usar dentro de literales de matriz, incluyendo multi-row e integrales múltiples (doble, triple):
+
+```calcpad
+g(x; y; z) = x^2 + y^2 + z^2
+'Triple integral en cubo unitario:'integrate(integrate(integrate(g(x;y;z); z; 0; 1); y; 0; 1); x; 0; 1)
+'(esperado: 1)
+'Matriz Jacobiana de gradiente:
+J(ξ; η) = [pdiff(N_1(ξ;η); ξ); pdiff(N_2(ξ;η); ξ) | pdiff(N_1(ξ;η); η); pdiff(N_2(ξ;η); η)]
+J(0; 0)  ' evalúa numéricamente con central FD
+```
+
 ---
 
 ## Detailed Usage

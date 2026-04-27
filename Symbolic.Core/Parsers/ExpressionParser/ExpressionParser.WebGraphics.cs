@@ -25,7 +25,21 @@ namespace Calcpad.Core
             Dot,     // Graphviz vía viz.js — grafos declarativos DOT
             Jsx,     // JSXGraph — geometría dinámica interactiva
             Map,     // Leaflet — mapas geográficos
-            Math     // KaTeX — fórmulas LaTeX completas
+            Math,    // KaTeX — fórmulas LaTeX completas
+            // Fase 3: 10 librerías adicionales
+            Mathbox,  // MathBox 2 — math viz 3D, isosurfaces, vector fields
+            D3,       // D3.js v7 — custom data-driven plots
+            Echarts,  // Apache ECharts 5 — sankey, parallel, heatmap, treemap
+            Vega,     // Vega-Lite 5 — declarative JSON charts
+            Visnet,   // vis-network 9 — networks dinámicos
+            P5,       // p5.js 1 — creative coding, animaciones
+            Matter,   // Matter.js — physics 2D rígidos
+            Cannon,   // Cannon-es — physics 3D rígidos
+            Geogebra, // GeoGebra applet
+            Chart,    // Chart.js 4 — gráficos simples
+            // Fase 4: animaciones
+            Anime,    // anime.js v4 — animaciones generales
+            Manim     // animaciones matemáticas estilo 3blue1brown (vía MathBox + helpers)
         }
 
         // Estado del bloque activo
@@ -114,6 +128,18 @@ namespace Calcpad.Core
                     WebGraphicKind.Jsx => RenderJsx(content),
                     WebGraphicKind.Map => RenderMap(content),
                     WebGraphicKind.Math => RenderMath(content),
+                    WebGraphicKind.Mathbox => RenderMathbox(content),
+                    WebGraphicKind.D3 => RenderD3(content),
+                    WebGraphicKind.Echarts => RenderEcharts(content),
+                    WebGraphicKind.Vega => RenderVega(content),
+                    WebGraphicKind.Visnet => RenderVisnet(content),
+                    WebGraphicKind.P5 => RenderP5(content),
+                    WebGraphicKind.Matter => RenderMatter(content),
+                    WebGraphicKind.Cannon => RenderCannon(content),
+                    WebGraphicKind.Geogebra => RenderGeogebra(content),
+                    WebGraphicKind.Chart => RenderChart(content),
+                    WebGraphicKind.Anime => RenderAnime(content),
+                    WebGraphicKind.Manim => RenderManim(content),
                     _ => ""
                 };
                 _sb.Append(html);
@@ -354,6 +380,67 @@ namespace Calcpad.Core
                     "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css\">\n" +
                     "<script src=\"https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js\"></script>\n",
 
+                // Fase 3 — 10 librerías adicionales
+                WebGraphicKind.Mathbox =>
+                    // MathBox 2.3.1 UMD bundle requires window.THREE to be set
+                    // BEFORE the bundle loads (it's webpack UMD with THREE as
+                    // external dependency). So we load three.min.js (classic
+                    // UMD that exposes window.THREE) first, then mathbox.
+                    // The bundle exports as window.MathBox.
+                    "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/build.css\">\n" +
+                    "<script src=\"https://unpkg.com/three@0.160.0/build/three.min.js\"></script>\n" +
+                    "<script src=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/bundle/mathbox.min.js\"></script>\n",
+
+                WebGraphicKind.D3 =>
+                    "<script src=\"https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js\"></script>\n",
+
+                WebGraphicKind.Echarts =>
+                    "<script src=\"https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js\"></script>\n",
+
+                WebGraphicKind.Vega =>
+                    "<script src=\"https://cdn.jsdelivr.net/npm/vega@5.30.0/build/vega.min.js\"></script>\n" +
+                    "<script src=\"https://cdn.jsdelivr.net/npm/vega-lite@5.21.0/build/vega-lite.min.js\"></script>\n" +
+                    "<script src=\"https://cdn.jsdelivr.net/npm/vega-embed@6.26.0/build/vega-embed.min.js\"></script>\n",
+
+                WebGraphicKind.Visnet =>
+                    "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/vis-network@9.1.9/dist/dist/vis-network.min.css\">\n" +
+                    "<script src=\"https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js\"></script>\n",
+
+                WebGraphicKind.P5 =>
+                    "<script src=\"https://cdn.jsdelivr.net/npm/p5@1.10.0/lib/p5.min.js\"></script>\n",
+
+                WebGraphicKind.Matter =>
+                    "<script src=\"https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js\"></script>\n",
+
+                WebGraphicKind.Cannon =>
+                    // Cannon-es es ESM; lo importamos en cada bloque, pero pre-cargamos como
+                    // import map para que `import * as CANNON from 'cannon-es'` funcione.
+                    "<script type=\"importmap\">\n" +
+                    "{\n" +
+                    "  \"imports\": {\n" +
+                    "    \"cannon-es\": \"https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js\"\n" +
+                    "  }\n" +
+                    "}\n" +
+                    "</script>\n",
+
+                WebGraphicKind.Geogebra =>
+                    "<script src=\"https://www.geogebra.org/apps/deployggb.js\"></script>\n",
+
+                WebGraphicKind.Chart =>
+                    "<script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js\"></script>\n",
+
+                // Fase 4 — animaciones
+                WebGraphicKind.Anime =>
+                    // anime.js v3 (UMD, expone window.anime)
+                    "<script src=\"https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js\"></script>\n",
+
+                WebGraphicKind.Manim =>
+                    // #manim usa MathBox como motor (estilo 3blue1brown).
+                    // Misma carga que #mathbox (Three.js UMD primero, luego MathBox).
+                    "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/build.css\">\n" +
+                    "<script src=\"https://unpkg.com/three@0.160.0/build/three.min.js\"></script>\n" +
+                    "<script src=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/bundle/mathbox.min.js\"></script>\n",
+
                 _ => ""
             };
         }
@@ -532,6 +619,477 @@ namespace Calcpad.Core
                 .Replace("\n", "\\n")
                 .Replace("\r", "")
                 + "\"";
+        }
+
+        // ═════════════════════════════════════════════════════════════════
+        // FASE 3 — 10 librerías adicionales de visualización web
+        // ═════════════════════════════════════════════════════════════════
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: MathBox 2 — visualización matemática 3D (built on Three.js)
+        //   Ideal para: isosurfaces de f(x,y,z), campos vectoriales, surfaces
+        //   paramétricas, animaciones matemáticas estilo 3blue1brown.
+        //
+        //   #mathbox 700 500
+        //     mathbox.set('focus', 3);
+        //     var view = mathbox.cartesian({range:[[-2,2],[-2,2],[-2,2]], scale:[1,1,1]});
+        //     view.axis({axis:1}); view.axis({axis:2}); view.axis({axis:3});
+        //     view.grid({divideX:10, divideY:10});
+        //     view.area({width:64, height:64,
+        //       expr:function(emit,x,y,i,j){emit(x, y, Math.sin(x)*Math.cos(y));}});
+        //     view.surface({shaded:true, color:0x3090ff});
+        //   #end mathbox
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderMathbox(string content)
+        {
+            var id = $"mathbox_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;height:{_webGraphicHeight}px;");
+            sb.Append("border:1px solid #ccc;background:#fafafa\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Mathbox));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append($"  var container = document.getElementById('{id}');\n");
+            sb.Append("  // MathBox 2 UMD: window.THREE viene de three.min.js (cargado antes),\n");
+            sb.Append("  // window.MathBox es el namespace que expone mathBox() factory.\n");
+            sb.Append("  var mathbox = MathBox.mathBox({\n");
+            sb.Append("    plugins: ['core', 'controls', 'cursor'],\n");
+            // No 'klass': MathBox usa controles default (threestrap trackball).
+            sb.Append("    element: container,\n");
+            sb.Append($"   camera: {{ near: 0.1, far: 1000 }},\n");
+            sb.Append($"   size: {{ width: {_webGraphicWidth}, height: {_webGraphicHeight} }}\n");
+            sb.Append("  });\n");
+            sb.Append("  var three = mathbox.three || mathbox;\n");
+            sb.Append("  if (three.camera) three.camera.position.set(2.5, 2.5, 2.5);\n");
+            sb.Append("  if (three.renderer) three.renderer.setClearColor(new THREE.Color(0xfafafa), 1.0);\n");
+            sb.Append("  // ─ user code ─\n");
+            sb.Append(content);
+            sb.Append("\n  // ─ end user code ─\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: D3.js — custom data-driven plots
+        //   Acceso a `svg` (D3 selection del SVG ya creado), `width`, `height`.
+        //
+        //   #d3 600 400
+        //     const data = [10, 25, 30, 45, 60];
+        //     const x = d3.scaleLinear().domain([0,4]).range([40, width-20]);
+        //     const y = d3.scaleLinear().domain([0,60]).range([height-30, 20]);
+        //     svg.selectAll('circle').data(data).enter().append('circle')
+        //       .attr('cx', (d,i) => x(i)).attr('cy', d => y(d))
+        //       .attr('r', 5).attr('fill', 'steelblue');
+        //   #end d3
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderD3(string content)
+        {
+            var id = $"d3_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<svg id=\"{id}\" width=\"{_webGraphicWidth}\" height=\"{_webGraphicHeight}\" ");
+            sb.Append("style=\"border:1px solid #ccc;background:#fafafa\"></svg>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.D3));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append($"  const svg = d3.select('#{id}');\n");
+            sb.Append($"  const width = {_webGraphicWidth};\n");
+            sb.Append($"  const height = {_webGraphicHeight};\n");
+            sb.Append("  // ─ user code ─\n");
+            sb.Append(content);
+            sb.Append("\n  // ─ end user code ─\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: Apache ECharts 5
+        //   Sintaxis: el contenido es el `option` JS literal.
+        //
+        //   #echarts 700 400
+        //   {
+        //     title: {text: 'Demo'},
+        //     xAxis: {data: ['A','B','C','D']},
+        //     yAxis: {},
+        //     series: [{name:'sales', type:'bar', data:[5,20,36,10]}]
+        //   }
+        //   #end echarts
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderEcharts(string content)
+        {
+            var id = $"echarts_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;height:{_webGraphicHeight}px\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Echarts));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append($"  var chart = echarts.init(document.getElementById('{id}'));\n");
+            sb.Append("  var option = ").Append(content.Trim()).Append(";\n");
+            sb.Append("  chart.setOption(option);\n");
+            sb.Append("  window.addEventListener('resize', () => chart.resize());\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: Vega-Lite — declarative JSON charts
+        //   Sintaxis: JSON Vega-Lite spec.
+        //
+        //   #vega 600 400
+        //   {
+        //     "data": {"values":[{"x":1,"y":2},{"x":2,"y":3}]},
+        //     "mark": "bar",
+        //     "encoding": {"x":{"field":"x","type":"quantitative"},
+        //                  "y":{"field":"y","type":"quantitative"}}
+        //   }
+        //   #end vega
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderVega(string content)
+        {
+            var id = $"vega_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;min-height:{_webGraphicHeight}px\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Vega));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append("  var spec = ").Append(content.Trim()).Append(";\n");
+            sb.Append($"  if (!spec.width) spec.width = {_webGraphicWidth - 40};\n");
+            sb.Append($"  if (!spec.height) spec.height = {_webGraphicHeight - 40};\n");
+            sb.Append($"  vegaEmbed('#{id}', spec, {{actions:false}});\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: vis-network — networks dinámicos
+        //   #visnet 700 500
+        //   {
+        //     nodes: [{id:1, label:'A'}, {id:2, label:'B'}],
+        //     edges: [{from:1, to:2}],
+        //     options: {physics:{enabled:true}}
+        //   }
+        //   #end visnet
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderVisnet(string content)
+        {
+            var id = $"visnet_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;height:{_webGraphicHeight}px;");
+            sb.Append("border:1px solid #ccc;background:#fafafa\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Visnet));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append("  var spec = ").Append(content.Trim()).Append(";\n");
+            sb.Append($"  var container = document.getElementById('{id}');\n");
+            sb.Append("  var data = {nodes: new vis.DataSet(spec.nodes||[]), edges: new vis.DataSet(spec.edges||[])};\n");
+            sb.Append("  var options = spec.options || {};\n");
+            sb.Append("  new vis.Network(container, data, options);\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: p5.js — creative coding & animations
+        //   Acceso a p5 sketch with setup() / draw() global functions.
+        //
+        //   #p5 600 400
+        //     function setup() { createCanvas(width, height); }
+        //     function draw() {
+        //       background(220);
+        //       ellipse(mouseX, mouseY, 50, 50);
+        //     }
+        //   #end p5
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderP5(string content)
+        {
+            var id = $"p5_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;");
+            sb.Append("border:1px solid #ccc;background:#fafafa\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.P5));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append($"  var width = {_webGraphicWidth};\n");
+            sb.Append($"  var height = {_webGraphicHeight};\n");
+            sb.Append("  var sketch = function(p) {\n");
+            sb.Append("    var setup = null, draw = null, mousePressed = null;\n");
+            sb.Append("    // wrap user code into closure with p5 instance\n");
+            sb.Append("    var w = width, h = height;\n");
+            sb.Append("    var fn = new Function('p', 'width', 'height',\n");
+            sb.Append("      `with(p){\n");
+            sb.Append(content.Replace("\\", "\\\\").Replace("`", "\\`"));
+            sb.Append("\n      if (typeof setup==='function') p.setup = setup;\n");
+            sb.Append("      if (typeof draw==='function') p.draw = draw;\n");
+            sb.Append("      if (typeof mousePressed==='function') p.mousePressed = mousePressed;\n");
+            sb.Append("      }`);\n");
+            sb.Append("    fn(p, w, h);\n");
+            sb.Append("  };\n");
+            sb.Append($"  new p5(sketch, '{id}');\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: Matter.js — physics 2D
+        //   Acceso a `engine`, `world`, `render`, `Matter`, `width`, `height`.
+        //
+        //   #matter 600 400
+        //     var ground = Matter.Bodies.rectangle(width/2, height-25, width, 50, {isStatic:true});
+        //     var ball = Matter.Bodies.circle(width/2, 50, 30, {restitution:0.8});
+        //     Matter.World.add(world, [ground, ball]);
+        //   #end matter
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderMatter(string content)
+        {
+            var id = $"matter_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;height:{_webGraphicHeight}px;");
+            sb.Append("border:1px solid #ccc;background:#fafafa\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Matter));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append($"  var width = {_webGraphicWidth}, height = {_webGraphicHeight};\n");
+            sb.Append("  var engine = Matter.Engine.create();\n");
+            sb.Append("  var world = engine.world;\n");
+            sb.Append($"  var render = Matter.Render.create({{element:document.getElementById('{id}'),engine:engine,\n");
+            sb.Append("    options:{width:width,height:height,wireframes:false,background:'#fafafa'}});\n");
+            sb.Append("  // ─ user code ─\n");
+            sb.Append(content);
+            sb.Append("\n  // ─ end user code ─\n");
+            sb.Append("  Matter.Render.run(render);\n");
+            sb.Append("  var runner = Matter.Runner.create();\n");
+            sb.Append("  Matter.Runner.run(runner, engine);\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: Cannon-es — physics 3D (renderiza con Three.js)
+        //   Acceso a `world` (CANNON.World), `scene`, `camera`, `renderer`,
+        //   `THREE`, `CANNON`, `width`, `height`.
+        //
+        //   #cannon 700 500
+        //     var groundBody = new CANNON.Body({type:CANNON.Body.STATIC,shape:new CANNON.Plane()});
+        //     groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0), -Math.PI/2);
+        //     world.addBody(groundBody);
+        //     var sphereBody = new CANNON.Body({mass:1,shape:new CANNON.Sphere(1)});
+        //     sphereBody.position.set(0,5,0);
+        //     world.addBody(sphereBody);
+        //   #end cannon
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderCannon(string content)
+        {
+            var id = $"cannon_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;height:{_webGraphicHeight}px;");
+            sb.Append("border:1px solid #ccc;background:#fafafa\"></div>\n");
+            // Cannon-es needs the THREE importmap too (same as #three)
+            sb.Append(LoadLibrary(WebGraphicKind.Three));
+            sb.Append(LoadLibrary(WebGraphicKind.Cannon));
+            sb.Append("<script type=\"module\">\n");
+            sb.Append("import * as THREE from 'three';\n");
+            sb.Append("import * as CANNON from 'cannon-es';\n");
+            sb.Append("import {OrbitControls} from 'three/addons/controls/OrbitControls.js';\n");
+            sb.Append("(function(){\n");
+            sb.Append($"  const container = document.getElementById('{id}');\n");
+            sb.Append($"  const width = {_webGraphicWidth}, height = {_webGraphicHeight};\n");
+            sb.Append("  const scene = new THREE.Scene();\n");
+            sb.Append("  scene.background = new THREE.Color(0xfafafa);\n");
+            sb.Append("  const camera = new THREE.PerspectiveCamera(60, width/height, 0.1, 1000);\n");
+            sb.Append("  camera.position.set(8, 8, 8); camera.lookAt(0, 0, 0);\n");
+            sb.Append("  const renderer = new THREE.WebGLRenderer({antialias:true});\n");
+            sb.Append("  renderer.setSize(width, height);\n");
+            sb.Append("  container.appendChild(renderer.domElement);\n");
+            sb.Append("  const controls = new OrbitControls(camera, renderer.domElement);\n");
+            sb.Append("  scene.add(new THREE.AmbientLight(0xffffff, 0.5));\n");
+            sb.Append("  scene.add(new THREE.DirectionalLight(0xffffff, 0.8));\n");
+            sb.Append("  const world = new CANNON.World({gravity: new CANNON.Vec3(0,-9.82,0)});\n");
+            sb.Append("  // ─ user code ─\n");
+            sb.Append(content);
+            sb.Append("\n  // ─ end user code ─\n");
+            sb.Append("  function animate(){requestAnimationFrame(animate);world.step(1/60);controls.update();renderer.render(scene,camera);}\n");
+            sb.Append("  animate();\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: GeoGebra — applet matemático interactivo
+        //   El contenido es un objeto JS con la propiedad `commands` (array de
+        //   strings con comandos GeoGebra) y otras opciones.
+        //
+        //   #geogebra 700 500
+        //   {
+        //     appName:'graphing',
+        //     commands:['f(x) = sin(x)', 'g(x) = cos(x)']
+        //   }
+        //   #end geogebra
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderGeogebra(string content)
+        {
+            var id = $"geogebra_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;height:{_webGraphicHeight}px\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Geogebra));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append("  var spec = ").Append(content.Trim()).Append(";\n");
+            sb.Append($"  var params = Object.assign({{appName:'graphing',width:{_webGraphicWidth},height:{_webGraphicHeight},showAlgebraInput:true,showToolBar:true,showMenuBar:false,language:'es',\n");
+            sb.Append("    appletOnLoad:function(api){if(spec.commands){spec.commands.forEach(c=>api.evalCommand(c));}}}, spec);\n");
+            sb.Append("  delete params.commands;\n");
+            sb.Append("  var applet = new GGBApplet(params, true);\n");
+            sb.Append($"  applet.inject('{id}');\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: Chart.js 4 — gráficos simples
+        //   El contenido es la config Chart.js (type, data, options).
+        //
+        //   #chart 600 400
+        //   {
+        //     type: 'line',
+        //     data: {
+        //       labels: ['Ene','Feb','Mar'],
+        //       datasets: [{label:'Sales', data:[12,19,3], borderColor:'rgb(75,192,192)'}]
+        //     },
+        //     options: {responsive:true}
+        //   }
+        //   #end chart
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderChart(string content)
+        {
+            var id = $"chart_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<canvas id=\"{id}\" width=\"{_webGraphicWidth}\" height=\"{_webGraphicHeight}\" ");
+            sb.Append("style=\"max-width:100%\"></canvas>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Chart));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append($"  var ctx = document.getElementById('{id}');\n");
+            sb.Append("  var config = ").Append(content.Trim()).Append(";\n");
+            sb.Append("  new Chart(ctx, config);\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: anime.js — animaciones generales
+        //   Acceso a `anime`, `width`, `height`, `container` (el div parent).
+        //   Crea elementos con SVG/HTML directamente o anima los del container.
+        //
+        //   #anime 600 200
+        //     container.innerHTML = '<div class="box" style="width:50px;height:50px;background:#ffd966;position:absolute"></div>';
+        //     anime({
+        //       targets: container.querySelector('.box'),
+        //       translateX: 250,
+        //       rotate: 360,
+        //       duration: 2000,
+        //       loop: true,
+        //       easing: 'easeInOutQuad'
+        //     });
+        //   #end anime
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderAnime(string content)
+        {
+            var id = $"anime_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;height:{_webGraphicHeight}px;");
+            sb.Append("border:1px solid #ccc;background:#fafafa;position:relative;overflow:hidden\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Anime));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append($"  var container = document.getElementById('{id}');\n");
+            sb.Append($"  var width = {_webGraphicWidth}, height = {_webGraphicHeight};\n");
+            sb.Append("  // ─ user code ─\n");
+            sb.Append(content);
+            sb.Append("\n  // ─ end user code ─\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // RENDER: Manim-style — animaciones matemáticas (built on MathBox)
+        //   Manim como tal (Python+Cairo) no puede correr en browser. En su
+        //   lugar usamos MathBox que cubre el mismo dominio (math viz 3D
+        //   animado) con API JavaScript. El user escribe DSL MathBox y lo
+        //   tratamos como una animación matemática estilo 3blue1brown.
+        //
+        //   #manim 700 500
+        //     mathbox.set('focus', 3);
+        //     var view = mathbox.cartesian({range:[[-3,3],[-2,2],[-2,2]], scale:[1,1,1]});
+        //     view.axis({axis:1}); view.axis({axis:2}); view.axis({axis:3});
+        //     view.area({width:64, height:64, axes:[1,2],
+        //       expr:function(emit,x,y,i,j){
+        //         var t = mathbox.three.clock.getElapsedTime();
+        //         emit(x, y, Math.sin(x + t)*Math.cos(y));
+        //       },
+        //       channels:3, live:true});
+        //     view.surface({shaded:true, color:0x3090ff});
+        //   #end manim
+        // ─────────────────────────────────────────────────────────────────
+        private string RenderManim(string content)
+        {
+            var id = $"manim_{++_webGraphicCounter}";
+            var sb = new StringBuilder(2048);
+            sb.Append("<div").Append(HtmlId).Append(">\n");
+            sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;height:{_webGraphicHeight}px;");
+            sb.Append("border:1px solid #222;background:#000\"></div>\n");
+            sb.Append(LoadLibrary(WebGraphicKind.Manim));
+            sb.Append("<script>\n");
+            sb.Append("(function(){\n");
+            sb.Append($"  var container = document.getElementById('{id}');\n");
+            sb.Append("  var mathbox = MathBox.mathBox({\n");
+            sb.Append("    plugins: ['core', 'controls', 'cursor'],\n");
+            // No 'klass': MathBox usa controles default (threestrap trackball).
+            sb.Append("    element: container,\n");
+            sb.Append($"   camera: {{ near: 0.1, far: 1000 }},\n");
+            sb.Append($"   size: {{ width: {_webGraphicWidth}, height: {_webGraphicHeight} }}\n");
+            sb.Append("  });\n");
+            sb.Append("  var three = mathbox.three || mathbox;\n");
+            sb.Append("  if (three.camera) three.camera.position.set(2.5, 2.5, 2.5);\n");
+            sb.Append("  // estilo manim: fondo negro, math en colores brillantes\n");
+            sb.Append("  if (three.renderer) three.renderer.setClearColor(new THREE.Color(0x000000), 1.0);\n");
+            sb.Append("  // ─ user code ─\n");
+            sb.Append(content);
+            sb.Append("\n  // ─ end user code ─\n");
+            sb.Append("})();\n");
+            sb.Append("</script>\n");
+            sb.Append("</div>\n");
+            return sb.ToString();
         }
     }
 }
