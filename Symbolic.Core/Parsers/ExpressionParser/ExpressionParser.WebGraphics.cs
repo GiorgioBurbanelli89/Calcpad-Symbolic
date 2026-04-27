@@ -438,12 +438,10 @@ namespace Calcpad.Core
                     "<script src=\"https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js\"></script>\n",
 
                 WebGraphicKind.Manim =>
-                    // #manim usa MathBox como motor (estilo 3blue1brown).
-                    // Misma carga que #mathbox: Three.js UMD r146 + OrbitControls + MathBox.
-                    "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/mathbox.css\">\n" +
-                    "<script src=\"https://unpkg.com/three@0.146.0/build/three.min.js\"></script>\n" +
-                    "<script src=\"https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js\"></script>\n" +
-                    "<script src=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/bundle/mathbox.min.js\"></script>\n",
+                    // #manim comparte motor con #mathbox. Para evitar cargar
+                    // los scripts UMD dos veces (lo que rompe THREE/MathBox
+                    // por re-inicialización), delegamos al loader de Mathbox.
+                    LoadLibrary(WebGraphicKind.Mathbox),
 
                 _ => ""
             };
