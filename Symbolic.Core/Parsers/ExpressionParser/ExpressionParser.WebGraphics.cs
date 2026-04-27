@@ -382,13 +382,16 @@ namespace Calcpad.Core
 
                 // Fase 3 — 10 librerías adicionales
                 WebGraphicKind.Mathbox =>
-                    // MathBox 2.3.1 UMD bundle requires window.THREE to be set
-                    // BEFORE the bundle loads (it's webpack UMD with THREE as
-                    // external dependency). So we load three.min.js (classic
-                    // UMD that exposes window.THREE) first, then mathbox.
-                    // The bundle exports as window.MathBox.
-                    "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/build.css\">\n" +
-                    "<script src=\"https://unpkg.com/three@0.160.0/build/three.min.js\"></script>\n" +
+                    // MathBox 2.3.1 UMD bundle requires:
+                    //  1. window.THREE (UMD) — Three.js dropped UMD after r147,
+                    //     so we use 0.146.0 which is the last version with both
+                    //     UMD bundle and examples/js/controls/OrbitControls.js
+                    //     loadable as a script tag (no ESM required).
+                    //  2. THREE.OrbitControls global — needed for controls.klass.
+                    //  3. window.MathBox factory — exposed by mathbox bundle.
+                    "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/mathbox.css\">\n" +
+                    "<script src=\"https://unpkg.com/three@0.146.0/build/three.min.js\"></script>\n" +
+                    "<script src=\"https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js\"></script>\n" +
                     "<script src=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/bundle/mathbox.min.js\"></script>\n",
 
                 WebGraphicKind.D3 =>
@@ -436,9 +439,10 @@ namespace Calcpad.Core
 
                 WebGraphicKind.Manim =>
                     // #manim usa MathBox como motor (estilo 3blue1brown).
-                    // Misma carga que #mathbox (Three.js UMD primero, luego MathBox).
-                    "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/build.css\">\n" +
-                    "<script src=\"https://unpkg.com/three@0.160.0/build/three.min.js\"></script>\n" +
+                    // Misma carga que #mathbox: Three.js UMD r146 + OrbitControls + MathBox.
+                    "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/mathbox.css\">\n" +
+                    "<script src=\"https://unpkg.com/three@0.146.0/build/three.min.js\"></script>\n" +
+                    "<script src=\"https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js\"></script>\n" +
                     "<script src=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/bundle/mathbox.min.js\"></script>\n",
 
                 _ => ""
@@ -655,7 +659,7 @@ namespace Calcpad.Core
             sb.Append("  // window.MathBox es el namespace que expone mathBox() factory.\n");
             sb.Append("  var mathbox = MathBox.mathBox({\n");
             sb.Append("    plugins: ['core', 'controls', 'cursor'],\n");
-            // No 'klass': MathBox usa controles default (threestrap trackball).
+            sb.Append("    controls: { klass: THREE.OrbitControls },\n");
             sb.Append("    element: container,\n");
             sb.Append($"   camera: {{ near: 0.1, far: 1000 }},\n");
             sb.Append($"   size: {{ width: {_webGraphicWidth}, height: {_webGraphicHeight} }}\n");
@@ -1074,7 +1078,7 @@ namespace Calcpad.Core
             sb.Append($"  var container = document.getElementById('{id}');\n");
             sb.Append("  var mathbox = MathBox.mathBox({\n");
             sb.Append("    plugins: ['core', 'controls', 'cursor'],\n");
-            // No 'klass': MathBox usa controles default (threestrap trackball).
+            sb.Append("    controls: { klass: THREE.OrbitControls },\n");
             sb.Append("    element: container,\n");
             sb.Append($"   camera: {{ near: 0.1, far: 1000 }},\n");
             sb.Append($"   size: {{ width: {_webGraphicWidth}, height: {_webGraphicHeight} }}\n");
