@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Test mínimo $DrawStruct masa-resorte</title>
+<style>
+  body { font-family: sans-serif; margin: 20px; }
+  h2 { color: #333; }
+  .box { display: inline-block; border: 1px solid #ccc; margin: 10px; padding: 10px; }
+</style>
+<!-- Bundle calcpad-viz inline (cache-buster ?v=now) -->
+<script src="../../calcpad-viz/dist/calcpad-viz.umd.cjs?v=20260425b"></script>
+</head>
+<body>
+
+<h2>1. Spring solo con etiqueta "k=1000"</h2>
+<div class="box"><div id="t1"></div></div>
+<script>
+CalcpadViz.structDraw("t1", {
+  elements: [
+    { type: "support", x: 0, y: 0, supportType: "fixed" },
+    { type: "spring", x1: 0, y1: 0, x2: 4, y2: 0, text: "k=1000" },
+    { type: "node", x: 4, y: 0, text: "" }
+  ],
+  options: { width: 600, height: 200, title: "Spring solo" }
+});
+</script>
+
+<h2>2. Mass solo con etiqueta "m"</h2>
+<div class="box"><div id="t2"></div></div>
+<script>
+CalcpadViz.structDraw("t2", {
+  elements: [
+    { type: "mass", x: 1, y: 0, size: 0.7, text: "m" }
+  ],
+  options: { width: 400, height: 200, title: "Mass" }
+});
+</script>
+
+<h2>3. Force sola apuntando a la derecha con "F(t)"</h2>
+<div class="box"><div id="t3"></div></div>
+<script>
+CalcpadViz.structDraw("t3", {
+  elements: [
+    { type: "force", x: 1, y: 0, dir: "right", text: "F(t)" }
+  ],
+  options: { width: 400, height: 200, title: "Force" }
+});
+</script>
+
+<h2>4. Sistema completo masa-resorte</h2>
+<div class="box"><div id="t4"></div></div>
+<script>
+CalcpadViz.structDraw("t4", {
+  elements: [
+    { type: "support", x: 0, y: 0, supportType: "fixed" },
+    { type: "spring", x1: 0, y1: 0, x2: 4, y2: 0, text: "k=1000" },
+    { type: "mass", x: 4.6, y: 0, size: 0.7, text: "m" },
+    { type: "force", x: 5, y: 0, dir: "right", text: "F(t)" }
+  ],
+  options: { width: 700, height: 250, title: "Masa-resorte 1 GDL" }
+});
+</script>
+
+</body>
+</html>
