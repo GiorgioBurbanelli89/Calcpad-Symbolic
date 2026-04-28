@@ -389,10 +389,13 @@ namespace Calcpad.Core
                     //     loadable as a script tag (no ESM required).
                     //  2. THREE.OrbitControls global — needed for controls.klass.
                     //  3. window.MathBox factory — exposed by mathbox bundle.
+                    // Use the same versions as the official MathBox 2 example
+                    // (unconed/mathbox/v2.3.1/examples/empty.html) — these are
+                    // verified to work in the browser.
                     "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/mathbox.css\">\n" +
-                    "<script src=\"https://unpkg.com/three@0.146.0/build/three.min.js\"></script>\n" +
-                    "<script src=\"https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js\"></script>\n" +
-                    "<script src=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/bundle/mathbox.min.js\"></script>\n",
+                    "<script src=\"https://cdn.jsdelivr.net/npm/three@0.137.0/build/three.min.js\"></script>\n" +
+                    "<script src=\"https://cdn.jsdelivr.net/npm/three@0.137.0/examples/js/controls/OrbitControls.js\"></script>\n" +
+                    "<script src=\"https://cdn.jsdelivr.net/npm/mathbox@2.3.1/build/bundle/mathbox.js\"></script>\n",
 
                 WebGraphicKind.D3 =>
                     "<script src=\"https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js\"></script>\n",
@@ -646,25 +649,28 @@ namespace Calcpad.Core
         {
             var id = $"mathbox_{++_webGraphicCounter}";
             var sb = new StringBuilder(2048);
-            sb.Append("<div").Append(HtmlId).Append(">\n");
+            // Setup matches the official MathBox 2 example from
+            // unconed/mathbox/v2.3.1/examples/empty.html — the only
+            // configuration that's been verified to work in browsers.
+            // CSS-sized container, plugins includes 'mathbox' explicitly,
+            // OrbitControls from THREE global, no custom camera/size.
+            sb.Append("<div").Append(HtmlId).Append(" style=\"position:relative\">\n");
             sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;height:{_webGraphicHeight}px;");
-            sb.Append("border:1px solid #ccc;background:#fafafa\"></div>\n");
+            sb.Append("border:1px solid #ccc;background:#fafafa;position:relative\"></div>\n");
             sb.Append(LoadLibrary(WebGraphicKind.Mathbox));
             sb.Append("<script>\n");
             sb.Append("(function(){\n");
             sb.Append($"  var container = document.getElementById('{id}');\n");
-            sb.Append("  // MathBox 2 UMD: window.THREE viene de three.min.js (cargado antes),\n");
-            sb.Append("  // window.MathBox es el namespace que expone mathBox() factory.\n");
             sb.Append("  var mathbox = MathBox.mathBox({\n");
-            sb.Append("    plugins: ['core', 'controls', 'cursor'],\n");
+            sb.Append("    plugins: ['core', 'controls', 'cursor', 'mathbox'],\n");
             sb.Append("    controls: { klass: THREE.OrbitControls },\n");
-            sb.Append("    element: container,\n");
-            sb.Append($"   camera: {{ near: 0.1, far: 1000 }},\n");
-            sb.Append($"   size: {{ width: {_webGraphicWidth}, height: {_webGraphicHeight} }}\n");
+            sb.Append("    element: container\n");
             sb.Append("  });\n");
-            sb.Append("  var three = mathbox.three || mathbox;\n");
-            sb.Append("  if (three.camera) three.camera.position.set(2.5, 2.5, 2.5);\n");
-            sb.Append("  if (three.renderer) three.renderer.setClearColor(new THREE.Color(0xfafafa), 1.0);\n");
+            sb.Append("  if (mathbox.fallback) { container.innerHTML='<p style=\"color:red;padding:1em\">WebGL not supported</p>'; return; }\n");
+            sb.Append("  var three = mathbox.three;\n");
+            sb.Append("  three.renderer.setClearColor(new THREE.Color(0xfafafa), 1.0);\n");
+            sb.Append("  // Cámara default — MathBox no la setea sola, sin esto la escena queda fuera de viewport\n");
+            sb.Append("  mathbox.camera({ proxy: true, position: [0, 0, 3] });\n");
             sb.Append("  // ─ user code ─\n");
             sb.Append(content);
             sb.Append("\n  // ─ end user code ─\n");
@@ -1067,24 +1073,27 @@ namespace Calcpad.Core
         {
             var id = $"manim_{++_webGraphicCounter}";
             var sb = new StringBuilder(2048);
-            sb.Append("<div").Append(HtmlId).Append(">\n");
+            // Same setup as #mathbox but with dark theme (black background,
+            // bright lines) — the 3blue1brown look. Otherwise identical to
+            // the verified official MathBox 2 example.
+            sb.Append("<div").Append(HtmlId).Append(" style=\"position:relative\">\n");
             sb.Append($"<div id=\"{id}\" style=\"width:{_webGraphicWidth}px;height:{_webGraphicHeight}px;");
-            sb.Append("border:1px solid #222;background:#000\"></div>\n");
+            sb.Append("border:1px solid #222;background:#000;position:relative\"></div>\n");
             sb.Append(LoadLibrary(WebGraphicKind.Manim));
             sb.Append("<script>\n");
             sb.Append("(function(){\n");
             sb.Append($"  var container = document.getElementById('{id}');\n");
             sb.Append("  var mathbox = MathBox.mathBox({\n");
-            sb.Append("    plugins: ['core', 'controls', 'cursor'],\n");
+            sb.Append("    plugins: ['core', 'controls', 'cursor', 'mathbox'],\n");
             sb.Append("    controls: { klass: THREE.OrbitControls },\n");
-            sb.Append("    element: container,\n");
-            sb.Append($"   camera: {{ near: 0.1, far: 1000 }},\n");
-            sb.Append($"   size: {{ width: {_webGraphicWidth}, height: {_webGraphicHeight} }}\n");
+            sb.Append("    element: container\n");
             sb.Append("  });\n");
-            sb.Append("  var three = mathbox.three || mathbox;\n");
-            sb.Append("  if (three.camera) three.camera.position.set(2.5, 2.5, 2.5);\n");
+            sb.Append("  if (mathbox.fallback) { container.innerHTML='<p style=\"color:#fff;padding:1em\">WebGL not supported</p>'; return; }\n");
+            sb.Append("  var three = mathbox.three;\n");
             sb.Append("  // estilo manim: fondo negro, math en colores brillantes\n");
-            sb.Append("  if (three.renderer) three.renderer.setClearColor(new THREE.Color(0x000000), 1.0);\n");
+            sb.Append("  three.renderer.setClearColor(new THREE.Color(0x000000), 1.0);\n");
+            sb.Append("  // Cámara default — MathBox no la setea sola, sin esto la escena queda fuera de viewport\n");
+            sb.Append("  mathbox.camera({ proxy: true, position: [0, 0, 3] });\n");
             sb.Append("  // ─ user code ─\n");
             sb.Append(content);
             sb.Append("\n  // ─ end user code ─\n");
