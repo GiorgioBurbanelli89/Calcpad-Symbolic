@@ -543,7 +543,24 @@ namespace Calcpad.Core
                 }
 
                 _parser._targetUnitsArray = null;
-                var n = expression.LastIndexOf('|');
+                // Buscar el operador `|` a nivel TOP-LEVEL (depth 0 de [], (), {}).
+                // LastIndexOf('|') devolvería un | interno de [u1|u2|u3], no el operador.
+                // Recorremos right-to-left tracking depth.
+                var n = -1;
+                {
+                    int depth = 0;
+                    for (int k = expression.Length - 1; k >= 0; k--)
+                    {
+                        var ch = expression[k];
+                        if (ch == ']' || ch == ')' || ch == '}') depth++;
+                        else if (ch == '[' || ch == '(' || ch == '{') depth--;
+                        else if (ch == '|' && depth == 0)
+                        {
+                            n = k;
+                            break;
+                        }
+                    }
+                }
                 if (n >= 0)
                 {
                     if (n < len)
@@ -571,21 +588,7 @@ namespace Calcpad.Core
                             }
                             _parser._targetUnitsArray = flat.ToArray();
                             _parser._targetUnits = null;
-                            // Encontrar el inicio real del | [
-                            n = expression.LastIndexOf('|');
-                            // Retroceder para encontrar el | que precede al [
-                            for (int k = n; k >= 0; k--)
-                            {
-                                if (expression[k] == '|')
-                                {
-                                    var after = expression[(k + 1)..].TrimStart();
-                                    if (after.Length > 0 && after[0] == '[')
-                                    {
-                                        n = k;
-                                        break;
-                                    }
-                                }
-                            }
+                            // n ya apunta al `|` top-level antes del `[`
                         }
                         else if (unit.Contains(']'))
                         {
