@@ -78,42 +78,42 @@ L = 5m
 '<h2>5. Cálculo de frecuencias n=1,2,3,4</h2>
 '<p>Modo n=1 (frecuencia fundamental):</p>
 n_1 = 1
-omega_viga_1 = (n_1*pi/L)^2 * sqrt(EI/mA)
-'ω_viga_1 = (π/L)² · √(EI/ρA) = 'omega_viga_1' rad/s
-omega_medio = sqrt(k/mA)
-'ω_medio = √(k/ρA) = 'omega_medio' rad/s
-omega_1 = sqrt(omega_viga_1^2 + omega_medio^2)
+ω_viga_1 = (n_1*pi/L)^2 * sqrt(EI/mA)
+'ω_viga_1 = (π/L)² · √(EI/ρA) = 'ω_viga_1' rad/s
+ω_medio = sqrt(k/mA)
+'ω_medio = √(k/ρA) = 'ω_medio' rad/s
+omega_1 = sqrt(ω_viga_1^2 + ω_medio^2)
 '<b>ω_1 = √(ω_viga_1² + ω_medio²) = 'omega_1' rad/s</b>
 f_1 = omega_1/(2*pi)
 '<b>f_1 = ω_1/(2π) = 'f_1' Hz</b>
 '<p>Modo n=2:</p>
 n_2 = 2
-omega_viga_2 = (n_2*pi/L)^2 * sqrt(EI/mA)
-'ω_viga_2 = (2π/L)² · √(EI/ρA) = 'omega_viga_2' rad/s
-omega_2 = sqrt(omega_viga_2^2 + omega_medio^2)
+ω_viga_2 = (n_2*pi/L)^2 * sqrt(EI/mA)
+'ω_viga_2 = (2π/L)² · √(EI/ρA) = 'ω_viga_2' rad/s
+omega_2 = sqrt(ω_viga_2^2 + ω_medio^2)
 '<b>ω_2 = 'omega_2' rad/s</b>
 f_2 = omega_2/(2*pi)
 '<b>f_2 = 'f_2' Hz</b>
 '<p>Modo n=3:</p>
 n_3 = 3
-omega_viga_3 = (n_3*pi/L)^2 * sqrt(EI/mA)
-'ω_viga_3 = 'omega_viga_3' rad/s
-omega_3 = sqrt(omega_viga_3^2 + omega_medio^2)
+ω_viga_3 = (n_3*pi/L)^2 * sqrt(EI/mA)
+'ω_viga_3 = 'ω_viga_3' rad/s
+omega_3 = sqrt(ω_viga_3^2 + ω_medio^2)
 '<b>ω_3 = 'omega_3' rad/s</b>
 f_3 = omega_3/(2*pi)
 '<b>f_3 = 'f_3' Hz</b>
 '<p>Modo n=4:</p>
 n_4 = 4
-omega_viga_4 = (n_4*pi/L)^2 * sqrt(EI/mA)
-'ω_viga_4 = 'omega_viga_4' rad/s
-omega_4 = sqrt(omega_viga_4^2 + omega_medio^2)
+ω_viga_4 = (n_4*pi/L)^2 * sqrt(EI/mA)
+'ω_viga_4 = 'ω_viga_4' rad/s
+omega_4 = sqrt(ω_viga_4^2 + ω_medio^2)
 '<b>ω_4 = 'omega_4' rad/s</b>
 f_4 = omega_4/(2*pi)
 '<b>f_4 = 'f_4' Hz</b>
 '<hr/>
 '<h2>6. Frecuencia de corte (cut-off) del medio elástico</h2>
 '<p>La frecuencia ω_medio = √(k/ρA) es la frecuencia natural del sistema masa-resorte distribuido <b>sin la viga</b>. Es la frecuencia de corte (cut-off) — bajo esta frecuencia, no hay propagación de ondas de flexión en el medio.</p>
-f_cutoff = omega_medio/(2*pi)
+f_cutoff = ω_medio/(2*pi)
 '<b>f_cutoff = ω_medio / (2π) = 'f_cutoff' Hz</b>
 '<p>Interpretación: para excitaciones por debajo de f_cutoff, la viga oscila como un resorte rígido sobre el suelo. Para frecuencias mayores, las ondas flexurales se propagan a lo largo de la viga.</p>
 '<hr/>
@@ -272,9 +272,9 @@ f_cutoff = omega_medio/(2*pi)
     line: {color: '#f59e0b', width: 3}
   }],
   layout: {
-    title: 'Formas modales sin(n*pi*x/L), L=5m',
+    title: 'Formas modales sin(n·π·x/L), L=5m',
     xaxis: {title: 'x (m)'},
-    yaxis: {title: 'phi_n normalizado'}
+    yaxis: {title: 'φ_n normalizado'}
   }
 }
 #end plotly
@@ -284,7 +284,7 @@ f_cutoff = omega_medio/(2*pi)
 #plotly 700 400
 {
   data: [{
-    type: 'scatter', mode: 'lines', name: 'H(omega) zeta=5%',
+    type: 'scatter', mode: 'lines', name: 'H(ω) zeta=5%',
     x: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,26,28,30,32,34,36,38,40,45,50,55,60,70,80,100],
     y: [1.000,1.003,1.013,1.030,1.054,1.087,1.131,1.190,1.270,1.382,1.547,1.804,2.249,3.122,5.270,9.999,5.521,3.140,2.114,1.583,1.272,0.918,0.706,0.566,0.469,0.398,0.343,0.300,0.265,0.236,0.213,0.169,0.139,0.116,0.099,0.073,0.056,0.036],
     line: {color: '#dc2626', width: 2},
@@ -293,7 +293,7 @@ f_cutoff = omega_medio/(2*pi)
   layout: {
     title: 'FRF (resonancia en f_1=17.9 Hz)',
     xaxis: {title: 'f (Hz)'},
-    yaxis: {title: 'H(omega)', type: 'log'}
+    yaxis: {title: 'H(ω)', type: 'log'}
   }
 }
 #end plotly

@@ -124,9 +124,9 @@ ratio_tL = t_losa/L_losa
 '<h3>Ejemplo: edificio de 1 piso como masa concentrada</h3>
 m_edificio = 100ton
 k_lateral = 5000kN/m
-omega_n = sqrt(k_lateral/m_edificio)
-'ω_n = √(k/m) = 'omega_n' rad/s
-f_n = omega_n/(2*pi)
+ω_n = sqrt(k_lateral/m_edificio)
+'ω_n = √(k/m) = 'ω_n' rad/s
+f_n = ω_n/(2*pi)
 'f_n = 'f_n' Hz
 T_n = 1/f_n
 'T = 1/f = 'T_n' s (período)
@@ -150,25 +150,25 @@ T_n = 1/f_n
 #plotly 700 400
 {
   data: [{
-    type: 'scatter', mode: 'lines', name: 'zeta=2% (poco amortiguado)',
+    type: 'scatter', mode: 'lines', name: 'ζ=2% (poco amortiguado)',
     x: [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95,0.98,1.0,1.02,1.05,1.1,1.2,1.3,1.5,2,3,5],
     y: [1.00,1.01,1.04,1.10,1.19,1.34,1.56,1.96,2.78,5.26,10.0,15.0,25.0,15.0,10.0,5.26,2.78,1.96,1.34,0.50,0.13,0.04],
     line: {color: '#dc2626', width: 3}
   }, {
-    type: 'scatter', mode: 'lines', name: 'zeta=10% (amortiguado normal)',
+    type: 'scatter', mode: 'lines', name: 'ζ=10% (amortiguado normal)',
     x: [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95,1.0,1.05,1.1,1.2,1.3,1.5,2,3,5],
     y: [1.00,1.01,1.04,1.09,1.18,1.30,1.45,1.65,1.89,2.13,2.27,2.50,2.27,2.13,1.65,1.30,0.92,0.42,0.13,0.04],
     line: {color: '#3b82f6', width: 3}
   }, {
-    type: 'scatter', mode: 'lines', name: 'zeta=50% (muy amortiguado)',
+    type: 'scatter', mode: 'lines', name: 'ζ=50% (muy amortiguado)',
     x: [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.2,1.5,2,3,5],
     y: [1.00,1.00,1.00,0.99,0.98,0.96,0.94,0.91,0.88,0.85,0.82,0.71,0.55,0.38,0.18,0.07],
     line: {color: '#10b981', width: 3}
   }],
   layout: {
-    title: 'Amplificacion dinamica vs ratio omega/omega_n',
-    xaxis: {title: 'omega / omega_n (frec excitacion / natural)'},
-    yaxis: {title: '|H(omega)| amplificacion', type: 'log'}
+    title: 'Amplificacion dinamica vs ratio ω/ω_n',
+    xaxis: {title: 'ω / ω_n (frec excitación / natural)'},
+    yaxis: {title: '|H(ω)| amplificación', type: 'log'}
   }
 }
 #end plotly
@@ -208,7 +208,7 @@ T_n = 1/f_n
   layout: {
     title: 'Formas modales de una viga simply supported L=5m',
     xaxis: {title: 'x (m)'},
-    yaxis: {title: 'forma modal phi_n(x)'}
+    yaxis: {title: 'forma modal φ_n(x)'}
   }
 }
 #end plotly
@@ -217,7 +217,7 @@ T_n = 1/f_n
 '<hr/>
 
 '<h2>9. AMORTIGUAMIENTO — qué hace la oscilación pequeña</h2>
-'<p>Toda oscilación real DECAE con el tiempo (no oscila eternamente). Eso se debe al <b>amortiguamiento</b> (zeta, ζ).</p>
+'<p>Toda oscilación real DECAE con el tiempo (no oscila eternamente). Eso se debe al <b>amortiguamiento</b> (ζ, ζ).</p>
 '<p><b>Analogía:</b> 🪀 péndulo en aire vs en agua — en agua decae rápido por la viscosidad.</p>
 '<p>Tipos:</p>
 '<ul>
@@ -254,9 +254,9 @@ mA_v = 2.45ton/m^3*A_v
 k_dist = 20000kN/m^2*b_v
 'k_winkler distribuido = 'k_dist' kN/m²
 L_v = 5m
-omega_1 = sqrt((pi/L_v)^4*EI_v/mA_v + k_dist/mA_v)
-'ω_1 = √[(π/L)⁴·EI/ρA + k/ρA] = 'omega_1' rad/s
-f_1_v = omega_1/(2*pi)
+ω_1 = sqrt((pi/L_v)^4*EI_v/mA_v + k_dist/mA_v)
+'ω_1 = √[(π/L)⁴·EI/ρA + k/ρA] = 'ω_1' rad/s
+f_1_v = ω_1/(2*pi)
 '<b>f_1 = 'f_1_v' Hz</b>
 
 '<h3>Paso 2: ¿Hay riesgo de resonancia?</h3>
