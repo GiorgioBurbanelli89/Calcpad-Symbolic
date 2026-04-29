@@ -1,0 +1,159 @@
+"Frecuencias naturales de oscilación de una viga sobre medio elástico
+'<hr/>
+'<h1>Viga finita sobre medio elástico — frecuencias naturales</h1>
+'<p><b>Problema:</b> Determinar las frecuencias naturales de oscilación de una viga de longitud finita L apoyada sobre un medio elástico (continuo o discreto).</p>
+'<p>Esta situación aparece en cimentaciones flotantes, vigas de amarre sobre suelo, rieles ferroviarios, etc.</p>
+'<hr/>
+'<h2>1. Modelo continuo — viga de Bernoulli-Euler sobre fundación de Winkler</h2>
+'<p>La ecuación diferencial parcial gobernante es:</p>
+'<p style="font-family:monospace; text-align:center; padding:10px; background:#f0f4f8;">
+'EI · ∂⁴w/∂x⁴ + ρA · ∂²w/∂t² + k·w = 0
+'</p>
+'<p>donde:</p>
+'<ul>
+'<li><b>w(x, t)</b> — desplazamiento transversal de la viga (m)</li>
+'<li><b>EI</b> — rigidez flexural (kN·m²)</li>
+'<li><b>ρA</b> — masa por unidad de longitud (ton/m = kN·s²/m²)</li>
+'<li><b>k</b> — módulo de Winkler distribuido = ks · b (kN/m²) donde b = ancho viga</li>
+'</ul>
+'<hr/>
+'<h2>2. Solución por separación de variables</h2>
+'<p>Asumimos solución armónica:</p>
+'<p style="font-family:monospace; text-align:center;">
+'w(x, t) = φ(x) · sin(ω·t)
+'</p>
+'<p>Sustituyendo en la EDP:</p>
+'<p style="font-family:monospace; text-align:center;">
+'EI · φ⁽⁴⁾(x) + (k - ω²·ρA) · φ(x) = 0
+'</p>
+'<p>Definimos el parámetro adimensional:</p>
+'<p style="font-family:monospace; text-align:center;">
+'β⁴ = (ω²·ρA - k) / EI
+'</p>
+'<p>La solución general de φ(x) = ∑(C_i · F_i(βx)) involucra funciones sin/cos/sinh/cosh de βx.</p>
+'<hr/>
+'<h2>3. Frecuencias naturales — viga simplemente apoyada</h2>
+'<p>Para condiciones de borde simplemente apoyadas (w=0, M=EI·w''=0 en x=0,L):</p>
+'<p>Modos de vibración:</p>
+'<p style="font-family:monospace; text-align:center;">
+'φ_n(x) = sin(n·π·x/L)
+'</p>
+'<p>Frecuencias naturales:</p>
+'<p style="font-family:monospace; text-align:center; background:#fff3cd; padding:10px;">
+'<b>ω_n² = (n²π²/L²)² · EI/ρA + k/ρA</b>
+'</p>
+'<p>Esto se descompone en dos contribuciones:</p>
+'<ul>
+'<li><b>Contribución de viga sola (sin medio):</b> ω_viga² = (n²π²/L²)² · EI/ρA</li>
+'<li><b>Contribución del medio elástico:</b> ω_medio² = k/ρA</li>
+'</ul>
+'<p>Por superposición cuadrática (suma de cuadrados, no lineal):</p>
+'<p style="font-family:monospace; text-align:center; background:#d1f7e0; padding:10px;">
+'<b>ω_n = √(ω_viga,n² + ω_medio²)</b>
+'</p>
+'<hr/>
+'<h2>4. Caso numérico — viga de cimentación 5m</h2>
+'<p>Datos de una viga típica de amarre:</p>
+E = 25000000kN/m^2
+'E = 'E' (módulo elasticidad concreto)
+b = 0.25m
+h = 0.40m
+A = b*h
+'A = b·h = 'A
+I = b*h^3/12
+'I = b·h³/12 = 'I
+EI = E*I
+'EI = 'EI
+'<p>Masa por unidad de longitud (ρ = 24/9.81 ton/m³ ≈ 2.45 ton/m³):</p>
+rho = 2.45ton/m^3
+mA = rho*A
+'m/L = ρ·A = 'mA
+'<p>Módulo de Winkler distribuido (ks suelo medio · b):</p>
+ks = 20000kN/m^3
+k = ks*b
+'k = ks·b = 'k' (kN/m por m de viga)
+L = 5m
+'L = 'L
+'<hr/>
+'<h2>5. Cálculo de frecuencias n=1,2,3,4</h2>
+'<p>Modo n=1 (frecuencia fundamental):</p>
+n_1 = 1
+omega_viga_1 = (n_1*pi/L)^2 * sqrt(EI/mA)
+'ω_viga_1 = (π/L)² · √(EI/ρA) = 'omega_viga_1' rad/s
+omega_medio = sqrt(k/mA)
+'ω_medio = √(k/ρA) = 'omega_medio' rad/s
+omega_1 = sqrt(omega_viga_1^2 + omega_medio^2)
+'<b>ω_1 = √(ω_viga_1² + ω_medio²) = 'omega_1' rad/s</b>
+f_1 = omega_1/(2*pi)
+'<b>f_1 = ω_1/(2π) = 'f_1' Hz</b>
+'<p>Modo n=2:</p>
+n_2 = 2
+omega_viga_2 = (n_2*pi/L)^2 * sqrt(EI/mA)
+'ω_viga_2 = (2π/L)² · √(EI/ρA) = 'omega_viga_2' rad/s
+omega_2 = sqrt(omega_viga_2^2 + omega_medio^2)
+'<b>ω_2 = 'omega_2' rad/s</b>
+f_2 = omega_2/(2*pi)
+'<b>f_2 = 'f_2' Hz</b>
+'<p>Modo n=3:</p>
+n_3 = 3
+omega_viga_3 = (n_3*pi/L)^2 * sqrt(EI/mA)
+'ω_viga_3 = 'omega_viga_3' rad/s
+omega_3 = sqrt(omega_viga_3^2 + omega_medio^2)
+'<b>ω_3 = 'omega_3' rad/s</b>
+f_3 = omega_3/(2*pi)
+'<b>f_3 = 'f_3' Hz</b>
+'<p>Modo n=4:</p>
+n_4 = 4
+omega_viga_4 = (n_4*pi/L)^2 * sqrt(EI/mA)
+'ω_viga_4 = 'omega_viga_4' rad/s
+omega_4 = sqrt(omega_viga_4^2 + omega_medio^2)
+'<b>ω_4 = 'omega_4' rad/s</b>
+f_4 = omega_4/(2*pi)
+'<b>f_4 = 'f_4' Hz</b>
+'<hr/>
+'<h2>6. Frecuencia de corte (cut-off) del medio elástico</h2>
+'<p>La frecuencia ω_medio = √(k/ρA) es la frecuencia natural del sistema masa-resorte distribuido <b>sin la viga</b>. Es la frecuencia de corte (cut-off) — bajo esta frecuencia, no hay propagación de ondas de flexión en el medio.</p>
+f_cutoff = omega_medio/(2*pi)
+'<b>f_cutoff = ω_medio / (2π) = 'f_cutoff' Hz</b>
+'<p>Interpretación: para excitaciones por debajo de f_cutoff, la viga oscila como un resorte rígido sobre el suelo. Para frecuencias mayores, las ondas flexurales se propagan a lo largo de la viga.</p>
+'<hr/>
+'<h2>7. Modelo discreto — viga de N elementos finitos</h2>
+'<p>Si discretizamos la viga en N elementos Euler-Bernoulli con springs Winkler en cada nodo:</p>
+'<p style="font-family:monospace; text-align:center; padding:10px; background:#f0f4f8;">
+'(K_viga + K_winkler - ω²·M) · φ = 0
+'</p>
+'<p>donde:</p>
+'<ul>
+'<li><b>K_viga</b> — matriz de rigidez global (12×12 por elemento, 4 DOF por nodo)</li>
+'<li><b>K_winkler</b> — matriz diagonal con kvz = ks·b·dL en cada nodo</li>
+'<li><b>M</b> — matriz de masa consistente o concentrada (lumped)</li>
+'<li><b>ω², φ</b> — autovalores y autovectores</li>
+'</ul>
+'<p>El problema discreto da N+1 frecuencias naturales (en práctica, las primeras 4-6 convergen a las del modelo continuo cuando N→∞).</p>
+'<hr/>
+'<h2>8. Resumen de fórmulas</h2>
+'<table border="1" cellpadding="6" style="border-collapse:collapse;">
+'<tr><th>Modelo</th><th>Frecuencias naturales</th><th>Comentario</th></tr>
+'<tr><td>Viga libre sin medio</td><td>ω_n = (nπ/L)² · √(EI/ρA)</td><td>simplemente apoyada</td></tr>
+'<tr><td>Medio elástico solo (sin viga)</td><td>ω = √(k/ρA)</td><td>frecuencia de corte</td></tr>
+'<tr><td>Viga + medio (continuo)</td><td>ω_n = √[((nπ/L)²)²·EI/ρA + k/ρA]</td><td>simply supported, Bernoulli</td></tr>
+'<tr><td>Modelo FEM discreto</td><td>(K-ω²M)·φ=0 → eig</td><td>cualquier condición de borde</td></tr>
+'</table>
+'<hr/>
+'<h2>9. Aplicación práctica — viga de amarre cimentación Hekatan</h2>
+'<p>En el análisis dinámico de una viga de amarre entre zapatas:</p>
+'<ol>
+'<li>Calcular m/L (masa por longitud) = ρ_concreto · b · h</li>
+'<li>Calcular k_winkler distribuido = ks_suelo · b</li>
+'<li>Aplicar fórmula ω_n = √[(nπ/L)²² · EI/ρA + k/ρA] para cada modo n</li>
+'<li>Comparar con frecuencia de excitación sismica/mecánica para evaluar resonancia</li>
+'</ol>
+'<p>Si la frecuencia de excitación se acerca a ω_1, la viga puede entrar en resonancia y amplificar las amplitudes — diseño debe alejarse de esa zona o agregar amortiguamiento.</p>
+'<hr/>
+'<h2>10. Bibliografía</h2>
+'<ul>
+'<li>Hetenyi, M. <i>Beams on Elastic Foundation</i>, Univ. Michigan Press, 1946.</li>
+'<li>Bowles, J. <i>Foundation Analysis and Design</i>, McGraw-Hill, 5th ed., 1996, §16.</li>
+'<li>Paz, M. & Leigh, W. <i>Structural Dynamics: Theory and Computation</i>, 5th ed., 2004, Cap. 14 — Vibration of Beams.</li>
+'<li>Timoshenko, S. <i>Vibration Problems in Engineering</i>, Van Nostrand, 1955.</li>
+'</ul>
