@@ -119,24 +119,27 @@ f_cutoff = ω_medio/(2*pi)
 '<hr/>
 '<h2>7. Modelo discreto — viga de N elementos finitos</h2>
 '<p>Discretizamos la viga en N elementos Euler-Bernoulli, cada uno con DOFs [w_i, θ_i, w_j, θ_j]. La matriz de rigidez elemental (4×4) es:</p>
-'<p style="font-family:monospace; padding:10px; background:#f0f4f8;">
-'K_e = (EI/L_e³) · [<br>
-'&nbsp;&nbsp;&nbsp; 12&nbsp;&nbsp;&nbsp;&nbsp; 6L_e&nbsp;&nbsp; -12&nbsp;&nbsp; 6L_e<br>
-'&nbsp;&nbsp; 6L_e&nbsp; 4L_e²&nbsp; -6L_e&nbsp; 2L_e²<br>
-'&nbsp;-12&nbsp;&nbsp;&nbsp; -6L_e&nbsp;&nbsp; 12&nbsp;&nbsp; -6L_e<br>
-'&nbsp;&nbsp; 6L_e&nbsp; 2L_e²&nbsp; -6L_e&nbsp; 4L_e²<br>
-'] + (ks·b·L_e/420) · M_winkler_dist
+
+'<h4>Matriz de rigidez elemental K_e</h4>
+K_bernoulli = [12; 6; -12; 6 | 6; 4; -6; 2 | -12; -6; 12; -6 | 6; 2; -6; 4]
+'K_e = (EI/L_e³) · 'K_bernoulli
+'<p>(donde los términos con L_e se interpretan como: posición [i,j] del 6 = 6·L_e, del 4 = 4·L_e², del 2 = 2·L_e², etc., siguiendo la convención Bernoulli-Euler estándar)</p>
+
+'<h4>Matriz de masa CONSISTENTE elemental M_e (Bernoulli)</h4>
+M_bernoulli = [156; 22; 54; -13 | 22; 4; 13; -3 | 54; 13; 156; -22 | -13; -3; -22; 4]
+'M_e = (ρA·L_e/420) · 'M_bernoulli
+
+'<h4>Matriz de Winkler (contribución del medio elástico al elemento)</h4>
+'<p>Cuando la viga apoya sobre un suelo Winkler con k_y constante, hay una matriz adicional similar a la masa consistente (PDF Austrell §6.4):</p>
+K_winkler = [156; 22; 54; -13 | 22; 4; 13; -3 | 54; 13; 156; -22 | -13; -3; -22; 4]
+'K_s_e = (k_y·L_e/420) · 'K_winkler
+'<p>donde k_y = ks·b (rigidez Winkler distribuida por unidad de longitud).</p>
+
+'<h4>Sistema global y problema de autovalores</h4>
+'<p>Ensamblamos las matrices elementales en globales:</p>
+'<p style="text-align:center; font-family:monospace; padding:10px; background:#f0f4f8;">
+'(K_global + K_s_global) - ω²·M_global · φ = 0
 '</p>
-'<p>La matriz de masa CONSISTENTE elemental (Bernoulli):</p>
-'<p style="font-family:monospace; padding:10px; background:#f0f4f8;">
-'M_e = (ρA·L_e/420) · [<br>
-'&nbsp;156&nbsp;&nbsp; 22L_e&nbsp;&nbsp; 54&nbsp;&nbsp; -13L_e<br>
-'&nbsp;22L_e&nbsp; 4L_e²&nbsp;&nbsp; 13L_e&nbsp; -3L_e²<br>
-'&nbsp;54&nbsp;&nbsp; 13L_e&nbsp;&nbsp; 156&nbsp;&nbsp; -22L_e<br>
-'-13L_e&nbsp; -3L_e²&nbsp;-22L_e&nbsp; 4L_e²<br>
-']
-'</p>
-'<p>Eigenvalue problem global: <b>(K_global - ω²·M_global) · φ = 0</b></p>
 '<p>Las primeras frecuencias convergen al modelo continuo cuando N → ∞.</p>
 
 '<h3>7.1. Caso numérico FEM — N=4 elementos</h3>
