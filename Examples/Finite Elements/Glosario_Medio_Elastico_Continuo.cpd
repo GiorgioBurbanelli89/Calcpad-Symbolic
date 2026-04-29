@@ -1,0 +1,292 @@
+"Glosario — Medio Elástico, Continuo, Winkler, Modos... explicado con ejemplos
+'<hr/>
+'<h1>📖 Glosario visual — términos raros del análisis dinámico</h1>
+'<p>Si lees "viga sobre medio elástico continuo en su modo de oscilación con frecuencia natural" y te quedas en blanco, este documento es para ti. Cada término viene con <b>analogía cotidiana</b> + <b>ejemplo numérico</b>.</p>
+'<hr/>
+
+'<h2>1. ¿Qué es un MEDIO ELÁSTICO?</h2>
+'<p><b>Definición seca:</b> material que se deforma bajo carga y vuelve a su forma original al retirarla, con relación lineal F = k·δ (Ley de Hooke).</p>
+'<p><b>Analogía cotidiana:</b> 🛏️ <b>colchón</b>. Te acuestas → se hunde una cierta cantidad. Te paras → vuelve a su forma. Si te acuestas con el doble de peso, se hunde el doble.</p>
+'<p><b>Característica clave</b> — la rigidez se cuantifica con un número:</p>
+k_resorte = 1000kN/m
+'k_resorte = 'k_resorte' (rigidez vertical)
+'<p>Si aplicas F = 100 kN, la deformación es:</p>
+F_aplicada = 100kN
+delta = F_aplicada / k_resorte
+'δ = F / k = 'delta' = 'delta'*1000mm/m'mm
+'<p>Ejemplos de medios elásticos:</p>
+'<ul>
+'<li>Suelo (donde apoyas un edificio)</li>
+'<li>Acero, hormigón, plástico (en su rango elástico)</li>
+'<li>Aire/gas comprimido</li>
+'<li>Resortes mecánicos</li>
+'</ul>
+'<hr/>
+
+'<h2>2. CONTINUO vs DISCRETO — la diferencia clave</h2>
+'<p><b>Modelo CONTINUO:</b> el medio existe en TODOS los puntos del espacio. Como una espuma sólida — entre dos puntos cualquiera, hay material.</p>
+'<p><b>Modelo DISCRETO:</b> el medio existe solo en PUNTOS específicos (resortes en posiciones discretas). Como una cama elástica con 100 muelles separados.</p>
+
+'<h3>Ejemplo visual</h3>
+#plotly 700 350
+{
+  data: [{
+    type: 'scatter', mode: 'lines', name: 'Continuo (espuma)',
+    x: [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1],
+    y: [0, -0.05, -0.10, -0.13, -0.15, -0.16, -0.15, -0.13, -0.10, -0.05, 0],
+    line: {color: '#3b82f6', width: 4}, fill: 'tozeroy', fillcolor: 'rgba(59,130,246,0.2)'
+  }, {
+    type: 'scatter', mode: 'markers', name: 'Discreto (5 resortes)',
+    x: [0.1, 0.3, 0.5, 0.7, 0.9],
+    y: [-0.05, -0.13, -0.16, -0.13, -0.05],
+    marker: {color: '#ef4444', size: 18, symbol: 'triangle-up'}
+  }],
+  layout: {
+    title: 'Misma deformacion bajo una carga puntual al centro',
+    xaxis: {title: 'x (m)'},
+    yaxis: {title: 'deflexion (m)'}
+  }
+}
+#end plotly
+
+'<p><b>¿Cuál usar?</b> En la práctica:</p>
+'<ul>
+'<li><b>Continuo</b>: para ecuaciones diferenciales (más exacto, pero solo soluble en geometrías sencillas)</li>
+'<li><b>Discreto</b>: para FEM (computadora, geometrías arbitrarias)</li>
+'</ul>
+'<p>Cuando refinas el modelo discreto (más resortes/elementos), <b>converge al continuo</b>.</p>
+'<hr/>
+
+'<h2>3. MODELO WINKLER — el suelo bajo tu casa</h2>
+'<p><b>Idea:</b> el suelo se modela como una "cama de resortes" independientes, cada uno responde solo a la presión justo encima de él (sin transmitir a vecinos).</p>
+'<p><b>Analogía:</b> 🛏️ piensa en muchos colchones individuales pegados — si presionas uno, los de al lado NO se hunden.</p>
+'<p>Parámetro principal: <b>k_s</b> (módulo de balasto) en kN/m³.</p>
+ks = 20000kN/m^3
+'k_s = 'ks
+'<p>Para una zapata de área A apoyada en el suelo:</p>
+A_zapata = 4m^2
+k_total = ks*A_zapata
+'k_total zapata = k_s · A = 'k_total' kN/m
+'<p>Bajo carga P = 100 kN, la zapata se hunde:</p>
+P_zapata = 100kN
+delta_zapata = P_zapata / k_total
+'δ = 'delta_zapata' = 'delta_zapata*1000mm/m'mm
+'<p><b>Limitación de Winkler:</b> ignora la cohesión lateral del suelo (en realidad sí transmite a vecinos). Para análisis preciso → modelos elastoplásticos o continuos (Boussinesq).</p>
+'<hr/>
+
+'<h2>4. VIGA DE BERNOULLI-EULER vs TIMOSHENKO</h2>
+'<p><b>Bernoulli-Euler:</b> teoría de viga clásica. Asume que las secciones planas perpendiculares al eje SE MANTIENEN PLANAS y PERPENDICULARES tras deformarse. Solo considera flexión.</p>
+'<p><b>Analogía:</b> 🍝 espagueti seco — si lo flexionas, se dobla pero las "rebanadas" no se desalinean.</p>
+
+'<p><b>Timoshenko:</b> añade el efecto del CORTE (las rebanadas pueden deslizarse).</p>
+'<p><b>Analogía:</b> 🍰 torta de capas — si la doblas, las capas pueden desplazarse entre sí.</p>
+
+'<h3>¿Cuándo importa el corte?</h3>
+'<p>Para vigas <b>cortas y altas</b> (L/h pequeño). Regla práctica:</p>
+'<ul>
+'<li>L/h > 10 → Bernoulli-Euler suficiente (error &lt;5%)</li>
+'<li>L/h &lt; 10 → usar Timoshenko (error puede ser ~20%)</li>
+'</ul>
+
+'<h3>Ejemplo numérico — viga de cimentación</h3>
+L_viga = 5m
+h_viga = 0.40m
+ratio_Lh = L_viga/h_viga
+'L/h = 'ratio_Lh
+'<p>Como L/h = 12.5 > 10, Bernoulli-Euler es aceptable.</p>
+'<p>Si fuera una zapata corrida con L=2m, h=0.5m → L/h=4 → Timoshenko obligatorio.</p>
+'<hr/>
+
+'<h2>5. PLACAS — Kirchhoff vs Mindlin-Reissner</h2>
+'<p>Misma idea que vigas pero en 2D:</p>
+'<ul>
+'<li><b>Kirchhoff (CPT)</b>: placa delgada (t/L &lt; 1/20). Análogo a Bernoulli-Euler.</li>
+'<li><b>Mindlin-Reissner (FSDT)</b>: placa gruesa (t/L > 1/20). Considera deformación por corte transversal. Análogo a Timoshenko.</li>
+'</ul>
+'<p><b>Ejemplo:</b> losa de piso 5m × 5m × 20cm:</p>
+t_losa = 0.20m
+L_losa = 5m
+ratio_tL = t_losa/L_losa
+'<p>t/L = 'ratio_tL' (= 1/25)</p>
+'<p>Como 1/25 &lt; 1/20 → es DELGADA → Kirchhoff suficiente.</p>
+'<p>Una zapata de 1.5×1.5×0.30m: t/L = 0.30/1.5 = 0.20 = 1/5 → es GRUESA → <b>Mindlin obligatorio</b>.</p>
+'<hr/>
+
+'<h2>6. FRECUENCIA NATURAL — la "nota musical" de un sistema</h2>
+'<p>Todo sistema masa-resorte tiene una frecuencia natural <b>ω_n</b> a la que oscila libremente cuando lo perturbas.</p>
+'<p><b>Analogía:</b> 🪀 un péndulo — siempre oscila al mismo ritmo (depende de su longitud), independiente de cómo lo empujes.</p>
+'<p>Fórmula básica masa-resorte:</p>
+'<p style="text-align:center; font-family:monospace; padding:10px; background:#f0f4f8;">
+'ω_n = √(k / m)   [rad/s]<br>
+'f_n = ω_n / (2π)  [Hz]
+'</p>
+
+'<h3>Ejemplo: edificio de 1 piso como masa concentrada</h3>
+m_edificio = 100ton
+k_lateral = 5000kN/m
+omega_n = sqrt(k_lateral/m_edificio)
+'ω_n = √(k/m) = 'omega_n' rad/s
+f_n = omega_n/(2*pi)
+'f_n = 'f_n' Hz
+T_n = 1/f_n
+'T = 1/f = 'T_n' s (período)
+'<p>Significa que si empujas el edificio y lo sueltas, oscila ~ ½ veces por segundo (período ~2s).</p>
+'<hr/>
+
+'<h2>7. RESONANCIA — el famoso copa de vino que se rompe</h2>
+'<p>Cuando una excitación externa tiene frecuencia <b>cercana</b> a ω_n, la respuesta se AMPLIFICA enormemente.</p>
+'<p><b>Analogía:</b> 🥂 cantante rompe copa cantando en su frecuencia. Si canta otra nota → no pasa nada.</p>
+
+'<h3>Caso real — sismo y edificios</h3>
+'<p>Sismos típicos tienen contenido de frecuencia 0.5–10 Hz. Edificios:</p>
+'<ul>
+'<li>1 piso: f ~ 5 Hz</li>
+'<li>5 pisos: f ~ 1 Hz</li>
+'<li>20 pisos: f ~ 0.3 Hz</li>
+'</ul>
+'<p>Si el edificio tiene f ~ frecuencia dominante del sismo → resonancia → catástrofe (Mexico City 1985 — edificios de 8-15 pisos colapsaron porque su f coincidió con el período largo del sismo).</p>
+
+'<h3>Curva de amplificación dinámica</h3>
+#plotly 700 400
+{
+  data: [{
+    type: 'scatter', mode: 'lines', name: 'zeta=2% (poco amortiguado)',
+    x: [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95,0.98,1.0,1.02,1.05,1.1,1.2,1.3,1.5,2,3,5],
+    y: [1.00,1.01,1.04,1.10,1.19,1.34,1.56,1.96,2.78,5.26,10.0,15.0,25.0,15.0,10.0,5.26,2.78,1.96,1.34,0.50,0.13,0.04],
+    line: {color: '#dc2626', width: 3}
+  }, {
+    type: 'scatter', mode: 'lines', name: 'zeta=10% (amortiguado normal)',
+    x: [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95,1.0,1.05,1.1,1.2,1.3,1.5,2,3,5],
+    y: [1.00,1.01,1.04,1.09,1.18,1.30,1.45,1.65,1.89,2.13,2.27,2.50,2.27,2.13,1.65,1.30,0.92,0.42,0.13,0.04],
+    line: {color: '#3b82f6', width: 3}
+  }, {
+    type: 'scatter', mode: 'lines', name: 'zeta=50% (muy amortiguado)',
+    x: [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.2,1.5,2,3,5],
+    y: [1.00,1.00,1.00,0.99,0.98,0.96,0.94,0.91,0.88,0.85,0.82,0.71,0.55,0.38,0.18,0.07],
+    line: {color: '#10b981', width: 3}
+  }],
+  layout: {
+    title: 'Amplificacion dinamica vs ratio omega/omega_n',
+    xaxis: {title: 'omega / omega_n (frec excitacion / natural)'},
+    yaxis: {title: '|H(omega)| amplificacion', type: 'log'}
+  }
+}
+#end plotly
+
+'<p>Cerca de ω/ω_n=1 (resonancia), la amplificación es 25× con poco amortiguamiento. Por eso los edificios necesitan amortiguadores (TMD, dashpots viscosos).</p>
+'<hr/>
+
+'<h2>8. MODOS DE VIBRACIÓN — las formas de oscilar</h2>
+'<p>Un sistema con N grados de libertad tiene N modos. Cada modo es una <b>forma característica</b> (eigenvector) y una <b>frecuencia</b> (eigenvalor).</p>
+'<p><b>Analogía:</b> 🎸 cuerda de guitarra — al tocarla vibra en una mezcla de modos:</p>
+'<ul>
+'<li>Modo 1 (fundamental): cuerda completa oscila como una sola onda</li>
+'<li>Modo 2: cuerda dividida en 2 mitades, oscilan en sentido opuesto</li>
+'<li>Modo 3: 3 segmentos alternados</li>
+'<li>etc.</li>
+'</ul>
+
+'<h3>Modos de una viga simply supported (φ_n = sin(nπx/L))</h3>
+#plotly 700 400
+{
+  data: [{
+    type: 'scatter', mode: 'lines', name: 'Modo 1 (fundamental)',
+    x: [0,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5],
+    y: [0,0.309,0.588,0.809,0.951,1.000,0.951,0.809,0.588,0.309,0],
+    line: {color: '#3b82f6', width: 4}
+  }, {
+    type: 'scatter', mode: 'lines', name: 'Modo 2 (doble S)',
+    x: [0,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5],
+    y: [0,0.588,0.951,0.951,0.588,0,-0.588,-0.951,-0.951,-0.588,0],
+    line: {color: '#ef4444', width: 4}
+  }, {
+    type: 'scatter', mode: 'lines', name: 'Modo 3',
+    x: [0,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5],
+    y: [0,0.809,0.951,0.309,-0.588,-1.000,-0.588,0.309,0.951,0.809,0],
+    line: {color: '#10b981', width: 4}
+  }],
+  layout: {
+    title: 'Formas modales de una viga simply supported L=5m',
+    xaxis: {title: 'x (m)'},
+    yaxis: {title: 'forma modal phi_n(x)'}
+  }
+}
+#end plotly
+
+'<p>El <b>modo 1</b> es el más importante (frecuencia más baja, amplitud más grande bajo carga típica). Los modos altos (n=3, 4, ...) tienen frecuencias mayores pero amplitud menor.</p>
+'<hr/>
+
+'<h2>9. AMORTIGUAMIENTO — qué hace la oscilación pequeña</h2>
+'<p>Toda oscilación real DECAE con el tiempo (no oscila eternamente). Eso se debe al <b>amortiguamiento</b> (zeta, ζ).</p>
+'<p><b>Analogía:</b> 🪀 péndulo en aire vs en agua — en agua decae rápido por la viscosidad.</p>
+'<p>Tipos:</p>
+'<ul>
+'<li><b>Subamortiguado (ζ &lt; 1)</b>: oscila con amplitud decreciente (caso típico estructural ζ=2-10%)</li>
+'<li><b>Crítico (ζ = 1)</b>: vuelve al equilibrio sin oscilar (mínimo tiempo)</li>
+'<li><b>Sobreamortiguado (ζ > 1)</b>: vuelve al equilibrio lentamente sin oscilar</li>
+'</ul>
+
+'<h3>Tabla de valores típicos</h3>
+'<table border="1" cellpadding="6" style="border-collapse:collapse;">
+'<tr><th>Sistema</th><th>ζ típico (%)</th><th>Comentario</th></tr>
+'<tr><td>Acero soldado</td><td>0.5 – 1</td><td>poca disipación</td></tr>
+'<tr><td>Hormigón armado</td><td>2 – 5</td><td>típico estructural</td></tr>
+'<tr><td>Hormigón con fisuras</td><td>5 – 10</td><td>sismo intenso</td></tr>
+'<tr><td>Madera laminada</td><td>5 – 8</td><td>fibras disipan</td></tr>
+'<tr><td>Suelo blando</td><td>10 – 20</td><td>radiación al infinito</td></tr>
+'<tr><td>TMD (sintonizado)</td><td>15 – 25</td><td>diseñado para max ζ</td></tr>
+'</table>
+'<hr/>
+
+'<h2>10. JUNTANDO TODO — ejemplo final</h2>
+'<p>Una viga de cimentación de 5m sobre Winkler ks=20000 kN/m³, sección 0.25×0.40 m, ¿cómo responde a un sismo de f = 5 Hz?</p>
+
+'<h3>Paso 1: ¿Cuál es la frecuencia natural?</h3>
+b_v = 0.25m
+h_v = 0.40m
+A_v = b_v*h_v
+I_v = b_v*h_v^3/12
+E_concreto = 25000000kN/m^2
+EI_v = E_concreto*I_v
+'EI = 'EI_v' kN·m²
+mA_v = 2.45ton/m^3*A_v
+'ρA = 'mA_v' ton/m
+k_dist = 20000kN/m^2*b_v
+'k_winkler distribuido = 'k_dist' kN/m²
+L_v = 5m
+omega_1 = sqrt((pi/L_v)^4*EI_v/mA_v + k_dist/mA_v)
+'ω_1 = √[(π/L)⁴·EI/ρA + k/ρA] = 'omega_1' rad/s
+f_1_v = omega_1/(2*pi)
+'<b>f_1 = 'f_1_v' Hz</b>
+
+'<h3>Paso 2: ¿Hay riesgo de resonancia?</h3>
+f_sismo = 5Hz
+ratio_f = f_sismo/f_1_v
+'ratio f_sismo / f_1 = 'ratio_f
+'<p>Si está cerca de 1 → resonancia. Aquí f_1 ≈ 18 Hz vs f_sismo = 5 Hz → ratio ≈ 0.28 → <b>seguro</b>, lejos de la resonancia.</p>
+
+'<h3>Paso 3: ¿Y si la excitación viene de maquinaria a 18 Hz?</h3>
+'<p>Entonces SÍ habría resonancia y la viga se amplificaría 10–25× (según amortiguamiento). Solución:</p>
+'<ul>
+'<li>Cambiar la frecuencia de la maquinaria</li>
+'<li>Cambiar la rigidez de la viga (rigidizar EI o k)</li>
+'<li>Agregar amortiguador (TMD)</li>
+'</ul>
+'<hr/>
+
+'<h2>📚 Resumen rápido</h2>
+'<table border="1" cellpadding="6" style="border-collapse:collapse;">
+'<tr><th>Término</th><th>Significado en una frase</th><th>Analogía</th></tr>
+'<tr><td>Medio elástico</td><td>Material que deforma proporcional a la fuerza</td><td>Colchón</td></tr>
+'<tr><td>Continuo</td><td>Material en TODOS los puntos</td><td>Espuma sólida</td></tr>
+'<tr><td>Discreto</td><td>Resortes/elementos en puntos separados</td><td>Cama elástica con muelles</td></tr>
+'<tr><td>Winkler</td><td>Suelo modelado como resortes verticales independientes</td><td>Muchos colchones individuales</td></tr>
+'<tr><td>Bernoulli-Euler</td><td>Viga sin deformación por corte</td><td>Espagueti seco</td></tr>
+'<tr><td>Timoshenko</td><td>Viga CON deformación por corte</td><td>Torta de capas</td></tr>
+'<tr><td>Kirchhoff</td><td>Placa delgada (sin corte)</td><td>Hoja de papel</td></tr>
+'<tr><td>Mindlin-Reissner</td><td>Placa gruesa CON corte</td><td>Mantel doblado</td></tr>
+'<tr><td>Frecuencia natural</td><td>El "ritmo propio" del sistema (Hz)</td><td>Péndulo</td></tr>
+'<tr><td>Resonancia</td><td>Excitación coincide con frec. natural</td><td>Copa de vino + cantante</td></tr>
+'<tr><td>Modo de vibración</td><td>Forma característica de oscilar</td><td>Cuerda de guitarra</td></tr>
+'<tr><td>Amortiguamiento (ζ)</td><td>Tasa de decaimiento de la oscilación</td><td>Péndulo en agua</td></tr>
+'</table>
