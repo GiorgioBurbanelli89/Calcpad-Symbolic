@@ -30,21 +30,23 @@
 
 '<p>El verdadero puente entre las dos descripciones es el siguiente: cuando
 'integras la fuerza interna sobre el elemento usando B, recuperas la
-'rigidez axial del resorte. Es decir:</p>
+'rigidez axial del resorte:</p>
 
-#deq K_e = ∫(B^T*E*A*B)*dx ≡ k = E*A/L
+"Formula de la matriz de rigidez del elemento
 
-'<p>El resorte es el caso particular del FEM con 1 GDL libre. B aparece
-'integrada DENTRO de la formula de k.</p>
-
-"Verificacion simbolica
 #sym
 integrate(E*A/L^2; x; 0; L)
 #end sym
 
-'<p>Resultado E·A/L = k del resorte. Las dos visiones son consistentes
-'pero operan a niveles distintos: <b>k es la version "macro" integrada
-'de B</b>.</p>
+'<p>El integrando B^T·E·A·B (con B = -1/L, +1/L y E·A constantes) se
+'reduce a E·A/L². Integrado sobre x desde 0 hasta L da <b>E·A/L</b>,
+'que es exactamente la <b>k del resorte axial clasico</b>.</p>
+
+#deq k_resorte = E*A/L
+
+'<p>Las dos visiones son consistentes pero operan a niveles distintos:
+'k del resorte es la version "macro" integrada de B. El resorte es el
+'caso particular del FEM con 1 GDL libre.</p>
 
 '<hr/>
 
