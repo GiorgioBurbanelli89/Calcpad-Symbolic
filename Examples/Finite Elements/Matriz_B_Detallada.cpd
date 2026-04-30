@@ -12,9 +12,35 @@
 '<p>La matriz B hace ese paso: <b>convierte desplazamientos nodales en
 'deformacion en cualquier punto del elemento</b>:</p>
 
-#deq ε(x) = B(x)*u_e
+#deq ε = B*u_e
 
-'<p>donde u_e es el vector de los desplazamientos de los nodos del elemento.</p>
+'<p>donde u_e es el vector columna de los desplazamientos de los nodos del
+'elemento. La notacion B(x) significa "B evaluada en la posicion x" — NO
+'es B multiplicada por x. Para barra lineal B es <b>constante</b> y no
+'depende de x.</p>
+
+"Analisis dimensional — ¿por que B tiene unidades 1/longitud?
+'<p>Veamos las unidades de cada variable para entender que es B:</p>
+
+'<table border="1" cellpadding="6">
+'<tr><th>Variable</th><th>Unidades</th><th>Que representa</th></tr>
+'<tr><td>u_e</td><td>m (metros)</td><td>Desplazamiento de los nodos</td></tr>
+'<tr><td>ε</td><td>adimensional (m/m)</td><td>Deformacion unitaria (cuanto se estira por unidad de longitud)</td></tr>
+'<tr><td>x, L</td><td>m</td><td>Posicion / longitud del elemento</td></tr>
+'<tr><td>B</td><td><b>1/m</b></td><td>"Tasa" geometrica que conecta u con ε</td></tr>
+'</table>
+
+'<p>Para que la ecuacion ε = B·u sea consistente:</p>
+
+#deq [adimensional] = [1/m]*[m]
+
+'<p>Las dos m se cancelan. <b>B no es longitud al cuadrado</b> — es 1/longitud,
+'precisamente para que el producto con u de la deformacion adimensional.</p>
+
+'<p>Esto se ve claramente en B = [-1/L, 1/L] para la barra lineal: cada
+'componente tiene unidades 1/m. Cuando multiplicas por u (en metros),
+'obtienes la deformacion unitaria (adimensional, normalmente expresada
+'como microstrains o porcentaje).</p>
 
 "Diagrama conceptual del rol de B
 '<p>El flujo es:</p>
@@ -22,6 +48,63 @@
 '<p>2) <b>B convierte u_e en ε(x)</b>: las deformaciones unitarias en cada punto</p>
 '<p>3) D (Hooke) convierte ε en σ: los esfuerzos</p>
 '<p>4) σ comparado con f_y / f_c verifica el diseño</p>
+
+'<hr/>
+
+"Cap 1.5 — ¿De donde viene B matematicamente?
+'<p>B no se "inventa" — sale de aplicar TRES principios fisicos en orden.
+'Cada uno se justifica por separado:</p>
+
+"Principio 1 — Definicion de deformacion unitaria (Cauchy 1828)
+'<p>La deformacion ε en un punto es el <b>cambio de longitud por unidad de
+'longitud original</b>. Matematicamente, es la derivada del desplazamiento:</p>
+
+#deq ε = du/dx
+
+'<p>Si una barra de 1 m se estira 1 mm, ε = 0.001 (1 mm/1000 mm). Es una
+'fraccion adimensional. Esta definicion es <b>geometrica</b>, no del FEM —
+'aplica a cualquier solido elastico.</p>
+
+"Principio 2 — Interpolacion del desplazamiento (Courant 1943)
+'<p>El FEM postula que dentro del elemento, u se construye como suma de
+'contribuciones nodales:</p>
+
+#deq u(x) = N_1(x)*u_1 + N_2(x)*u_2
+
+'<p>Cada N_i es una funcion conocida de x (sale de las condiciones nodales,
+'ver el archivo Funciones_de_Forma_Detalladas.cpd Cap 3). Los u_i son
+'incognitas que el FEM resuelve.</p>
+
+"Principio 3 — Combinar (1) + (2): aparece B
+'<p>Sustituyendo (2) en (1) y aplicando la derivada termino a termino:</p>
+
+#deq ε(x) = du/dx = (dN_1/dx)*u_1 + (dN_2/dx)*u_2
+
+'<p>Esto es una <b>combinacion lineal</b> de los desplazamientos nodales
+'con coeficientes (dN_i/dx). Si la escribimos como producto matricial:</p>
+
+#deq ε = [dN_1/dx, dN_2/dx]*[u_1|u_2]
+
+'<p>Identificamos:</p>
+
+#deq B = [dN_1/dx, dN_2/dx]
+
+'<p>Eso es <b>todo</b>. B es simplemente el vector de derivadas de las
+'funciones de forma. Su nombre viene de la convencion clasica de Zienkiewicz
+'(la primera letra de "B-matrix" o "strain-displacement matrix").</p>
+
+"Las unidades de B salen automaticamente
+'<p>Como dN_i/dx tiene unidades de 1/m (adimensional dividido por m), B
+'hereda esa unidad. No es algo "fabricado" — es la consecuencia natural
+'de derivar una funcion adimensional respecto a una posicion en metros.</p>
+
+'<p>Con B definida, la cadena queda:</p>
+
+#deq u_nodal → ε = B*u → σ = D*ε → K_e = ∫B^T*D*B*dV
+
+'<p>Toda la fisica del FEM lineal se reduce a multiplicaciones de matrices,
+'gracias a que B captura la "geometria diferencial" del elemento en una
+'forma compacta.</p>
 
 '<hr/>
 
@@ -254,7 +337,7 @@ K_e = (E*A/L)*[1; -1|-1; 1]
 '<p>B es una matriz que <b>convierte desplazamientos nodales en
 'deformaciones puntuales</b> mediante derivacion de las funciones de forma.</p>
 
-#deq B(x) = [dN_1/dx; dN_2/dx; ...; dN_n/dx]
+#deq B = [dN_1/dx, dN_2/dx, dN_n/dx]
 
 '<p>Para 1D: vector fila. Para 2D plano: 3×(2n). Para 3D solido: 6×(3n).
 'Siempre con la misma logica: cada columna captura como un nodo afecta
