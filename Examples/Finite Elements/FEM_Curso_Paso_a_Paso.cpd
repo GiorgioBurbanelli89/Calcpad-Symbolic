@@ -103,6 +103,71 @@ K_2 = [k_2; -k_2|-k_2; k_2]
 K_total = [k_1; -k_1; 0|-k_1; k_1+k_2; -k_2|0; -k_2; k_2]
 #equ
 
+"¿Por que la matriz tiene esa forma? — la regla del ensamblaje
+'<p>Cada resorte es un elemento de 2 nodos. Su matriz K_e (2×2) se "estampa"
+'en la matriz global (3×3) en las filas y columnas correspondientes a los
+'nodos del elemento. Como el resorte 1 conecta nodos 1-2 y el resorte 2
+'conecta nodos 2-3, se pisan en la posicion (2,2) — ahi es donde se suman.</p>
+
+"Grafica de ensamblaje SERIE — diagramas y mapeo
+$Struct{fixed,0,0 : spring,0,0,2,0,k₁ : node,0,0,1 : spring,2,0,4,0,k₂ : node,2,0,2 : node,4,0,3 : force,4,0,right,F @ title=ESQUEMA SERIE - k1 entre nodos 1-2, k2 entre 2-3, comparten el nodo 2 : w=580 : h=160}
+
+'<p>Mapeo nodal:</p>
+'<p>• Resorte 1 con K_e1 → fila/columna globales (1,2). Se estampa en
+'esquinas (1,1), (1,2), (2,1), (2,2).</p>
+'<p>• Resorte 2 con K_e2 → fila/columna globales (2,3). Se estampa en
+'esquinas (2,2), (2,3), (3,2), (3,3).</p>
+'<p>• Las contribuciones de AMBOS en (2,2) se SUMAN: k₁ + k₂.</p>
+
+'<p>Por eso la matriz total tiene la estructura tridiagonal (banda):</p>
+
+#noc
+K_serie = [k_1; -k_1; 0|-k_1; k_1+k_2; -k_2|0; -k_2; k_2]
+#equ
+
+'<hr/>
+
+"Comparacion: ¿que pasa si los resortes estan EN PARALELO?
+'<p>Cuando dos resortes estan en <b>paralelo</b>, ambos conectan los MISMOS
+'dos nodos (no comparten un nodo intermedio sino los dos). Solo hay 2 nodos
+'en total — no 3.</p>
+
+"Grafica del esquema PARALELO
+$Struct{fixed,0,0 : bar,0,-0.6,0,0.6 : bar,3,-0.6,3,0.6 : spring,0,0.4,3,0.4,k₁ : spring,0,-0.4,3,-0.4,k₂ : node,0,0,1 : node,3,0,2 : force,3,0,right,F @ title=ESQUEMA PARALELO - k1 y k2 conectan los MISMOS dos nodos : w=580 : h=200}
+
+'<p>Como los dos resortes empujan al nodo 2 al mismo tiempo cuando se aplica
+'una fuerza, sus rigideces se SUMAN directamente. La rigidez equivalente es
+'k_eq = k₁ + k₂ y la matriz total es solo 2×2:</p>
+
+#noc
+K_paralelo = [k_1+k_2; -(k_1+k_2)|-(k_1+k_2); k_1+k_2]
+#equ
+
+'<p>Notar que cada elemento aporta una matriz 2×2 al mismo bloque (1,2). Como
+'no hay tercer nodo, las dos contribuciones se SUMAN en sus 4 esquinas.</p>
+
+"Resumen de la diferencia clave
+'<table border="1" cellpadding="6">
+'<tr><th>Aspecto</th><th>SERIE</th><th>PARALELO</th></tr>
+'<tr><td>Nodos totales</td><td>3 (1, 2, 3)</td><td>2 (1, 2)</td></tr>
+'<tr><td>Conectividad k₁</td><td>nodos 1-2</td><td>nodos 1-2</td></tr>
+'<tr><td>Conectividad k₂</td><td>nodos 2-3</td><td>nodos 1-2 (mismo)</td></tr>
+'<tr><td>Tamano K_total</td><td>3×3 tridiagonal</td><td>2×2</td></tr>
+'<tr><td>Rigidez equiv.</td><td>1/(1/k₁+1/k₂) = k₁k₂/(k₁+k₂)</td><td>k₁+k₂</td></tr>
+'<tr><td>Donde se suman?</td><td>solo en (2,2)</td><td>en las 4 esquinas</td></tr>
+'</table>
+
+"Verificacion numerica — k₁=100, k₂=200
+ks_eq_serie = 100*200/(100 + 200)
+ks_eq_paral = 100 + 200
+
+'<p>Para los mismos resortes: en serie quedan equivalentes a 66.67 N/m
+'(menos rigido que el menor de los dos). En paralelo quedan equivalentes a
+'300 N/m (mas rigido que el mayor de los dos). Esa es la <b>regla
+'mnemotecnica</b>: serie blando, paralelo rigido.</p>
+
+'<hr/>
+
 "Caso numerico — primer resorte k₁=100, segundo k₂=200, F=30 en el extremo libre
 k_1 = 100
 k_2 = 200
