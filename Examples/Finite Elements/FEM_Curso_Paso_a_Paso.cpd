@@ -204,21 +204,110 @@ $Chart{L_v; k_v @ title=Rigidez axial k = E·A/L vs longitud L : xlabel=L (m) : 
 
 '<hr/>
 
-"Paso 4.3 — Despejar N₁(x) y N₂(x)
-'Imponemos las dos condiciones que las funciones de forma DEBEN cumplir:
+"Paso 4.3 — Despejar N₁(x) y N₂(x) graficamente
+'<p>El truco para entender las funciones de forma: piensa en los puntos por los
+'que <b>obligatoriamente</b> pasa cada una.</p>
 
-'Condicion 1 — en el nodo 1 (x=0) tenemos 'u(0) = u_1', asi que:
-#deq N_1(0) = 1   y   N_2(0) = 0
+"Condicion 1 — N₁ vale 1 en su nodo y 0 en el otro
+'<p>Como en x=0 queremos u(0) = u₁ (todo el peso al nodo 1), debe pasar:</p>
 
-'Condicion 2 — en el nodo 2 (x=L) tenemos 'u(L) = u_2', asi que:
-#deq N_1(L) = 0   y   N_2(L) = 1
+#deq N_1(0) = 1
 
-'Asumimos formas LINEALES (mas simple posible): 'N_1(x) = a + b*x' y 'N_2(x) = c + d*x'.
+'<p>Y en x=L queremos u(L) = u₂ (cero peso al nodo 1), entonces:</p>
 
-'Resolviendo el sistema de ecuaciones (4 condiciones, 4 incognitas a, b, c, d):
+#deq N_1(L) = 0
+
+'<p>O sea, N₁ es una funcion que pasa por los puntos (0, 1) y (L, 0).</p>
+
+"Grafica 4.3a — N₁ esta forzada a pasar por (0,1) y (L,0)
+#hide
+n_pic = 30
+xpic = vector(n_pic)
+N1pic = vector(n_pic)
+'Solo dibujamos los DOS puntos de paso (los marcadores los pone el chart con tipo line)
+xpts1 = vector(2)
+ypts1 = vector(2)
+xpts1.(1) = 0
+ypts1.(1) = 1
+xpts1.(2) = 1
+ypts1.(2) = 0
+#for i = 1 : n_pic
+    xpic.(i) = (i - 1)*1/(n_pic - 1)
+    N1pic.(i) = 1 - xpic.(i)
+#loop
+#show
+
+$Chart{xpts1; ypts1; xpic; N1pic @ title=N₁ pasa por (0,1) y (L,0) - linea recta unica : xlabel=x/L : ylabel=N₁ : labels=Puntos forzados,N₁(x) lineal}
+
+'<hr/>
+
+"Condicion 2 — N₂ es la imagen espejo
+'<p>Mismo razonamiento para N₂: en x=0 vale 0, en x=L vale 1.</p>
+
+#deq N_2(0) = 0
+
+#deq N_2(L) = 1
+
+'<p>Asi que N₂ pasa por los puntos (0, 0) y (L, 1).</p>
+
+"Grafica 4.3b — N₂ pasa por (0,0) y (L,1)
+#hide
+xpts2 = vector(2)
+ypts2 = vector(2)
+xpts2.(1) = 0
+ypts2.(1) = 0
+xpts2.(2) = 1
+ypts2.(2) = 1
+N2pic = vector(n_pic)
+#for i = 1 : n_pic
+    N2pic.(i) = xpic.(i)
+#loop
+#show
+
+$Chart{xpts2; ypts2; xpic; N2pic @ title=N₂ pasa por (0,0) y (L,1) - linea recta unica : xlabel=x/L : ylabel=N₂ : labels=Puntos forzados,N₂(x) lineal}
+
+'<hr/>
+
+"Asumir forma lineal y despejar
+'<p>La interpolacion mas simple posible es <b>lineal</b> (recta). Asumimos:</p>
+
+#deq N_1(x) = a + b*x
+
+#deq N_2(x) = c + d*x
+
+'<p>Con cuatro ecuaciones (las cuatro condiciones de arriba) y cuatro incognitas
+'(a, b, c, d), el sistema tiene solucion unica.</p>
+
+"Para N₁ — sustituyendo x=0 y x=L en N₁(x) = a + b·x
+'<p>De N₁(0) = 1 obtenemos a = 1. De N₁(L) = 0 obtenemos a + b·L = 0,
+'asi que b = -a/L = -1/L. Entonces:</p>
 
 #deq N_1(x) = 1 - x/L
+
+"Para N₂ — sustituyendo x=0 y x=L en N₂(x) = c + d·x
+'<p>De N₂(0) = 0 obtenemos c = 0. De N₂(L) = 1 obtenemos d·L = 1,
+'asi que d = 1/L. Entonces:</p>
+
 #deq N_2(x) = x/L
+
+'<hr/>
+
+"Resolucion simbolica con AngouriMath
+'<p>Calcpad puede despejar el coeficiente b de la primera ecuacion N₁(L) = 1 + b·L = 0:</p>
+
+#sym
+solve(1 + b*L; b)
+#end sym
+
+'<p>El resultado b = -1/L confirma lo que hicimos a mano.</p>
+
+'<p>Para N₂: el coeficiente d sale de N₂(L) = d·L = 1:</p>
+
+#sym
+solve(d*L - 1; d)
+#end sym
+
+'<p>El resultado d = 1/L tambien coincide.</p>
 
 '<hr/>
 
