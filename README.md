@@ -786,6 +786,96 @@ K & [kN/m; kN | kN; kN*m]
 
 ---
 
+## Pitfalls & Best Practices — `#deq`, `#sym`, HTML
+
+> Verified empirically with `Examples/Finite Elements/TEST_sintaxis.cpd`. Run that file
+> with `Cli.exe` to reproduce. The behaviors below are the ground truth in this
+> version of Calcpad-Symbolic; some of them are not in the AngouriMath docs.
+
+### `#deq` — what works and what doesn't
+
+| Pattern | Result | Notes |
+|---|---|---|
+| `#deq y = a*x + b` | ✅ math | Basic algebra always renders |
+| `#deq E = m*c^2` | ✅ superscript | `^` for single-char exponent |
+| `#deq u_1 = N_1*ua` | ✅ subscript | `_1` works (numeric) |
+| `#deq v_max = 5*q*L^4` | ✅ subscript | `_max` works (alphabetic, no braces) |
+| `#deq σ_xx = E*ε_xx` | ✅ subscript | Greek + multi-char `_xx` works |
+| `#deq T_{max} = K*L^2` | ❌ shows `T{max}` | **LaTeX braces `_{...}` NOT supported** |
+| `#deq A^{2} = π*r^2` | ❌ shows `A^{2}` | **LaTeX braces `^{...}` NOT supported** |
+| `#deq F = m*a @@(label)` | ❌ shows `@@(label)` | **`@@(...)` annotation does NOT render** |
+| `#deq U = ∫f(x)dx` | ⚠️ shows `∫f(x)dx` | Integral symbol OK, but no fraction/limits |
+| `#deq U = ∫*f(x)*dx` | ❌ shows asterisks | `*` shows literally — for clean integrals use HTML |
+| `#deq U = ∫_{0}^{L} f dx` | ❌ shows `∫{0}^{L}` | Underscore stripped before braces |
+| `#deq E = m*c^2 — formula` | ❌ "Invalid symbol —" | **Em dash inside `#deq` breaks parser** |
+| `#deq v''''(x) = q(x)` | ✅ math | Multiple primes (apostrophes inside `()`) work |
+
+**Workaround for integrals:** use HTML in `'<p>...</p>` instead of `#deq`:
+```
+'<p>U = (1/2) ∫₀<sup>L</sup> EI · (d²v/dx²)² dx</p>
+'<p>K_e = ∫₋₁<sup>1</sup> ∫₋₁<sup>1</sup> B<sup>T</sup>·D·B·|J| dξ dη</p>
+```
+
+**Workaround for annotations:** put the label on a separate centered line:
+```
+#deq F = m*a
+'<p style="text-align:center"><i>(2nd Newton's law)</i></p>
+```
+
+### `#sym` — what works and what doesn't
+
+| Pattern | Result | Notes |
+|---|---|---|
+| `diff(expr; x)` | ✅ | 1st derivative |
+| `diff(expr; x; n)` | ✅ | **n-th derivative — undocumented but works** (see `SymbolicProcessor.cs:147`) |
+| `diff(diff(f; x); x)` | ❌ stack overflow | **Nested `diff` does NOT work** — use `diff(f; x; 2)` instead |
+| `integrate(x^2; x)` | ✅ | Indefinite integral |
+| `integrate(x^2; x; 0; 2)` | ✅ | Definite with numeric bounds |
+| `integrate(x; x; 0; L)` | ⚠️ may hang | **Definite with symbolic bounds may stack overflow AngouriMath** |
+| `integrate(sin(π*x/L)^2; x)` | ⚠️ may hang | sin² with symbolic argument can recurse infinitely |
+| `simplify((1-ν)/(2*(1-ν^2)))` | ⚠️ may hang | **Simplification with single-char Greek can stack overflow** — workaround: replace `ν` with `nu` (Roman name) |
+| `simplify(N1+N2+N3+N4)` (4 products) | ⚠️ may hang | Sum of 4+ products with multiple symbolic variables triggers OOM |
+| `expand((a+b)^3)` | ✅ | |
+| `factor(x^2-4)` | ✅ | |
+| `solve(x^2-5*x+6; x)` | ✅ | Polynomial solver |
+
+**Why nested `diff` fails:** `Diff()` returns a `SymResult` containing a presentation tag (`TAG_DERIV|d|dx|body`), not an `Entity` parseable by AngouriMath. Use the 3rd-arg form `diff(expr; x; n)` for higher derivatives.
+
+**Recommendation for symbolic Greek arguments:** if a `#sym simplify`/`#sym integrate` block hangs, **replace single-char Greek symbols with their Roman names** (`ν` → `nu`, `ξ` → `r`, `η` → `s`, `θ` → `theta`) — AngouriMath simplification works fine with the renamed variables.
+
+### HTML inside `'<p>...</p>` lines
+
+| Pattern | Result | Notes |
+|---|---|---|
+| `'<p>texto</p>` | ✅ | Standard HTML paragraph |
+| `'<p>x<sub>1</sub> + y<sup>2</sup></p>` | ✅ | Subs/sups work |
+| `'<p>Esto es importante — muy.</p>` | ✅ | **Em dash works in HTML text** |
+| `'<p>los '60 fueron decisivos</p>` | ❌ "Invalid symbol —" | **Apostrophe inside the line CLOSES the comment context** |
+| `'<p>derivada w' a coincidir — ...</p>` | ❌ parser error | Same — apostrophes break the `'` line, then em dash fails |
+
+**Rule of `'` lines:** the leading `'` starts an HTML‑comment line where the content is treated as raw text/HTML. Any **additional** apostrophe inside the line closes the context, and everything after is parsed as a Calcpad expression — special chars (`—`, `<`, `</`, `?`) then trigger errors.
+
+**Workaround:** write `los anios 60` instead of `los '60`, `dw/dx` instead of `w'`, etc.
+
+### `f'c` (concrete strength) inside expressions
+
+```
+E_c = 25000000   'kPa (concreto fc=4000 psi)        ✅ OK
+E_c = 25000000   'kPa (concreto f'c 4000 psi)       ❌ FAILS — apostrophe breaks comment
+```
+
+### Quick checklist before rendering
+
+- [ ] No `_{...}` or `^{...}` LaTeX braces in `#deq`
+- [ ] No `@@(...)` annotations (use centered italics on next line instead)
+- [ ] No em dashes (`—`) inside `#deq`
+- [ ] No apostrophes (`'`, `f'c`, `'60`, `w'`) inside `'<p>...</p>` lines
+- [ ] No nested `diff(diff(...))` — use `diff(expr; var; n)`
+- [ ] No `simplify(...)` of expressions with single-char Greek vars (rename to Roman)
+- [ ] Definite `integrate(...; var; 0; L)` with symbolic bound — risky; use indefinite + explain bounds in text
+
+---
+
 ## Licensing
 
 MIT License.
