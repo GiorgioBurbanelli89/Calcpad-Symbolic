@@ -184,8 +184,17 @@ A_4 = 0.001
 
 $Chart{L_v; k_v @ title=Rigidez axial k = E·A/L vs longitud L : xlabel=L (m) : ylabel=k (kN/m)}
 
-'A medida que la barra se hace mas larga, su rigidez baja (1/L). Por eso una
-'barra muy larga es mas flexible que una corta del mismo material y seccion.
+"Para que sirve esta grafica
+'<p>La curva muestra como cae la rigidez al aumentar la longitud. Es una
+'<b>hiperbola</b> (k ∝ 1/L) — no una recta. Esto te enseña dos cosas:</p>
+
+'<p><b>1)</b> La rigidez NO es proporcional a 1/L^2 ni a otra potencia, es
+'simple inversa. Una barra del doble de largo tiene la mitad de rigidez,
+'no un cuarto.</p>
+
+'<p><b>2)</b> La curva tiende a 0 cuando L crece — pero nunca llega. Esto
+'significa que cualquier barra real (por mas larga que sea) tiene rigidez
+'positiva: jamas se "quiebra" sola. La rigidez existe y es siempre util.</p>
 
 '<hr/>
 
@@ -193,6 +202,36 @@ $Chart{L_v; k_v @ title=Rigidez axial k = E·A/L vs longitud L : xlabel=L (m) : 
 'El resorte equivalente solo nos dice como se desplaza el extremo. Pero dentro
 'de la barra hay infinitos puntos. ¿Como sabemos cuanto se mueve el punto medio,
 'o cualquier punto a distancia x del extremo fijo?
+
+"Grafica 4.2 — Solo conocemos los EXTREMOS, no el medio
+#hide
+xN = vector(2)
+uN = vector(2)
+xN.(1) = 0
+uN.(1) = 0
+xN.(2) = 1
+uN.(2) = 0.5
+'¿Que sucede entre los nodos? — varias hipotesis posibles
+xCURV = vector(20)
+linea = vector(20)
+parab = vector(20)
+seno = vector(20)
+#for i = 1 : 20
+    xCURV.(i) = (i - 1)/19
+    linea.(i) = 0.5*xCURV.(i)
+    parab.(i) = 0.5*xCURV.(i)^2
+    seno.(i) = 0.5*sin(90*xCURV.(i))
+#loop
+#show
+
+$Chart{xN; uN; xCURV; linea; xCURV; parab; xCURV; seno @ title=Tres curvas posibles uniendo los extremos (0,0) y (L,0.5) : xlabel=x/L : ylabel=u(x) : labels=Nodos conocidos,Lineal,Parabolica,Sinusoidal}
+
+"Para que sirve esta grafica
+'<p>Hay <b>infinitas</b> curvas que pasan por los dos puntos nodales. ¿Cual
+'elegimos? La respuesta del FEM: la mas <b>simple posible</b> que permita
+'representar la fisica con suficiente precision. Para barras axiales sin carga
+'distribuida la respuesta exacta ES lineal — asi que la lineal es la mejor.
+'Para vigas con flexion necesitaremos cubicas (Hermite, Leccion 7).</p>
 
 'Respuesta: <b>interpolar</b> entre los desplazamientos nodales (u₁ en el nodo 1,
 'u₂ en el nodo 2). El desplazamiento en cualquier x es una mezcla pesada:
@@ -239,6 +278,13 @@ ypts1.(2) = 0
 
 $Chart{xpts1; ypts1; xpic; N1pic @ title=N₁ pasa por (0,1) y (L,0) - linea recta unica : xlabel=x/L : ylabel=N₁ : labels=Puntos forzados,N₁(x) lineal}
 
+"Para que sirve esta grafica
+'<p>Aqui ves graficamente que <b>fijar dos puntos determina UNICA recta</b>.
+'Es el principio que garantiza que las funciones de forma estan definidas sin
+'ambigüedad. Si dejaras N₁ libre con cualquier forma, habria infinitas curvas
+'pasando por (0,1) y (L,0) — pero al exigir que sea LINEAL solo queda una:
+'la que ves en rojo.</p>
+
 '<hr/>
 
 "Condicion 2 — N₂ es la imagen espejo
@@ -265,6 +311,13 @@ N2pic = vector(n_pic)
 #show
 
 $Chart{xpts2; ypts2; xpic; N2pic @ title=N₂ pasa por (0,0) y (L,1) - linea recta unica : xlabel=x/L : ylabel=N₂ : labels=Puntos forzados,N₂(x) lineal}
+
+"Para que sirve esta grafica
+'<p>Lo mismo que la anterior pero invertido: N₂ es la <b>imagen espejo</b>
+'de N₁. La simetria es importante porque significa que el elemento no tiene
+'preferencia por ningun nodo — la fisica es identica si renumeramos. Eso
+'confirma que el elemento es <b>isotropico</b> en el sentido de la
+'discretizacion.</p>
 
 '<hr/>
 
@@ -312,7 +365,7 @@ solve(d*L - 1; d)
 '<hr/>
 
 "Paso 4.4 — Verificacion numerica de las condiciones
-'Verificamos que 'N_1' y 'N_2' realmente cumplen el delta de Kronecker:
+'Verificamos que N₁ y N₂ realmente cumplen el delta de Kronecker:
 
 L_check = 1
 N1_en_0 = 1 - 0/L_check
@@ -321,6 +374,28 @@ N1_en_L = 1 - L_check/L_check
 N2_en_L = L_check/L_check
 
 'Los 4 valores deben ser 1, 0, 0, 1 — bien.
+
+"Grafica 4.4 — Visualizacion de los 4 puntos verificados
+#hide
+xVer = vector(2)
+N1Ver = vector(2)
+N2Ver = vector(2)
+xVer.(1) = 0
+xVer.(2) = 1
+N1Ver.(1) = N1_en_0
+N1Ver.(2) = N1_en_L
+N2Ver.(1) = N2_en_0
+N2Ver.(2) = N2_en_L
+#show
+
+$Chart{xVer; N1Ver; xVer; N2Ver @ title=Los 4 valores nodales (1,0) y (0,1) confirman el delta de Kronecker : xlabel=x : ylabel=N : labels=N₁ en nodos,N₂ en nodos}
+
+"Para que sirve esta grafica
+'<p>Confirma de forma <b>visual</b> lo que las 4 ecuaciones dicen analiticamente:
+'cada N esta "encendida" (=1) solo en su propio nodo y "apagada" (=0) en el
+'otro. Esta es exactamente la propiedad del <b>delta de Kronecker</b> δᵢⱼ
+'que permite que el desplazamiento u(xⱼ) en el nodo j sea exactamente uⱼ
+'(no un promedio raro).</p>
 
 '<hr/>
 
@@ -342,8 +417,26 @@ suma_N = vector(n_l4)
 
 $Chart{xL4; N1_v; xL4; N2_v @ title=Funciones de forma N₁ y N₂ a lo largo del elemento : xlabel=x/L : ylabel=N : labels=N₁,N₂}
 
-'En x=0 'N_1' vale 1 y 'N_2' vale 0 (todo el peso al nodo 1). En x=L pasa al
-'reves. En el medio (x=L/2) cada nodo aporta 0.5 al desplazamiento.
+"Para que sirve esta grafica
+'<p>La grafica te ayuda a <b>ver</b> tres cosas que las formulas no muestran tan
+'claro:</p>
+
+'<p><b>1) Cumplimiento del delta de Kronecker</b> — la curva azul (N₁) toca el
+'valor 1 exactamente en x=0 (donde esta el nodo 1), y baja a 0 en x=L. La
+'roja (N₂) hace lo opuesto. Ese cruce en los extremos confirma visualmente
+'que cada N controla SOLO su propio nodo.</p>
+
+'<p><b>2) Comportamiento intermedio</b> — en x=L/2 ambas funciones cruzan en 0.5.
+'Esto significa que el desplazamiento en el centro del elemento es el
+'promedio (u₁+u₂)/2. Ningun nodo tiene "mas voz" que el otro en el centro.</p>
+
+'<p><b>3) Rectas, no curvas</b> — son lineas rectas, no parabolas. La derivada
+'(=ε) sera CONSTANTE — esto define al elemento como CST en 2D
+'(Constant Strain). Si quisieramos deformacion variable, necesitariamos
+'funciones de forma de mayor orden (cuadraticas o cubicas).</p>
+
+'<p>Sin la grafica, los puntos 1, 2 y 3 son abstractos — con ella saltan a la
+'vista. Esa es la utilidad de cada chart en el curso.</p>
 
 '<hr/>
 
@@ -357,6 +450,14 @@ $Chart{xL4; N1_v; xL4; N2_v @ title=Funciones de forma N₁ y N₂ a lo largo de
 
 "Grafica 4.6 — La suma N₁ + N₂ es constante = 1
 $Chart{xL4; suma_N @ title=Particion de la unidad: N₁ + N₂ = 1 en todo punto : xlabel=x/L : ylabel=N₁ + N₂}
+
+"Para que sirve esta grafica
+'<p>La linea <b>plana en 1</b> es la prueba visual de la <b>particion de la
+'unidad</b>. Si las dos funciones de forma no sumaran 1 en algun punto,
+'tendrias deformaciones espurias cuando aplicas un movimiento de cuerpo
+'rigido (toda la barra se mueve por igual sin deformarse). El test del
+'patch — uno de los criterios de Irons para validar elementos finitos —
+'verifica exactamente esta propiedad.</p>
 
 '<hr/>
 
