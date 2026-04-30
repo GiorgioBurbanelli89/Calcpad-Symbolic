@@ -116,25 +116,27 @@ $Chart{u_v; F_resorte @ title=Caso resorte: fuerza CRECIENTE (recta diagonal) : 
 
 "Cap 3 — Verificacion con calculo — la integral
 
-'<p>Matematicamente la energia es la integral de la fuerza:</p>
+'<p>Matematicamente la energia es la integral de la fuerza respecto al
+'desplazamiento. Para el resorte F = k·u con k=100 N/m, evaluando de
+'u=0 hasta u=0.1 m:</p>
 
-#deq U = ∫F*du
-
-'<p>Para el resorte F = k·u:</p>
-
-#sym
-integrate(k*u; u; 0; 0.1)
-#end sym
-
-'<p>El simbolo k es generico. Si fijamos k=100 y evaluamos de 0 a 0.1:
-'U = (1/2)·100·(0.1)² = 0.5 J. Confirma el ejemplo del Cap 1.</p>
-
-"Verificacion analitica
 #sym
 integrate(100*u; u; 0; 0.1)
 #end sym
 
-'<p>Resultado 0.5. Coincide con la formula (1/2)·k·u<sup>2</sup>.</p>
+'<p>El simbolo de integral con sus limites (0 abajo, 0.1 arriba) y el
+'integrando 100·u se renderizan via Calcpad-Symbolic. El resultado es
+'<b>0.5 J</b>, que coincide con la formula (1/2)·k·u<sup>2</sup> =
+'(1/2)·100·(0.1)² = 0.5.</p>
+
+"Forma simbolica generica con k arbitrario
+#sym
+integrate(k*u; u; 0; u_max)
+#end sym
+
+'<p>El resultado simbolico es (1/2)·k·u_max<sup>2</sup> — la formula
+'clasica de la energia de un resorte aparece automaticamente al integrar
+'la fuerza linealmente creciente.</p>
 
 '<hr/>
 
