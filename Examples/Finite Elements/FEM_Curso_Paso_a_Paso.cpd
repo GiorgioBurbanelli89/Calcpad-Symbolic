@@ -409,18 +409,29 @@ $Chart{xL4; ε_v @ title=Deformacion ε(x) = constante para barra lineal : xlabe
 "Leccion 6 — Esfuerzo y rigidez (Hooke + B^T·E·B)
 '<p>Ley de Hooke uniaxial: '#deq σ = E*ε'. La fuerza interna es F = σ·A.</p>
 
-'<p>La <b>matriz de rigidez del elemento</b> sale de la energia interna:</p>
-#deq U = (1/2)*∫B^T*E*B*A*dx
+'<p>La <b>matriz de rigidez del elemento</b> sale de la energia interna acumulada
+'por el elemento al deformarse. La formula universal del FEM es:</p>
 
-'<p>Para la barra lineal, B es constante, asi que la integral es trivial:</p>
+"Energia interna del elemento como integral
+'<p>Para la barra lineal con B = 1/L (escalar), la energia es:</p>
 
-"Operacion simbolica — calcular K<sub>e</sub>
+#sym
+integrate((1/2)*E*A*(1/L)^2; x; 0; L)
+#end sym
+
+'<p>Calcpad evalua la integral simbolica sobre x desde 0 hasta L y simplifica.
+'El resultado es la energia interna que se almacena en el elemento.</p>
+
+"La rigidez K<sub>e</sub> sale de la integral del producto B<sup>T</sup>·E·B
+'<p>Multiplicando por 2 (eliminando el 1/2 de la energia) y dejando solo el
+'integrando B^T·E·B·A:</p>
+
 #sym
 integrate(E*A/L^2; x; 0; L)
 #end sym
 
-'<p>Resultado: E·A/L. Esa es la rigidez axial del elemento, identica al "resorte
-'equivalente" de la Leccion 4. La matriz K<sub>e</sub> completa es:</p>
+'<p>Resultado: E·A/L. Esa es la rigidez axial del elemento, identica al
+'"resorte equivalente" de la Leccion 4. La matriz K<sub>e</sub> completa es:</p>
 
 #noc
 K_e = (E*A/L)*[1; -1|-1; 1]
@@ -514,9 +525,15 @@ $Chart{ξ_v; H1; ξ_v; H2; ξ_v; H3; ξ_v; H4 @ title=Funciones de Hermite del e
 '<hr/>
 
 "Leccion 8 — Matriz de rigidez de la viga (4×4)
-'<p>La rigidez del elemento viga sale de '#deq K_e = ∫E*I*B^T*B*dx' donde
-'B = d²N/dx² (segunda derivada de las Hermite). El resultado es la
-'<b>matriz de Bernoulli</b>:</p>
+'<p>La rigidez del elemento viga sale de la integral:</p>
+
+#sym
+integrate(E*I; x; 0; L)
+#end sym
+
+'<p>donde B = d²N/dx² (segunda derivada de las Hermite). El integrando completo
+'es B<sup>T</sup>·E·I·B (rigidez por flexion). Al integrar sobre el elemento
+'aparece la <b>matriz de Bernoulli</b>:</p>
 
 #noc
 K_e = (E*I/L^3)*[12; 6*L; -12; 6*L|6*L; 4*L^2; -6*L; 2*L^2|-12; -6*L; 12; -6*L|6*L; 2*L^2; -6*L; 4*L^2]
