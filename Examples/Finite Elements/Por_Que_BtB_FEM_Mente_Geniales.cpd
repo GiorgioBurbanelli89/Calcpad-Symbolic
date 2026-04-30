@@ -1,4 +1,4 @@
-"Por que B^T·B aparece INEVITABLEMENTE en FEM — la logica de los pioneros
+"Por que Bᵀ·B aparece INEVITABLEMENTE en FEM — la logica de los pioneros
 '<p>Para entender por que existe B<sup>T</sup>·B en FEM, hay que pensar
 'como pensaron Rayleigh, Ritz, Galerkin, Turner y Zienkiewicz. <b>No es
 'una eleccion arbitraria — es una consecuencia matematica forzada</b>
@@ -89,7 +89,7 @@ U_demo = 0.5*k_demo*u_demo^2
 
 '<p style="margin-left:1em;font-size:110%">U<sub>e</sub> = (1/2) u<sub>e</sub><sup>T</sup> [∫ B<sup>T</sup>·D·B dV] u<sub>e</sub></p>
 
-"¡AHI APARECE B^T·D·B!
+"¡AHI APARECE Bᵀ·D·B!
 '<p><b>El sandwich B<sup>T</sup>·D·B es la consecuencia matematica
 'inevitable de combinar una forma cuadratica en ε con una transformacion
 'lineal ε = B·u.</b></p>
@@ -104,7 +104,7 @@ U_demo = 0.5*k_demo*u_demo^2
 
 '<hr/>
 
-"Cap 4 — La intuicion fisica de B^T·B
+"Cap 4 — La intuicion fisica de Bᵀ·B
 '<p>¿Por que el sandwich tiene que ser B<sup>T</sup>·D·B y no algo distinto?
 'Geometricamente B<sup>T</sup>·B es la forma como el espacio de
 'desplazamientos nodales (n-dimensional) se "proyecta" al espacio de
@@ -176,7 +176,7 @@ BtB_22 = B2*B2
 
 '<hr/>
 
-"Cap 6 — Resumen: B^T·B es la "contabilidad" entre desplazamiento y energia
+"Cap 6 — Resumen: Bᵀ·B es la contabilidad entre desplazamiento y energia
 
 '<p>En lenguaje simple:</p>
 
