@@ -170,7 +170,7 @@ $Chart{xL4; N1_v; xL4; N2_v @ title=Funciones de forma N_1 y N_2 (barra lineal) 
 
 '<p>Propiedades:</p>
 '<ul>
-'<li>N_i vale 1 en su nodo, 0 en los demas (delta de Kronecker)</li>
+'<li>N<sub>i</sub> vale 1 en su nodo, 0 en los demas (delta de Kronecker)</li>
 '<li>N_1 + N_2 = 1 en todo punto (particion de la unidad)</li>
 '<li>Son lineales (la deformacion sera constante)</li>
 '</ul>
@@ -221,13 +221,13 @@ $Chart{xL4; ε_v @ title=Deformacion ε(x) = constante para barra lineal : xlabe
 
 '<p>Para la barra lineal, B es constante, asi que la integral es trivial:</p>
 
-"Operacion simbolica — calcular K_e
+"Operacion simbolica — calcular K<sub>e</sub>
 #sym
 integrate(E*A/L^2; x; 0; L)
 #end sym
 
 '<p>Resultado: E·A/L. Esa es la rigidez axial del elemento, identica al "resorte
-'equivalente" de la Leccion 4. La matriz K_e completa es:</p>
+'equivalente" de la Leccion 4. La matriz K<sub>e</sub> completa es:</p>
 
 #noc
 K_e = (E*A/L)*[1; -1|-1; 1]
@@ -239,7 +239,7 @@ A_b = 0.001    'm² (10 cm²)
 L_b = 2        'm
 F_b = 50       'kN
 
-k_axial = E_b*1000*A_b/L_b   'kN/m (E_b en MPa → kPa con ×1000)
+k_axial = E_b*1000*A_b/L_b   'kN/m (E en MPa → kPa con ×1000)
 u_extremo = F_b/k_axial      'm
 
 '<p>Rigidez axial: '#deq k = E*A/L'. Numericamente para acero E=200 GPa,
@@ -341,7 +341,7 @@ P_v = 10          'kN (carga puntual en el extremo)
 v_max_v = P_v*L_v^3/(3*E_v*I_v)
 v_max_mm = v_max_v*1000
 
-'<p>Para P=10 kN, L=3 m, E=200 GPa, I=1.94e-5 m⁴: v_max = 23.2 mm.</p>
+'<p>Para P=10 kN, L=3 m, E=200 GPa, I=1.94e-5 m⁴: v<sub>max</sub> = 23.2 mm.</p>
 
 "Grafica 8 — Forma del cantilever deformado
 #hide
@@ -375,8 +375,8 @@ K_red = (E*I/L^3)*[12; -6*L|-6*L; 4*L^2]
 '<p>Sistema reducido 2×2 con F = [P, 0]:</p>
 #deq K_red*[v_2|θ_2] = [P|0]
 
-"Verificacion simbolica — invertir K_red y multiplicar por F
-'<p>El determinante de K_red sin el factor (E·I/L³) es 12·4L² − 6L·6L = 12L².</p>
+"Verificacion simbolica — invertir K<sub>red</sub> y multiplicar por F
+'<p>El determinante de K<sub>red</sub> sin el factor (E·I/L³) es 12·4L² − 6L·6L = 12L².</p>
 
 '<p>Por inversion 2×2: v_2 = P·L³/(3EI) que coincide con la solucion analitica.</p>
 '<hr/>
@@ -394,11 +394,11 @@ K_global = (E*I/L^3)*[24; 0; -12; 6*L|0; 8*L^2; -6*L; 2*L^2|-12; -6*L; 12; -6*L|
 #equ
 
 '<p>(con L = longitud de cada subelemento). Resuelto numericamente da el mismo
-'v_max que con 1 elemento — porque la solucion analitica es exactamente cubica
+'v<sub>max</sub> que con 1 elemento — porque la solucion analitica es exactamente cubica
 'y las Hermite la representan exactamente.</p>
 
 "Caso numerico — comparacion 1 vs 2 elementos
-'<p>Con 1 elemento (L_total = 3 m):</p>
+'<p>Con 1 elemento (L<sub>total</sub> = 3 m):</p>
 v_max_1elem = P_v*L_v^3/(3*E_v*I_v)*1000   'mm
 
 '<p>Con 2 elementos (cada uno de L = 1.5 m, ensamblados):</p>
@@ -429,11 +429,11 @@ $Chart{N_e; err @ title=Error vs numero de elementos (cantilever Bernoulli) : xl
 "Resumen — los 7 ingredientes que TODO FEM tiene
 '<table border="1" cellpadding="6">
 '<tr><th>Ingrediente</th><th>Que es</th><th>Donde aparece</th></tr>
-'<tr><td>1. Funciones de forma N_i</td><td>Interpolan el desplazamiento dentro del elemento</td><td>Leccion 4 (lineal), 7 (Hermite)</td></tr>
+'<tr><td>1. Funciones de forma N<sub>i</sub></td><td>Interpolan el desplazamiento dentro del elemento</td><td>Leccion 4 (lineal), 7 (Hermite)</td></tr>
 '<tr><td>2. Matriz B</td><td>Derivada de N (lineal o segunda derivada)</td><td>Leccion 5</td></tr>
 '<tr><td>3. Matriz constitutiva D</td><td>Ley de Hooke σ = D·ε</td><td>Leccion 6</td></tr>
-'<tr><td>4. Rigidez del elemento K_e</td><td>K_e = ∫B^T·D·B·dV</td><td>Leccion 6, 8</td></tr>
-'<tr><td>5. Ensamblaje</td><td>Sumar K_e en posiciones globales</td><td>Leccion 3, 10</td></tr>
+'<tr><td>4. Rigidez del elemento K<sub>e</sub></td><td>K<sub>e</sub> = ∫B<sup>T</sup>·D·B·dV</td><td>Leccion 6, 8</td></tr>
+'<tr><td>5. Ensamblaje</td><td>Sumar K<sub>e</sub> en posiciones globales</td><td>Leccion 3, 10</td></tr>
 '<tr><td>6. Condiciones de borde</td><td>Imponer u=0 en apoyos (eliminar filas/columnas)</td><td>Leccion 9</td></tr>
 '<tr><td>7. Resolver K·u = F</td><td>Sistema lineal final</td><td>Leccion 10</td></tr>
 '</table>
