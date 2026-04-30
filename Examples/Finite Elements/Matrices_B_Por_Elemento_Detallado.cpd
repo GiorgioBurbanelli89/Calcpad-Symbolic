@@ -1,0 +1,295 @@
+"Cada matriz B explicada en detalle — un capitulo por elemento
+'<p>Cada elemento finito tiene su propia matriz B con un tamano y una
+'estructura particular. Aqui las desarrollamos una por una con
+'derivacion + ejemplo numerico + interpretacion.</p>
+'<hr/>
+
+"Cap 1 — B para BARRA LINEAL (1D, 2 nodos)
+'<p>El elemento mas simple: una barra de longitud L con 2 nodos en sus
+'extremos. Cada nodo tiene 1 grado de libertad (desplazamiento axial u).</p>
+
+"Funciones de forma
+#deq N_1(x) = 1 - x/L
+
+#deq N_2(x) = x/L
+
+"Derivar para obtener B
+'<p>Aplicamos B = dN/dx a cada componente:</p>
+
+#sym
+diff(1 - x/L; x)
+#end sym
+
+#sym
+diff(x/L; x)
+#end sym
+
+"Resultado — B es vector fila constante
+'<p style="margin-left:1em;font-size:110%"><b>B = [-1/L, +1/L]</b> &nbsp; (tamano 1×2, unidades 1/m)</p>
+
+"Caso numerico — barra de 2m
+L_1 = 2
+B_1_1 = -1/L_1
+B_1_2 = 1/L_1
+
+'<p>B = [-0.5, +0.5] (1/m). La deformacion es:</p>
+
+#deq ε = (-1/L)*u_1 + (1/L)*u_2 = (u_2 - u_1)/L
+
+'<p>Si u₁ = 0 y u₂ = 1mm: ε = 0.001/2 = 0.0005 (deformacion unitaria).</p>
+
+"Interpretacion
+'<p>La barra lineal solo puede representar <b>deformacion constante</b>
+'dentro del elemento. Como B no depende de x, ε(x) es la misma en
+'todos los puntos. Para deformacion variable necesitas mas elementos
+'o un elemento de orden mayor.</p>
+
+'<hr/>
+
+"Cap 2 — B para BARRA CUADRATICA (1D, 3 nodos)
+'<p>Tres nodos: extremos en x=0, L y nodo central en x=L/2. Cada nodo con
+'1 GDL. Las funciones de forma son polinomios cuadraticos.</p>
+
+"Funciones de forma cuadraticas
+#deq N_1(x) = (1 - 2*x/L)*(1 - x/L)
+
+#deq N_2(x) = 4*x/L*(1 - x/L)
+
+#deq N_3(x) = (2*x/L - 1)*(x/L)
+
+"Derivar — ahora B SI varia con x
+#sym
+diff((1 - 2*x/L)*(1 - x/L); x)
+#end sym
+
+#sym
+diff(4*x/L*(1 - x/L); x)
+#end sym
+
+#sym
+diff((2*x/L - 1)*(x/L); x)
+#end sym
+
+"Resultado — B varia linealmente en x
+'<p style="margin-left:1em;font-size:110%"><b>B(x) = [(4x/L<sup>2</sup> - 3/L), (4/L - 8x/L<sup>2</sup>), (4x/L<sup>2</sup> - 1/L)]</b></p>
+
+'<p>Tamano 1×3, unidades 1/m. La deformacion ε(x) varia linealmente
+'a lo largo del elemento.</p>
+
+'<hr/>
+
+"Cap 3 — B para TRIANGULO CST (2D, 3 nodos)
+'<p>El elemento bidimensional mas simple. 3 nodos en el plano, cada uno
+'con 2 GDL (u, v). Total 6 GDL por elemento.</p>
+
+"Vector de deformaciones plana — 3 componentes
+'<p style="margin-left:1em;font-size:110%">ε = [ε<sub>xx</sub>, ε<sub>yy</sub>, γ<sub>xy</sub>]<sup>T</sup></p>
+
+"Funciones de forma — areales
+#deq N_i(x,y) = (a_i + b_i*x + c_i*y)/(2*A)
+
+'<p>donde A es el area del triangulo, y los coeficientes a_i, b_i, c_i
+'salen de las coordenadas nodales:</p>
+
+#deq b_1 = y_2 - y_3, b_2 = y_3 - y_1, b_3 = y_1 - y_2
+
+#deq c_1 = x_3 - x_2, c_2 = x_1 - x_3, c_3 = x_2 - x_1
+
+"Estructura de B — matriz 3×6
+'<p>B se construye colocando dN_i/dx, dN_i/dy en posiciones especificas
+'segun el componente de deformacion:</p>
+
+'<p style="margin-left:1em">
+'<b>Fila 1 (ε<sub>xx</sub>):</b> [b<sub>1</sub>, 0, b<sub>2</sub>, 0, b<sub>3</sub>, 0]/(2A)<br/>
+'<b>Fila 2 (ε<sub>yy</sub>):</b> [0, c<sub>1</sub>, 0, c<sub>2</sub>, 0, c<sub>3</sub>]/(2A)<br/>
+'<b>Fila 3 (γ<sub>xy</sub>):</b> [c<sub>1</sub>, b<sub>1</sub>, c<sub>2</sub>, b<sub>2</sub>, c<sub>3</sub>, b<sub>3</sub>]/(2A)
+'</p>
+
+"Caso numerico — triangulo (0,0), (4,0), (0,3)
+x1 = 0
+y1 = 0
+x2 = 4
+y2 = 0
+x3 = 0
+y3 = 3
+
+A_t = abs((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1))/2
+
+b_1 = y2 - y3
+b_2 = y3 - y1
+b_3 = y1 - y2
+
+c_1 = x3 - x2
+c_2 = x1 - x3
+c_3 = x2 - x1
+
+'<p>Para este triangulo: A=6 m². b₁=-3, b₂=3, b₃=0; c₁=-4, c₂=0, c₃=4.</p>
+
+"Interpretacion — el nombre "Constant Strain Triangle"
+'<p>B es CONSTANTE en todo el triangulo (no depende de x ni y). Eso
+'significa que la <b>deformacion es la misma en todos los puntos</b>
+'dentro del elemento. De ahi su nombre CST. Limitacion: para campos de
+'deformacion variable, requiere mallas finas.</p>
+
+'<hr/>
+
+"Cap 4 — B para Q4 (cuadrilatero bilineal, 4 nodos)
+'<p>4 nodos en (x,y), cada uno con 2 GDL. Total 8 GDL. Funciones de forma
+'bilineales en coordenadas naturales (ξ, η).</p>
+
+"Funciones de forma del cuadrado padre
+#deq N_1(ξ,η) = (1 - ξ)*(1 - η)/4
+
+#deq N_2(ξ,η) = (1 + ξ)*(1 - η)/4
+
+#deq N_3(ξ,η) = (1 + ξ)*(1 + η)/4
+
+#deq N_4(ξ,η) = (1 - ξ)*(1 + η)/4
+
+"Derivadas — varian con (ξ, η)
+#sym
+diff((1 - ξ)*(1 - η)/4; ξ)
+#end sym
+
+#sym
+diff((1 - ξ)*(1 - η)/4; η)
+#end sym
+
+"Estructura de B — matriz 3×8
+'<p>Tamano 3×8 (3 componentes de ε × 8 GDL del elemento). B varia con
+'(ξ, η) — no es constante.</p>
+
+'<p>Las derivadas de N_i respecto a (x, y) requieren el <b>Jacobiano</b>:</p>
+
+'<p style="margin-left:1em">[∂N/∂x, ∂N/∂y]<sup>T</sup> = J<sup>-1</sup> · [∂N/∂ξ, ∂N/∂η]<sup>T</sup></p>
+
+"Interpretacion
+'<p>Q4 puede representar deformacion <b>variable</b> dentro del elemento
+'(porque B no es constante). Pero requiere <b>integracion numerica de
+'Gauss</b> en lugar de integracion analitica trivial. Tipico: 2×2 puntos
+'de Gauss en ±1/√3 — exacto para polinomios hasta grado 3.</p>
+
+'<hr/>
+
+"Cap 5 — B para VIGA BERNOULLI (4 GDL, Hermite cubicas)
+'<p>Cada nodo tiene <b>2 GDL</b>: deflexion v y rotacion θ. Elemento de
+'2 nodos = 4 GDL totales.</p>
+
+"En vigas, B no es la derivada PRIMERA, es la SEGUNDA
+'<p>La curvatura κ es la segunda derivada de v:</p>
+
+#deq κ = d^2v/dx^2
+
+'<p>Asi que B = d²N/dx² para vigas (no dN/dx).</p>
+
+"Funciones de Hermite cubicas
+#deq H_1(ξ) = 1 - 3*ξ^2 + 2*ξ^3
+
+#deq H_2(ξ) = L*(ξ - 2*ξ^2 + ξ^3)
+
+#deq H_3(ξ) = 3*ξ^2 - 2*ξ^3
+
+#deq H_4(ξ) = L*(-ξ^2 + ξ^3)
+
+"Derivadas segundas — son las componentes de B
+#sym
+diff(1 - 3*ξ^2 + 2*ξ^3; ξ; 2)
+#end sym
+
+#sym
+diff(L*(ξ - 2*ξ^2 + ξ^3); ξ; 2)
+#end sym
+
+"Estructura de B — vector fila 1×4
+'<p>Tamano 1×4 (1 componente κ × 4 GDL). Varia linealmente con ξ.</p>
+
+"Interpretacion
+'<p>La viga representa <b>flexion exacta</b> (M cubico, V lineal, q
+'constante) con cualquier numero de elementos. Por eso el FEM Bernoulli
+'da resultados analiticamente correctos en vigas con cargas puntuales o
+'distribuidas uniformes.</p>
+
+'<hr/>
+
+"Cap 6 — B para TETRAEDRO T4 (3D, 4 nodos)
+'<p>3 dimensiones, 4 nodos, 3 GDL por nodo (u, v, w). Total 12 GDL.</p>
+
+"Vector de deformacion 3D — 6 componentes
+'<p style="margin-left:1em">ε = [ε<sub>xx</sub>, ε<sub>yy</sub>, ε<sub>zz</sub>, γ<sub>xy</sub>, γ<sub>yz</sub>, γ<sub>zx</sub>]<sup>T</sup></p>
+
+"Estructura de B — matriz 6×12
+'<p>Cada columna corresponde a un GDL nodal. La estructura es:</p>
+
+'<p style="margin-left:1em">
+'<b>Fila ε<sub>xx</sub>:</b> [b<sub>1</sub>, 0, 0, b<sub>2</sub>, 0, 0, b<sub>3</sub>, 0, 0, b<sub>4</sub>, 0, 0]/(6V)<br/>
+'<b>Fila ε<sub>yy</sub>:</b> [0, c<sub>1</sub>, 0, ...]/(6V)<br/>
+'<b>Fila ε<sub>zz</sub>:</b> [0, 0, d<sub>1</sub>, ...]/(6V)<br/>
+'<b>Filas γ:</b> combinaciones cruzadas con b/c/d
+'</p>
+
+'<p>donde V es el volumen del tetraedro y b_i, c_i, d_i son combinaciones
+'de las coordenadas nodales (cofactores).</p>
+
+"Interpretacion
+'<p>T4 es el "CST 3D": deformacion CONSTANTE en todo el elemento. Util
+'para mallas no-estructuradas pero requiere muchos elementos para
+'precision. Para problemas con gradientes finos se prefiere T10
+'(tetraedro cuadratico) o H8 (hexaedro).</p>
+
+'<hr/>
+
+"Cap 7 — B para HEXAEDRO H8 (3D, 8 nodos)
+'<p>El "ladrillo" de 8 nodos en 3D. Cada nodo con 3 GDL = 24 GDL totales.
+'Funciones de forma trilineales en (ξ, η, ζ).</p>
+
+"Funciones de forma trilineales
+'<p style="margin-left:1em;font-size:110%">N<sub>i</sub>(ξ,η,ζ) = (1 ± ξ)(1 ± η)(1 ± ζ)/8</p>
+
+'<p>con signos segun el nodo (8 combinaciones).</p>
+
+"Estructura de B — matriz 6×24
+'<p>Tamano 6×24 (6 deformaciones × 24 GDL). Cada columna i tiene la
+'derivada de N_floor((i-1)/3) respecto a una coordenada espacial,
+'colocada en la fila correspondiente del componente de deformacion.</p>
+
+"Integracion — Gauss 2×2×2
+'<p>Para H8 se usa cuadratura de Gauss con 2 puntos en cada direccion
+'= 8 puntos de evaluacion totales en ±1/√3. Eso es exacto para
+'polinomios hasta grado 3 en cada direccion.</p>
+
+"Interpretacion
+'<p>H8 es el caballo de batalla del FEM 3D: representa deformacion
+'<b>variable</b>, malla regular o levemente distorsionada, integracion
+'eficiente. Es el elemento default en ABAQUS, ANSYS, OpenSees para
+'solidos.</p>
+
+'<hr/>
+
+"Resumen comparativo
+
+'<table border="1" cellpadding="6">
+'<tr><th>Elemento</th><th>Dim</th><th>Nodos</th><th>GDL/nodo</th><th>Filas B</th><th>Cols B</th><th>Tamano B</th><th>B variable?</th></tr>
+'<tr><td>Barra lineal</td><td>1D</td><td>2</td><td>1</td><td>1 (ε)</td><td>2</td><td>1×2</td><td>NO (constante)</td></tr>
+'<tr><td>Barra cuadratica</td><td>1D</td><td>3</td><td>1</td><td>1</td><td>3</td><td>1×3</td><td>SI (lineal)</td></tr>
+'<tr><td>Viga Bernoulli</td><td>1D</td><td>2</td><td>2 (v, θ)</td><td>1 (κ)</td><td>4</td><td>1×4</td><td>SI</td></tr>
+'<tr><td>Triangulo CST</td><td>2D</td><td>3</td><td>2</td><td>3</td><td>6</td><td>3×6</td><td>NO</td></tr>
+'<tr><td>Triangulo LST (T6)</td><td>2D</td><td>6</td><td>2</td><td>3</td><td>12</td><td>3×12</td><td>SI</td></tr>
+'<tr><td>Q4</td><td>2D</td><td>4</td><td>2</td><td>3</td><td>8</td><td>3×8</td><td>SI</td></tr>
+'<tr><td>Q8</td><td>2D</td><td>8</td><td>2</td><td>3</td><td>16</td><td>3×16</td><td>SI</td></tr>
+'<tr><td>Tetraedro T4</td><td>3D</td><td>4</td><td>3</td><td>6</td><td>12</td><td>6×12</td><td>NO</td></tr>
+'<tr><td>Hexaedro H8</td><td>3D</td><td>8</td><td>3</td><td>6</td><td>24</td><td>6×24</td><td>SI</td></tr>
+'<tr><td>Placa Kirchhoff (4 nodos)</td><td>2D</td><td>4</td><td>3 (w, θ_x, θ_y)</td><td>3 (curv)</td><td>12</td><td>3×12</td><td>SI</td></tr>
+'</table>
+
+'<p><b>Patrones que se ven:</b></p>
+'<p>1) Las <b>filas</b> de B son las componentes de deformacion del problema
+'(1 en 1D, 3 en 2D plano, 6 en 3D solido).</p>
+'<p>2) Las <b>columnas</b> de B son los GDL totales del elemento (numero
+'de nodos × DOFs por nodo).</p>
+'<p>3) Los elementos <b>lineales con B constante</b> (CST, T4) tienen
+'integracion analitica trivial pero limitan la precision.</p>
+'<p>4) Los elementos <b>de mayor orden con B variable</b> (Q4, Q8, H8)
+'requieren cuadratura numerica (Gauss) pero capturan gradientes finos
+'de deformacion.</p>
+
+"Fin del archivo

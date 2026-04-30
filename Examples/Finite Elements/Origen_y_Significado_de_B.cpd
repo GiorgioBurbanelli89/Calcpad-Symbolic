@@ -75,7 +75,7 @@ integrate(E*A/L^2; x; 0; L)
 'elemento (barra, viga, placa, solido) requeriria una derivacion diferente.
 'Con B, todos siguen el mismo esquema:</p>
 
-#deq K_e = ∫(B^T*D*B)*dV
+'<p style="margin-left:1em;font-size:110%"><b>K<sub>e</sub> = ∫ B<sup>T</sup>·D·B dV</b></p>
 
 '<p>Esa "B" puede ser 1×2 (barra), 3×6 (CST), 6×24 (H8) — pero la formula
 'es la misma. Es el equivalente al "operador" de Galerkin discreto.</p>
@@ -88,18 +88,21 @@ integrate(E*A/L^2; x; 0; L)
 '<b>matriz de Gram</b>. Algunas propiedades fundamentales:</p>
 
 "Propiedad 1 — Es siempre simetrica
-#deq (B^T*B)^T = B^T*(B^T)^T = B^T*B
+'<p>La traspuesta de un producto invierte el orden: (A·B)<sup>T</sup> = B<sup>T</sup>·A<sup>T</sup>.
+'Aplicando esto al producto B<sup>T</sup>·B:</p>
 
-'<p>Asi que B^T·B es matriz simetrica garantizada (las dos diagonales
-'reflejadas son iguales).</p>
+'<p style="margin-left:1em;font-size:110%">(B<sup>T</sup>·B)<sup>T</sup> = B<sup>T</sup>·(B<sup>T</sup>)<sup>T</sup> = B<sup>T</sup>·B</p>
+
+'<p>El resultado es la misma matriz. Asi que B<sup>T</sup>·B es matriz
+'simetrica garantizada (las dos diagonales reflejadas son iguales).</p>
 
 "Propiedad 2 — Es siempre positiva semi-definida
-'<p>Para cualquier vector x:</p>
+'<p>Para cualquier vector x evaluamos la forma cuadratica:</p>
 
-#deq x^T*(B^T*B)*x = (B*x)^T*(B*x) = ||B*x||^2 ≥ 0
+'<p style="margin-left:1em;font-size:110%">x<sup>T</sup>·(B<sup>T</sup>·B)·x = (B·x)<sup>T</sup>·(B·x) = ‖B·x‖<sup>2</sup> ≥ 0</p>
 
-'<p>O sea, x^T·(B^T·B)·x es siempre ≥ 0 (es la norma cuadrada de B·x).
-'Eso es la definicion de PSD (positiva semi-definida).</p>
+'<p>O sea, x<sup>T</sup>·(B<sup>T</sup>·B)·x es siempre ≥ 0 (es la norma
+'cuadrada del vector B·x). Eso es la definicion de PSD (positiva semi-definida).</p>
 
 "Propiedad 3 — Es la "covarianza" de los modos de B
 '<p>Cada columna de B representa un "modo" (una direccion en el espacio
