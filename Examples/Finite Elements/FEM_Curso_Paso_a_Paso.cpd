@@ -117,15 +117,63 @@ K_red = [k_1+k_2; -k_2|-k_2; k_2]
 #equ
 
 "Vector de incognitas y vector de cargas
+'<p>Tenemos 3 nodos, pero como el nodo 1 esta fijo a la pared, solo 2 son
+'incognitas: u₂ (desplazamiento del nodo intermedio) y u₃ (extremo libre).
+'Esos forman el vector de incognitas:</p>
+
 #noc
 u = [u_2|u_3]
 #equ
+
+"¿Por que el vector de cargas F tiene un 0 y un F₃?
+'<p>Hay que mirar fisicamente <b>donde aplicamos la fuerza externa</b>:</p>
+
+"Grafica 3.1 — El sistema fisico de dos resortes en serie
+#hide
+xS = vector(4)
+yS = vector(4)
+'Pared izquierda (x=-0.5), nodo 1 (x=0), nodo 2 (x=2), nodo 3 (x=5) — extremo libre con F
+xS.(1) = 0
+yS.(1) = 1
+xS.(2) = 2
+yS.(2) = 1
+xS.(3) = 5
+yS.(3) = 1
+xS.(4) = 5.5
+yS.(4) = 1
+#show
+
+$Struct{fixed,0,0 : spring,0,0,2,0,k1 : node,0,0,Nodo 1 (fijo) : spring,2,0,5,0,k2 : node,2,0,Nodo 2 : node,5,0,Nodo 3 : force,5,0,right,F : label,2,1.5,sin fuerza externa : label,5,-1.0,F aplicada aqui @ title=Sistema fisico - solo el nodo 3 tiene fuerza externa : w=600 : h=200}
+
+"Para que sirve esta grafica
+'<p>El dibujo muestra <b>donde se aplican las fuerzas</b> en el sistema fisico:</p>
+
+'<p><b>Nodo 1 (pared):</b> esta fijo, no entra en el vector u. La pared
+'reacciona con la fuerza necesaria para mantenerlo quieto, pero esa es
+'<b>reaccion</b>, no fuerza aplicada — la calculamos despues.</p>
+
+'<p><b>Nodo 2 (intermedio):</b> esta entre los dos resortes. Nadie lo empuja
+'ni lo tira desde afuera. La <b>fuerza externa aplicada en el nodo 2 es 0</b>
+'— ese es el primer 0 del vector F.</p>
+
+'<p><b>Nodo 3 (extremo libre):</b> aqui si tiramos con F = 30 N. Es la unica
+'carga externa del sistema.</p>
+
+'<p>Por eso el vector de cargas se construye <b>nodo por nodo</b> con la
+'fuerza externa aplicada en cada uno:</p>
 
 #noc
 F = [0|F_3]
 #equ
 
-'<p>El sistema a resolver es:</p>
+'<p>El 0 representa "nadie aplica fuerza al nodo 2 desde afuera" y F₃ es la
+'fuerza real en el nodo 3.</p>
+
+"¿Y si aplicara una fuerza tambien en el nodo 2?
+'<p>El vector cambiaria a F = [F₂; F₃]. Cada nodo lleva la fuerza externa que
+'le aplican (positiva si va en +, negativa si va en −, 0 si nada).</p>
+
+'<p>El sistema completo a resolver es:</p>
 
 #deq K_red*u = F
 
