@@ -10,6 +10,92 @@ Calcpad-Symbolic extends CalcpadCE with three CAS engines, interactive FEM visua
 
 ---
 
+## 🚀 Quick start — mixing text, equations, symbolic and numeric
+
+This is the **most common** thing people want to do — write a paragraph that
+explains a concept and embeds equations or numerical results inline. Here are
+the **five idioms** you need:
+
+### 1. Text only — line starts with `'`
+
+```
+'Esto es texto plano. No se evalua, solo se imprime.
+```
+
+### 2. Numeric calculation — write the formula on its own line (no `'`)
+
+```
+m = 5      'kg
+g = 9.81   'm/s²
+P = m*g    ← Calcpad shows: P = m·g = 5·9.81 = 49.05  (substitution + result)
+```
+
+### 3. Equation WITHOUT result (display only) — `#deq`
+
+When you want to *show* a formula but **not** compute it (variables may be
+undefined), use `#deq`:
+
+```
+#deq F = m*a                    ← shows: F = m·a (no values, no =result)
+#deq E = (1/2)*m*v^2 @@(EC)     ← with equation number on the right
+```
+
+### 4. Symbolic operation (derivative, integral, etc.) — `#sym`
+
+```
+#sym diff(x^3; x)               ← shows: d/dx(x³) = 3·x²
+#sym integrate(sin(x); x)       ← shows: ∫sin(x)dx = -cos(x) + C
+#sym diff(x^5; x; 4)            ← shows: d⁴/dx⁴(x⁵) = 120·x  (n-th derivative)
+```
+
+### 5. Mixing everything in one line (apostrophe toggles)
+
+A line that starts with `'` is in **Text mode**. Each additional `'` flips to
+**Math/Calc mode**. So the count of `'` matters:
+
+```
+'La 2da ley es '#deq F = m*a' fundamental en dinamica.
+'Derivar x³ da '#sym diff(x^3; x)' segun AngouriMath.
+'La energia cinetica '#deq E_c = (1/2)*m*v^2' se conserva.
+'Suma de cuadrados -'S = $Sum{i^2 @ i = 1 : 10}      ← renders as Σᵢ₌₁¹⁰ i² = 385
+```
+
+Pattern: `'<text>'<directive>'<more text>` — the embedded `'#deq …'` /
+`'#sym …'` is in math mode, the surrounding text is in text mode.
+
+**Important gotcha for `$Sum`/`$Integral`/`$Product`:** they need an
+**assignment** (`varname = $Cmd{...}`), and the `'` BEFORE the `=` ends text
+mode. Do **not** wrap them between two `'` like `'$Sum{...}'` — that fails.
+
+### 6. Just an expression / identity, no result wanted
+
+If you only want to display a formula in flowing text without `#deq` (e.g. an
+identity where variables aren't defined), Calcpad's *permissive inline math*
+detects the pattern and routes it to display:
+
+```
+'Identidad: '(a + b)^2 = a^2 + 2*a*b + b^2' es directa.
+'Leibniz: 'χ = -d^2*w/dx^2' es la curvatura.
+```
+
+The bare math between apostrophes renders as proper formula even though no
+variables are defined. This works since v1.3 (Apr 2026) — see
+[Pitfalls section below](#pitfalls--best-practices--deq-sym-layout-html).
+
+### Where to learn more
+
+- **`Examples/Finite Elements/TEST_inline.cpd`** — 12 blocks, each demonstrating
+  one mixing pattern. Renders with 0 errors. Copy-paste idioms from there.
+- **`Examples/Finite Elements/TEST_sintaxis.cpd`** — 24+ patterns testing what
+  works and what doesn't (with labels A1..L2).
+- **`Examples/Finite Elements/FEM_Curso_Paso_a_Paso.cpd`** — 10-lesson FEM
+  tutorial that mixes text + equations + symbolic + numeric + charts in every
+  section. Real production example of the idioms above.
+- **[Mixing text + math + symbolic in the same line](#mixing-text--math--symbolic-in-the-same-line--inline-mode)**
+  — full 6-rule reference with cookbook (further down in this README).
+
+---
+
 ## What CalcpadCE Had (v7.6.2 by Ned Ganchovski)
 
 - Real and complex numbers, vectors, matrices

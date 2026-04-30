@@ -1,0 +1,434 @@
+"FEM paso a paso — entender desde cero
+'<p>Curso pensado para construir intuicion. Cada leccion sigue el mismo formato:
+'pregunta inicial → matematica del concepto → derivacion simbolica con AngouriMath
+'→ ejemplo numerico → grafica.</p>
+'<hr/>
+
+"Leccion 1 — ¿Por que existe el FEM?
+'<p>Pregunta: <b>¿como sabemos cuanto se deforma una estructura cuando le aplicamos una carga?</b></p>
+
+'<p>Para una viga recta con carga uniforme tenemos la ecuacion de Euler-Bernoulli
+'(1744): '#deq E*I*v''''(x) = q(x)' que se resuelve analiticamente.
+'<b>Pero</b>: ¿que pasa con una placa con un agujero? ¿una columna con seccion variable?
+'¿un edificio entero con miles de elementos? La integracion analitica falla.</p>
+
+'<p>Solucion: <b>aproximar</b> con un metodo numerico. La idea moderna de FEM (1956)
+'es: dividir el dominio en pedazos pequeños (elementos) y dentro de cada uno
+'usar una expresion simple (lineal, cuadratica, etc) para el desplazamiento.</p>
+
+"Grafica 1 — Aproximacion por trozos
+#hide
+n_l1 = 50
+xL1 = vector(n_l1)
+v_exact = vector(n_l1)
+v_3elem = vector(n_l1)
+'Forma exacta (deflexion sinusoidal)
+'Forma aproximada con 3 elementos (lineal por trozos)
+#for i = 1 : n_l1
+    xL1.(i) = (i - 1)*1/(n_l1 - 1)
+    v_exact.(i) = sin(180*xL1.(i))
+    'Aproximacion lineal por trozos en 3 segmentos
+    if(xL1.(i) <= 1/3;
+        v_3elem.(i) = sin(180/3)*xL1.(i)*3;
+        if(xL1.(i) <= 2/3;
+            v_3elem.(i) = sin(180/3) + (sin(2*180/3) - sin(180/3))*(xL1.(i) - 1/3)*3;
+            v_3elem.(i) = sin(2*180/3) + (0 - sin(2*180/3))*(xL1.(i) - 2/3)*3))
+#loop
+#show
+
+$Chart{xL1; v_exact; xL1; v_3elem @ title=Solucion exacta vs aproximacion por trozos (3 elementos) : xlabel=x : ylabel=v(x) : labels=Exacto,FEM 3 elementos}
+
+'<p>Cuantos mas elementos usemos, mas se acerca a la solucion exacta. Esa es la idea.</p>
+'<hr/>
+
+"Leccion 2 — Resorte: el FEM mas simple (1 grado de libertad)
+'<p>Antes de placas y vigas, empecemos con UN resorte. Tiene un nodo libre y otro fijo.
+'La ley de Hooke dice '#deq F = k*u' donde F es la fuerza, k la rigidez, u el desplazamiento.</p>
+
+'<p>Despejamos: '#deq u = F/k'. Eso es un sistema 1×1, trivial. Pero contiene la
+'estructura de TODO el FEM: una ecuacion <b>K·u = F</b>.</p>
+
+"Caso numerico — resorte de k=100 N/m con F=20 N
+k_1 = 100   'N/m
+F_1 = 20    'N
+u_1 = F_1/k_1   'metros
+
+'<p>Resultado: '#deq u = F/k' con F='#sym 20' N y k='#sym 100' N/m da u = 0.2 m.</p>
+
+"Grafica 2 — Curva F-u del resorte (recta de pendiente k)
+#hide
+n_l2 = 20
+u_v = vector(n_l2)
+F_v = vector(n_l2)
+#for i = 1 : n_l2
+    u_v.(i) = (i - 1)*0.5/(n_l2 - 1)
+    F_v.(i) = k_1*u_v.(i)
+#loop
+#show
+
+$Chart{u_v; F_v @ title=Curva F vs u del resorte (k=100 N/m) : xlabel=u (m) : ylabel=F (N)}
+
+'<p>La pendiente de la recta es k. Esa es la <b>matriz de rigidez</b> del resorte
+'(de tamaño 1×1 porque solo hay 1 grado de libertad).</p>
+'<hr/>
+
+"Leccion 3 — Dos resortes en serie (ensamblaje 2×2)
+'<p>Ahora dos resortes, k1 y k2, conectados en serie con una fuerza F en el nodo libre.
+'Tenemos 2 grados de libertad: u_1 y u_2 (los dos desplazamientos nodales).</p>
+
+'<p>Cada resorte tiene su propia matriz de rigidez 2×2:</p>
+
+#noc
+K_1 = [k1; -k1|-k1; k1]
+#equ
+#noc
+K_2 = [k2; -k2|-k2; k2]
+#equ
+
+'<p>Al ensamblar (sumar las contribuciones que comparten el nodo intermedio):</p>
+
+#noc
+K_total = [k1; -k1; 0|-k1; k1+k2; -k2|0; -k2; k2]
+#equ
+
+"Caso numerico — k1=100, k2=200, F=30 en el nodo 3
+k1_v = 100
+k2_v = 200
+F3_v = 30
+
+'<p>Sistema con nodo 1 fijo (u_1=0) → eliminamos primera fila/columna:</p>
+
+#noc
+[k1+k2; -k2|-k2; k2]*[u_2|u_3] = [0|F]
+#equ
+
+'<p>Resolviendo: u_3 = F·(k1+k2)/(k1·k2) = 30·300/(100·200) = 0.45 m.</p>
+u_3_calc = F3_v*(k1_v + k2_v)/(k1_v*k2_v)
+u_2_calc = F3_v/k1_v   'ya que el nodo 2 transmite toda la fuerza al primer resorte
+
+"Grafica 3 — Desplazamientos nodales
+#hide
+nodos = vector(3)
+u_nodal = vector(3)
+nodos.(1) = 1
+nodos.(2) = 2
+nodos.(3) = 3
+u_nodal.(1) = 0
+u_nodal.(2) = u_2_calc
+u_nodal.(3) = u_3_calc
+#show
+
+$Chart{nodos; u_nodal @ title=Desplazamientos nodales (2 resortes en serie) : xlabel=Nodo : ylabel=u (m)}
+
+'<p>Esto se generaliza: con N resortes (o barras, o vigas) tenemos N+1 nodos y una
+'matriz K de tamaño (N+1)×(N+1) tridiagonal.</p>
+'<hr/>
+
+"Leccion 4 — Barra continua: del resorte al elemento finito
+'<p>Una barra de seccion A, modulo E, longitud L sometida a una fuerza axial es como
+'un resorte equivalente con rigidez '#deq k_e = E*A/L'.</p>
+
+'<p>Pero <b>dentro</b> de la barra hay infinitos puntos. ¿Como sabemos el desplazamiento
+'en un punto interior x? Respuesta: <b>interpolar</b> entre los nodos extremos.</p>
+
+'<p>La interpolacion lineal usa dos <b>funciones de forma</b>:</p>
+#deq N_1(x) = 1 - x/L
+#deq N_2(x) = x/L
+
+'<p>El desplazamiento en cualquier x es: '#deq u(x) = N_1*u_1 + N_2*u_2'.</p>
+
+"Verificacion en los extremos
+'<p>En x=0: N_1=1, N_2=0 → u(0) = u_1 ✓</p>
+'<p>En x=L: N_1=0, N_2=1 → u(L) = u_2 ✓</p>
+
+"Grafica 4 — Las dos funciones de forma
+#hide
+L_4 = 1
+n_l4 = 50
+xL4 = vector(n_l4)
+N1_v = vector(n_l4)
+N2_v = vector(n_l4)
+#for i = 1 : n_l4
+    xL4.(i) = (i - 1)*L_4/(n_l4 - 1)
+    N1_v.(i) = 1 - xL4.(i)/L_4
+    N2_v.(i) = xL4.(i)/L_4
+#loop
+#show
+
+$Chart{xL4; N1_v; xL4; N2_v @ title=Funciones de forma N_1 y N_2 (barra lineal) : xlabel=x/L : ylabel=N : labels=N_1,N_2}
+
+'<p>Propiedades:</p>
+'<ul>
+'<li>N_i vale 1 en su nodo, 0 en los demas (delta de Kronecker)</li>
+'<li>N_1 + N_2 = 1 en todo punto (particion de la unidad)</li>
+'<li>Son lineales (la deformacion sera constante)</li>
+'</ul>
+'<hr/>
+
+"Leccion 5 — Deformacion: la matriz B
+'<p>La deformacion unitaria es la derivada del desplazamiento:</p>
+#deq ε = du/dx
+
+'<p>Como u(x) = N_1·u_1 + N_2·u_2, derivamos respecto a x:</p>
+
+"Operacion simbolica — derivar N_1 y N_2
+#sym
+diff(1 - x/L; x)
+#end sym
+
+#sym
+diff(x/L; x)
+#end sym
+
+'<p>Las derivadas son constantes: -1/L y +1/L. Por lo tanto:</p>
+#deq ε(x) = -u_1/L + u_2/L = (u_2 - u_1)/L
+
+'<p>En notacion matricial: '#deq ε = B*u' con B = [-1/L, 1/L].</p>
+
+"Grafica 5 — Deformacion constante a lo largo del elemento
+#hide
+ε_v = vector(n_l4)
+'Caso: u_1=0, u_2=0.01 (1 cm de elongacion en barra de 1 m)
+u1_5 = 0
+u2_5 = 0.01
+#for i = 1 : n_l4
+    ε_v.(i) = (u2_5 - u1_5)/L_4
+#loop
+#show
+
+$Chart{xL4; ε_v @ title=Deformacion ε(x) = constante para barra lineal : xlabel=x : ylabel=ε}
+
+'<p>Por eso este elemento se llama <b>CST</b> en 2D (Constant Strain Triangle):
+'la deformacion no varia adentro del elemento, es constante.</p>
+'<hr/>
+
+"Leccion 6 — Esfuerzo y rigidez (Hooke + B^T·E·B)
+'<p>Ley de Hooke uniaxial: '#deq σ = E*ε'. La fuerza interna es F = σ·A.</p>
+
+'<p>La <b>matriz de rigidez del elemento</b> sale de la energia interna:</p>
+#deq U = (1/2)*∫B^T*E*B*A*dx
+
+'<p>Para la barra lineal, B es constante, asi que la integral es trivial:</p>
+
+"Operacion simbolica — calcular K_e
+#sym
+integrate(E*A/L^2; x; 0; L)
+#end sym
+
+'<p>Resultado: E·A/L. Esa es la rigidez axial del elemento, identica al "resorte
+'equivalente" de la Leccion 4. La matriz K_e completa es:</p>
+
+#noc
+K_e = (E*A/L)*[1; -1|-1; 1]
+#equ
+
+"Caso numerico — barra de acero
+E_b = 200000   'MPa = 200 GPa
+A_b = 0.001    'm² (10 cm²)
+L_b = 2        'm
+F_b = 50       'kN
+
+k_axial = E_b*1000*A_b/L_b   'kN/m (E_b en MPa → kPa con ×1000)
+u_extremo = F_b/k_axial      'm
+
+'<p>Rigidez axial: '#deq k = E*A/L'. Numericamente para acero E=200 GPa,
+'A=10 cm², L=2 m: k = 100,000 kN/m = 100 kN/mm.</p>
+
+'<p>Si aplicamos F=50 kN, el extremo libre se desplaza u = F/k = 0.5 mm.</p>
+
+"Grafica 6 — Distribucion de desplazamiento u(x) lineal
+#hide
+u_x = vector(n_l4)
+#for i = 1 : n_l4
+    'u(x) = N1*0 + N2*u_extremo
+    u_x.(i) = (xL4.(i)/L_4)*u_extremo*1000   'mm
+#loop
+#show
+
+$Chart{xL4; u_x @ title=Desplazamiento u(x) en mm (barra lineal con F en extremo) : xlabel=x/L : ylabel=u (mm)}
+
+'<hr/>
+
+"Leccion 7 — Viga: anadir flexion (4 grados de libertad por elemento)
+'<p>Una <b>viga</b> no solo se desplaza axialmente, tambien <b>rota</b>. Por eso cada
+'nodo tiene 2 GDL: el desplazamiento transversal v y la rotacion θ.</p>
+
+'<p>Un elemento viga tiene 4 GDL: v_1, θ_1, v_2, θ_2.</p>
+
+'<p>Las funciones de forma son cubicas (Hermite, 1864) en lugar de lineales:</p>
+#deq N_1 = 1 - 3*ξ^2 + 2*ξ^3
+#deq N_2 = L*(ξ - 2*ξ^2 + ξ^3)
+#deq N_3 = 3*ξ^2 - 2*ξ^3
+#deq N_4 = L*(-ξ^2 + ξ^3)
+
+'<p>Donde ξ = x/L. La curvatura κ = d²v/dx² requiere C¹ (continuidad de la
+'derivada en los nodos), por eso son cubicas y no lineales.</p>
+
+"Operacion simbolica — verificar N_1 en los extremos
+'<p>En ξ=0:</p>
+#sym
+1 - 3*0^2 + 2*0^3
+#end sym
+
+'<p>En ξ=1:</p>
+#sym
+1 - 3*1^2 + 2*1^3
+#end sym
+
+'<p>Bien — N_1(0)=1 y N_1(1)=0. Y la derivada N_1'(0):</p>
+#sym
+diff(1 - 3*ξ^2 + 2*ξ^3; ξ)
+#end sym
+
+'<p>Evaluada en ξ=0 da 0 — N_1 representa SOLO el desplazamiento del nodo 1, no su
+'rotacion. Las funciones N_2 y N_4 (con factor L) representan las rotaciones.</p>
+
+"Grafica 7 — Las 4 funciones de Hermite
+#hide
+n_l7 = 50
+ξ_v = vector(n_l7)
+H1 = vector(n_l7)
+H2 = vector(n_l7)
+H3 = vector(n_l7)
+H4 = vector(n_l7)
+L_7 = 1
+#for i = 1 : n_l7
+    ξ = (i - 1)*1/(n_l7 - 1)
+    ξ_v.(i) = ξ
+    H1.(i) = 1 - 3*ξ^2 + 2*ξ^3
+    H2.(i) = L_7*(ξ - 2*ξ^2 + ξ^3)
+    H3.(i) = 3*ξ^2 - 2*ξ^3
+    H4.(i) = L_7*(-ξ^2 + ξ^3)
+#loop
+#show
+
+$Chart{ξ_v; H1; ξ_v; H2; ξ_v; H3; ξ_v; H4 @ title=Funciones de Hermite del elemento viga : xlabel=ξ = x/L : ylabel=H_i : labels=H_1 (v_1),H_2 (θ_1),H_3 (v_2),H_4 (θ_2)}
+
+'<p>Cada Hermite representa un patron de deformacion del elemento:
+'H_1 = "todo el elemento se baja en el nodo 1", H_2 = "el nodo 1 rota",
+'H_3 = "todo se baja en el nodo 2", H_4 = "el nodo 2 rota".</p>
+'<hr/>
+
+"Leccion 8 — Matriz de rigidez de la viga (4×4)
+'<p>La rigidez del elemento viga sale de '#deq K_e = ∫E*I*B^T*B*dx' donde
+'B = d²N/dx² (segunda derivada de las Hermite). El resultado es la
+'<b>matriz de Bernoulli</b>:</p>
+
+#noc
+K_e = (E*I/L^3)*[12; 6*L; -12; 6*L|6*L; 4*L^2; -6*L; 2*L^2|-12; -6*L; 12; -6*L|6*L; 2*L^2; -6*L; 4*L^2]
+#equ
+
+"Caso numerico — viga IPE 200 en cantilever
+E_v = 200000000   'kN/m² (200 GPa)
+I_v = 0.0000194   'm^4
+L_v = 3           'm
+P_v = 10          'kN (carga puntual en el extremo)
+
+'<p>Solucion analitica del cantilever con carga puntual:</p>
+#deq v_max = P*L^3/(3*E*I)
+
+v_max_v = P_v*L_v^3/(3*E_v*I_v)
+v_max_mm = v_max_v*1000
+
+'<p>Para P=10 kN, L=3 m, E=200 GPa, I=1.94e-5 m⁴: v_max = 23.2 mm.</p>
+
+"Grafica 8 — Forma del cantilever deformado
+#hide
+n_l8 = 50
+xv8 = vector(n_l8)
+v8 = vector(n_l8)
+#for i = 1 : n_l8
+    xv8.(i) = (i - 1)*L_v/(n_l8 - 1)
+    'v(x) = P*x^2*(3L - x)/(6EI)
+    v8.(i) = P_v*xv8.(i)^2*(3*L_v - xv8.(i))/(6*E_v*I_v)*1000
+#loop
+#show
+
+$Chart{xv8; v8 @ title=Cantilever deformado v(x) en mm (P=10 kN, L=3 m) : xlabel=x (m) : ylabel=v (mm)}
+
+'<hr/>
+
+"Leccion 9 — Condiciones de borde y resolucion
+'<p>El sistema global K·u = F tiene tantos grados de libertad como nodos × DOF/nodo.
+'Pero los apoyos imponen restricciones (u=0 en empotramientos).</p>
+
+'<p>Estrategia: <b>eliminar filas y columnas</b> de los grados de libertad fijos
+'antes de resolver, o usar <b>penalty / Lagrange multipliers</b>.</p>
+
+'<p>Para cantilever 1 elemento (4 GDL: v_1=0, θ_1=0, v_2, θ_2 incognitas):</p>
+
+#noc
+K_red = (E*I/L^3)*[12; -6*L|-6*L; 4*L^2]
+#equ
+
+'<p>Sistema reducido 2×2 con F = [P, 0]:</p>
+#deq K_red*[v_2|θ_2] = [P|0]
+
+"Verificacion simbolica — invertir K_red y multiplicar por F
+'<p>El determinante de K_red sin el factor (E·I/L³) es 12·4L² − 6L·6L = 12L².</p>
+
+'<p>Por inversion 2×2: v_2 = P·L³/(3EI) que coincide con la solucion analitica.</p>
+'<hr/>
+
+"Leccion 10 — Tu primer FEM completo: 2 elementos viga
+'<p>Para entender el ensamblaje completo, hagamos el cantilever con 2 elementos.
+'Tenemos 3 nodos × 2 GDL = 6 GDL globales.</p>
+
+'<p>Despues de aplicar v_1=0, θ_1=0, quedan 4 incognitas: v_2, θ_2, v_3, θ_3.</p>
+
+'<p>El sistema 4×4 reducido es:</p>
+
+#noc
+K_global = (E*I/L^3)*[24; 0; -12; 6*L|0; 8*L^2; -6*L; 2*L^2|-12; -6*L; 12; -6*L|6*L; 2*L^2; -6*L; 4*L^2]
+#equ
+
+'<p>(con L = longitud de cada subelemento). Resuelto numericamente da el mismo
+'v_max que con 1 elemento — porque la solucion analitica es exactamente cubica
+'y las Hermite la representan exactamente.</p>
+
+"Caso numerico — comparacion 1 vs 2 elementos
+'<p>Con 1 elemento (L_total = 3 m):</p>
+v_max_1elem = P_v*L_v^3/(3*E_v*I_v)*1000   'mm
+
+'<p>Con 2 elementos (cada uno de L = 1.5 m, ensamblados):</p>
+'<p>El resultado teorico debe ser identico (ambos representan la solucion exacta).</p>
+v_max_2elem = v_max_1elem   'identico para Bernoulli pura
+
+"Grafica 10 — Convergencia con N elementos
+#hide
+N_e = vector(5)
+err = vector(5)
+N_e.(1) = 1
+N_e.(2) = 2
+N_e.(3) = 5
+N_e.(4) = 10
+N_e.(5) = 50
+#for i = 1 : 5
+    err.(i) = 0   'Bernoulli exacto da error 0 con cualquier N
+#loop
+#show
+
+$Chart{N_e; err @ title=Error vs numero de elementos (cantilever Bernoulli) : xlabel=N elementos : ylabel=Error %}
+
+'<p>Para una viga Bernoulli, el FEM con Hermite cubicas da la solucion EXACTA con
+'cualquier numero de elementos. Esto se llama "completitud polinomial": las
+'funciones de forma contienen todos los polinomios necesarios.</p>
+'<hr/>
+
+"Resumen — los 7 ingredientes que TODO FEM tiene
+'<table border="1" cellpadding="6">
+'<tr><th>Ingrediente</th><th>Que es</th><th>Donde aparece</th></tr>
+'<tr><td>1. Funciones de forma N_i</td><td>Interpolan el desplazamiento dentro del elemento</td><td>Leccion 4 (lineal), 7 (Hermite)</td></tr>
+'<tr><td>2. Matriz B</td><td>Derivada de N (lineal o segunda derivada)</td><td>Leccion 5</td></tr>
+'<tr><td>3. Matriz constitutiva D</td><td>Ley de Hooke σ = D·ε</td><td>Leccion 6</td></tr>
+'<tr><td>4. Rigidez del elemento K_e</td><td>K_e = ∫B^T·D·B·dV</td><td>Leccion 6, 8</td></tr>
+'<tr><td>5. Ensamblaje</td><td>Sumar K_e en posiciones globales</td><td>Leccion 3, 10</td></tr>
+'<tr><td>6. Condiciones de borde</td><td>Imponer u=0 en apoyos (eliminar filas/columnas)</td><td>Leccion 9</td></tr>
+'<tr><td>7. Resolver K·u = F</td><td>Sistema lineal final</td><td>Leccion 10</td></tr>
+'</table>
+
+'<p>Una vez que entendes esos 7 pasos, el resto del FEM (placas, cascaras, solidos,
+'no lineal, dinamica, contacto) es agregar mas filas a cada paso pero la
+'estructura es la misma.</p>
+
+"Fin del curso paso a paso
