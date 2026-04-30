@@ -786,40 +786,66 @@ K & [kN/m; kN | kN; kN*m]
 
 ---
 
-## Pitfalls & Best Practices — `#deq`, `#sym`, HTML
+## Pitfalls & Best Practices — `#deq`, `#sym`, layout, HTML
 
-> Verified empirically with `Examples/Finite Elements/TEST_sintaxis.cpd`. Run that file
-> with `Cli.exe` to reproduce. The behaviors below are the ground truth in this
-> version of Calcpad-Symbolic; some of them are not in the AngouriMath docs.
+> Verified empirically with `Examples/Finite Elements/TEST_sintaxis.cpd` against the
+> Apr-26-2026 build of `Symbolic.Cli`. Run that test file with the **current** `Cli.exe`
+> from `Symbolic.Cli/bin/Release/net10.0/` to reproduce. **Do not use older binaries** —
+> they don't recognize newer keywords (`#margen`, `#pgb`, `#blq`) and report
+> `Invalid symbol: "#"` on line 1 of any file using them.
+
+### Visibility modes — `#val`, `#equ`, `#noc`
+
+| Directive | `_isVal` | Effect |
+|---|---|---|
+| `#val` | 1 | Show **only the numeric value** (substituted, no formula) |
+| `#equ` | 0 | Default — show formula AND value (`F = m·a = 5·2 = 10`) |
+| `#noc` | -1 | **No calculation** — show formula symbolically, no substitution |
+
+`#noc` ... `#equ` blocks are useful to **type matrix equations as text** without Calcpad evaluating them:
+
+```
+#noc
+[F_1|F_2] = [k_e; -k_e|-k_e; k_e]*[u_1|u_2]
+#equ
+```
+
+### Layout — `#blk`, `#inl`, `#cen`, `#pgb`, `#margen`
+
+| Directive | Mode | Effect |
+|---|---|---|
+| `#inl A=5 ; B=3 ; C=8` | inline | N columns in one line (separated by `;`) |
+| `#blk` ... `#end blk` | block | Multi-row column layout |
+| `#cen expr` | inline | Center single line |
+| `#cen` ... `#end cen` | block | Center entire block |
+| `#pgb` | inline | Page break (PDF/DOCX only — empty `<div class="pgb">` in HTML) |
+| `#margen 20` ... `#end margen` | block | Justified text with 20mm margins both sides (default 15mm) |
 
 ### `#deq` — what works and what doesn't
 
 | Pattern | Result | Notes |
 |---|---|---|
-| `#deq y = a*x + b` | ✅ math | Basic algebra always renders |
+| `#deq y = a*x + b` | ✅ math | Basic algebra |
 | `#deq E = m*c^2` | ✅ superscript | `^` for single-char exponent |
 | `#deq u_1 = N_1*ua` | ✅ subscript | `_1` works (numeric) |
 | `#deq v_max = 5*q*L^4` | ✅ subscript | `_max` works (alphabetic, no braces) |
-| `#deq σ_xx = E*ε_xx` | ✅ subscript | Greek + multi-char `_xx` works |
-| `#deq T_{max} = K*L^2` | ❌ shows `T{max}` | **LaTeX braces `_{...}` NOT supported** |
-| `#deq A^{2} = π*r^2` | ❌ shows `A^{2}` | **LaTeX braces `^{...}` NOT supported** |
-| `#deq F = m*a @@(label)` | ❌ shows `@@(label)` | **`@@(...)` annotation does NOT render** |
-| `#deq U = ∫f(x)dx` | ⚠️ shows `∫f(x)dx` | Integral symbol OK, but no fraction/limits |
-| `#deq U = ∫*f(x)*dx` | ❌ shows asterisks | `*` shows literally — for clean integrals use HTML |
-| `#deq U = ∫_{0}^{L} f dx` | ❌ shows `∫{0}^{L}` | Underscore stripped before braces |
-| `#deq E = m*c^2 — formula` | ❌ "Invalid symbol —" | **Em dash inside `#deq` breaks parser** |
-| `#deq v''''(x) = q(x)` | ✅ math | Multiple primes (apostrophes inside `()`) work |
+| `#deq σ_xx = E*ε_xx` | ✅ subscript | Greek + multi-char subscript works |
+| `#deq T_{max} = K*L^2` | ✅ subscript | **`_{...}` LaTeX braces work** — extract subscript content |
+| `#deq A^{2} = π*r^2` | ⚠️ partial | **`^{...}` braces fail** — `A^{2}` shows literally (asymmetric with `_{...}`) |
+| `#deq F = m*a @@(2da ley)` | ✅ eqnum | **`@@(text)` produces equation number on the right** (CSS class `.eqn`) |
+| `#deq v''''(x) = q(x) @@(EDP)` | ✅ eqnum | Works even with multiple primes |
+| `#deq v(x) = a_1*φ_1(x) + a_2*φ_2(x)` | ⚠️ varies | Long sum with `(x)` argument may render plain — split into multiple lines |
+| `#deq U = ∫f(x)dx` | ⚠️ math literal | Integral symbol renders, but content shows multiplication dots |
+| `#deq U = ∫*f(x)*dx` | ❌ asterisks visible | `*` between integrand parts displays literally — use HTML for clean integrals |
+| `#deq U = ∫_{0}^{L} f dx` | ❌ shows `∫0{L}` | Underscore before `{` is stripped, content not nested under integral |
+| `#deq E = m*c^2 — formula` | ❌ "Invalid symbol —" | **Em dash inside `#deq` breaks the AngouriMath parser** |
+| `#deq` (alone) ... `#end deq` | ✅ block | Multi-line block — use `#deq` alone on its line, content next, then `#end deq` |
+| `#deq θ_x = -∂w/∂y, θ_y = ∂w/∂x` | ✅ multi | Top-level `,` splits into multiple equations on the same `#deq` line |
 
-**Workaround for integrals:** use HTML in `'<p>...</p>` instead of `#deq`:
+**Best practice for integrals:** for complex limits, use HTML — produces visually cleaner output:
 ```
 '<p>U = (1/2) ∫₀<sup>L</sup> EI · (d²v/dx²)² dx</p>
 '<p>K_e = ∫₋₁<sup>1</sup> ∫₋₁<sup>1</sup> B<sup>T</sup>·D·B·|J| dξ dη</p>
-```
-
-**Workaround for annotations:** put the label on a separate centered line:
-```
-#deq F = m*a
-'<p style="text-align:center"><i>(2nd Newton's law)</i></p>
 ```
 
 ### `#sym` — what works and what doesn't
@@ -827,52 +853,171 @@ K & [kN/m; kN | kN; kN*m]
 | Pattern | Result | Notes |
 |---|---|---|
 | `diff(expr; x)` | ✅ | 1st derivative |
-| `diff(expr; x; n)` | ✅ | **n-th derivative — undocumented but works** (see `SymbolicProcessor.cs:147`) |
-| `diff(diff(f; x); x)` | ❌ stack overflow | **Nested `diff` does NOT work** — use `diff(f; x; 2)` instead |
+| `diff(expr; x; n)` | ✅ | **n-th derivative** (undocumented; see `SymbolicProcessor.cs:147`). Internal loop: `for i in 0..n: r = r.Differentiate(v)` |
+| `diff(diff(f; x); x)` | ❌ stack overflow | **Nested `diff` does NOT work** — use `diff(f; x; 2)` |
 | `integrate(x^2; x)` | ✅ | Indefinite integral |
-| `integrate(x^2; x; 0; 2)` | ✅ | Definite with numeric bounds |
-| `integrate(x; x; 0; L)` | ⚠️ may hang | **Definite with symbolic bounds may stack overflow AngouriMath** |
-| `integrate(sin(π*x/L)^2; x)` | ⚠️ may hang | sin² with symbolic argument can recurse infinitely |
-| `simplify((1-ν)/(2*(1-ν^2)))` | ⚠️ may hang | **Simplification with single-char Greek can stack overflow** — workaround: replace `ν` with `nu` (Roman name) |
-| `simplify(N1+N2+N3+N4)` (4 products) | ⚠️ may hang | Sum of 4+ products with multiple symbolic variables triggers OOM |
+| `integrate(x^2; x; 0; 2)` | ✅ | Definite with **numeric** bounds |
+| `integrate(x; x; 0; L)` | ⚠️ may hang | **Definite with symbolic bound** can stack-overflow AngouriMath. Stay with indefinite + describe bounds in text |
+| `integrate(sin(π*x/L)^2; x)` | ⚠️ may hang | `sin²` with symbolic compound argument recurses infinitely |
+| `simplify((1-ν)/(2*(1-ν^2)))` | ⚠️ may hang | **Simplify with single-char Greek (ν, ξ, η)** can stack-overflow. Workaround: rename to Roman (`nu`, `r`, `s`) |
+| `simplify(N1+N2+N3+N4)` (sum of 4 products) | ⚠️ may hang | OOM on large symbolic sums |
 | `expand((a+b)^3)` | ✅ | |
 | `factor(x^2-4)` | ✅ | |
 | `solve(x^2-5*x+6; x)` | ✅ | Polynomial solver |
+| `pdiff(x^2*y; x)` | ✅ | Partial derivative |
+| `gradient(x^2+y^2; x; y)` | ✅ | Vector calculus |
 
-**Why nested `diff` fails:** `Diff()` returns a `SymResult` containing a presentation tag (`TAG_DERIV|d|dx|body`), not an `Entity` parseable by AngouriMath. Use the 3rd-arg form `diff(expr; x; n)` for higher derivatives.
+**Why nested `diff` fails:** `Diff()` returns a `SymResult` containing a presentation tag `TAG_DERIV|d|dx|body` (string with metadata for rendering the `d/dx` fraction), **not** an AngouriMath `Entity`. The outer `diff` cannot re-parse it. Use the 3-arg form.
 
-**Recommendation for symbolic Greek arguments:** if a `#sym simplify`/`#sym integrate` block hangs, **replace single-char Greek symbols with their Roman names** (`ν` → `nu`, `ξ` → `r`, `η` → `s`, `θ` → `theta`) — AngouriMath simplification works fine with the renamed variables.
+**Recommendation for symbolic Greek arguments:** if `#sym simplify`/`#sym integrate` hangs, **rename single-char Greek to Roman**:
+- `ν` → `nu`
+- `ξ` → `r`  (or `xi`)
+- `η` → `s`  (or `eta`)
+- `θ` → `theta`
+- `π` → leave (AngouriMath knows π is a constant)
 
-### HTML inside `'<p>...</p>` lines
+### Escape rules for `'`-prefixed HTML lines
 
-| Pattern | Result | Notes |
-|---|---|---|
-| `'<p>texto</p>` | ✅ | Standard HTML paragraph |
-| `'<p>x<sub>1</sub> + y<sup>2</sup></p>` | ✅ | Subs/sups work |
-| `'<p>Esto es importante — muy.</p>` | ✅ | **Em dash works in HTML text** |
-| `'<p>los '60 fueron decisivos</p>` | ❌ "Invalid symbol —" | **Apostrophe inside the line CLOSES the comment context** |
-| `'<p>derivada w' a coincidir — ...</p>` | ❌ parser error | Same — apostrophes break the `'` line, then em dash fails |
+The leading `'` starts a comment-as-HTML line. Inside that line:
 
-**Rule of `'` lines:** the leading `'` starts an HTML‑comment line where the content is treated as raw text/HTML. Any **additional** apostrophe inside the line closes the context, and everything after is parsed as a Calcpad expression — special chars (`—`, `<`, `</`, `?`) then trigger errors.
+| Pattern | Result |
+|---|---|
+| `'<p>texto sin apostrofes</p>` | ✅ |
+| `'<p>x<sub>1</sub> + y<sup>2</sup></p>` | ✅ HTML subs/sups |
+| `'<p>Esto es importante — muy.</p>` | ✅ Em dash in HTML text fine |
+| `'<p>los '60 fueron decisivos</p>` | ❌ Apostrophe **closes** comment context, rest parsed as math, errors |
+| `'<p>derivada w' a coincidir — ...</p>` | ❌ Same — `w'` closes context, em-dash invalid in math |
+| `'kPa (concreto f'c 4000 psi)` | ❌ `f'c` closes the comment in a regular comment line |
 
-**Workaround:** write `los anios 60` instead of `los '60`, `dw/dx` instead of `w'`, etc.
-
-### `f'c` (concrete strength) inside expressions
-
-```
-E_c = 25000000   'kPa (concreto fc=4000 psi)        ✅ OK
-E_c = 25000000   'kPa (concreto f'c 4000 psi)       ❌ FAILS — apostrophe breaks comment
-```
+**Rule:** any **additional** `'` inside a `'`-line closes the comment context. Everything after is parsed as a Calcpad expression. Use `anios 60`, `dw/dx`, `fc`, etc.
 
 ### Quick checklist before rendering
 
-- [ ] No `_{...}` or `^{...}` LaTeX braces in `#deq`
-- [ ] No `@@(...)` annotations (use centered italics on next line instead)
-- [ ] No em dashes (`—`) inside `#deq`
-- [ ] No apostrophes (`'`, `f'c`, `'60`, `w'`) inside `'<p>...</p>` lines
-- [ ] No nested `diff(diff(...))` — use `diff(expr; var; n)`
+- [ ] Use the **current** `Cli.exe` (Apr 2026 build or later) — older builds reject `#margen`, `#pgb`, `#blq`
+- [ ] Avoid `^{...}` LaTeX braces in `#deq` (use `^N` for single chars; `^{N}` shows literally)
+- [ ] No em dashes (`—`) inside `#deq` (use them only in `'<p>` HTML)
+- [ ] No additional apostrophes inside `'`-prefixed comment lines
+- [ ] **Nested `diff(diff(...))` now WORKS** since `SymbolicProcessor.cs` v1.3.3 (May 2026) — recursively resolves inner symbolic calls before applying the outer derivative
 - [ ] No `simplify(...)` of expressions with single-char Greek vars (rename to Roman)
-- [ ] Definite `integrate(...; var; 0; L)` with symbolic bound — risky; use indefinite + explain bounds in text
+- [ ] Definite `integrate(...; var; 0; L)` with symbolic bound — risky; use indefinite + describe bounds in text
+- [ ] For clean integrals with limits, use HTML `∫₀<sup>L</sup>` instead of `#deq`
+
+---
+
+## Mixing text + math + symbolic in the same line — Inline mode
+
+Calcpad has rich support for mixing text and math in a single line. The rules
+take some practice — see `Examples/Finite Elements/TEST_inline.cpd` for a
+12-block test that exercises every pattern. Here are the working idioms:
+
+### Rule 1 — `'` toggles between Text and Math mode
+
+A line that starts with `'` is in **Text mode**. Each additional `'` toggles to
+**Math mode** (and back). This means the count of apostrophes matters.
+
+### Rule 2 — Inline `#deq` and `#sym` directly in text
+
+```
+'La 2da ley es '#deq F = m*a' fundamental.
+'Derivada cubica '#sym diff(x^3; x; 3)' constante.
+```
+
+Pattern: `'<text>'<directive>'<more text>`. The first `'` opens text, the second
+`'` switches to math (where the directive lives), the third `'` returns to text.
+Renders as: *La 2da ley es F = m·a fundamental.*
+
+### Rule 3 — Inline `$Sum`, `$Integral`, `$Product`
+
+These need an explicit assignment: `varname = $Cmd{...}`. The pattern is
+**different** from `#deq`/`#sym`:
+
+```
+'Suma -'S = $Sum{i^2 @ i = 1 : 10}
+'Trabajo -'W = $Integral{k*x @ x = 0 : 1}
+'Factorial -'P = $Product{i @ i = 1 : 5}
+```
+
+The `'` inside text closes the comment, then `S = $Sum{...}` is parsed as a
+calculation. Result: *Suma - S = Σᵢ₌₁¹⁰ i² = 385*. Note: do **not** wrap
+`$Sum{...}` between two apostrophes — that treats it as text and shows
+`$Sum{...}` literally.
+
+### Rule 4 — Permissive inline math (v1.3+)
+
+Bare math identities work without any directive (auto-detected and routed to
+display renderer):
+
+```
+'Identidad: '(a + b)^2 = a^2 + 2*a*b + b^2' clasica.
+'Biharmonica: 'd^4*w/dx^4 + 2*d^4*w/dx^2*dy^2 + d^4*w/dy^4 = q/D_f' multi-termino.
+```
+
+If you reference variables that aren't yet defined, Calcpad falls back to
+display mode instead of erroring. Useful for citing formulas before computing.
+
+### Rule 5 — Numeric values mixed in text
+
+The cleanest way to mix numeric results with text is to **define variables in
+their own block lines**, then reference them in `'<p>` HTML:
+
+```
+masa = 5
+g = 9.81
+P = masa*g
+
+'<p>Para masa=5kg y g=9.81 m/s² el peso es P = 49.05 N.</p>
+```
+
+If you want the *substitution chain* visible (`P = m·g = 5·9.81 = 49.05`), put
+the calculation on its own line **without** `'`:
+
+```
+masa = 5
+g = 9.81
+P = masa*g    ← shows: P = m·g = 5·9.81 = 49.05 with substitution arrows
+```
+
+### Rule 6 — Block mode for complex multi-line content
+
+When a line gets too cluttered or you want each item visually separated, use
+block form. Every directive has a block counterpart:
+
+| Inline | Block |
+|---|---|
+| `'foo '#deq F = k*x' bar` | `#deq F = k*x` (alone on a line) |
+| `'foo '#sym diff(x^3; x)' bar` | `#sym` ... `diff(x^3; x)` ... `#end sym` |
+| `'foo '$Sum{i @ i=1:5}'` | (always on its own line — no block form) |
+
+### Cookbook
+
+```
+"Section title — inline mixed
+'<p>The cinetic energy of a body is '#deq E_c = (1/2)*m*v^2'
+'where m is mass and v is velocity. The derivative w.r.t. v
+'is '#sym diff((1/2)*m*v^2; v)' which equals momentum p = m·v.</p>
+
+"Block form of the same content
+#deq E_c = (1/2)*m*v^2
+
+#sym
+diff((1/2)*m*v^2; v)
+#end sym
+
+'<p>The above shows the kinetic energy formula and its derivative
+'as separate display equations.</p>
+
+"Numeric example
+m = 2     'kg
+v = 10    'm/s
+E_c = (1/2)*m*v^2     'Joules
+
+'<p>Para m=2 kg y v=10 m/s la energia cinetica vale E_c = 100 J.</p>
+```
+
+### Working example in repo
+
+`Examples/Finite Elements/TEST_inline.cpd` — 12 blocks covering every pattern.
+Render with `Cli.exe TEST_inline.cpd test_inline.html -s` and inspect the HTML.
 
 ---
 

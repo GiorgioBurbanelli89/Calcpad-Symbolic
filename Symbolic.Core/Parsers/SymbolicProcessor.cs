@@ -186,10 +186,62 @@ namespace Calcpad.Core
 
         // ─── Operations ────────────────────────────────────────────
 
+        // Recursively resolve nested symbolic function calls in an expression
+        // string and return the actual AngouriMath Entity. Allows callers like
+        // diff(diff(f; x); x) to compute correctly instead of failing because
+        // the inner `diff(...)` is not AngouriMath syntax.
+        private static Entity ParseExpressionResolvingNested(string s)
+        {
+            var t = s.Trim();
+            if (string.IsNullOrEmpty(t)) return t;
+
+            // Cheap prefix dispatch — only inspect strings that look like a call
+            var pi = t.IndexOf('(');
+            if (pi <= 0 || !t.EndsWith(")"))
+                return t;
+            var op = t[..pi].Trim().ToLowerInvariant();
+            var ci = FindClose(t, pi);
+            if (ci != t.Length - 1)
+                return t; // not a single wrapping call (e.g. "diff(...) + 1")
+            var inner = t[(pi + 1)..ci];
+            var args = Split(inner);
+
+            switch (op)
+            {
+                case "diff":
+                case "derivative":
+                {
+                    if (args.Length < 2) return t;
+                    var e = ParseExpressionResolvingNested(args[0]);
+                    var v = Var(args[1]);
+                    int n = args.Length >= 3 && int.TryParse(args[2], out var nn) ? nn : 1;
+                    Entity r = e;
+                    for (int i = 0; i < n; i++) r = r.Differentiate(v);
+                    return r.Simplify();
+                }
+                case "simplify":
+                case "simp":
+                    return args.Length >= 1
+                        ? ParseExpressionResolvingNested(args[0]).Simplify()
+                        : (Entity)t;
+                case "expand":
+                    return args.Length >= 1
+                        ? ParseExpressionResolvingNested(args[0]).Expand()
+                        : (Entity)t;
+                case "factor":
+                    return args.Length >= 1
+                        ? ParseExpressionResolvingNested(args[0]).Factorize()
+                        : (Entity)t;
+                default:
+                    return t;
+            }
+        }
+
         private static SymResult Diff(string[] a)
         {
             if (a.Length < 2) return Err("diff(expr; var)");
-            Entity e = a[0];
+            // Resolve nested symbolic calls in the body so diff(diff(...)) works
+            Entity e = ParseExpressionResolvingNested(a[0]);
             var v = Var(a[1]);
             int n = a.Length >= 3 && int.TryParse(a[2], out var nn) ? nn : 1;
             Entity r = e;
@@ -201,7 +253,13 @@ namespace Calcpad.Core
             if (n == 1) { num = "d"; den = $"d{a[1]}"; }
             else { num = $"d^{n}"; den = $"d{a[1]}^{n}"; }
 
-            return new SymResult($"{TAG_DERIV}{num}|{den}|{a[0]}", TC(r));
+            // For nested calls, show the resolved inner entity instead of the
+            // raw "diff(...)" string so the displayed body is readable.
+            var bodyStr = a[0].TrimStart().StartsWith("diff(", StringComparison.OrdinalIgnoreCase)
+                       || a[0].TrimStart().StartsWith("derivative(", StringComparison.OrdinalIgnoreCase)
+                ? e.ToString()
+                : a[0];
+            return new SymResult($"{TAG_DERIV}{num}|{den}|{bodyStr}", TC(r));
         }
 
         private static SymResult Integrate(string[] a)
