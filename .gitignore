@@ -12,3 +12,4 @@ node_modules/
 # see .gitattributes. NOT excluded anymore.
 # Temporary debug project used while diagnosing AngouriMath stack overflow.
 TestAngouri/
+explicaciones/*.html

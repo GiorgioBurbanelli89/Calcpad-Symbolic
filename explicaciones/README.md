@@ -49,6 +49,16 @@ Se abre el HTML en cualquier navegador (Edge, Chrome, Firefox).
   pura (matriz de Gram, simétrica, PSD, conexión con SVD, mínimos
   cuadrados, proyecciones).
 
+### Solver — almacenamiento esparso y factorización
+- **`Archivos_K_Solver_SAPFIRE.cpd`** — qué contienen los archivos
+  `.K_0 / .K_I / .K_J / .K_M` que ETABS/SAFE generan tras un análisis.
+  Cap 0 ecuación K·u=F, Cap 1 ensamblaje de K en sistema de resortes,
+  Cap 2 esparsidad (nnz vs n²), Cap 3 formato CSR (values/col_idx/row_ptr),
+  Cap 4 Cholesky con derivación 3×3, Cap 5 reuso entre combinaciones,
+  Cap 6 mapping completo de cada extensión, Cap 7 comparación con
+  hekatan-fem (Eigen SimplicialLLT), Cap 8 reordering AMD para
+  controlar fill-in.
+
 ### Conceptos físicos
 - **`Energia_Cuadratica_Explicada.cpd`** — qué significa que la energía
   sea cuadrática (vs lineal del peso). Razón física: la fuerza crece
