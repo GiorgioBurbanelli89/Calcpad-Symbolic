@@ -37,19 +37,22 @@ namespace Calcpad.Core
                 var c = s[i];
                 if (c == '\'' || c == '\"')
                 {
+                    // Treat '' (or "") at ANY position as a literal escaped apostrophe/
+                    // quote. Previously this only worked while INSIDE a text region —
+                    // which surprised users who wrote things like "'hello' #deqξ''world"
+                    // expecting `''` to mean "literal apostrophe in text". With the old
+                    // rule the second `'` toggled to expression mode and "world" was
+                    // parsed as math, producing a noisy red error in the editor.
+                    var i1 = i + 1;
+                    if (i1 < len && s[i1] == c)
+                    {
+                        ts.Expand();
+                        ts.Expand();
+                        i = i1;
+                        continue;
+                    }
                     if (currentSeparator == ' ' || currentSeparator == c)
                     {
-                        if (currentSeparator == c)
-                        {
-                            var i1 = i + 1;
-                            if (i1 < len && s[i1] == currentSeparator)
-                            {
-                                ts.Expand();
-                                ts.Expand();
-                                i = i1;
-                                continue;
-                            }
-                        }
                         if (!ts.IsEmpty)
                             AddToken(tokens, ts.Cut(), currentSeparator);
 

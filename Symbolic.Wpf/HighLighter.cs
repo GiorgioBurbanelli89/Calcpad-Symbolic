@@ -968,7 +968,21 @@ namespace Calcpad.Wpf
                         _state.IsUnits = true;
 
                     if (_state.MacroArgs == 0)
+                    {
+                        // Pass the NEXT char so ParseComment can detect '' / "" as
+                        // escaped literal apostrophe/quote (matches parser fix).
+                        var nextChar = (i + 1 < text.Length) ? text[i + 1] : '\0';
+                        if ((c == '\'' || c == '"') && nextChar == c)
+                        {
+                            // Skip the toggle: emit both chars literally as part of
+                            // the current region (text or whatever) and advance i.
+                            _builder.Append(c);
+                            if (_state.TextComment != '\0') _builder.Append(c);
+                            ++i;
+                            continue;
+                        }
                         ParseComment(c);
+                    }
 
                     if (_state.MacroArgs > 0)
                         ParseMacroArgs(c);
@@ -1228,6 +1242,10 @@ namespace Calcpad.Wpf
             }
             else if (c == '\'' || c == '"')
             {
+                // The escape-pair detection ('' / "") is handled by the caller in
+                // the main loop BEFORE we get here — see Parse around the
+                // ParseComment(c) call site, which advances i and skips the
+                // ParseComment call entirely on a quote-escape.
                 if (_state.TextComment == '\0')
                 {
                     _state.IsUnits = false;
