@@ -969,15 +969,41 @@ namespace Calcpad.Wpf
 
                     if (_state.MacroArgs == 0)
                     {
-                        // Pass the NEXT char so ParseComment can detect '' / "" as
-                        // escaped literal apostrophe/quote (matches parser fix).
+                        // Detect '' / "" escape pair. Two semantics depending on
+                        // current region (matches parser GetTokens):
+                        //   • INSIDE a text region of same quote type → literal
+                        //     escaped quote. Append both chars; stay in text mode.
+                        //   • OUTSIDE any region (default expression mode) → user
+                        //     typo for "close expression + re-enter text". Skip
+                        //     the pair entirely; switch to text mode for what
+                        //     follows.
                         var nextChar = (i + 1 < text.Length) ? text[i + 1] : '\0';
                         if ((c == '\'' || c == '"') && nextChar == c)
                         {
-                            // Skip the toggle: emit both chars literally as part of
-                            // the current region (text or whatever) and advance i.
-                            _builder.Append(c);
-                            if (_state.TextComment != '\0') _builder.Append(c);
+                            if (_state.TextComment == c)
+                            {
+                                // Inside-text escape → emit both chars as part of
+                                // the comment region.
+                                _builder.Append(c);
+                                _builder.Append(c);
+                            }
+                            else if (_state.TextComment == '\0')
+                            {
+                                // Outside any text region. Flush whatever was
+                                // being built, then ENTER text mode for content
+                                // that follows the pair.
+                                Append(_state.CurrentType);
+                                _state.TextComment = c;
+                                _state.TagComment = c == '\'' ? '"' : '\'';
+                                _state.IsUnits = false;
+                                _state.CurrentType = Types.Comment;
+                            }
+                            else
+                            {
+                                // Inside a different-quote region. Treat as literal.
+                                _builder.Append(c);
+                                _builder.Append(c);
+                            }
                             ++i;
                             continue;
                         }
