@@ -680,6 +680,41 @@ namespace Calcpad.Wpf
             return false;
         }
 
+        /// <summary>Names of the 21 web-graphics directives (everything except #svg
+        /// which has its own _isInSvgBlock flag). Centralised so we don't repeat
+        /// 21 OR-chained <c>StartsWith</c> calls in three different places.</summary>
+        private static readonly string[] WebGraphicDirectives =
+        {
+            // Phase 1
+            "#plotly", "#three", "#mermaid", "#canvas", "#cyto", "#dot",
+            "#jsx", "#map", "#math", "#chart",
+            // Phase 3
+            "#mathbox", "#d3", "#echarts", "#vega", "#visnet", "#p5",
+            "#matter", "#cannon", "#geogebra",
+            // Phase 4
+            "#anime", "#manim"
+        };
+
+        private static bool IsWebGraphicOpener(string text)
+        {
+            foreach (var d in WebGraphicDirectives)
+                if (text.StartsWith(d, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            return false;
+        }
+
+        private static bool IsWebGraphicCloser(string text)
+        {
+            if (!text.StartsWith("#end ", StringComparison.OrdinalIgnoreCase)) return false;
+            foreach (var d in WebGraphicDirectives)
+            {
+                // "#end plotly" matches "#plotly"
+                if (text.StartsWith("#end " + d.Substring(1), StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
         /// <summary>Walk backwards from <paramref name="start"/> through previous paragraphs
         /// to determine whether we're currently inside a #svg/#python/#maxima block.
         /// Sets <see cref="_isInSvgBlock"/> / <see cref="_isInCodeBlock"/> accordingly.</summary>
@@ -699,27 +734,9 @@ namespace Calcpad.Wpf
                     _isInSvgBlock = true;
                     return;
                 }
-                if (prevText.StartsWith("#end plotly", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#end three", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#end mermaid", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#end canvas", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#end cyto", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#end dot", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#end jsx", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#end map", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#end math", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#end chart", StringComparison.OrdinalIgnoreCase))
+                if (IsWebGraphicCloser(prevText))
                     return; // Web-graphics block already closed
-                if (prevText.StartsWith("#plotly", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#three", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#mermaid", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#canvas", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#cyto", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#dot", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#jsx", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#map", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#math", StringComparison.OrdinalIgnoreCase) ||
-                    prevText.StartsWith("#chart", StringComparison.OrdinalIgnoreCase))
+                if (IsWebGraphicOpener(prevText))
                 {
                     _isInPlotlyBlock = true;
                     return;
@@ -809,16 +826,7 @@ namespace Calcpad.Wpf
                 // Web-graphics block opener directives (Phase 1 — 10 libs incl. #plotly).
                 // Body is raw JS / JSON / DSL — tokenising would strip whitespace, colons,
                 // braces and quotes that the libraries need.
-                if (trimmedText.StartsWith("#plotly", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#three", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#mermaid", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#canvas", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#cyto", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#dot", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#jsx", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#map", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#math", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#chart", StringComparison.OrdinalIgnoreCase))
+                if (IsWebGraphicOpener(trimmedText))
                 {
                     _isInPlotlyBlock = true;   // reuse the same passthrough flag
                     p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
@@ -845,16 +853,7 @@ namespace Calcpad.Wpf
                     ++lineNumber;
                     continue;
                 }
-                if (trimmedText.StartsWith("#end plotly", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#end three", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#end mermaid", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#end canvas", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#end cyto", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#end dot", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#end jsx", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#end map", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#end math", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#end chart", StringComparison.OrdinalIgnoreCase))
+                if (IsWebGraphicCloser(trimmedText))
                 {
                     _isInPlotlyBlock = false;
                     p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });

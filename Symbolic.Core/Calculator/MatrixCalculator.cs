@@ -528,10 +528,27 @@ namespace Calcpad.Core
 
         private static IValue SetUnits(in IValue v, in IValue unitsValue)
         {
-            if (unitsValue is not RealValue rvu || rvu.D != 1d || !rvu.IsUnit )
+            if (unitsValue is not RealValue rvu)
                 throw Exceptions.InvalidUnits(unitsValue.ToString());
 
-            var units = rvu.Units ?? throw Exceptions.InvalidUnits(unitsValue.ToString());
+            // Two valid forms:
+            //   1) setunits(x; <unit>)  — rvu.IsUnit == true, rvu.Units != null
+            //   2) setunits(x; 1)       — literal 1 means "make unitless"
+            //                            (rvu.IsUnit == false, rvu.Units == null, D == 1)
+            Unit units;
+            if (rvu.IsUnit && rvu.Units is not null && rvu.D == 1d)
+            {
+                units = rvu.Units;
+            }
+            else if (!rvu.IsUnit && rvu.Units is null && rvu.D == 1d)
+            {
+                // Strip units (alias for clrunits when used on a value with units)
+                return ClrUnits(v);
+            }
+            else
+            {
+                throw Exceptions.InvalidUnits(unitsValue.ToString());
+            }
 
             switch (v)
             {

@@ -88,11 +88,39 @@ namespace Calcpad.Core
             End_Jsx,
             Map,          // Leaflet (maps)
             End_Map,
+            // Mathbox MUST come before Math (it's a longer prefix; otherwise
+            // "#mathbox" matches "#math" first because GetKeyword iterates the
+            // 'm' bucket in declaration order and StartsWith returns true for
+            // the shorter keyword).
+            Mathbox,      // MathBox 2 — math viz 3D, isosurfaces, vector fields
+            End_Mathbox,
             Math,         // KaTeX (LaTeX rendering)
             End_Math,
-            Chart         // Chart.js (simple charts)
+            Chart,        // Chart.js (simple charts)
+            End_Chart,
+            // Web graphics phase 3 — advanced viz (9)
+            D3,           // D3.js v7 — custom data-driven plots
+            End_D3,
+            Echarts,      // Apache ECharts 5 — sankey, parallel, heatmap, treemap
+            End_Echarts,
+            Vega,         // Vega-Lite 5 — declarative JSON charts
+            End_Vega,
+            Visnet,       // vis-network 9 — networks dinámicos
+            End_Visnet,
+            P5,           // p5.js 1 — creative coding
+            End_P5,
+            Matter,       // Matter.js — physics 2D rígidos
+            End_Matter,
+            Cannon,       // Cannon-es — physics 3D rígidos
+            End_Cannon,
+            Geogebra,     // GeoGebra applet
+            End_Geogebra,
+            // Web graphics phase 4 — animations (2)
+            Anime,        // anime.js v3 — DOM/SVG animations
+            End_Anime,
+            Manim         // animaciones tipo 3blue1brown via MathBox dark theme
             ,
-            End_Chart
+            End_Manim
         }
         private enum KeywordResult  
         {
@@ -331,6 +359,72 @@ namespace Calcpad.Core
                     return KeywordResult.Continue;
                 case Keyword.End_Chart:
                     ParseKeywordEndWebGraphic(WebGraphicKind.Chart);
+                    return KeywordResult.Continue;
+                case Keyword.Mathbox:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Mathbox);
+                    return KeywordResult.Continue;
+                case Keyword.End_Mathbox:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Mathbox);
+                    return KeywordResult.Continue;
+                case Keyword.D3:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.D3);
+                    return KeywordResult.Continue;
+                case Keyword.End_D3:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.D3);
+                    return KeywordResult.Continue;
+                case Keyword.Echarts:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Echarts);
+                    return KeywordResult.Continue;
+                case Keyword.End_Echarts:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Echarts);
+                    return KeywordResult.Continue;
+                case Keyword.Vega:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Vega);
+                    return KeywordResult.Continue;
+                case Keyword.End_Vega:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Vega);
+                    return KeywordResult.Continue;
+                case Keyword.Visnet:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Visnet);
+                    return KeywordResult.Continue;
+                case Keyword.End_Visnet:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Visnet);
+                    return KeywordResult.Continue;
+                case Keyword.P5:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.P5);
+                    return KeywordResult.Continue;
+                case Keyword.End_P5:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.P5);
+                    return KeywordResult.Continue;
+                case Keyword.Matter:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Matter);
+                    return KeywordResult.Continue;
+                case Keyword.End_Matter:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Matter);
+                    return KeywordResult.Continue;
+                case Keyword.Cannon:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Cannon);
+                    return KeywordResult.Continue;
+                case Keyword.End_Cannon:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Cannon);
+                    return KeywordResult.Continue;
+                case Keyword.Geogebra:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Geogebra);
+                    return KeywordResult.Continue;
+                case Keyword.End_Geogebra:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Geogebra);
+                    return KeywordResult.Continue;
+                case Keyword.Anime:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Anime);
+                    return KeywordResult.Continue;
+                case Keyword.End_Anime:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Anime);
+                    return KeywordResult.Continue;
+                case Keyword.Manim:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Manim);
+                    return KeywordResult.Continue;
+                case Keyword.End_Manim:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Manim);
                     return KeywordResult.Continue;
                 case Keyword.NoSub:
                     _parser.VariableSubstitution = MathParser.VariableSubstitutionOptions.VariablesOnly;
