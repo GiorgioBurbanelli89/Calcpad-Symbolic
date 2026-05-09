@@ -86,6 +86,53 @@ namespace Calcpad.Core
                         ParseKeywordContinue();
                         continue;
                     }
+
+                    // Dentro de #plotly/#three/#mermaid/#canvas, capturamos
+                    // la línea cruda. Detectamos el cierre por TEXTO crudo
+                    // porque el cache puede tener keyword=None aún para "#end xxx".
+                    if (_insideWebGraphicBlock)
+                    {
+                        var wgStart = lines[_currentLine];
+                        var wgEnd = lines[_currentLine + 1];
+                        var wgRaw = code[wgStart..wgEnd];
+                        var wgEol = wgRaw.IndexOf('\v');
+                        if (wgEol > -1) wgRaw = wgRaw[..wgEol];
+                        var wgTxt = wgRaw.ToString().TrimEnd('\n', '\r').TrimStart();
+                        // Detectar el #end <kind>
+                        string expectedEnd = _webGraphicKind switch
+                        {
+                            WebGraphicKind.Three => "#end three",
+                            WebGraphicKind.Mermaid => "#end mermaid",
+                            WebGraphicKind.Canvas => "#end canvas",
+                            WebGraphicKind.Cyto => "#end cyto",
+                            WebGraphicKind.Dot => "#end dot",
+                            WebGraphicKind.Jsx => "#end jsx",
+                            WebGraphicKind.Map => "#end map",
+                            WebGraphicKind.Math => "#end math",
+                            // Fase 3
+                            WebGraphicKind.Mathbox => "#end mathbox",
+                            WebGraphicKind.D3 => "#end d3",
+                            WebGraphicKind.Echarts => "#end echarts",
+                            WebGraphicKind.Vega => "#end vega",
+                            WebGraphicKind.Visnet => "#end visnet",
+                            WebGraphicKind.P5 => "#end p5",
+                            WebGraphicKind.Matter => "#end matter",
+                            WebGraphicKind.Cannon => "#end cannon",
+                            WebGraphicKind.Geogebra => "#end geogebra",
+                            WebGraphicKind.Chart => "#end chart",
+                            // Fase 4
+                            WebGraphicKind.Anime => "#end anime",
+                            WebGraphicKind.Manim => "#end manim",
+                            _ => ""
+                        };
+                        if (wgTxt.StartsWith(expectedEnd, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ParseKeywordEndWebGraphic(_webGraphicKind);
+                            continue;
+                        }
+                        ProcessWebGraphicLine(wgRaw.ToString().TrimEnd('\n', '\r'));
+                        continue;
+                    }
                     if (currentLineCache.IsCached && keyword == Keyword.None)
                     {
                         // Inside #plotly block: every body line is raw JSON, never evaluated
@@ -111,6 +158,13 @@ namespace Calcpad.Core
                             }
                             // Non-dot cached lines: evaluate but discard HTML
                             _svgSbPositionBeforeLine = _sb.Length;
+                        }
+                        // Inside #plotly/#three/#mermaid/#canvas block: bypass
+                        // cache y captura tal cual.
+                        if (_insideWebGraphicBlock)
+                        {
+                            ProcessWebGraphicLine(textSpan.ToString());
+                            continue;
                         }
                         if (IsEnabled())
                         {
@@ -307,6 +361,16 @@ namespace Calcpad.Core
                         }
                         // Non-dot lines: evaluate (so variables get assigned) but discard generated HTML
                         _svgSbPositionBeforeLine = _sb.Length;
+                    }
+
+                    // #plotly / #three / #mermaid / #canvas block mode:
+                    // capturar la línea TAL CUAL en el buffer del bloque
+                    // (sin evaluarla por el parser de Calcpad). El contenido
+                    // es DSL/JS de la librería web, no math de Calcpad.
+                    if (_insideWebGraphicBlock && keyword == Keyword.None)
+                    {
+                        ProcessWebGraphicLine(textSpan.ToString());
+                        continue;
                     }
 
                     // Check for user-defined function call: "K = MyFunc(args)"
@@ -823,6 +887,19 @@ namespace Calcpad.Core
                         continue;
                     }
 
+                    // Inline display-only pre-check: identities, Leibniz
+                    // derivatives, matrix literals, and literal #/$ directive
+                    // references all bypass evaluation (which would reject
+                    // them) and render as display text. This mirrors the
+                    // permissiveness of block-level #deq for inline math so
+                    // users can intersperse "'texto'math'texto" with richer
+                    // math constructs.
+                    if (isOutput && ShouldRenderInlineAsDisplay(token.Value))
+                    {
+                        RenderInlineAsDisplay(token.Value);
+                        continue;
+                    }
+
                     try
                     {
                         var cacheID = token.CacheID;
@@ -848,14 +925,15 @@ namespace Calcpad.Core
                             else
                             {
                                 var html = _parser.ToHtml();
+                                var eqStyle = EqStyleForMatrix(html);
                                 if (getXml && Settings.Math.FormatEquations)
                                 {
                                     var xml = _parser.ToXml();
                                     OpenXmlExpressions.Add(xml);
-                                    _sb.Append($"<span class=\"eq\" id=\"eq-{OpenXmlExpressions.Count - 1}\">{html}</span>");
+                                    _sb.Append($"<span class=\"eq\"{eqStyle} id=\"eq-{OpenXmlExpressions.Count - 1}\">{html}</span>");
                                 }
                                 else
-                                    _sb.Append($"<span class=\"eq\">{html}</span>");
+                                    _sb.Append($"<span class=\"eq\"{eqStyle}>{html}</span>");
                             }
                         }
                     }
@@ -907,9 +985,28 @@ namespace Calcpad.Core
                                 _parser.IsCalculation = _isVal != -1;
                                 if (sb2.Length > 0)
                                 {
-                                    _sb.Append($"<span class=\"eq\">{sb2}</span>");
+                                    var sb2Str = sb2.ToString();
+                                    var eqStyle2 = EqStyleForMatrix(sb2Str);
+                                    _sb.Append($"<span class=\"eq\"{eqStyle2}>{sb2Str}</span>");
                                     continue;
                                 }
+                            }
+                            catch { /* fall through to error display */ }
+                        }
+
+                        // Last-resort display-only fallback: if evaluation
+                        // failed because a variable/function in the RHS was
+                        // undefined (common inline when the user describes
+                        // a formula before binding values), route through
+                        // ParseInlineDeq which renders without evaluation.
+                        if (isOutput)
+                        {
+                            try
+                            {
+                                var startLen = _sb.Length;
+                                RenderInlineAsDisplay(token.Value);
+                                if (_sb.Length > startLen)
+                                    continue;
                             }
                             catch { /* fall through to error display */ }
                         }

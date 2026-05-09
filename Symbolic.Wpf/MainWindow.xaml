@@ -224,6 +224,9 @@
                 <MenuItem Click="MenuCli_Click"
                           Header="{x:Static wpf:MainWindowResources.CommandLineInterpreter}"/>
                 <Separator/>
+                <MenuItem x:Name="MenuExcelViewer" Header="Open Excel Viewer (.xlsx)"
+                          Click="MenuExcelViewer_Click"/>
+                <Separator/>
                 <MenuItem x:Name="MenuExportPlugin" Header="Export to MathCad Prime (.mcdx)"
                           Click="MenuExportPlugin_Click" Visibility="Collapsed"/>
                 <MenuItem x:Name="MenuImportPlugin" Header="Import from MathCad Prime (.mcdx)"

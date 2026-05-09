@@ -1,0 +1,69 @@
+"Cáscara Gruesa — Teoría de Mindlin-Reissner (MITC, Naghdi)
+'Una cáscara gruesa combina:
+'  • Comportamiento de MEMBRANA
+'  • Comportamiento de PLACA GRUESA (Mindlin — con deformacion de corte)
+'Total: 5 GDL por nodo (u, v, w, phi_x, phi_y) — phi's INDEPENDIENTES de w.
+
+"Hipótesis (Mindlin-Reissner para shells)
+'  (1) Espesor t comparable con otras dimensiones (t/R ~ 1/10 a 1/5).
+'  (2) Normales permanecen rectas pero NO necesariamente perpendiculares.
+'  (3) Existe deformacion por cortante transversal (gamma_xz, gamma_yz != 0).
+
+"Campo de desplazamientos
+#deq u_alfa = u_alfa0 + z*phi_alfa
+
+"Deformaciones
+'Membrana (como en shell delgada):
+#deq ε_alfa_beta_mem = 0.5*(du_alfa0/dx_beta + du_beta0/dx_alfa)
+
+'Flexion (con giros independientes):
+#deq κ_alfa_beta = 0.5*(dphi_alfa/dx_beta + dphi_beta/dx_alfa)
+
+'Cortante transversal — NUEVO:
+#deq γ_alfa_3 = phi_alfa + dw/dx_alfa
+
+"Matriz constitutiva completa
+E = 200000
+ν = 0.3
+t = 0.05
+
+'Membrana:
+C_m = E*t/(1 - ν^2)
+D_m = [C_m; ν*C_m; 0 | ν*C_m; C_m; 0 | 0; 0; (1-ν)*C_m/2]
+
+'Flexion:
+D_f = E*t^3/(12*(1 - ν^2))
+D_b = [D_f; ν*D_f; 0 | ν*D_f; D_f; 0 | 0; 0; (1-ν)*D_f/2]
+
+'Cortante transversal — nueva respecto a shell delgada:
+G = E/(2*(1 + ν))
+k_s = 5/6
+D_s = [k_s*G*t; 0 | 0; k_s*G*t]
+
+"Energia de deformacion total
+#deq U = 0.5*integral((ε_mem^T*D_m*ε_mem + κ^T*D_b*κ + γ^T*D_s*γ)*dA)
+
+"Problema: shear locking
+'Cuando t/R → 0, los elementos Mindlin estandar muestran rigidez aparente
+'infinita por el termino cortante. Soluciones:
+'  • MITC (Mixed Interpolation of Tensorial Components) — muy popular
+'  • Reduced Integration (RI) + Stabilization
+'  • Selective Reduced Integration (SRI)
+'  • Assumed Natural Strain (ANS)
+
+"Elementos MITC
+'  MITC4 — cuadrilatero 4 nodos con interpolacion mixta del cortante
+'  MITC9 — cuadrilatero 9 nodos (mayor precision)
+'  MITC3 — triangulo 3 nodos
+'Calcpad-Symbolic incluye ejemplos validados en /Examples/Finite Elements/.
+
+"Validacion
+'Hekatan Struct valida MITC4 contra:
+'  • Pinched cylinder (Belytschko patch test)
+'  • Scordelis-Lo roof
+'  • SAP2000 placa gruesa (ratio 1.00x)
+
+"Ventaja de FSDT para shells
+'A diferencia de CPT/Kirchhoff-Love, FSDT-shell requiere solo continuidad C0
+'(displacement), no C1. Esto simplifica enormemente la formulacion de
+'elementos finitos.

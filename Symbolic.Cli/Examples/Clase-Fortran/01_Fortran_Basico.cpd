@@ -1,0 +1,123 @@
+"Clase 1 — Fortran 77 Básico
+'Guía paso a paso para entender el código del Prof. Moita (Retic3D.for).
+
+"Lo más raro de Fortran 77 (fixed-form)
+
+'<table class="bordered" style="width:100%;font-family:Arial;font-size:13px">
+'<tr><th style="background:#1e293b;color:#fff">Columna</th><th style="background:#1e293b;color:#fff">Qué hay ahí</th></tr>
+'<tr><td><b>1</b></td><td>Si es <code>C</code>, <code>*</code> o <code>!</code> → TODA la línea es comentario</td></tr>
+'<tr><td><b>1-5</b></td><td>Etiqueta numérica (para GOTO, DO, FORMAT). Ej: <code>100</code> o <code>55</code></td></tr>
+'<tr><td><b>6</b></td><td>Si hay cualquier caracter no-espacio → continuación de línea anterior</td></tr>
+'<tr><td><b>7-72</b></td><td>Código real. Fin en columna 72 (más allá se ignora)</td></tr>
+'<tr><td><b>73-80</b></td><td>Histórico: número de tarjeta perforada, ignorado</td></tr>
+'</table>
+
+'<b>Por eso ves esto en Retic3D.for:</b>
+'<pre style="background:#1e293b;color:#e2e8f0;padding:8px;margin:6px 0">      DIMENSION  ESF(NMEL,6),DISPL(NDISP),FORCE(NMOS,3),GLOAD(NMAX),<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#           GSTIF(NMAX,NMAX),ISECT(NMEL),IGU(NMON),ELOAD(6),</pre>
+'Los 6 espacios al inicio son OBLIGATORIOS. El <code>#</code> en columna 6 significa "esta línea es CONTINUACIÓN de la anterior".
+
+"Tipos implícitos — regla I-N
+
+'Sin declaración explícita, Fortran decide el tipo por la PRIMERA LETRA:
+'<table class="bordered" style="width:100%;font-family:Arial;font-size:13px">
+'<tr><th>Primera letra</th><th>Tipo implícito</th><th>Ejemplo</th></tr>
+'<tr><td><b>I, J, K, L, M, N</b></td><td>INTEGER (entero)</td><td>I, J, NEQ, NMAX</td></tr>
+'<tr><td><b>A-H, O-Z</b></td><td>REAL (float)</td><td>X, Y, ELMOD, AREA</td></tr>
+'</table>
+
+'<b>Por eso Moita puso:</b>
+'<pre style="background:#1e293b;color:#e2e8f0;padding:8px;margin:6px 0">IMPLICIT DOUBLE PRECISION (A-H,O-Z)</pre>
+'Significa: "toda letra de A-H y O-Z será DOUBLE PRECISION (64 bits)". Los enteros (I-N) quedan INTEGER.
+
+"Declarar arrays — DIMENSION vs PARAMETER
+
+'<table class="bordered" style="width:100%;font-family:Consolas,monospace;font-size:11px">
+'<tr><th style="width:25%;background:#f59e0b;color:#fff">MATLAB</th><th style="width:25%;background:#0ea5e9;color:#fff">Calcpad-Symbolic</th><th style="width:25%;background:#8b5cf6;color:#fff">Fortran 77</th><th style="width:25%;background:#10b981;color:#fff">C++</th></tr>
+'<tr>
+'<td><pre style="margin:0">A = zeros(450,450);<br>v = zeros(450,1);</pre></td>
+'<td><pre style="margin:0">A = matrix(450; 450)<br>v = vector(450)</pre></td>
+'<td><pre style="margin:0">PARAMETER(NMAX=450)<br>DIMENSION A(NMAX,NMAX)<br>DIMENSION V(NMAX)</pre></td>
+'<td><pre style="margin:0">double A[450][450];<br>double v[450];</pre></td>
+'</tr></table>
+
+'<b>PARAMETER</b> = constante en tiempo de compilación (como <code>#define</code>). <b>DIMENSION</b> = declarar tamaño del array.
+
+"Bucles DO — equivalente al FOR
+
+'<table class="bordered" style="width:100%;font-family:Consolas,monospace;font-size:11px">
+'<tr><th style="width:50%;background:#8b5cf6;color:#fff">Clásico (con etiqueta)</th><th style="width:50%;background:#8b5cf6;color:#fff">Moderno (DO/END DO)</th></tr>
+'<tr>
+'<td><pre style="margin:0">DO 11 I=1,NN<br>&nbsp;&nbsp;READ(5,700) I,XC(I)<br>11 CONTINUE</pre></td>
+'<td><pre style="margin:0">DO I=1,NN<br>&nbsp;&nbsp;READ(5,700) I,XC(I)<br>END DO</pre></td>
+'</tr></table>
+
+'<b><code>DO 11</code></b> = "haz este bucle HASTA la línea etiquetada <code>11</code>". <code>CONTINUE</code> no hace nada, solo marca el fin.
+
+"READ / WRITE / FORMAT
+
+'<table class="bordered" style="width:100%;font-family:Consolas,monospace;font-size:12px">
+'<tr><th colspan="2" style="background:#8b5cf6;color:#fff">Fortran I/O (Entrada/Salida)</th></tr>
+'<tr><td><code>OPEN(5,FILE=&apos;INPUT.DAT&apos;)</code></td><td>Abre unidad 5 → archivo INPUT.DAT</td></tr>
+'<tr><td><code>OPEN(9,FILE=&apos;RESUL.DAT&apos;)</code></td><td>Abre unidad 9 → archivo RESUL.DAT</td></tr>
+'<tr><td><code>READ(5,500) A,B,C</code></td><td>Lee de unidad 5 con formato 500 → A, B, C</td></tr>
+'<tr><td><code>WRITE(9,500) A,B,C</code></td><td>Escribe en unidad 9 con formato 500</td></tr>
+'<tr><td><code>WRITE(*,*) &quot;hola&quot;</code></td><td>Escribe en pantalla (*) formato libre (*)</td></tr>
+'<tr><td><code>500 FORMAT(5I5)</code></td><td>5 enteros de 5 columnas cada uno</td></tr>
+'<tr><td><code>600 FORMAT(D10.3,F6.2)</code></td><td>1 double 10.3 + 1 float 6.2</td></tr>
+'</table>
+
+'<b>Clave FORMAT:</b> <code>I</code>=integer, <code>F</code>=float, <code>D</code>=double, <code>E</code>=scientific, <code>A</code>=string, <code>X</code>=espacio. <code>F10.5</code> = 10 col con 5 decimales.
+
+"SUBROUTINE vs FUNCTION
+
+'<table class="bordered" style="width:100%;font-family:Consolas,monospace;font-size:11px">
+'<tr><th style="width:50%;background:#8b5cf6;color:#fff">SUBROUTINE (no retorna)</th><th style="width:50%;background:#8b5cf6;color:#fff">FUNCTION (retorna valor)</th></tr>
+'<tr>
+'<td><pre style="margin:0">SUBROUTINE SUM(A,B,C)<br>&nbsp;&nbsp;C = A + B<br>END<br><br>CALL SUM(2.0, 3.0, R)</pre></td>
+'<td><pre style="margin:0">FUNCTION SUM(A,B)<br>&nbsp;&nbsp;SUM = A + B<br>END<br><br>R = SUM(2.0, 3.0)</pre></td>
+'</tr></table>
+
+'<b>En Retic3D.for:</b>
+'<pre style="background:#1e293b;color:#e2e8f0;padding:8px;margin:6px 0">CALL STIFF(STIF,ELMOD,AREA,EL,CSXX,CSXY,CSXZ,COEF,XL,YL,ZL,TR,...)</pre>
+'Los parámetros de <b>SALIDA</b> (como <code>STIF</code>) se modifican in-place (paso por referencia default en Fortran).
+
+"Funciones intrínsecas comunes
+
+'<table class="bordered" style="width:100%;font-family:Consolas,monospace;font-size:12px">
+'<tr><th>Fortran</th><th>Significado</th></tr>
+'<tr><td><code>DSQRT(x)</code></td><td>Raíz cuadrada DOUBLE</td></tr>
+'<tr><td><code>SQRT(x)</code></td><td>Raíz cuadrada REAL</td></tr>
+'<tr><td><code>DABS(x)</code></td><td>Valor absoluto DOUBLE</td></tr>
+'<tr><td><code>IABS(x)</code></td><td>Valor absoluto INTEGER</td></tr>
+'<tr><td><code>ASIN(x), ACOS(x)</code></td><td>arcsin, arccos (radianes)</td></tr>
+'<tr><td><code>MIN(a,b), MAX(a,b)</code></td><td>Mínimo, máximo</td></tr>
+'</table>
+
+"Ejemplo ejecutable — área de un triángulo
+
+'Cálculo directo en Calcpad-Symbolic:
+x_1 = 0
+y_1 = 0
+x_2 = 4
+y_2 = 0
+x_3 = 2
+y_3 = 3
+A_triang = abs(x_1*(y_2 - y_3) + x_2*(y_3 - y_1) + x_3*(y_1 - y_2))/2
+A_triang
+
+'<b>Traducción a Fortran:</b>
+'<pre style="background:#1e293b;color:#e2e8f0;padding:8px;margin:6px 0">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PROGRAM AREA<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IMPLICIT DOUBLE PRECISION (A-H,O-Z)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;X1 = 0.0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Y1 = 0.0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;X2 = 4.0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Y2 = 0.0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;X3 = 2.0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Y3 = 3.0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A = DABS(X1*(Y2-Y3) + X2*(Y3-Y1) + X3*(Y1-Y2))/2.0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WRITE(*,*) &apos;Area = &apos;, A<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END</pre>
+
+"Resumen
+
+'<ol>
+'<li>Regla de <b>columnas</b> (6 espacios al inicio, fin col 72)</li>
+'<li><b>IMPLICIT</b> + regla I-N (entero vs real)</li>
+'<li><b>DIMENSION</b> y <b>PARAMETER</b></li>
+'<li><b>DO/END DO</b> (y la forma antigua con etiqueta)</li>
+'<li><b>READ/WRITE/FORMAT</b></li>
+'<li><b>SUBROUTINE vs FUNCTION</b></li>
+'<li>Intrínsecas: <b>DSQRT, IABS, DABS, ASIN, ACOS</b></li>
+'</ol>
+
+'Siguiente clase: analizar <code>Retic3D.for</code> línea por línea.

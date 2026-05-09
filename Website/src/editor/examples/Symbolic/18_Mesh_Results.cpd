@@ -1,0 +1,23 @@
+"FEM Mesh with Results — $Mesh
+
+"Simple 2D mesh: 4 nodes, 2 triangles
+x_n = [0; 2; 2; 0]
+y_n = [0; 0; 2; 2]
+
+"Elements (triangles: 3 nodes each)
+e = [1; 2; 3 | 1; 3; 4]
+
+"Supports (node; direction)
+s = [1; 1 | 1; 2 | 4; 1]
+
+"Forces (node; direction; value)
+f = [2; 1; 10 | 3; 2; -5]
+
+"SVG Mesh with supports and loads
+$Mesh{x_n; y_n; e; s; f @ w = 400}
+
+"Stress results per element
+sigma = [150; 85]
+
+"Color-mapped results
+$MeshResults{x_n; y_n; e; sigma @ w = 400}

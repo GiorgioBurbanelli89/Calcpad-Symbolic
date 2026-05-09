@@ -1,0 +1,155 @@
+"Análisis Dinámico — Método de Newmark-β
+"Basado en: Métodos Matriciales con MATLAB — Ejemplo 11.4
+'<hr/>
+"1. Funciones (#function)
+
+#function PlaneFrameKe(E; A; I; x1; y1; x2; y2)
+    L_e = sqr((x2 - x1)^2 + (y2 - y1)^2)
+    C_e = (x2 - x1)/L_e
+    S_e = (y2 - y1)/L_e
+    EA_e = E*A
+    EI_e = E*I
+    a1 = (EA_e*L_e^2*C_e^2 + 12*EI_e*S_e^2)/L_e^3
+    a2 = (EA_e*L_e^2*S_e^2 + 12*EI_e*C_e^2)/L_e^3
+    a3 = (EA_e*L_e^2 - 12*EI_e)*C_e*S_e/L_e^3
+    a4 = 6*EI_e*S_e/L_e^2
+    a5 = 6*EI_e*C_e/L_e^2
+    a6 = 4*EI_e/L_e
+    a7 = 2*EI_e/L_e
+    PlaneFrameKe = [a1; a3; -a4; -a1; -a3; -a4 | a3; a2; a5; -a3; -a2; a5 | -a4; a5; a6; a4; -a5; a7 | -a1; -a3; a4; a1; a3; a4 | -a3; -a2; -a5; a3; a2; -a5 | -a4; a5; a7; a4; -a5; a6]
+#end function
+
+#function FrameConsMass(m_bar; x1; y1; x2; y2)
+    L_e = sqr((x2 - x1)^2 + (y2 - y1)^2)
+    ls = (x2 - x1)/L_e
+    ms = (y2 - y1)/L_e
+    T_m = [ls; ms; 0; 0; 0; 0 | -ms; ls; 0; 0; 0; 0 | 0; 0; 1; 0; 0; 0 | 0; 0; 0; ls; ms; 0 | 0; 0; 0; -ms; ls; 0 | 0; 0; 0; 0; 0; 1]
+    c1 = m_bar*L_e/420
+    Ml = [140*c1; 0; 0; 70*c1; 0; 0 | 0; 156*c1; 22*L_e*c1; 0; 54*c1; -13*L_e*c1 | 0; 22*L_e*c1; 4*L_e^2*c1; 0; 13*L_e*c1; -3*L_e^2*c1 | 70*c1; 0; 0; 140*c1; 0; 0 | 0; 54*c1; 13*L_e*c1; 0; 156*c1; -22*L_e*c1 | 0; -13*L_e*c1; -3*L_e^2*c1; 0; -22*L_e*c1; 4*L_e^2*c1]
+    FrameConsMass = transp(T_m)*Ml*T_m
+#end function
+
+'<hr/>
+"2. Datos del modelo
+'<h4>Material y sección</h4>
+E_m = 10^7*psi
+A_s = 6*in^2
+I_s = 100*in^4
+m_b = 4.2*lb*s^2/in^2
+
+'<h4>Nodos</h4>
+x_1 = 0*in
+y_1 = 0*in
+x_2 = 70.71*in
+y_2 = 70.71*in
+x_3 = 170.71*in
+y_3 = 70.71*in
+
+'<h4>Longitudes</h4>
+L1 = sqr((x_2 - x_1)^2 + (y_2 - y_1)^2)
+L2 = sqr((x_3 - x_2)^2 + (y_3 - y_2)^2)
+
+'<hr/>
+"3. Matrices reducidas (3×3)
+'<p>Unidades internas: lb, in, s. Matrices adimensionalizadas.</p>
+#hide
+'<p>Adimensionalizar para matrices: dividir por unidad base (lb, in, s)</p>
+Ke1 = PlaneFrameKe(E_m/psi; A_s/in^2; I_s/in^4; x_1/in; y_1/in; x_2/in; y_2/in)
+Ke2 = PlaneFrameKe(E_m/psi; A_s/in^2; I_s/in^4; x_2/in; y_2/in; x_3/in; y_3/in)
+Me1 = FrameConsMass(m_b*in^2/(lb*s^2); x_1/in; y_1/in; x_2/in; y_2/in)
+Me2 = FrameConsMass(m_b*in^2/(lb*s^2); x_2/in; y_2/in; x_3/in; y_3/in)
+#show
+
+K = [Ke1.(4;4)+Ke2.(1;1); Ke1.(4;5)+Ke2.(1;2); Ke1.(4;6)+Ke2.(1;3) | Ke1.(5;4)+Ke2.(2;1); Ke1.(5;5)+Ke2.(2;2); Ke1.(5;6)+Ke2.(2;3) | Ke1.(6;4)+Ke2.(3;1); Ke1.(6;5)+Ke2.(3;2); Ke1.(6;6)+Ke2.(3;3)]
+
+M = [Me1.(4;4)+Me2.(1;1); Me1.(4;5)+Me2.(1;2); Me1.(4;6)+Me2.(1;3) | Me1.(5;4)+Me2.(2;1); Me1.(5;5)+Me2.(2;2); Me1.(5;6)+Me2.(2;3) | Me1.(6;4)+Me2.(3;1); Me1.(6;5)+Me2.(3;2); Me1.(6;6)+Me2.(3;3)]
+
+'<hr/>
+"4. Newmark-β
+beta = 1/4
+gam = 1/2
+dt = 0.001
+n_steps = 5000
+n_plot = 500
+n_skip = 10
+
+a0 = 1/(beta*dt^2)
+a2 = 1/(beta*dt)
+a3 = 1/(2*beta) - 1
+K_eff = K + a0*M
+
+'<hr/>
+"5. Carga
+F_ap = 100000*lbf
+'<p>Carga escalón en DOF u₁, sin amortiguamiento</p>
+#hide
+F_val = F_ap/lbf
+#show
+
+'<hr/>
+"6. Integración (5000 pasos, dt = 0.001 s)
+#hide
+u_n = [0; 0; 0]
+v_n = [0; 0; 0]
+a_n = [0; 0; 0]
+u1_max = 0
+u2_max = 0
+u3_max = 0
+t_hist = matrix(1; n_plot)
+u1_hist = matrix(1; n_plot)
+u2_hist = matrix(1; n_plot)
+u3_hist = matrix(1; n_plot)
+j_p = 1
+
+#for i = 1 : n_steps
+    t_i = i*dt
+    F_i = [F_val; 0; 0]
+    F_eff = F_i + M*(a0*u_n + a2*v_n + a3*a_n)
+    u_new = lsolve(K_eff; F_eff)
+    a_new = a0*(u_new - u_n) - a2*v_n - a3*a_n
+    v_new = v_n + dt*((1 - gam)*a_n + gam*a_new)
+
+    #if abs(u_new.(1)) > u1_max
+        u1_max = abs(u_new.(1))
+    #end if
+    #if abs(u_new.(2)) > u2_max
+        u2_max = abs(u_new.(2))
+    #end if
+    #if abs(u_new.(3)) > u3_max
+        u3_max = abs(u_new.(3))
+    #end if
+
+    i_mod = i - floor(i/n_skip)*n_skip
+    #if i_mod ≡ 0
+        t_hist.(1; j_p) = t_i
+        u1_hist.(1; j_p) = u_new.(1)
+        u2_hist.(1; j_p) = u_new.(2)
+        u3_hist.(1; j_p) = u_new.(3)
+        j_p = j_p + 1
+    #end if
+
+    u_n = u_new
+    v_n = v_new
+    a_n = a_new
+#loop
+#show
+
+'<hr/>
+"7. Resultados
+
+'<h4>Desplazamientos máximos</h4>
+u_1max = u1_max*in
+'<p>MATLAB: 0.3119 in</p>
+u_2max = u2_max*in
+'<p>MATLAB: 0.3590 in</p>
+u_3max = u3_max*rad
+'<p>MATLAB: 0.0045 rad</p>
+
+'<hr/>
+"8. Gráficas
+
+$Chart{t_hist; u1_hist @ type=line & title=u1 Desplazamiento x & xlabel=Tiempo (s) & ylabel=u1 (in)}
+
+$Chart{t_hist; u2_hist @ type=line & title=u2 Desplazamiento y & xlabel=Tiempo (s) & ylabel=u2 (in)}
+
+$Chart{t_hist; u3_hist @ type=line & title=u3 Rotacion & xlabel=Tiempo (s) & ylabel=u3 (rad)}

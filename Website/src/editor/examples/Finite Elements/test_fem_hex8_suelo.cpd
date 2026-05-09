@@ -1,0 +1,172 @@
+"Test fem_hex8 con masa de suelo — Malla grande (replica Serquen)
+'<hr/>
+'<b>Problema:</b> masa de suelo 10x10x5 m con carga puntual de 100 kN
+'<b>Malla:</b> 10x10x5 = 500 elementos hex8 — totalmente resuelto en C# nativo
+
+"PASO 1) Datos
+Lx = 10','Ly = 10','Lz = 5
+nx = 20','ny = 20','nz = 10
+nn = (nx + 1)*(ny + 1)*(nz + 1)
+ne = nx*ny*nz
+nn
+ne
+Es = 20','νs = 0.42
+P = 100
+
+"PASO 2) Generar nudos
+dx = Lx/nx','dy = Ly/ny','dz = Lz/nz
+Xn = vector(nn)
+Yn = vector(nn)
+Zn = vector(nn)
+nodes = matrix(nn; 3)
+#hide
+#for k = 0 : nz
+    #for j = 0 : ny
+        #for i = 0 : nx
+            id = k*(nx + 1)*(ny + 1) + j*(nx + 1) + i + 1
+            Xn.(id) = i*dx - Lx/2
+            Yn.(id) = j*dy - Ly/2
+            Zn.(id) = k*dz
+            nodes.(id; 1) = i*dx - Lx/2
+            nodes.(id; 2) = j*dy - Ly/2
+            nodes.(id; 3) = k*dz
+        #loop
+    #loop
+#loop
+#show
+
+"PASO 3) Generar conectividad (elementos)
+elems = matrix(ne; 8)
+#hide
+#for k = 0 : nz - 1
+    #for j = 0 : ny - 1
+        #for i = 0 : nx - 1
+            eid = k*nx*ny + j*nx + i + 1
+            elems.(eid; 1) = k*(nx+1)*(ny+1) + j*(nx+1) + i + 1
+            elems.(eid; 2) = k*(nx+1)*(ny+1) + j*(nx+1) + (i+1) + 1
+            elems.(eid; 3) = k*(nx+1)*(ny+1) + (j+1)*(nx+1) + (i+1) + 1
+            elems.(eid; 4) = k*(nx+1)*(ny+1) + (j+1)*(nx+1) + i + 1
+            elems.(eid; 5) = (k+1)*(nx+1)*(ny+1) + j*(nx+1) + i + 1
+            elems.(eid; 6) = (k+1)*(nx+1)*(ny+1) + j*(nx+1) + (i+1) + 1
+            elems.(eid; 7) = (k+1)*(nx+1)*(ny+1) + (j+1)*(nx+1) + (i+1) + 1
+            elems.(eid; 8) = (k+1)*(nx+1)*(ny+1) + (j+1)*(nx+1) + i + 1
+        #loop
+    #loop
+#loop
+#show
+
+"PASO 4) Construir specs: cargas y BCs
+'<b>Generacion automatica de specs con desigualdades:</b>
+'Un nudo esta restringido si esta en la base (z=0) o en alguna cara lateral.
+'Usamos tolerancia tol = dx/100 para comparar floats.
+tol = dx/100
+
+'Pre-contar BCs: nudos restringidos
+n_bcs_count = 0
+#hide
+#for id = 1 : nn
+    x1 = Xn.(id)
+    y1 = Yn.(id)
+    z1 = Zn.(id)
+    on_base = z1 < tol
+    on_left = x1 < -Lx/2 + tol
+    on_right = x1 > Lx/2 - tol
+    on_front = y1 < -Ly/2 + tol
+    on_back = y1 > Ly/2 - tol
+    is_fixed = or(on_base; on_left; on_right; on_front; on_back)
+    #if is_fixed
+        n_bcs_count = n_bcs_count + 3
+    #end if
+#loop
+#show
+n_bcs_count
+
+'Total specs = 1 carga puntual + BCs
+n_specs = 1 + n_bcs_count
+n_specs
+specs = matrix(n_specs; 5)
+
+'Encontrar el nudo top-center (x≈0, y≈0, z=Lz)
+tc_id = 0
+#hide
+#for id = 1 : nn
+    xc = Xn.(id)
+    yc = Yn.(id)
+    zc = Zn.(id)
+    x_ok = and(xc < tol; xc > -tol)
+    y_ok = and(yc < tol; yc > -tol)
+    z_ok = zc > Lz - tol
+    #if and(x_ok; y_ok; z_ok)
+        tc_id = id
+    #end if
+#loop
+#show
+tc_id
+
+'Fila 1: carga puntual
+specs.(1; 1) = 1
+specs.(1; 2) = tc_id
+specs.(1; 3) = 0
+specs.(1; 4) = 0
+specs.(1; 5) = -P
+
+'Filas BCs: UX, UY, UZ en cada nudo restringido
+row = 2
+#hide
+#for id = 1 : nn
+    x2 = Xn.(id)
+    y2 = Yn.(id)
+    z2 = Zn.(id)
+    on_base2 = z2 < tol
+    on_left2 = x2 < -Lx/2 + tol
+    on_right2 = x2 > Lx/2 - tol
+    on_front2 = y2 < -Ly/2 + tol
+    on_back2 = y2 > Ly/2 - tol
+    is_fixed2 = or(on_base2; on_left2; on_right2; on_front2; on_back2)
+    #if is_fixed2
+        specs.(row; 1) = 2
+        specs.(row; 2) = 3*(id - 1) + 1
+        specs.(row; 3) = 0
+        specs.(row; 4) = 0
+        specs.(row; 5) = 0
+        row = row + 1
+        specs.(row; 1) = 2
+        specs.(row; 2) = 3*(id - 1) + 2
+        specs.(row; 3) = 0
+        specs.(row; 4) = 0
+        specs.(row; 5) = 0
+        row = row + 1
+        specs.(row; 1) = 2
+        specs.(row; 2) = 3*(id - 1) + 3
+        specs.(row; 3) = 0
+        specs.(row; 4) = 0
+        specs.(row; 5) = 0
+        row = row + 1
+    #end if
+#loop
+#show
+
+"PASO 5) Resolver con funcion nativa fem_hex8
+'<b>Ejecutando solver nativo C# para 'ne' elementos = '3*nn' DOFs</b>
+u = fem_hex8(nodes; elems; Es; νs; specs)
+
+"PASO 6) Extraer desplazamientos verticales UZ por nudo
+uz_nodal = vector(nn)
+#hide
+#for id = 1 : nn
+    uz_nodal.(id) = u.(3*(id - 1) + 3)
+#loop
+#show
+'<b>UZ minimo (mas compresion):</b>
+uz_min = min(uz_nodal)
+uz_min
+'<b>UZ maximo:</b>
+uz_max = max(uz_nodal)
+uz_max
+'<b>UZ en nudo top-center:</b>
+uz_tc = uz_nodal.(tc_id)
+uz_tc
+
+"PASO 7) Visualizacion 3D estilo SAP2000
+'<b>Color map UZ en la masa de suelo completa:</b>
+$Fem3D{Xn; Yn; Zn; elems; uz_nodal @ w=700 & h=500}

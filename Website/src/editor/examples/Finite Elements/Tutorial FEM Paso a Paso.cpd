@@ -1,0 +1,223 @@
+"Tutorial FEM — Paso a Paso desde Cero
+'<hr/>
+
+"Paso 1: Todo empieza con un resorte
+'<p>Un resorte tiene rigidez k. Si aplicas fuerza F, se estira x = F/k</p>
+
+$Struct{fixed,0,0 : spring,0,0,4,0,k=500 : node,0,0,1 (fijo) : node,4,0,2 : force,4,0,right,F=25 : dim,0,0,4,0,x = F/k @ title=Paso 1: Resorte F=kx : w=550 : h=180}
+
+k = 500
+F = 25
+x = F/k
+
+'<hr/>
+"Paso 2: La barra — Un resorte con area y longitud
+'<p>Una barra de acero es un resorte con k = EA/L</p>
+
+$Struct{fixed,0,0 : bar,0,0,5,0,E=200000 A=0.001 : node,0,0,1 (fijo) : node,5,0,2 : force,5,0,right,P=50 kN : dim,0,0,5,0,L=2m @ title=Paso 2: Barra k=EA/L : w=550 : h=180}
+
+E_b = 200000
+A_b = 0.001
+L_b = 2
+k_b = E_b*A_b/L_b
+P_b = 50
+u_b = P_b/k_b
+
+'Funciones de forma (lineales):
+#deq N_1(x) = 1 - x/L
+#deq N_2(x) = x/L
+
+#hide
+n_p = 25
+xp = vector(n_p)
+N1p = vector(n_p)
+N2p = vector(n_p)
+up = vector(n_p)
+#for i = 1 : n_p
+    xp.(i) = (i - 1)*L_b/(n_p - 1)
+    N1p.(i) = 1 - xp.(i)/L_b
+    N2p.(i) = xp.(i)/L_b
+    up.(i) = N2p.(i)*u_b
+#loop
+#show
+
+$Chart{xp; N1p; xp; N2p @ title=Shape Functions N1 and N2 : xlabel=x (m) : ylabel=N(x) : labels=N1 = 1-x/L,N2 = x/L}
+
+$Chart{xp; up @ title=Displacement u(x) = N2*u2 : xlabel=x (m) : ylabel=u}
+
+'<hr/>
+"Paso 3: Dos barras ensambladas
+'<p>3 nodos, 2 barras. Nodo 1 fijo, F=100 en nodo 3</p>
+
+$Struct{fixed,0,0 : bar,0,0,3,0,Bar 1 : bar,3,0,5,0,Bar 2 : node,0,0,1 (fijo) : node,3,0,2 : node,5,0,3 : force,5,0,right,F=100 : dim,0,0,3,0,L1=3 : dim,3,0,5,0,L2=2 @ title=Paso 3: Ensamblaje de 2 barras : w=600 : h=200}
+
+E_3 = 200000
+A_3a = 0.002
+A_3b = 0.001
+L_3a = 3
+L_3b = 2
+k_3a = E_3*A_3a/L_3a
+k_3b = E_3*A_3b/L_3b
+
+K_3 = [k_3a + k_3b; -k_3b | -k_3b; k_3b]
+F_3 = [0; 100]
+u_3s = lsolve(K_3; F_3)
+u_n2 = u_3s.(1)
+u_n3 = u_3s.(2)
+
+N_b1 = k_3a*u_n2
+N_b2 = k_3b*(u_n3 - u_n2)
+
+#hide
+n_3p = 30
+x3 = vector(n_3p)
+u3v = vector(n_3p)
+#for i = 1 : n_3p
+    x3.(i) = (i - 1)*(L_3a + L_3b)/(n_3p - 1)
+    #if x3.(i) < L_3a
+        u3v.(i) = x3.(i)/L_3a*u_n2
+    #else
+        u3v.(i) = u_n2 + (x3.(i) - L_3a)/L_3b*(u_n3 - u_n2)
+    #end if
+#loop
+#show
+
+$Chart{x3; u3v @ title=Displacement along 2 bars : xlabel=x (m) : ylabel=u}
+
+'<hr/>
+"Paso 4: La viga en voladizo
+'<p>La viga se dobla. Cada nodo tiene v (desplazamiento) y theta (rotacion).</p>
+
+$Struct{fixed,0,0 : beam,0,0,6,0,EI : node,0,0,1 (empotre) : node,6,0,2 : force,6,0,down,P=10 kN : dim,0,0,6,0,L=3m @ title=Paso 4: Viga en voladizo : w=550 : h=220}
+
+'Funciones de forma cubicas (Hermite):
+#deq N_1 = 1 - 3*ξ^2 + 2*ξ^3
+#deq N_3 = 3*ξ^2 - 2*ξ^3
+
+#hide
+n_h = 40
+xi_h = vector(n_h)
+H1 = vector(n_h)
+H2 = vector(n_h)
+H3 = vector(n_h)
+H4 = vector(n_h)
+#for i = 1 : n_h
+    xi_h.(i) = (i - 1)/(n_h - 1)
+    H1.(i) = 1 - 3*xi_h.(i)^2 + 2*xi_h.(i)^3
+    H2.(i) = xi_h.(i)*(1 - xi_h.(i))^2
+    H3.(i) = 3*xi_h.(i)^2 - 2*xi_h.(i)^3
+    H4.(i) = xi_h.(i)^2*(xi_h.(i) - 1)
+#loop
+#show
+
+$Chart{xi_h; H1; xi_h; H2; xi_h; H3; xi_h; H4 @ title=Hermite Shape Functions : xlabel=xi=x/L : ylabel=N(xi) : labels=N1 (v at i),N2 (theta at i),N3 (v at j),N4 (theta at j)}
+
+'Ejemplo numerico:
+E_v = 200000
+I_v = 8.333*10^(-6)
+L_v = 3
+P_v = 10
+cv = E_v*I_v/L_v^3
+Kr = [cv*12; -cv*6*L_v | -cv*6*L_v; cv*4*L_v^2]
+Fv = [-P_v; 0]
+uv = lsolve(Kr; Fv)
+v_tip = uv.(1)
+θ_tip = uv.(2)
+
+v_exact = -P_v*L_v^3/(3*E_v*I_v)
+
+#hide
+xv = vector(n_h)
+vv = vector(n_h)
+Mv = vector(n_h)
+#for i = 1 : n_h
+    xv.(i) = xi_h.(i)*L_v
+    vv.(i) = H3.(i)*v_tip + H4.(i)*θ_tip*L_v
+    Mv.(i) = -P_v*(L_v - xv.(i))
+#loop
+#show
+
+$Chart{xv; vv @ title=Cantilever Deflection : xlabel=x (m) : ylabel=v (m)}
+
+$Chart{xv; Mv @ title=Bending Moment M(x) : xlabel=x (m) : ylabel=M (kN*m)}
+
+'<hr/>
+"Paso 5: Viga simplemente apoyada
+
+$Struct{pin,0,0 : roller,8,0 : beam,0,0,8,0,EI : node,0,0,1 : node,4,0,2 : node,8,0,3 : force,4,0,down,P=20 kN : dim,0,0,8,0,L=6m @ title=Paso 5: Viga simplemente apoyada : w=600 : h=220}
+
+L_sa = 6
+P_sa = 20
+E_sa = 200000
+I_sa = 5*10^(-5)
+v_mid = P_sa*L_sa^3/(48*E_sa*I_sa)
+M_max = P_sa*L_sa/4
+
+#hide
+xsa = vector(n_h)
+vsa = vector(n_h)
+Msa = vector(n_h)
+Vsa = vector(n_h)
+#for i = 1 : n_h
+    xsa.(i) = (i - 1)*L_sa/(n_h - 1)
+    #if xsa.(i) < L_sa/2
+        vsa.(i) = -P_sa*xsa.(i)/(48*E_sa*I_sa)*(3*L_sa^2 - 4*xsa.(i)^2)
+        Msa.(i) = P_sa*xsa.(i)/2
+        Vsa.(i) = P_sa/2
+    #else
+        vsa.(i) = -P_sa*(L_sa - xsa.(i))/(48*E_sa*I_sa)*(3*L_sa^2 - 4*(L_sa - xsa.(i))^2)
+        Msa.(i) = P_sa*(L_sa - xsa.(i))/2
+        Vsa.(i) = -P_sa/2
+    #end if
+#loop
+#show
+
+$Chart{xsa; vsa @ title=Deflection v(x) : xlabel=x (m) : ylabel=v (m)}
+
+$Chart{xsa; Msa; xsa; Vsa @ title=Moment and Shear Diagrams : xlabel=x (m) : ylabel=Value : labels=Moment M,Shear V}
+
+'<hr/>
+"Paso 6: El portico — Todo junto
+
+$Struct{fixed,0,0 : fixed,6,0 : beam,0,0,0,4,Col 1 : beam,6,0,6,4,Col 2 : beam,0,4,6,4,Viga : node,0,0,1 : node,6,0,2 : node,0,4,3 : node,6,4,4 : force,0,4,right,F=10 kN @ title=Paso 6: Portico plano : w=550 : h=350}
+
+E_f = 200000
+A_col = 0.09
+I_col = 6.75*10^(-4)
+L_col = 4
+A_bm = 0.15
+I_bm = 3.125*10^(-3)
+L_bm = 6
+
+kk2 = 12*E_f*I_col/L_col^3
+kk3 = 6*E_f*I_col/L_col^2
+kk4 = 4*E_f*I_col/L_col
+kk5 = 2*E_f*I_col/L_col
+eac = E_f*A_col/L_col
+bv1 = E_f*A_bm/L_bm
+bv2 = 12*E_f*I_bm/L_bm^3
+bv3 = 6*E_f*I_bm/L_bm^2
+bv4 = 4*E_f*I_bm/L_bm
+bv5 = 2*E_f*I_bm/L_bm
+
+Kff = [kk2+bv1; 0; -kk3; -bv1; 0; 0 | 0; eac+bv2; bv3; 0; -bv2; bv3 | -kk3; bv3; kk4+bv4; 0; -bv3; bv5 | -bv1; 0; 0; kk2+bv1; 0; kk3 | 0; -bv2; -bv3; 0; eac+bv2; -bv3 | 0; bv3; bv5; kk3; -bv3; kk4+bv4]
+
+Ff = [10; 0; 0; 0; 0; 0]
+uf = lsolve(Kff; Ff)
+Δ_lat = uf.(1)
+
+#hide
+nod = [0; 0 | 6; 0 | 0; 4 | 6; 4]
+ele = [1; 3 | 2; 4 | 3; 4]
+sop = [1; 2]
+dsp = [0; 0 | 0; 0 | uf.(1); uf.(2) | uf.(4); uf.(5)]
+M1i = kk3*uf.(1) + kk5*uf.(3)
+M1j = kk3*uf.(1) + kk4*uf.(3)
+M2i = -kk3*uf.(4) + kk5*uf.(6)
+M2j = -kk3*uf.(4) + kk4*uf.(6)
+Mvi = bv3*uf.(2) + bv4*uf.(3) - bv3*uf.(5) + bv5*uf.(6)
+Mvj = bv3*uf.(2) + bv5*uf.(3) - bv3*uf.(5) + bv4*uf.(6)
+moms = [M1i; M1j | M2i; M2j | Mvi; Mvj]
+#show
+
+$Frame{nod; ele; sop; dsp; moms @ defScale=10 : diagScale=0.05 : title=Moment Diagram}

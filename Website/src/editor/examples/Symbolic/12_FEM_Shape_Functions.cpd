@@ -1,0 +1,34 @@
+"FEM Shape Functions — Derivation with #sym
+'From polynomial to stiffness matrix
+
+"Axial Element (Linear)
+#deq N_1 = 1 - ξ
+#deq N_2 = ξ
+#sym diff(1-t; t)
+#sym diff(t; t)
+#deq K_axial = E*A/L*[1; -1 | -1; 1]
+
+"Beam Element (Hermite Cubic)
+#deq N_1 = 1 - 3*ξ^2 + 2*ξ^3
+#deq N_2 = ξ - 2*ξ^2 + ξ^3
+#deq N_3 = 3*ξ^2 - 2*ξ^3
+#deq N_4 = -ξ^2 + ξ^3
+'Second derivatives (curvature B matrix):
+#sym diff(1 - 3*t^2 + 2*t^3; t; 2)
+#sym diff(t - 2*t^2 + t^3; t; 2)
+#sym diff(3*t^2 - 2*t^3; t; 2)
+#sym diff(-t^2 + t^3; t; 2)
+
+"Verification: integrals of B^T*B
+#sym integrate((-6+12*t)^2; t; 0; 1)
+#sym integrate((-6+12*t)*(-4+6*t); t; 0; 1)
+#sym integrate((-4+6*t)^2; t; 0; 1)
+
+"Q4 Bilinear Element
+#deq N_1 = (1-a)*(1-b)/4
+#deq N_2 = (1+a)*(1-b)/4
+#deq N_3 = (1+a)*(1+b)/4
+#deq N_4 = (1-a)*(1+b)/4
+#sym pdiff((1-a)*(1-b)/4; a)
+#sym pdiff((1-a)*(1-b)/4; b)
+#sym hessian((1-a)*(1-b)/4; a; b)

@@ -1,0 +1,58 @@
+"Membrane Q4 Element — Plane Stress Stiffness
+'4-node quadrilateral membrane (Zienkiewicz, Logan Ch.10)
+
+"1. Shape Functions in Natural Coordinates
+#deq N_1 = (1-ξ)*(1-η)/4
+#deq N_2 = (1+ξ)*(1-η)/4
+#deq N_3 = (1+ξ)*(1+η)/4
+#deq N_4 = (1-ξ)*(1+η)/4
+
+"2. Partial Derivatives dN/dξ, dN/dη
+#sym
+pdiff((1-a)*(1-b)/4; a)
+pdiff((1+a)*(1-b)/4; a)
+pdiff((1+a)*(1+b)/4; a)
+pdiff((1-a)*(1+b)/4; a)
+pdiff((1-a)*(1-b)/4; b)
+pdiff((1+a)*(1-b)/4; b)
+pdiff((1+a)*(1+b)/4; b)
+pdiff((1-a)*(1+b)/4; b)
+#end sym
+
+"3. Constitutive Matrix D (Plane Stress)
+#deq D = E/(1-ν^2)*[1; ν; 0 | ν; 1; 0 | 0; 0; (1-ν)/2]
+
+"4. Symbolic: Stress from Strain
+#sym stress(e_xx; e_yy; e_xy; E; nu)
+
+"5. Numerical Example — Square Membrane
+'Wall panel 2m × 2m, t=20cm, E=25000MPa, ν=0.2
+E = 25000MPa
+ν = 0.2
+t = 20cm
+a_dim = 2m
+b_dim = 2m
+
+"D Matrix
+D_11 = E/(1 - ν^2)
+D_12 = ν*D_11
+D_33 = D_11*(1 - ν)/2
+D = [D_11; D_12; 0MPa | D_12; D_11; 0MPa | 0MPa; 0MPa; D_33]
+D|[MPa; MPa; MPa | MPa; MPa; MPa | MPa; MPa; MPa]
+
+"6. Jacobian for Rectangular Element
+'For rectangle a×b: J = [a/2, 0; 0, b/2], det(J) = a*b/4
+det_J = a_dim*b_dim/4
+det_J|m^2
+
+"7. Strain-Displacement B Matrix at Center (ξ=0, η=0)
+'B = [dN/dx, 0; 0, dN/dy; dN/dy, dN/dx] evaluated at center
+'dN/dx = (1/a) * dN/dξ, dN/dy = (1/b) * dN/dη
+dN1_dx = -1/(2*a_dim)
+dN2_dx = 1/(2*a_dim)
+dN3_dx = 1/(2*a_dim)
+dN4_dx = -1/(2*a_dim)
+dN1_dy = -1/(2*b_dim)
+dN2_dy = -1/(2*b_dim)
+dN3_dy = 1/(2*b_dim)
+dN4_dy = 1/(2*b_dim)

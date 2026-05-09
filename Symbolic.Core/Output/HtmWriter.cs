@@ -84,7 +84,23 @@ namespace Calcpad.Core
             {
                 var i1 = i + 1;
                 if (i1 < name.Length)
-                    return FormatSubscript(FormatBold($"<var{s}>{name[..i]}</var>"), name[i1..]);
+                {
+                    // Subscript only consumes identifier-ish chars (letters,
+                    // digits, underscore). If the remainder contains operators
+                    // or whitespace, the subscript ends at the first such char
+                    // and the rest is emitted as plain text — otherwise the
+                    // fallback path (used when MathParser.Parse fails) would
+                    // greedy-consume everything after '_' into a single <sub>.
+                    int subEnd = i1;
+                    while (subEnd < name.Length &&
+                           (char.IsLetterOrDigit(name[subEnd]) || name[subEnd] == '_'))
+                        subEnd++;
+                    var subContent = name[i1..subEnd];
+                    var head = FormatSubscript(FormatBold($"<var{s}>{name[..i]}</var>"), subContent);
+                    if (subEnd < name.Length)
+                        head += System.Net.WebUtility.HtmlEncode(name[subEnd..]);
+                    return head;
+                }
             }
             return FormatBold($"<var{s}>{name}</var>");
 
@@ -407,9 +423,15 @@ namespace Calcpad.Core
                 }
             }
 
-            // IsRow = true → horizontal row
-            // IsRow = false → vertical column
-            if (vector.IsRow)
+            // Reglas de presentación:
+            //   - Si len > maxCount: SIEMPRE horizontal con truncado (… + n
+            //     elementos saltados + último). Un vector vertical de 200
+            //     filas ocuparía pantallas enteras inútilmente.
+            //   - Si len <= maxCount: respeta IsRow (row → horizontal,
+            //     column → vertical).
+            if (len > maxCount)
+                FormatVectorAsRow();
+            else if (vector.IsRow)
                 FormatVectorAsRow();
             else
                 FormatVectorAsColumn();
@@ -422,18 +444,25 @@ namespace Calcpad.Core
 
             return sb.ToString();
 
-            // Render as single row: [a  b  c  ⋯  z]
+            // Render as single row: [a₁ a₂ … aₙ-₁  ⋯ (N skipped)  aₙ]
+            // Igual al Calcpad original: muestra primeros maxCount, luego
+            // un placeholder con tooltip y el ULTIMO elemento del vector
+            // para dar contexto del rango.
             void FormatVectorAsRow()
             {
                 sb.AppendLine("<span class=\"matrix\">");
                 sb.Append("<span class=\"tr\"><span class=\"td\"></span>");
+                int last = len - 1;
                 for (int i = 0; i < len; ++i)
                 {
                     if (i == maxCount)
                     {
-                        var n = len - maxCount;
-                        sb.Append($"<span class=\"td\" title=\"{n - Math.Sign(n - 1)} elements skipped.\">⋯</span>");
-                        i = len - 1;
+                        // Cuántos elementos saltamos (sin contar el ÚLTIMO
+                        // que SÍ vamos a mostrar después).
+                        var skipped = len - maxCount - 1;
+                        sb.Append($"<span class=\"td\" title=\"{skipped} elementos saltados (vector de {len} elementos)\">⋯</span>");
+                        // Saltar al último para mostrarlo
+                        i = last;
                     }
                     sb.Append("<span class=\"td\">");
                     AppendElement(i);

@@ -1,0 +1,87 @@
+"Stiffness Matrix — 3D Space Frame Element 12x12
+'<hr/>
+"1. Element properties
+
+E = 200000*MPa
+A = 100*cm^2
+I_y = 8000*cm^4
+I_z = 3000*cm^4
+G = 80000*MPa
+J = 5000*cm^4
+L = 5*m
+
+'<hr/>
+"2. Stiffness components
+
+a1 = E*A/L
+a2 = 12*E*I_z/L^3
+a3 = 12*E*I_y/L^3
+a4 = G*J/L
+a5 = 6*E*I_y/L^2
+a6 = 6*E*I_z/L^2
+a7 = 4*E*I_y/L
+a8 = 4*E*I_z/L
+a9 = 2*E*I_y/L
+a10 = 2*E*I_z/L
+
+'<hr/>
+"3. K matrix (12x12)
+
+K = [a1;0;0;0;0;0;-a1;0;0;0;0;0 | 0;a2;0;0;0;a6;0;-a2;0;0;0;a6 | 0;0;a3;0;-a5;0;0;0;-a3;0;-a5;0 | 0;0;0;a4;0;0;0;0;0;-a4;0;0 | 0;0;-a5;0;a7;0;0;0;a5;0;a9;0 | 0;a6;0;0;0;a8;0;-a6;0;0;0;a10 | -a1;0;0;0;0;0;a1;0;0;0;0;0 | 0;-a2;0;0;0;-a6;0;a2;0;0;0;-a6 | 0;0;-a3;0;a5;0;0;0;a3;0;a5;0 | 0;0;0;-a4;0;0;0;0;0;a4;0;0 | 0;0;-a5;0;a9;0;0;0;a5;0;a7;0 | 0;a6;0;0;0;a10;0;-a6;0;0;0;a8]
+
+'<hr/>
+"4. Cantilever Beam — Application
+'<p>Node 1 fixed (6 DOFs restrained), Node 2 free with loads</p>
+
+'Loads at node 2:
+F_x = 0*kN
+F_y = -10*kN
+F_z = 5*kN
+M_x = 0*kN*m
+M_y = 0*kN*m
+M_z = 0*kN*m
+
+'<h4>Force vector (6x1)</h4>
+F = [F_x; F_y; F_z; M_x; M_y; M_z]
+
+'<h4>Reduced stiffness K_R (free DOFs at node 2)</h4>
+K_R = [a1;0;0;0;0;0 | 0;a2;0;0;0;-a6 | 0;0;a3;0;a5;0 | 0;0;0;a4;0;0 | 0;0;a5;0;a7;0 | 0;-a6;0;0;0;a8]
+
+'<h4>Solve K_R*u = F</h4>
+u = lsolve(K_R; F)
+
+'<hr/>
+"5. Displacements
+
+u_x = u.(1)|mm
+u_y = u.(2)|mm
+u_z = u.(3)|mm
+
+"6. Rotations
+
+θ_x = u.(4)|°
+θ_y = u.(5)|°
+θ_z = u.(6)|°
+
+'<hr/>
+"7. Support reactions
+
+K_12 = [-a1;0;0;0;0;0 | 0;-a2;0;0;0;-a6 | 0;0;-a3;0;-a5;0 | 0;0;0;-a4;0;0 | 0;0;-a5;0;a9;0 | 0;a6;0;0;0;a10]
+
+R = K_12*u
+
+R_x = R.(1)|kN
+R_y = R.(2)|kN
+R_z = R.(3)|kN
+M_Rx = R.(4)|kN*m
+M_Ry = R.(5)|kN*m
+M_Rz = R.(6)|kN*m
+
+'<hr/>
+"8. Analytical verification (cantilever beam)
+'<p>d = PL^3/(3EI), t = PL^2/(2EI)</p>
+
+u_y_exact = F_y*L^3/(3*E*I_z)|mm
+u_z_exact = F_z*L^3/(3*E*I_y)|mm
+θ_y_exact = -F_z*L^2/(2*E*I_y)|°
+θ_z_exact = F_y*L^2/(2*E*I_z)|°

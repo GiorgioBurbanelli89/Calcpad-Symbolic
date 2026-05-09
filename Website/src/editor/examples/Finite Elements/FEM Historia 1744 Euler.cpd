@@ -1,0 +1,437 @@
+"1744 — Leonhard Euler: La Ecuacion de la Viga Elastica
+"Historia completa: de donde salen las formulas
+'<hr/>
+
+"CONTEXTO: Que sabia Euler antes de empezar?
+'<p>En 1744, Euler tenia 37 anos. Usaria 3 descubrimientos previos:</p>
+
+"1. Ley de Hooke (1678): F = k*x
+'<p>Robert Hooke descubrio que un resorte se estira proporcional a la fuerza.</p>
+
+#svg 450 120
+.line 30 60 80 60 black 2
+.hatch 10 40 20 40 4 gray
+.line 30 40 30 80 black 2
+k_sp = 5
+#for i = 0 : k_sp
+    .line 80+i*30 60+(-1)^i*15 80+(i+1)*30 60-(-1)^i*15 black 1.5
+#loop
+.circle 80+(k_sp+1)*30 60 4 red 1
+.arrow 80+(k_sp+1)*30+5 60 80+(k_sp+1)*30+50 60 red 2
+.text 80+(k_sp+1)*30+60 64 F 14 red start bold
+.darrow 80 85 80+(k_sp+1)*30 85 gray 1
+.text 80+(k_sp+1)*30/2+40 100 x 12 gray middle
+#end svg
+
+#deq F = k*x
+
+"2. Calculo (Newton 1666 / Leibniz 1684): La derivada
+'<p>Como medir la pendiente de una curva en un solo punto?</p>
+
+"PASO 1: Pendiente de una RECTA — facil
+
+#svg 350 250
+.fillrect 0 0 350 250 #fafafa 1
+.line 40 210 320 210 black 1.5
+.line 40 210 40 20 black 1.5
+.text 330 215 x 12 black start
+.text 35 15 y 12 black end
+.line 50 200 300 60 blue 2
+.circle 50 200 4 blue 1
+.circle 300 60 4 blue 1
+.text 55 195 A 12 blue start
+.text 290 55 B 12 blue end
+.dashed 50 200 300 200 gray 1
+.dashed 300 200 300 60 gray 1
+.hdim 50 230 300 230 0 Δx_=_250
+.vdim 310 200 310 60 0 Δy_=_140
+.text 200 170 pendiente_=_Δy/Δx_=_140/250_=_0.56 11 black middle
+#end svg
+
+#deq pendiente = Δy/Δx
+
+'<p>Facil: subes Δy metros en Δx metros horizontales.</p>
+'<p>Pero una curva tiene pendiente DIFERENTE en cada punto...</p>
+
+'<hr/>
+"PASO 2: Newton — como medir la pendiente de una CURVA?
+
+'<p>Newton tomo la parabola y = x² y el punto x = 2 (donde y = 4).</p>
+'<p>Su idea: tomar DOS puntos, trazar una recta (secante), y acercarlos.</p>
+
+#hide
+np = 40
+#show
+
+#svg 400 350
+.fillrect 0 0 400 350 #fafafa 1
+.line 30 310 370 310 black 1.5
+.line 30 310 30 20 black 1.5
+.text 375 315 x 12 black start
+.text 25 15 y 12 black end
+.circle 30+0*80 310-0*17 1.5 #3366cc 0.8
+.circle 30+0.4*80 310-0.16*17 1.5 #3366cc 0.8
+.circle 30+0.8*80 310-0.64*17 1.5 #3366cc 0.8
+.circle 30+1.2*80 310-1.44*17 1.5 #3366cc 0.8
+.circle 30+1.6*80 310-2.56*17 1.5 #3366cc 0.8
+.circle 30+2.0*80 310-4.00*17 1.5 #3366cc 0.8
+.circle 30+2.4*80 310-5.76*17 1.5 #3366cc 0.8
+.circle 30+2.8*80 310-7.84*17 1.5 #3366cc 0.8
+.circle 30+3.2*80 310-10.24*17 1.5 #3366cc 0.8
+.circle 30+3.6*80 310-12.96*17 1.5 #3366cc 0.8
+.circle 30+4.0*80 310-16.00*17 1.5 #3366cc 0.8
+.circle 30+2*80 310-4*17 5 red 1 red 1
+.text 30+2*80+8 310-4*17-8 A(2,4) 11 red start
+.circle 30+4*80 310-16*17 5 orange 1 orange 1
+.text 30+4*80+5 310-16*17+15 B1(4,16) 10 orange start
+.line 30+2*80 310-4*17 30+4*80 310-16*17 orange 1
+.text 340 120 pend=6 10 orange start
+.circle 30+3*80 310-9*17 5 #cc6600 1 #cc6600 1
+.line 30+2*80 310-4*17 30+3*80 310-9*17 #cc6600 1
+.text 280 165 pend=5 10 #cc6600 start
+.circle 30+2.5*80 310-6.25*17 5 green 1 green 1
+.line 30+2*80 310-4*17 30+2.5*80 310-6.25*17 green 1
+.text 245 195 pend=4.5 10 green start
+.line 30+0.5*80 310-4*17+(310-4*17-310+16*17)*(-1.5/2) 30+3.5*80 310-4*17+(310-4*17-310+16*17)*(1.5/2) #cc0000 2
+.text 300 250 TANGENTE 11 #cc0000 start bold
+.text 345 265 pend=4 10 #cc0000 start
+#end svg
+
+'<p>Cuando B se ACERCA a A, la secante se acerca a la TANGENTE.</p>
+'<p>La pendiente de la tangente es la DERIVADA.</p>
+
+'<h4>Algebra de Newton (asi lo calculo):</h4>
+'<p>Para y = x², la pendiente de la secante entre x y x+Δx:</p>
+'<p>y en x = x²</p>
+'<p>y en x+Δx = (x+Δx)² = x² + 2x*Δx + Δx²</p>
+'<p>Δy = 2x*Δx + Δx²</p>
+
+#deq Δy/Δx = 2*x + Δx
+
+'<p>Cuando Δx → 0:</p>
+#deq dy/dx = 2*x
+
+'<p>En x = 2: dy/dx = 2*2 = 4. Exacto como la grafica!</p>
+
+'<h4>Verificacion numerica:</h4>
+x_0 = 2
+Δx_1 = 2
+pend_1 = ((x_0 + Δx_1)^2 - x_0^2)/Δx_1
+Δx_2 = 1
+pend_2 = ((x_0 + Δx_2)^2 - x_0^2)/Δx_2
+Δx_3 = 0.1
+pend_3 = ((x_0 + Δx_3)^2 - x_0^2)/Δx_3
+Δx_4 = 0.01
+pend_4 = ((x_0 + Δx_4)^2 - x_0^2)/Δx_4
+Δx_5 = 0.001
+pend_5 = ((x_0 + Δx_5)^2 - x_0^2)/Δx_5
+
+'<p>Converge a 4.000 = la derivada exacta 2x evaluada en x=2.</p>
+
+'<hr/>
+"PASO 3: La SEGUNDA derivada — cuanto CAMBIA la pendiente
+
+'<p>Si la derivada dy/dx mide cuanto SUBE la curva...</p>
+'<p>La segunda derivada mide cuanto CAMBIA la pendiente = CURVATURA:</p>
+
+#deq κ = d^2y/dx^2
+
+#svg 450 200
+.fillrect 0 0 450 200 #fafafa 1
+.text 15 100 Volante_recto 10 gray end
+.text 15 120 κ_=_0 10 gray end
+.line 30 110 140 110 black 2
+.arrow 85 110 85 85 gray 1
+.text 85 78 no_gira 9 gray middle
+.text 180 100 Curva_suave 10 green end
+.text 180 120 κ_pequena 10 green end
+.arc 210 110 60 180 270 green 2
+.text 350 100 Curva_cerrada 10 red end
+.text 350 120 κ_grande 10 red end
+.arc 370 110 30 180 270 red 2
+#end svg
+
+'<p>Curvatura grande = la curva se dobla mucho (como girar el volante).</p>
+'<p>Curvatura cero = linea recta (volante derecho).</p>
+
+'<hr/>
+"PASO 4: La viga se CURVA cuando la cargas
+
+#svg 500 100
+.beam 50 40 430 40 12 gray
+.support 50 46 pin
+.support 430 46 roller
+.text 240 35 Viga_sin_carga:_recta 11 black middle
+.cnode 50 85 A
+.cnode 430 85 B
+#end svg
+
+#svg 500 150
+.color gray
+np2 = 30
+#for i = 0 : np2
+    t_v = i/np2
+    xb = 50 + t_v*380
+    yb = 60 - 30*sin(180*t_v)
+    .circle xb yb 1.5 gray 0.6
+#loop
+.color black
+.support 50 60 pin
+.support 430 60 roller
+.arrow 240 10 240 25 red 2
+.text 240 8 q 12 red middle
+.text 240 105 v(x)_=_cuanto_baja 11 blue middle
+.darrow 240 60 240 90 blue 1
+.hdim 50 130 430 130 0 L
+#end svg
+
+'<p>v(x) = deflexion. La viga doblada es una curva con curvatura:</p>
+#deq κ(x) = d^2v/dx^2
+
+'<p>La pregunta clave: QUE CAUSA esa curvatura?</p>
+
+'<hr/>
+"PASO 5: Que pasa DENTRO del material? (el descubrimiento)
+
+'<p>Euler imagino cortar la viga y mirar que pasa dentro:</p>
+
+#svg 500 220
+.fillrect 50 30 180 60 #fff0f0 0.8
+.rect 50 30 180 60 none 1 black 1
+.fillrect 250 30 180 60 #f0fff0 0.8
+.rect 250 30 180 60 none 1 black 1
+.text 140 65 Parte_izquierda 10 gray middle
+.text 340 65 Parte_derecha 10 gray middle
+.dashed 230 10 230 100 red 1
+.text 230 8 CORTE 11 red middle bold
+.text 250 130 Que_fuerzas_hay_en_la_cara_del_corte? 12 black middle
+.line 50 150 430 150 gray 0.5
+.fillrect 50 145 380 8 #ffe0e0 0.5
+.text 50 143 ARRIBA:_se_COMPRIME_(se_acorta) 10 #cc0000 start
+.arrow 50 149 20 149 #cc0000 1.5
+.arrow 430 149 460 149 #cc0000 1.5
+.line 50 170 430 170 gray 0.5
+.text 240 168 Eje_neutro_(no_cambia) 10 gray middle
+.fillrect 50 185 380 8 #e0e0ff 0.5
+.text 50 183 ABAJO:_se_ESTIRA_(se_alarga) 10 #0000cc start
+.arrow 50 189 20 189 #0000cc 1.5
+.arrow 430 189 460 189 #0000cc 1.5
+.text 10 149 C 12 #cc0000 end bold
+.text 465 149 C 12 #cc0000 start bold
+.text 10 189 T 12 #0000cc end bold
+.text 465 189 T 12 #0000cc start bold
+#end svg
+
+'<p>El par C-T (compresion arriba, tension abajo) crea el MOMENTO FLECTOR M.</p>
+
+'<h4>Cuanta deformacion hay en cada fibra?</h4>
+'<p>Euler uso geometria: si la viga se curva con radio R = 1/κ,</p>
+'<p>una fibra a distancia y del centro se deforma:</p>
+
+#deq ε = y*κ = y*d^2v/dx^2
+
+#svg 350 200
+.fillrect 0 0 350 200 #fafafa 1
+.arc 175 300 250 240 300 black 2
+.dashed 175 300 175 50 gray 0.5
+.text 178 55 R 11 gray start
+.text 175 310 Centro 10 gray middle
+.darrow 175 55 175 300 gray 1
+.text 80 65 Fibra_lejana:_mas_deformacion 10 red start
+.text 80 160 Fibra_cercana:_menos_deformacion 10 blue start
+.line 175 300 175-250*cos(70*π/180) 300-250*sin(70*π/180) red 1
+#end svg
+
+'<p>Fibras MAS LEJOS del centro → mas deformacion.</p>
+'<p>Fibras EN el centro → cero deformacion.</p>
+
+'<hr/>
+"PASO 6: De deformacion a esfuerzo (Hooke)
+
+'<p>Euler aplico la Ley de Hooke: esfuerzo = E × deformacion</p>
+#deq σ = E*ε = E*y*κ
+
+'<p>σ (sigma) = fuerza por unidad de area (MPa)</p>
+'<p>E = modulo de elasticidad:</p>
+'<p>  Acero: E = 200,000 MPa (muy rigido)</p>
+'<p>  Madera: E = 10,000 MPa</p>
+'<p>  Goma: E = 10 MPa (flexible)</p>
+
+'<hr/>
+"PASO 7: De esfuerzo a MOMENTO (la integral clave)
+
+'<p>Cada fibra genera una fuerza dF = σ*dA a distancia y del centro.</p>
+'<p>El momento total es la suma de y*σ*dA sobre toda la seccion:</p>
+
+#deq M = ∫*y*σ*dA = E*κ*∫*y^2*dA
+
+'<p>La integral ∫y²dA solo depende de la GEOMETRIA. Se llama INERCIA I:</p>
+
+#deq I = ∫*y^2*dA
+
+'<h4>Para seccion rectangular b × h:</h4>
+
+#svg 300 250
+.rect 100 30 80 160 lightblue 0.2 black 1.5
+.hatch 100 30 80 160 10 lightblue
+.dashed 80 110 200 110 red 1
+.text 205 114 Eje_neutro 10 red start
+.hdim 100 210 180 210 0 b
+.vdim 80 30 80 190 0 h
+.darrow 190 110 190 30 green 1
+.text 195 70 y 12 green start
+.text 105 55 σ_compresion 9 #cc0000 start
+.text 105 170 σ_tension 9 #0000cc start
+#end svg
+
+b = 0.3
+h = 0.5
+#deq I = b*h^3/12
+I_sec = b*h^3/12
+
+'<p>Resultado final de Euler:</p>
+#deq M(x) = EI*d^2v/dx^2
+
+'<p>MOMENTO = RIGIDEZ × CURVATURA</p>
+E = 200000
+EI = E*I_sec
+
+'<hr/>
+"PASO 8: Del momento a la carga — equilibrio del pedacito
+
+'<p>Euler corto un pedacito de longitud dx:</p>
+
+#svg 400 200
+.fillrect 100 50 180 80 #fff8e0 0.5
+.rect 100 50 180 80 none 1 black 1.5
+.hdim 100 155 280 155 0 dx
+.arrow 100 90 60 90 blue 2
+.text 50 94 V 14 blue end bold
+.arrow 280 90 320 90 blue 2
+.text 325 94 V+dV 12 blue start
+.moment 100 50 18 green
+.text 68 40 M 12 green end bold
+.moment 280 50 18 #009900
+.text 308 40 M+dM 10 #009900 start
+.arrow 190 20 190 48 red 2
+.text 190 14 q*dx 11 red middle
+#end svg
+
+'<h4>Equilibrio vertical (fuerzas = 0):</h4>
+'<p>V - (V+dV) + q*dx = 0 → dV = q*dx</p>
+#deq dV/dx = q
+
+'<h4>Equilibrio de momentos (momentos = 0):</h4>
+'<p>M + V*dx - (M+dM) = 0 → dM = V*dx</p>
+#deq dM/dx = V
+
+'<h4>Combinando las 3 ecuaciones:</h4>
+#deq EI*d^4v/dx^4 = q(x)
+
+'<p>LA ECUACION DE EULER-BERNOULLI (1744).</p>
+
+'<hr/>
+"PASO 9: Resolviendo — viga con carga uniforme
+
+#svg 500 140
+.beam 60 50 420 50 12 gray
+.support 60 56 pin
+.support 420 56 roller
+n_arrows = 8
+#for i = 0 : n_arrows
+    xa = 60 + i*360/n_arrows
+    .arrow xa 10 xa 44 red 1
+#loop
+.text 240 8 q_=_10_kN/m 11 red middle
+.hdim 60 120 420 120 0 L_=_6m
+.cnode 60 100 A 10
+.cnode 420 100 B 10
+#end svg
+
+L = 6
+q = 10
+
+'<p>Integrando 4 veces la ecuacion EI*v'''' = q:</p>
+
+'<h4>Integral 1: Cortante V</h4>
+#deq V(x) = q*(x - L/2)
+R_A = q*L/2
+
+'<h4>Integral 2: Momento M</h4>
+#deq M(x) = q*x*(x - L)/2
+M_max = q*L^2/8
+
+'<h4>Integral 3: Pendiente</h4>
+'<h4>Integral 4: Deflexion</h4>
+#deq v(x) = q*x/(24*EI)*(L^3 - 2*L*x^2 + x^3)
+
+v_max = 5*q*L^4/(384*EI)
+#deq v_max = 5*q*L^4/(384*EI)
+
+'<h4>Graficas:</h4>
+#hide
+n = 50
+xv = vector(n)
+Vx = vector(n)
+Mx = vector(n)
+defl_v = vector(n)
+#for i = 1 : n
+    xv.(i) = (i - 1)*L/(n - 1)
+    Vx.(i) = q*(xv.(i) - L/2)
+    Mx.(i) = q*xv.(i)/2*(xv.(i) - L)
+    defl_v.(i) = q*xv.(i)/(24*EI)*(L^3 - 2*L*xv.(i)^2 + xv.(i)^3)
+#loop
+#show
+
+$Chart{xv; Vx @ title=Cortante V(x) : xlabel=x (m) : ylabel=V (kN)}
+$Chart{xv; Mx @ title=Momento M(x) : xlabel=x (m) : ylabel=M (kN*m)}
+$Chart{xv; defl_v @ title=Deflexion v(x) — La solucion de Euler : xlabel=x (m) : ylabel=v (m)}
+
+'<hr/>
+"RESUMEN: De donde salio cada formula
+
+#svg 500 280
+.fillrect 0 0 500 280 #f8f8ff 1
+.rect 10 10 480 260 none 1 #cccccc 0.5
+.text 250 35 CADENA_DE_DERIVADAS_DE_EULER 13 black middle bold
+.rect 30 50 130 35 #e8f0ff 0.5 #3366cc 1
+.text 95 72 v(x)_deflexion 10 #3366cc middle
+.arrow 160 67 190 67 black 1
+.text 175 60 d/dx 9 black middle
+.rect 190 50 130 35 #e8ffe8 0.5 #339933 1
+.text 255 72 pendiente 10 #339933 middle
+.arrow 320 67 350 67 black 1
+.text 335 60 d/dx 9 black middle
+.rect 350 50 130 35 #ffe8e8 0.5 #cc3333 1
+.text 415 72 M/(EI) 10 #cc3333 middle
+.rect 30 110 130 35 #ffe8ff 0.5 #993399 1
+.text 95 132 V_cortante 10 #993399 middle
+.arrow 95 145 95 155 black 1
+.text 105 155 d/dx 9 black start
+.rect 30 160 130 35 #fff0e0 0.5 #cc6600 1
+.text 95 182 q_carga 10 #cc6600 middle
+.arrow 415 85 415 105 black 1
+.text 425 100 d/dx 9 black start
+.line 415 105 415 128 black 1
+.line 415 128 160 128 black 1
+.arrow 160 128 160 128 black 1
+.text 40 220 1._ε_=_y*κ 10 black start
+.text 40 235 2._σ_=_E*ε 10 black start
+.text 40 250 3._M_=_EI*κ 10 black start
+.text 200 220 ←_GEOMETRIA 10 gray start
+.text 200 235 ←_HOOKE_(1678) 10 gray start
+.text 200 250 ←_INTEGRAL_en_seccion 10 gray start
+.text 340 220 4._dV/dx_=_q 10 black start
+.text 340 235 5._dM/dx_=_V 10 black start
+.text 340 250 ←_EQUILIBRIO 10 gray start
+#end svg
+
+'<hr/>
+"LO QUE EULER NO PUDO RESOLVER
+'<p>Esta solucion funciona para vigas simples.</p>
+'<p>Para formas complejas (alas de avion, puentes, losas 2D),</p>
+'<p>integrar 4 veces es IMPOSIBLE a mano.</p>
+'<p>Rayleigh (1877) encontro otro camino: la ENERGIA...</p>
+
+'<hr/>
+"Siguiente: 1877 — Rayleigh y el metodo de la energia

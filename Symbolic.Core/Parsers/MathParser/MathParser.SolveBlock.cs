@@ -609,8 +609,8 @@ namespace Calcpad.Core
                     if (_type == SolverTypes.Integral || _type == SolverTypes.Area)
                         return writer.FormatNary(
                             $"<em>{TypeName(_type)}</em>",
-                            _items[2].Html + "&nbsp;",
-                            "&emsp; " + _items[3].Html,
+                            _items[2].Html + " ",       //   = NBSP (no `;` in source)
+                            "  " + _items[3].Html,      //   = EM SPACE (no `;` in source)
                             string.Concat(_items[0].Html, " d", _items[1].Html)
                             );
 

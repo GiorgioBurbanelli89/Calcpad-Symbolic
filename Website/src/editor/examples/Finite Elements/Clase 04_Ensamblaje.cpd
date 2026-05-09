@@ -1,0 +1,97 @@
+"Algoritmo para ensamblar la Matriz de Rigidez Global
+'Ref: Yabar Ingenieros - Clase 04
+
+"Datos de entrada
+Nudo = [1; 2; 3; 4]
+X = [0; 0; 20; 20]in','Y = [0; 10; 10; 0]in
+Apoyo = [1; 2]','Rx = [1; 1]','Ry = [1; 1]
+Ele = [1; 2]
+Ini = [1; 1]','Int_n = [2; 3]','Fin_n = [3; 4]
+
+"Dimensiones
+N_nud = len(Nudo)
+N_gl = N_nud*2
+N_apo = len(Apoyo)
+N_r = $Sum{Rx.i @ i = 1 : N_apo} + $Sum{Ry.i @ i = 1 : N_apo}
+N_ele = len(Ele)
+
+"Matriz de reacciones en nudos
+#hide
+Mre = matrix(N_nud; 2)
+#for i = 1 : N_apo
+    nd = Apoyo.i
+    Mre.(nd; 1) = Rx.i
+    Mre.(nd; 2) = Ry.i
+#loop
+#show
+Mre
+
+"Matriz de GDL por nudo (libres primero, restringidos despues)
+#hide
+Mgl = matrix(N_nud; 2)
+cnt_libre = 0','cnt_rest = N_gl - N_r
+#for k = 1 : N_nud
+    #for l = 1 : 2
+        #if Mre.(k; l) ≡ 1
+            cnt_rest = cnt_rest + 1
+            Mgl.(k; l) = cnt_rest
+        #else
+            cnt_libre = cnt_libre + 1
+            Mgl.(k; l) = cnt_libre
+        #end if
+    #loop
+#loop
+#show
+Mgl
+
+"Matriz de GDL por elemento (6 GDL: ini=2, int=2, fin=2)
+#hide
+a_gdl = matrix(6; N_ele)
+#for i = 1 : N_ele
+    ni = Ini.i','nm = Int_n.i','nj = Fin_n.i
+    #for j = 1 : 2
+        a_gdl.(j; i) = Mgl.(ni; j)
+        a_gdl.(j + 2; i) = Mgl.(nm; j)
+        a_gdl.(j + 4; i) = Mgl.(nj; j)
+    #loop
+#loop
+#show
+a_gdl
+
+"Matrices de rigidez por elemento (dadas)
+K_1 = 75000/0.91*[140; 0; -140; 70; 0; -70|0; 400; 60; -400; -60; 0|-140; 60; 240; -130; -100; 70|70; -400; -130; 435; 60; -35|0; -60; -100; 60; 100; 0|-70; 0; 70; -35; 0; 35]
+K_2 = 75000/0.91*[100; 0; 0; -60; -100; 60|0; 35; -70; 0; 70; -35|0; -70; 140; 0; -140; 70|60; 0; 0; 400; 60; -400|-100; 70; -140; 60; 240; -130|60; -35; 70; -400; -130; 435]
+
+"Ensamblaje de rigidez global
+#hide
+K_G = matrix(N_gl; N_gl)
+'Elemento 1:
+#for j = 1 : 6
+    #for k = 1 : 6
+        gi = a_gdl.(j; 1)','gj = a_gdl.(k; 1)
+        K_G.(gi; gj) = K_G.(gi; gj) + K_1.(j; k)
+    #loop
+#loop
+'Elemento 2:
+#for j = 1 : 6
+    #for k = 1 : 6
+        gi = a_gdl.(j; 2)','gj = a_gdl.(k; 2)
+        K_G.(gi; gj) = K_G.(gi; gj) + K_2.(j; k)
+    #loop
+#loop
+#show
+K_G
+
+"GDL libres
+N_cond = N_gl - N_r
+
+"Submatriz K_xx (GDL libres)
+#hide
+K_xx = matrix(N_cond; N_cond)
+#for i = 1 : N_cond
+    #for j = 1 : N_cond
+        K_xx.(i; j) = K_G.(i; j)
+    #loop
+#loop
+#show
+K_xx

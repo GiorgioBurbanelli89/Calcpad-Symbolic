@@ -1,0 +1,76 @@
+"Matrices en bucles #for
+'Pre-crear la matriz con matrix(filas; columnas) antes del bucle.
+
+"1. Matriz de Vandermonde
+x = [1; 2; 3; 4]
+nr = len(x)
+nc = 4
+A = matrix(nr; nc)
+#hide
+#for i = 1 : nr
+    #for j = 1 : nc
+        A.(i; j) = x.i^(j - 1)
+    #loop
+#loop
+#show
+A
+
+"2. Matriz identidad
+n = 4
+I4 = matrix(n; n)
+#hide
+#for i = 1 : n
+    I4.(i; i) = 1
+#loop
+#show
+I4
+
+"3. Acceso por indice literal (fuera del bucle)
+'Elemento (2,3):
+A.(2; 3)
+'Fila completa no se puede extraer directamente,
+'pero se puede copiar a un vector:
+fila2 = vector(nc)
+#hide
+#for j = 1 : nc
+    fila2.j = A.(2; j)
+#loop
+#show
+fila2
+
+"4. Matriz simetrica
+n = 3
+S = matrix(n; n)
+#hide
+#for i = 1 : n
+    #for j = i : n
+        S.(i; j) = i + j
+        S.(j; i) = i + j
+    #loop
+#loop
+#show
+S
+
+"5. Producto matricial manual
+'C = A * B (A es 3x2, B es 2x3)
+Am = [1; 2|3; 4|5; 6]
+Bm = [7; 8; 9|10; 11; 12]
+ra = n_rows(Am)
+ca = n_cols(Am)
+cb = n_cols(Bm)
+C = matrix(ra; cb)
+#hide
+#for i = 1 : ra
+    #for j = 1 : cb
+        s = 0
+        #for k = 1 : ca
+            s = s + Am.(i; k)*Bm.(k; j)
+        #loop
+        C.(i; j) = s
+    #loop
+#loop
+#show
+'Manual:
+C
+'Operador *:
+Am*Bm

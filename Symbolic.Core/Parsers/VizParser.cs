@@ -34,6 +34,10 @@ namespace Calcpad.Core
                 cmdType = "frame";
             else if (script.StartsWith("$struct", StringComparison.OrdinalIgnoreCase))
                 cmdType = "struct";
+            // $DrawStruct (alias preferido de $Struct) — debe revisarse ANTES de $Draw
+            // porque ambos empiezan con "$draw".
+            else if (script.StartsWith("$drawstruct", StringComparison.OrdinalIgnoreCase))
+                cmdType = "struct";
             else if (script.StartsWith("$draw", StringComparison.OrdinalIgnoreCase))
                 cmdType = "draw";
             else
@@ -575,10 +579,29 @@ namespace Calcpad.Core
                     case "spring":
                     case "bar":
                     case "beam":
+                    case "damper":
                         // type,x1,y1,x2,y2[,text]
+                        // damper = cilindro tipo amortiguador (dashpot)
                         if (parts.Length < 5) break;
                         sb.Append($"{{type:\"{type}\",x1:{Eval(parts[1])},y1:{Eval(parts[2])},x2:{Eval(parts[3])},y2:{Eval(parts[4])}");
                         if (parts.Length > 5) sb.Append($",text:\"{EscapeJs(parts[5].Trim())}\"");
+                        sb.Append('}');
+                        break;
+
+                    case "mass":
+                        // mass,x,y,size[,text]  (size = lado del cuadrado en unidades del mundo)
+                        if (parts.Length < 3) break;
+                        sb.Append($"{{type:\"mass\",x:{Eval(parts[1])},y:{Eval(parts[2])}");
+                        if (parts.Length > 3) sb.Append($",size:{Eval(parts[3])}");
+                        if (parts.Length > 4) sb.Append($",text:\"{EscapeJs(parts[4].Trim())}\"");
+                        sb.Append('}');
+                        break;
+
+                    case "wall":
+                        // wall,x,y1,y2[,side]   side=left|right (default=left, hatches a la izquierda)
+                        if (parts.Length < 4) break;
+                        sb.Append($"{{type:\"wall\",x:{Eval(parts[1])},y1:{Eval(parts[2])},y2:{Eval(parts[3])}");
+                        if (parts.Length > 4) sb.Append($",side:\"{parts[4].Trim()}\"");
                         sb.Append('}');
                         break;
 

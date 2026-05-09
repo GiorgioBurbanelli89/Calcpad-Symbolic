@@ -1,0 +1,76 @@
+"Placa Gruesa — Teoría de Mindlin-Reissner (FSDT)
+'Hipótesis:
+'  (1) Normales a la superficie media permanecen rectas.
+'  (2) Las normales NO se mantienen perpendiculares — aparecen giros
+'      independientes phi_x, phi_y que no coinciden con -dw/dx, -dw/dy.
+'  (3) El espesor no varía.
+
+"Campo de desplazamientos
+'Tres grados de libertad por punto: w, phi_x, phi_y.
+#deq u(x; y; z) = z*φ_x(x; y)
+#deq v(x; y; z) = z*φ_y(x; y)
+#deq w(x; y; z) = w(x; y)
+
+"Deformaciones de flexion (mismas que CPT pero con giros independientes)
+#deq ε_x = z*dφ_x/dx
+#deq ε_y = z*dφ_y/dy
+#deq γ_xy = z*(dφ_x/dy + dφ_y/dx)
+
+"Deformaciones de corte transversal — NO NULAS (diferencia con Kirchhoff)
+#deq γ_xz = φ_x + dw/dx
+#deq γ_yz = φ_y + dw/dy
+
+"Curvaturas
+#deq κ_x = dφ_x/dx
+#deq κ_y = dφ_y/dy
+#deq κ_xy = dφ_x/dy + dφ_y/dx
+
+"Matriz constitutiva de flexion (identica a CPT)
+E = 200000
+ν = 0.3
+t = 0.2
+D = E*t^3/(12*(1 - ν^2))
+D_b = [D; ν*D; 0 | ν*D; D; 0 | 0; 0; (1-ν)*D/2]
+
+"Matriz de corte transversal (nueva respecto a CPT)
+'G = E/(2*(1+nu)), con factor de correccion k = 5/6 para placas:
+G = E/(2*(1 + ν))
+k_s = 5/6
+D_s = [k_s*G*t; 0 | 0; k_s*G*t]
+
+"Energia total
+'Suma de energia de flexion (CPT) y energia de corte transversal (nueva):
+#deq U = 0.5*(κ^T*D_b*κ + γ^T*D_s*γ)*dA
+
+"Ecuacion de gobierno
+'Tres ecuaciones acopladas — una por GDL (w, phi_x, phi_y).
+'Se escriben matricialmente como [K]*{q} = {F} donde {q} = [w; phi_x; phi_y].
+
+"Locking por cortante
+'Cuando t → 0 (placa delgada), los elementos FSDT estandar muestran
+'shear locking (rigidez aparente infinita). Soluciones: MITC4, DKQ, DKT.
+
+"Derivacion simbolica de las curvaturas
+'Sea phi_x = a*x^2 + b*x*y (ejemplo):
+#sym
+diff(a*x^2 + b*x*y; x)
+#end sym
+#sym
+diff(a*x^2 + b*x*y; y)
+#end sym
+
+"Expansion simbolica del termino de cortante
+'gamma_xz = phi_x + dw/dx con w(x,y) = w0*sin(pi*x/a)*sin(pi*y/b):
+#sym
+diff(w0*sin(π*x/a)*sin(π*y/b); x)
+#end sym
+
+"Factor de correccion k por cortante
+'Para seccion rectangular: k = 5/6 (Timoshenko). Para otras formas:
+'  - Seccion circular solida: k = 0.85
+'  - Seccion en I (flex): k ~= area_alma/area_total
+k_s_rect = 5/6
+
+"Comparacion con CPT
+'En el limite t → 0, FSDT converge a CPT.
+'Para t/L > 1/10, FSDT da resultados mas exactos que CPT.

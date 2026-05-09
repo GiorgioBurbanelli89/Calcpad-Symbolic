@@ -1,0 +1,55 @@
+"Placa — Teoría de Corte de 3° Orden de Reddy (HSDT)
+'Ref: Moita Cap 5.2.3 — corrige las limitaciones de FSDT:
+'  • FSDT necesita factor de correccion por cortante k (5/6) porque asume
+'    deformacion cortante CONSTANTE en el espesor.
+'  • HSDT usa polinomio CUBICO en z: el corte varia PARABOLICAMENTE
+'    y se anula naturalmente en las caras superior e inferior.
+
+"Campo de desplazamientos de Reddy
+'c_1 = 4/(3*h^2), donde h es el espesor total:
+#deq u(x; y; z) = u_0 - z*θ_y + c_1*z^3*(θ_y - dw_0/dx)
+#deq v(x; y; z) = v_0 + z*θ_x + c_1*z^3*(-θ_x - dw_0/dy)
+#deq w(x; y; z) = w_0
+
+"Interpretacion de c_1
+'c_1 = 4/(3*h^2) se calibra para que las tensiones cortantes transversales
+'se anulen en z = +/- h/2 (superficies libres).
+h = 0.1
+c_1 = 4/(3*h^2)
+
+"Deformaciones de flexion (membrana + flexion + termino HSDT)
+#deq ε_x = du_0/dx - z*dθ_y/dx + c_1*z^3*(dθ_y/dx - d2w_0/dx2)
+#deq ε_y = dv_0/dy + z*dθ_x/dy + c_1*z^3*(-dθ_x/dy - d2w_0/dy2)
+
+"Deformacion por cortante transversal — variacion CUADRATICA en z
+'Este es el avance clave de Reddy sobre Mindlin:
+#deq γ_xz = (θ_y + dw_0/dx)*(1 - 4*z^2/h^2)
+#deq γ_yz = (θ_x + dw_0/dy)*(1 - 4*z^2/h^2)
+
+'En z = +/- h/2:  γ_xz = 0 (se anula automaticamente)
+'En z = 0:         γ_xz es maximo
+
+"Verificacion simbolica — derivada de (1 - 4*z^2/h^2) en z = h/2
+#sym
+diff(1 - 4*z^2/h^2; z)
+#end sym
+'La derivada vale -8*z/h^2; en z = h/2 es -4/h.
+'Y (1 - 4*z^2/h^2) en z = h/2 vale 1 - 4*(h/2)^2/h^2 = 1 - 1 = 0. OK.
+
+"Ventajas sobre FSDT
+'  • NO necesita factor k (la forma parabolica es natural)
+'  • Reproduce correctamente la distribucion de tensiones cortantes
+'  • Mejor precision para laminados compuestos de medio espesor (t/L ~ 1/10)
+'  • Captura bien el "boundary layer" en bordes
+
+"Limitaciones
+'  • Formulacion mas compleja que FSDT
+'  • Requiere C1 para w_0 (como Kirchhoff) — complica FEM
+'  • No necesita GDL adicionales respecto a FSDT (sigue siendo 5 GDL)
+'  • Para laminados muy gruesos, usar 3D elasticity en lugar de ESL.
+
+"Comparacion de teorias
+'CPT (Kirchhoff):      u,v lineales en z.  gamma = 0.     t/L < 1/20.
+'FSDT (Mindlin):       u,v lineales en z.  gamma = cte.   t/L ~ 1/10.
+'HSDT (Reddy 3er ord): u,v cubicas en z.   gamma parabol. t/L ~ 1/10.
+'3D:                   u,v,w arbitrarias.  gamma arbitr.  sin limite.

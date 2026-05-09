@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/partials/head.html"></div>
+  <title>Features — Calcpad-Symbolic</title>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+
+  <section class="block">
+    <div class="container">
+      <h1>Features</h1>
+      <p class="muted">Lo que añade Calcpad-Symbolic sobre CalcpadCE / Calcpad original.</p>
+
+      <h2>Parser simbólico + numérico</h2>
+      <table class="specs">
+        <tr><th>Directiva</th><th>Uso</th></tr>
+        <tr><td><code>#deq</code></td><td>Ecuación displayed con numeración @@(N)</td></tr>
+        <tr><td><code>#sym … #end sym</code></td><td>Cálculo simbólico (derivada, integral, solve)</td></tr>
+        <tr><td><code>#function</code></td><td>Funciones definidas por el usuario</td></tr>
+        <tr><td><code>#python</code></td><td>Bloque Python embebido (sandbox)</td></tr>
+        <tr><td><code>#maxima</code></td><td>Fallback CAS auto-descubierto</td></tr>
+        <tr><td><code>#inl / #blk</code></td><td>Layouts multicolumna e inline</td></tr>
+      </table>
+
+      <h2>Visualización</h2>
+      <table class="specs">
+        <tr><th>Comando</th><th>Para</th></tr>
+        <tr><td><code>$Draw</code></td><td>SVG: líneas, rectángulos, flechas, cotas</td></tr>
+        <tr><td><code>$Chart</code></td><td>Gráficos XY multi-serie</td></tr>
+        <tr><td><code>$Map</code></td><td>Superficie 2D coloreada de f(x,y)</td></tr>
+        <tr><td><code>$Fem2D / $Fem3D</code></td><td>Mallas con paleta jet (tensiones, flechas)</td></tr>
+        <tr><td><code>$Table</code></td><td>Tablas nativas con formateo</td></tr>
+      </table>
+
+      <h2>FEM (C++ → WASM)</h2>
+      <ul>
+        <li>Pórticos 3D Euler-Bernoulli (<em>deform.wasm</em>)</li>
+        <li>Análisis modal con Eigen 3.4.0</li>
+        <li>Elementos Q4, DKQ, MITC4 para placas</li>
+        <li>Sólidos C3D8 con validación SAP2000</li>
+        <li>Zapatas aisladas, medianera, esquinera con viga</li>
+      </ul>
+    </div>
+  </section>
+
+  <div data-include="/partials/footer.html"></div>
+  <script src="/js/include.js"></script>
+</body>
+</html>

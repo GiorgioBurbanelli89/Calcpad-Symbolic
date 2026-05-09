@@ -1,0 +1,71 @@
+"Test fem_hex8 — cubo 1x1x1m, E=22000 MPa, nu=0.2, P=100 kN
+'<b>Test de la funcion nativa fem_hex8</b>
+'Replica el tutorial C3D8 con solver nativo C#
+
+'<b>Datos:</b>
+Lx = 1000','Ly = 1000','Lz = 1000
+Ep = 22000','νp = 0.2
+
+'<b>8 nudos del cubo:</b>
+nodes = [0; 0; 0 | Lx; 0; 0 | Lx; Ly; 0 | 0; Ly; 0 | 0; 0; Lz | Lx; 0; Lz | Lx; Ly; Lz | 0; Ly; Lz]
+nodes
+
+'<b>1 elemento hex8 con los 8 nudos (1-based) — matriz 1x8:</b>
+elems = matrix(1; 8)
+elems.(1; 1) = 1','elems.(1; 2) = 2','elems.(1; 3) = 3','elems.(1; 4) = 4
+elems.(1; 5) = 5','elems.(1; 6) = 6','elems.(1; 7) = 7','elems.(1; 8) = 8
+elems
+
+'<b>Specs: cargas + BCs</b>
+'Cada fila:
+'  [1, nodeId, fx, fy, fz]     → carga
+'  [2, dofIdx, fixedVal, 0, 0] → BC (dofIdx = 3*(nodeId-1)+dir, dir 1=x,2=y,3=z)
+'
+'Cargas: -25 kN en cada nudo superior (5,6,7,8) en Z (eso es -25000 N por nudo)
+'Total: -100 kN
+P4 = -25000
+
+'BCs:
+' Nudo 1 (base): UX=UY=UZ=0 → DOFs 1,2,3
+' Nudo 2: UY=UZ=0 → DOFs 5,6
+' Nudo 3: UZ=0 → DOF 9
+' Nudo 4: UZ=0 → DOF 12
+specs = [1; 5; 0; 0; P4 | 1; 6; 0; 0; P4 | 1; 7; 0; 0; P4 | 1; 8; 0; 0; P4 | 2; 1; 0; 0; 0 | 2; 2; 0; 0; 0 | 2; 3; 0; 0; 0 | 2; 5; 0; 0; 0 | 2; 6; 0; 0; 0 | 2; 9; 0; 0; 0 | 2; 12; 0; 0; 0]
+specs
+
+'<b>Resolver con funcion nativa:</b>
+u = fem_hex8(nodes; elems; Ep; νp; specs)
+
+'<b>Desplazamientos UZ de los nudos superiores:</b>
+'u es vector de 24 elementos: ux1,uy1,uz1, ux2,uy2,uz2, ...
+uz5 = u.15','uz6 = u.18','uz7 = u.21','uz8 = u.24
+uz5
+uz6
+uz7
+uz8
+
+'<b>Promedio UZ superior:</b>
+uz_avg = (uz5 + uz6 + uz7 + uz8)/4
+uz_avg
+
+'<b>Teorico: w = -P*L/(A*E) = -100000*1000/(1000*1000*22000) = -0.004545 mm</b>
+uz_teo = -100000*1000/(1000*1000*22000)
+uz_teo
+
+'<b>Diferencia:</b>
+diff_pct = abs((uz_avg - uz_teo)/uz_teo)*100
+diff_pct
+
+"Visualizacion 3D del cubo deformado
+'<b>Vector de UZ nodales:</b>
+uz_all = vector(8)
+uz_all.1 = u.3','uz_all.2 = u.6','uz_all.3 = u.9','uz_all.4 = u.12
+uz_all.5 = u.15','uz_all.6 = u.18','uz_all.7 = u.21','uz_all.8 = u.24
+
+'<b>Vectores de coordenadas (extraidos de nodes):</b>
+Xn = col(nodes; 1)
+Yn = col(nodes; 2)
+Zn = col(nodes; 3)
+
+'<b>Mesh 3D con color map de UZ (estilo SAP2000):</b>
+$Fem3D{Xn; Yn; Zn; elems; uz_all @ w=600 & h=450}

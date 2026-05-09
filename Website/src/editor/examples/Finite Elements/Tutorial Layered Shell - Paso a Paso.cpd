@@ -1,0 +1,380 @@
+"Tutorial: Shell Layered (Multicapa) — Paso a Paso
+'<hr/>
+'Concepto: un elemento shell con MULTIPLES capas apiladas a traves del espesor.
+'Cada capa tiene: espesor, material, y posicion (offset desde el plano medio).
+'Las capas estan rigidamente unidas (bonded) — comparten DOFs w, θx, θy.
+'
+'<b>Aplicaciones:</b>
+'1. Zapata + viga de amarre encima
+'2. Placa compuesta (acero + concreto = losa colaborante)
+'3. Muro con refuerzo (concreto + acero)
+'4. Pavimento (asfalto + base + sub-base)
+'5. Cascaras reforzadas (shell + stiffener)
+
+"PASO 1) Datos: Zapata + Viga en layered
+'<b>Capa 1: Zapata de concreto</b>
+'Espesor -'t_1 = 400 mm
+'<b>Capa 2: Viga encima</b>
+'Espesor -'t_2 = 400 mm
+'<b>Material (ambas capas = concreto):</b>
+Ec = 22000MPa','νc = 0.2
+Gc = Ec/(2*(1 + νc))
+
+"PASO 2) Posicion de cada capa
+'Consideramos z = 0 en la base de la zapata.
+'<b>Capa 1 (zapata):</b> de z=0 a z=t1
+z1_bot = 0
+z1_top = z1_bot + t_1
+'Centro de la capa 1:
+z1_c = (z1_bot + z1_top)/2
+'<b>Capa 2 (viga):</b> de z=t1 a z=t1+t2
+z2_bot = z1_top
+z2_top = z2_bot + t_2
+z2_c = (z2_bot + z2_top)/2
+
+"PASO 3) Plano medio del conjunto (z_neutro geometrico)
+'El plano medio geometrico esta en la mitad del espesor total
+H = t_1 + t_2
+z_m = H/2
+'<b>Offset de cada capa desde el plano medio:</b>
+d1 = z1_c - z_m
+d2 = z2_c - z_m
+'<b>Importante:</b> d1 y d2 tienen signos opuestos.
+
+"PASO 4) Matrices constitutivas por capa
+'Cada capa aporta 3 matrices al conjunto:
+'- Membrana: A_k = (Ec·t_k)/(1 - νc²) * [1 νc 0; νc 1 0; 0 0 (1-νc)/2]
+'- Acople:   B_k = A_k · d_k
+'- Flexion:  D_k = A_k · (t_k²/12 + d_k²)
+#hide
+Dmat = 1/(1 - νc^2)*[1; νc; 0|νc; 1; 0|0; 0; (1 - νc)/2]
+#show
+'Matriz base (sin E·t):
+Dmat
+
+"PASO 5) Contribuciones de cada capa
+#hide
+Ew = Ec & MPa','t1w = t_1 & mm','t2w = t_2 & mm
+z1cw = z1_c & mm','z2cw = z2_c & mm','d1w = z1cw - (t1w + t2w)/2','d2w = z2cw - (t1w + t2w)/2
+#show
+'<b>Capa 1 (zapata):</b>
+A_1 = Ew*t1w*Dmat
+B_1 = A_1*d1w
+D_1 = A_1*(t1w^2/12 + d1w^2)
+'<b>Capa 2 (viga):</b>
+A_2 = Ew*t2w*Dmat
+B_2 = A_2*d2w
+D_2 = A_2*(t2w^2/12 + d2w^2)
+
+"PASO 6) Matrices totales del shell layered
+'Sumar contribuciones de todas las capas:
+A_total = A_1 + A_2
+B_total = B_1 + B_2
+D_total = D_1 + D_2
+'<b>A total (membrana, N/mm):</b>
+A_total
+'<b>B total (acople, N):</b>
+B_total
+'<b>D total (flexion, N·mm):</b>
+D_total
+
+"PASO 7) Comparacion con shell NO layered
+'Si fuera un shell simple de espesor H con el mismo material:
+D_simple_value = Ew*H^3/(12*(1 - νc^2))
+D_simple_value
+'<b>Rigidez flexion D_xx (dominante):</b>
+D_total.(1; 1)
+'<b>Ratio D_total / D_simple:</b>
+D_total.(1; 1)/D_simple_value
+'<b>Como 2 capas identicas pegadas rigidamente se comportan como 1 shell de espesor H = 2t.</b>
+'<b>D ∝ t³, entonces un shell de espesor 2t tiene 8x mas rigidez que 1 shell de espesor t.</b>
+'<b>El layered captura esto automaticamente.</b>
+
+"PASO 8) Caso practico — Viga T invertida
+'Que pasa si la viga es MAS ANGOSTA que la zapata?
+'El layered asume que la capa 2 cubre toda el area — eso es solo valido donde la viga existe.
+'Para modelar una viga T invertida (viga angosta encima de zapata ancha):
+'- En elementos DONDE la viga existe: usar D_total (zapata + viga)
+'- En elementos DONDE no hay viga: usar D de solo la zapata
+'
+'<b>Esta es la diferencia con nuestros archivos Lindero anteriores:</b>
+'- En los archivos de Lindero, la viga es frame 1D o shell del mismo espesor
+'- Con layered podemos modelar correctamente la viga encima de la zapata
+
+"PASO 9) Eje neutro del conjunto
+'Si el material es el mismo, el eje neutro esta en el centroide geometrico = z_m
+'Si hay 2 materiales distintos, el eje neutro cambia:
+'z_EN = Σ(E_k·t_k·z_k_c) / Σ(E_k·t_k)
+'
+'<b>Para el caso zapata + viga de concreto (mismo E):</b>
+z_EN = (Ew*t1w*z1cw + Ew*t2w*z2cw)/(Ew*t1w + Ew*t2w)
+z_EN
+'Como ambas capas son de concreto, z_EN = z_m = H/2 (el geometrico)
+
+"PASO 10) Cuando B ≠ 0 (acople)
+'Si modelaramos zapata de concreto + viga de acero:
+'<b>Ejemplo:</b>
+Es = 200000MPa','Esw = Es & MPa
+'Capa 1: concreto (t_1 = 400mm)
+A1m = Ew*t1w
+'Capa 2: acero (t_2 = 400mm)
+A2m = Esw*t2w
+'<b>Nuevo eje neutro (moviendose hacia el acero):</b>
+z_EN_mix = (A1m*z1cw + A2m*z2cw)/(A1m + A2m)
+z_EN_mix
+'<b>z_m geometrico (sin cambio):</b>
+z_m_geo = H/2 & mm
+'<b>Diferencia:</b>
+Δz = z_EN_mix - z_m_geo
+
+"PASO 11) Control de comportamiento por capa (como en SAP2000)
+'En SAP2000 Layered/Nonlinear cada capa tiene parametros independientes:
+'<b>Por capa podes controlar:</b>
+'1. <b>Type:</b>
+'   - Shell (membrana + flexion) — default
+'   - Membrane (solo in-plane, no aporta a flexion)
+'   - Bending (solo flexion, no aporta a membrana)
+'2. <b>Behavior por direccion (S11, S22, S12):</b>
+'   - Linear: comportamiento elastico lineal
+'   - Nonlinear: con modelo constitutivo (plasticidad, damage)
+'   - Inactive: la capa NO resiste esa componente
+'3. <b>Integration points:</b> numero de puntos Gauss a traves del espesor
+'4. <b>Material + Angle:</b> rotacion de anisotropia
+'
+'<b>Ejemplo: Losa colaborante (steel deck + concrete)</b>
+'- Capa 1 (Deck): steel, Type=Membrane (solo traccion), S22 Inactive (corrugado 1D)
+'- Capa 2 (Concrete): Type=Shell, Linear
+'
+'<b>Ejemplo: Viga T invertida</b>
+'- Capa 1 (zapata): Type=Shell, cubre toda el area
+'- Capa 2 (viga): Type=Shell, SOLO donde la viga existe (en el resto = Inactive)
+'
+'<b>Esto se modela en Calcpad con:</b>
+'1. Diferentes secciones por zona de la malla (zapata / zapata+viga)
+'2. En la zona con viga: D_total_layered
+'3. En la zona sin viga: D_solo_zapata
+
+"PASO 12) Empotrado vs Apoyado entre capas
+'<b>Empotrado (Bonded) = default</b>
+'Las capas comparten w, θx, θy en cada nudo.
+'<b>Imposible que deslicen entre si.</b>
+'Esto es lo que hace el shell layered de SAP2000.
+'
+'<b>Apoyado (Unbonded/Slip)</b>
+'Las capas pueden deslizar tangencialmente entre si.
+'En SAP2000 esto NO existe como layered — hay que modelarlo con:
+'  - 2 shells separados (uno para zapata, otro para viga encima)
+'  - Conectados por LINK elements con UZ restringido, UX/UY libres
+'  - O usar contacto superficial
+'
+'<b>En la practica de zapatas con viga de amarre:</b>
+'El concreto colado monoliticamente SIEMPRE es EMPOTRADO.
+'Solo es apoyado/slip en casos especiales:
+'  - Junta constructiva sin conectores
+'  - Neopreno entre capas
+'  - Capas de materiales diferentes sin adhesion
+
+"PASO 13) Control de GDL en las capas
+'<b>Pregunta: se pueden elegir los GDL por capa?</b>
+'<b>NO</b> — en un shell layered estandar las capas estan bonded:
+'- Mismo w en todas las capas
+'- Mismo θx, θy en todas las capas
+'
+'<b>Pero SI puedes controlar que componente de esfuerzo resiste cada capa</b>
+'(via Linear/Nonlinear/Inactive por cada S11, S22, S12).
+'
+'<b>Si necesitas GDL independientes por capa:</b>
+'No uses layered — usa 2 shells separados con LINK elements:
+'  link.Ux = fixed (no slip en X) o free (slip)
+'  link.Uy = fixed o free
+'  link.Uz = fixed (siempre, sino se separan)
+'  link.Rx, Ry = fixed o free (rotaciones compartidas o no)
+'
+'<b>Ejemplo: Aislador de base (base isolation)</b>
+'- Shell 1 = Losa superior
+'- Link = aislador con propiedades no lineales
+'- Shell 2 = Losa inferior (cimentacion)
+'Aqui las capas NO son layered — son 2 diafragmas independientes.
+
+"Resumen
+'<b>Layered Shell captura:</b>
+'1. Multiples capas con diferentes materiales
+'2. Offsets de cada capa desde el plano medio
+'3. Acoplamiento membrana-flexion cuando el eje neutro no coincide con el plano medio
+'4. Comportamiento compuesto (composite) riguroso
+'5. Control por capa de Linear/Nonlinear/Inactive por direccion
+'
+'<b>Usos:</b>
+'- Losas colaborantes (concreto sobre lamina de acero)
+'- Muros compuestos (concreto + acero)
+'- Cimentaciones con viga de amarre encima
+'- Pavimentos multicapa
+'
+'<b>En SAP2000:</b> Define Section → Shell Layered/Nonlinear
+'<b>En Calcpad:</b> Implementar A_total, B_total, D_total manualmente
+'
+'<b>Limitacion:</b> capas SIEMPRE empotradas entre si.
+'Para slip entre capas: usar shells separados + LINK elements.
+'
+'<b>Validacion:</b> Para 2 capas identicas de espesor t, el layered debe dar:
+'D_total = E·(2t)³/12/(1-ν²) = 8·D_single (donde D_single es para 1 capa)
+
+"PASO 14) Ejemplo ejecutable — Placa 1.5x1.5m con layered real
+'Placa simplemente apoyada, 2 capas concreto (0.4m + 0.4m), P=20tonf centro.
+'<b>Validado con SAP2000:</b> w_center = -0.02389 mm
+#hide
+'Usar D_total(1,1) calculada en PASO 6 como D_b efectivo para MITC4
+Lp = 1500','Bp = 1500
+Pp = 20*9806.65
+nex = 6','dep = Lp/nex','nj1d = nex + 1
+njp = nj1d^2','nep = nex^2','ndp = 3','ntp = ndp*njp
+xjp = vector(njp)','yjp = vector(njp)
+#for j = 0 : nex
+    #for i = 0 : nex
+        k = j*nj1d + i + 1
+        xjp.k = i*dep','yjp.k = j*dep
+    #loop
+#loop
+ejp = matrix(nep; 4)
+#for j = 0 : nex - 1
+    #for i = 0 : nex - 1
+        e = j*nex + i + 1','bl = j*nj1d + i + 1
+        ejp.(e; 1) = bl','ejp.(e; 2) = bl + 1
+        ejp.(e; 3) = bl + nj1d + 1','ejp.(e; 4) = bl + nj1d
+    #loop
+#loop
+'Matrices constitutivas usando D_total del layered (PASO 6):
+'D_b_layered es D_total que calculamos arriba — equivale a E*H^3/(12(1-nu^2))
+'para mismo material. Usar H = t_1 + t_2 = 800mm en MITC4.
+H_eq = 800
+Dbm_L = Ew*H_eq^3/(12*(1 - νc^2))*[1; νc; 0|νc; 1; 0|0; 0; (1 - νc)/2]
+Gw = Ew/(2*(1 + νc))
+Dsm_L = 5/6*Gw*H_eq*[1; 0|0; 1]
+gp_L = 1/sqr(3)','nk_L = 12
+dN1x_L(η) = -(1 - η)/4','dN2x_L(η) = (1 - η)/4
+dN3x_L(η) = (1 + η)/4','dN4x_L(η) = -(1 + η)/4
+dN1y_L(ξ) = -(1 - ξ)/4','dN2y_L(ξ) = -(1 + ξ)/4
+dN3y_L(ξ) = (1 + ξ)/4','dN4y_L(ξ) = (1 - ξ)/4
+Kp = symmetric(ntp)
+#for e = 1 : nep
+    i1 = ejp.(e; 1)','i3 = ejp.(e; 3)
+    dxe = xjp.i3 - xjp.i1','dye = yjp.i3 - yjp.i1
+    J11e = dxe/2','J22e = dye/2','detJe = J11e*J22e
+    Kep = symmetric(nk_L)
+    #for ig = 1 : 4
+        #if ig ≡ 1
+            ξg = -gp_L','ηg = -gp_L
+        #else if ig ≡ 2
+            ξg = gp_L','ηg = -gp_L
+        #else if ig ≡ 3
+            ξg = gp_L','ηg = gp_L
+        #else
+            ξg = -gp_L','ηg = gp_L
+        #end if
+        dx1 = dN1x_L(ηg)/J11e','dy1 = dN1y_L(ξg)/J22e
+        dx2 = dN2x_L(ηg)/J11e','dy2 = dN2y_L(ξg)/J22e
+        dx3 = dN3x_L(ηg)/J11e','dy3 = dN3y_L(ξg)/J22e
+        dx4 = dN4x_L(ηg)/J11e','dy4 = dN4y_L(ξg)/J22e
+        Bbp = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+               0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+               0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+        BtDB = transp(Bbp)*Dbm_L*Bbp*detJe
+        #for ii = 1 : nk_L
+            #for jj = ii : nk_L
+                Kep.(ii; jj) = Kep.(ii; jj) + BtDB.(ii; jj)
+            #loop
+        #loop
+    #loop
+    #for ig = 1 : 4
+        #if ig ≡ 1
+            ξg = -gp_L','ηg = -gp_L
+        #else if ig ≡ 2
+            ξg = gp_L','ηg = -gp_L
+        #else if ig ≡ 3
+            ξg = gp_L','ηg = gp_L
+        #else
+            ξg = -gp_L','ηg = gp_L
+        #end if
+        Bsp = matrix(2; nk_L)
+        #for it = 1 : 2
+            #if it ≡ 1
+                ηt = -1
+            #else
+                ηt = 1
+            #end if
+            wt = (1 + ηt*ηg)/2
+            dt1 = dN1x_L(ηt)/J11e','dt2 = dN2x_L(ηt)/J11e
+            dt3 = dN3x_L(ηt)/J11e','dt4 = dN4x_L(ηt)/J11e
+            Nt1 = (1 - ξg)*(1 - ηt)/4','Nt2 = (1 + ξg)*(1 - ηt)/4
+            Nt3 = (1 + ξg)*(1 + ηt)/4','Nt4 = (1 - ξg)*(1 + ηt)/4
+            Bsp.(1; 1) = Bsp.(1; 1) + wt*dt1','Bsp.(1; 3) = Bsp.(1; 3) - wt*Nt1
+            Bsp.(1; 4) = Bsp.(1; 4) + wt*dt2','Bsp.(1; 6) = Bsp.(1; 6) - wt*Nt2
+            Bsp.(1; 7) = Bsp.(1; 7) + wt*dt3','Bsp.(1; 9) = Bsp.(1; 9) - wt*Nt3
+            Bsp.(1; 10) = Bsp.(1; 10) + wt*dt4','Bsp.(1; 12) = Bsp.(1; 12) - wt*Nt4
+        #loop
+        #for it = 1 : 2
+            #if it ≡ 1
+                ξt = -1
+            #else
+                ξt = 1
+            #end if
+            wt = (1 + ξt*ξg)/2
+            dt1 = dN1y_L(ξt)/J22e','dt2 = dN2y_L(ξt)/J22e
+            dt3 = dN3y_L(ξt)/J22e','dt4 = dN4y_L(ξt)/J22e
+            Nt1 = (1 - ξt)*(1 - ηg)/4','Nt2 = (1 + ξt)*(1 - ηg)/4
+            Nt3 = (1 + ξt)*(1 + ηg)/4','Nt4 = (1 - ξt)*(1 + ηg)/4
+            Bsp.(2; 1) = Bsp.(2; 1) + wt*dt1','Bsp.(2; 2) = Bsp.(2; 2) + wt*Nt1
+            Bsp.(2; 4) = Bsp.(2; 4) + wt*dt2','Bsp.(2; 5) = Bsp.(2; 5) + wt*Nt2
+            Bsp.(2; 7) = Bsp.(2; 7) + wt*dt3','Bsp.(2; 8) = Bsp.(2; 8) + wt*Nt3
+            Bsp.(2; 10) = Bsp.(2; 10) + wt*dt4','Bsp.(2; 11) = Bsp.(2; 11) + wt*Nt4
+        #loop
+        BtDBs = transp(Bsp)*Dsm_L*Bsp*detJe
+        #for ii = 1 : nk_L
+            #for jj = ii : nk_L
+                Kep.(ii; jj) = Kep.(ii; jj) + BtDBs.(ii; jj)
+            #loop
+        #loop
+    #loop
+    #for ii = 1 : 4
+        #for jj = ii : 4
+            j1 = ejp.(e; ii)','j2 = ejp.(e; jj)
+            i1g = ndp*(j1 - 1) + 1','i2g = ndp*(j2 - 1) + 1
+            kij = submatrix(Kep; ndp*(ii - 1) + 1; ndp*ii; ndp*(jj - 1) + 1; ndp*jj)
+            #if j1 > j2
+                add(transp(kij); Kp; i2g; i1g)
+            #else
+                add(kij; Kp; i1g; i2g)
+            #end if
+        #loop
+    #loop
+#loop
+'Simply supported: fijar w en bordes
+penL = 10^15
+#for j = 0 : nex
+    #for i = 0 : nex
+        #if i ≡ 0 ∨ i ≡ nex ∨ j ≡ 0 ∨ j ≡ nex
+            k = j*nj1d + i + 1
+            dw = ndp*(k - 1) + 1
+            Kp.(dw; dw) = Kp.(dw; dw) + penL
+        #end if
+    #loop
+#loop
+'Carga en centro
+Fp = vector(ntp)
+icL = round(nex/2)','jcL = round(nex/2)
+kc_L = jcL*nj1d + icL + 1
+Fp.(ndp*(kc_L - 1) + 1) = -Pp
+Zp = clsolve(Kp; Fp)
+wnL = vector(njp)
+#for k = 1 : njp
+    wnL.k = re(Zp.(ndp*(k - 1) + 1))
+#loop
+w_centro_L = wnL.kc_L
+#show
+'<b>Resultado Calcpad Layered (H_eq = 800mm):</b>
+'w_centro = 'round(w_centro_L*100000)/100000' mm
+'<b>Comparacion con SAP2000 shell thick t=0.8m:</b>
+'SAP2000: w_centro = -0.02389 mm
+'Calcpad: w_centro = 'round(w_centro_L*100000)/100000' mm
+PlotWidth = 500
+$PlotMap{xjp; yjp; wnL; ejp}

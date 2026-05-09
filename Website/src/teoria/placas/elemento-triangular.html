@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/partials/head.html"></div>
+  <title>Elemento triangular placa-cáscara (CST + DKT)</title>
+  <style>
+    .theory-frame { width: 100%; height: 80vh; border: 1px solid var(--color-border); border-radius: var(--radius); }
+    .figure { margin: 1rem 0; text-align: center; }
+    .figure img { max-width: 100%; border: 1px solid var(--color-border); border-radius: 6px; }
+    .figure figcaption { font-size: 0.9rem; color: var(--color-text-muted); margin-top: 0.3rem; }
+    .eq-display { background: var(--color-bg-shaded); padding: 0.8rem 1rem; border-left: 3px solid var(--color-accent); margin: 1rem 0; font-family: 'Georgia Pro', 'Century Schoolbook', serif; overflow-x: auto; }
+    .cite { background: #fffbea; border-left: 3px solid #f59e0b; padding: 0.6rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+  <section class="block">
+    <div class="container">
+      <h1>§5.3 Elemento triangular placa-cáscara</h1>
+
+      <div class="cite">
+        <strong>Fuente:</strong> Moita, J. S. — <em>Método dos Elementos Finitos</em>, §5.3 Formulação geral do MEF em estruturas do tipo placa-casca, p. 82-86.
+      </div>
+
+      <h2>Características</h2>
+      <ul>
+        <li>Elemento <strong>plano</strong> de geometría triangular.</li>
+        <li>Tres nodos en los vértices, <strong>6 GDL por nodo</strong> (3 translaciones + 3 rotaciones) → <strong>18 GDL totales</strong>.</li>
+        <li>Aplicable a estructuras placa-cáscara de <strong>paredes finas o semi-espesas</strong>.</li>
+      </ul>
+
+      <h2>Superposición de matrices</h2>
+      <p>La formulación se obtiene por sobreposición de:</p>
+      <ol>
+        <li>Elemento de <strong>tensión plana</strong> de placa (membrana) → <em>K<sub>M</sub></em></li>
+        <li>Elemento de <strong>flexión</strong> de placa (DKT) → <em>K<sub>B</sub></em></li>
+        <li>Rotación según <em>z</em> (drilling DOF) → <em>K<sub>θz</sub></em></li>
+      </ol>
+
+      <figure class="figure">
+        <img src="/teoria/placas/img/fig41-superposicion.png" alt="Fig. 41 — obtención del elemento triangular placa-cáscara" onerror="this.style.display='none'; this.nextElementSibling.textContent='[Figura 41 — obtención del elemento = K_M + K_B + K_θz — imagen pendiente]'">
+        <figcaption>Figura 41 (Moita p. 82) — obtención del elemento triangular placa-cáscara por superposición.</figcaption>
+      </figure>
+
+      <div class="eq-display"><strong>K = K<sub>M</sub> + K<sub>B</sub> + K<sub>θ<sub>z</sub></sub></strong></div>
+
+      <h2>§5.3.2 Coordenadas de área</h2>
+      <p>Un punto <em>P</em> dentro del triángulo se define por las coordenadas de área:</p>
+      <div class="eq-display">
+        L<sub>1</sub> = A<sub>1</sub> / A&nbsp;&nbsp;;&nbsp;&nbsp;L<sub>2</sub> = A<sub>2</sub> / A&nbsp;&nbsp;;&nbsp;&nbsp;L<sub>3</sub> = A<sub>3</sub> / A<br>
+        con <em>L<sub>1</sub> + L<sub>2</sub> + L<sub>3</sub> = 1</em>
+      </div>
+
+      <figure class="figure">
+        <img src="/teoria/placas/img/fig42-areas.png" alt="Fig. 42 — coordenadas de área del triángulo" onerror="this.style.display='none'; this.nextElementSibling.textContent='[Figura 42 — subáreas A1, A2, A3 en el triángulo — imagen pendiente]'">
+        <figcaption>Figura 42 (Moita p. 83) — subáreas <em>A<sub>i</sub></em> formadas por <em>P</em> y los tres lados.</figcaption>
+      </figure>
+
+      <h2>Relación con coordenadas cartesianas</h2>
+      <div class="eq-display">
+        L<sub>i</sub> = (a<sub>i</sub> + b<sub>i</sub>·x + c<sub>i</sub>·y) / 2A<br>
+        a<sub>1</sub> = x<sub>2</sub>·y<sub>3</sub> − x<sub>3</sub>·y<sub>2</sub>&nbsp;;&nbsp; b<sub>1</sub> = y<sub>2</sub> − y<sub>3</sub>&nbsp;;&nbsp; c<sub>1</sub> = x<sub>3</sub> − x<sub>2</sub><br>
+        (permutación cíclica para a<sub>2</sub>, a<sub>3</sub>, etc.)
+      </div>
+
+      <h2>Coordenadas naturales</h2>
+      <div class="eq-display">
+        L<sub>1</sub> = 1 − ξ − η&nbsp;;&nbsp; L<sub>2</sub> = ξ&nbsp;;&nbsp; L<sub>3</sub> = η (ξ, η ∈ [0, 1])
+      </div>
+
+      <h2>Funciones de forma</h2>
+      <ul>
+        <li><strong>Membrana (CST)</strong> — lineales: <em>N<sub>i</sub><sup>m</sup> = L<sub>i</sub></em> → deformación <strong>constante</strong>.</li>
+        <li><strong>Flexión (DKT)</strong> — cuadráticas en <em>L<sub>i</sub></em>, una familia de 9 funciones:
+          <em>w<sub>0</sub> = Σ [₁N<sub>i</sub> &nbsp; ₂N<sub>i</sub> &nbsp; ₃N<sub>i</sub>] · {w<sub>0i</sub>; θ<sub>xi</sub>; θ<sub>yi</sub>}</em>
+        </li>
+      </ul>
+
+      <h2>Vector de deformaciones</h2>
+      <p>Separado en contribución de membrana y flexión (Moita p. 86):</p>
+      <div class="eq-display">
+        ε<sub>xx</sub><sup>m</sup> = ∂u<sub>0</sub>/∂x&nbsp;;&nbsp; ε<sub>yy</sub><sup>m</sup> = ∂v<sub>0</sub>/∂y&nbsp;;&nbsp; γ<sub>xy</sub><sup>m</sup> = ∂u<sub>0</sub>/∂y + ∂v<sub>0</sub>/∂x<br>
+        ε<sub>xx</sub><sup>b</sup> = −z·∂θ<sub>y</sub>/∂x&nbsp;;&nbsp; ε<sub>yy</sub><sup>b</sup> = z·∂θ<sub>x</sub>/∂y&nbsp;;&nbsp; γ<sub>xy</sub><sup>b</sup> = z·(−∂θ<sub>y</sub>/∂y + ∂θ<sub>x</sub>/∂x)
+      </div>
+
+      <h2>Matrices B<sup>m</sup> y B<sup>b</sup></h2>
+      <p>Obtenidas derivando las funciones de forma:</p>
+      <div class="eq-display">
+        ε<sup>m</sup> = B<sup>m</sup>·a<sup>e</sup>&nbsp;&nbsp;;&nbsp;&nbsp; ε<sup>b</sup> = B<sup>b</sup>·a<sup>e</sup>
+      </div>
+
+      <h2>Derivación simbólica en Calcpad-Symbolic</h2>
+      <iframe class="theory-frame" src="/teoria/placas/rendered/elemento_triangular_dkt.html" title="Derivación CST + DKT"></iframe>
+
+      <h2>Referencias</h2>
+      <ol>
+        <li>Moita, J. S. — <em>Método dos Elementos Finitos aplicado à Mecânica dos Sólidos</em>, §5.3, p. 82-86.</li>
+        <li>Batoz, J. L., Bathe, K. J., Ho, L. W. — <em>A study of three-node triangular plate bending elements</em>, IJNME, 1980 (origen DKT).</li>
+        <li>Zienkiewicz, O. C., Taylor, R. L. — <em>The Finite Element Method</em>, Cap. 5-6 (CST, plane stress).</li>
+      </ol>
+
+      <p><a href="/editor/?script=/teoria/placas/scripts/elemento_triangular_dkt.cpd" target="_blank" rel="noopener">▶ Abrir en editor</a></p>
+    </div>
+  </section>
+  <div data-include="/partials/footer.html"></div>
+  <script src="/js/include.js"></script>
+</body>
+</html>

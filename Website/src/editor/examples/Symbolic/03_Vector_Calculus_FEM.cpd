@@ -1,0 +1,31 @@
+"Vector Calculus and FEM Operators (#sym)
+
+"Gradient
+#sym gradient(x^2 + y^2 + x*y; x; y)
+
+"Divergence
+#sym divergence(x^2; y^2; z^2; x; y; z)
+
+"Curl
+#sym curl(y*z; x*z; x*y; x; y; z)
+
+"Laplacian
+#sym laplacian(x^2 + y^2 + z^2; x; y; z)
+
+"Jacobian
+#sym jacobian(x^2; y^2; x; y)
+
+"Hessian
+#sym hessian(x^3 + x*y^2; x; y)
+
+"Strain Tensor 2D
+#sym strain(x^2*y; x*y^2; x; y)
+
+"Stress Tensor (Hooke)
+#sym stress(0.001; 0.002; 0.0005; 200000; 0.3)
+
+"Dyadic Product
+#sym dyadic(1; 2; 3; 4)
+
+"Tensor Invariants
+#sym invariants(3; 1; 1; 2)

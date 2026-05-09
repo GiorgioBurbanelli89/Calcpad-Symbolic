@@ -4,5 +4,12 @@ obj/
 *.suo
 .vs/
 node_modules/
-*.exe
-!Installer/*.exe
+# Build output of `dotnet publish` (the same content is already packaged in
+# Calcpad-Symbolic-portable-win-x64.exe / the installers). Adding every
+# individual DLL/PDB would bloat the repo with thousands of redundant files.
+/publish/
+# Large binaries (installers, portable zips) are tracked via Git LFS —
+# see .gitattributes. NOT excluded anymore.
+# Temporary debug project used while diagnosing AngouriMath stack overflow.
+TestAngouri/
+explicaciones/*.html

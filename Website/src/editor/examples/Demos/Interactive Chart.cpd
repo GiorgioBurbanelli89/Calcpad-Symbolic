@@ -1,0 +1,51 @@
+"Interactive Charts with $Chart
+'<hr/>
+"1. Shear and Moment Diagrams — Simply Supported Beam
+
+w = 15
+L = 6
+n = 20
+
+'Generate vectors:
+#hide
+x = vector(n + 1)
+V = vector(n + 1)
+M = vector(n + 1)
+#for i = 1 : n + 1
+    x.(i) = (i - 1)*L/n
+    V.(i) = w*L/2 - w*x.(i)
+    M.(i) = w*L/2*x.(i) - w*x.(i)^2/2
+#loop
+#show
+
+$Chart{x; V; x; M @ title=Shear and Moment Diagrams : xlabel=x (m) : ylabel=Value : labels=Shear V (kN),Moment M (kN*m)}
+
+'<hr/>
+"2. Sine and Cosine
+
+#hide
+t = vector(50)
+sv = vector(50)
+cv = vector(50)
+#for i = 1 : 50
+    t.(i) = (i - 1)*360/49
+    sv.(i) = sin(t.(i))
+    cv.(i) = cos(t.(i))
+#loop
+#show
+
+$Chart{t; sv; t; cv @ title=Trigonometric Functions : xlabel=Angle (degrees) : ylabel=f(t) : labels=sin(t),cos(t)}
+
+'<hr/>
+"3. Beam Deflection
+
+E_b = 200000
+I_b = 8333
+#hide
+d = vector(n + 1)
+#for i = 1 : n + 1
+    d.(i) = w/(24*E_b*I_b)*(x.(i)^4 - 2*L*x.(i)^3 + L^3*x.(i))
+#loop
+#show
+
+$Chart{x; d @ title=Beam Deflection : xlabel=x (m) : ylabel=d (m)}

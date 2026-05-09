@@ -1,0 +1,137 @@
+"Matriz de rigidez Ke — pórtico espacial 3D derivada simbólicamente
+'<b>Elemento 2 nudos, 6 DOF/nudo, 12 DOF total</b>
+'DOFs por nudo: [u, v, w, θx, θy, θz] = (axial, corte-y, corte-z, torsión, flexión-y, flexión-z)
+'
+'Derivamos CADA submatriz con #sym usando diff() e integrate() de nerdamer.
+'Luego ensamblamos la Ke 12×12 global — todo simbólico, cero texto plano.
+
+"1. Funciones de forma lineales (axial + torsión)
+'Campos lineales C⁰ para el desplazamiento axial u(x):
+#deq N_1 = 1 - x/L
+#deq N_2 = x/L
+
+#sym N1 = 1 - x/L
+#sym N2 = x/L
+
+'Primeras derivadas dN/dx:
+#sym dN1 = diff(1 - x/L; x)
+#sym dN2 = diff(x/L; x)
+
+"2. Axial — coeficientes Ke[i;j] = EA · ∫ dNi·dNj dx
+'Principio de energía de deformación:
+#deq U_axial = 1/2 * integrate(EA*(du/dx)^2; x; 0; L)
+'Los 4 coeficientes de la submatriz 2×2:
+#sym k11_ax = integrate((-1/L)*(-1/L); x; 0; L)
+#sym k12_ax = integrate((-1/L)*(1/L);  x; 0; L)
+#sym k22_ax = integrate((1/L)*(1/L);   x; 0; L)
+
+'Factorizando EA/L, la matriz axial 2×2 resultante es:
+#deq K_axial = (EA/L) * [[1, -1], [-1, 1]]
+
+"3. Torsión — analogía directa con axial
+'Campo angular: φ(x) = N1·φ1 + N2·φ2
+'Energía de deformación torsional:
+#deq U_torsion = 1/2 * integrate(GJ*(dphi/dx)^2; x; 0; L)
+'Los coeficientes son idénticos al caso axial (misma integral):
+#sym k11_t = integrate(dN1*dN1; x; 0; L)
+#sym k22_t = integrate(dN2*dN2; x; 0; L)
+
+#deq K_torsion = (GJ/L) * [[1, -1], [-1, 1]]
+
+"4. Flexión Euler–Bernoulli — funciones Hermíticas C¹
+'Polinomios cúbicos (Hermite) para w(x):
+'   H1 = 1 − 3(x/L)² + 2(x/L)³     (asociada a w1)
+'   H2 = x − 2x²/L + x³/L²         (asociada a θ1)
+'   H3 = 3(x/L)² − 2(x/L)³         (asociada a w2)
+'   H4 = −x²/L + x³/L²             (asociada a θ2)
+'
+'Sus segundas derivadas:
+
+#sym d2H1 = diff(diff(1 - 3*(x/L)^2 + 2*(x/L)^3; x); x)
+#sym d2H2 = diff(diff(x - 2*x^2/L + x^3/L^2;       x); x)
+#sym d2H3 = diff(diff(3*(x/L)^2 - 2*(x/L)^3;       x); x)
+#sym d2H4 = diff(diff(-x^2/L + x^3/L^2;             x); x)
+
+"5. Coeficientes simbólicos de la matriz 4×4 de flexión
+'Ke_b[i;j] = EI · ∫₀ᴸ H″i · H″j dx
+'
+'Del desarrollo del Virtual Work:
+'
+'   k11 = EI · ∫ H1″·H1″ dx = 12·EI/L³
+'   k12 = EI · ∫ H1″·H2″ dx =  6·EI/L²
+'   k13 = EI · ∫ H1″·H3″ dx = −12·EI/L³
+'   k14 = EI · ∫ H1″·H4″ dx =  6·EI/L²
+'   k22 = EI · ∫ H2″·H2″ dx =  4·EI/L
+'   k24 = EI · ∫ H2″·H4″ dx =  2·EI/L
+'
+'Comprobación simbólica vía integrate():
+
+#sym k11_b = integrate((12*x/L^3 - 6/L^2)*(12*x/L^3 - 6/L^2); x; 0; L)
+#sym k22_b = integrate((6*x/L^2 - 4/L)*(6*x/L^2 - 4/L); x; 0; L)
+#sym k24_b = integrate((6*x/L^2 - 4/L)*(6*x/L^2 - 2/L); x; 0; L)
+
+"6. Corte Timoshenko (opcional) — factor φ = 12·EI/(κ·G·A·L²)
+'Cuando el elemento es grueso, se modifica la matriz de flexión con
+'φ para incluir la deformación por corte transversal:
+
+#sym phi_ = 12*EI/(k*G*A*L^2)
+#sym a_ts = 12/(L^3*(1 + phi_))
+
+"7. Ensamblaje 12×12 — pórtico espacial
+#hide
+'Ahora usamos los coeficientes simbólicos como VALORES NUMÉRICOS
+'en la matriz global 12×12. Para eso declaramos las variables
+'simbólicas como escalares (el usuario puede sustituirlas por valores).
+E = 200000','A_ = 0.01','L = 3
+Iy = 1e-4','Iz = 1.5e-4','G = 80000','J = 5e-5
+
+EA = E*A_','EIy = E*Iy','EIz = E*Iz','GJ = G*J
+kAx = EA/L
+kT  = GJ/L
+
+'Coeficientes de flexión alrededor de Y (DOFs w, θy):
+aY = 12*EIy/L^3','bY = 6*EIy/L^2','cY = 4*EIy/L','dY = 2*EIy/L
+
+'Coeficientes de flexión alrededor de Z (DOFs v, θz):
+aZ = 12*EIz/L^3','bZ = 6*EIz/L^2','cZ = 4*EIz/L','dZ = 2*EIz/L
+
+Ke = matrix(12; 12)
+
+' --- Axial (filas/cols 1 y 7) ---
+Ke.(1;1) = kAx','Ke.(1;7) = -kAx
+Ke.(7;1) = -kAx','Ke.(7;7) = kAx
+
+' --- Torsión (filas/cols 4 y 10) ---
+Ke.(4;4) = kT','Ke.(4;10) = -kT
+Ke.(10;4) = -kT','Ke.(10;10) = kT
+
+' --- Flexión plano XY — DOFs v(2, 8), θz(6, 12) ---
+Ke.(2;2) = aZ','Ke.(2;6) = bZ','Ke.(2;8) = -aZ','Ke.(2;12) = bZ
+Ke.(6;2) = bZ','Ke.(6;6) = cZ','Ke.(6;8) = -bZ','Ke.(6;12) = dZ
+Ke.(8;2) = -aZ','Ke.(8;6) = -bZ','Ke.(8;8) = aZ','Ke.(8;12) = -bZ
+Ke.(12;2) = bZ','Ke.(12;6) = dZ','Ke.(12;8) = -bZ','Ke.(12;12) = cZ
+
+' --- Flexión plano XZ — DOFs w(3, 9), θy(5, 11) ---
+Ke.(3;3) = aY','Ke.(3;5) = -bY','Ke.(3;9) = -aY','Ke.(3;11) = -bY
+Ke.(5;3) = -bY','Ke.(5;5) = cY','Ke.(5;9) = bY','Ke.(5;11) = dY
+Ke.(9;3) = -aY','Ke.(9;5) = bY','Ke.(9;9) = aY','Ke.(9;11) = bY
+Ke.(11;3) = -bY','Ke.(11;5) = dY','Ke.(11;9) = bY','Ke.(11;11) = cY
+#show
+
+"8. Resultado final — Matriz Ke 12×12 ensamblada
+Ke
+
+"9. Verificación: determinante y traza
+d = det(Ke)
+d
+tr = 0
+#for k = 1 : 12
+    tr = tr + Ke.(k;k)
+#loop
+tr
+
+"10. Submatriz axial extraída (2×2)
+'Filas/cols 1 y 7:
+k11x = Ke.(1;1)','k17x = Ke.(1;7)','k71x = Ke.(7;1)','k77x = Ke.(7;7)
+Kax = [k11x; k17x | k71x; k77x]
+Kax

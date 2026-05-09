@@ -1,0 +1,36 @@
+"Test SVG 2
+
+"Caso 1: recto
+#svg 450 80
+.line 30 40 420 40 black 2
+.rect 200 25 40 30 yellow 0.8 black 1
+.text 220 45 carro 8 black middle
+#end svg
+
+"Caso 2: curva suave
+#svg 450 100
+.line 30 70 120 40 green 2
+.line 120 40 225 25 green 2
+.line 225 25 330 40 green 2
+.line 330 40 420 70 green 2
+.rect 205 10 40 30 yellow 0.8 black 1
+.text 225 30 carro 8 black middle
+#end svg
+
+"Caso 3: curva cerrada
+#svg 350 100
+.line 80 70 130 35 red 2
+.line 130 35 175 20 red 2
+.line 175 20 225 20 red 2
+.line 225 20 270 35 red 2
+.line 270 35 320 70 red 2
+.rect 175 5 40 30 yellow 0.8 black 1
+.text 195 25 carro 8 black middle
+#end svg
+
+"Radián
+#svg 350 250
+.radian 150 130 90
+#end svg
+
+'<p>FIN</p>

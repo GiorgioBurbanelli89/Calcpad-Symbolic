@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/partials/head.html"></div>
+  <title>Placa delgada (Kirchhoff / CPT) — Teoría</title>
+  <style>
+    .theory-frame { width: 100%; height: 80vh; border: 1px solid var(--color-border); border-radius: var(--radius); }
+  </style>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+
+  <section class="block">
+    <div class="container">
+      <h1>Placa delgada — Teoría Clásica (Kirchhoff / CPT)</h1>
+
+      <h2>Hipótesis de Kirchhoff</h2>
+      <ol>
+        <li>Las normales a la superficie media permanecen <strong>rectas</strong> tras la deformación.</li>
+        <li>Las normales permanecen <strong>perpendiculares</strong> a la superficie media deformada (corte transversal despreciable).</li>
+        <li>El espesor no varía (ε<sub>z</sub> = 0).</li>
+      </ol>
+
+      <h2>Rango de aplicabilidad</h2>
+      <p>Relación espesor/lado menor <strong>t / L &lt; 1/20</strong>. Para placas más gruesas usa <a href="/teoria/placas/thick.html">Mindlin-Reissner (FSDT)</a>.</p>
+
+      <h2>Derivación simbólica en Calcpad-Symbolic</h2>
+      <p>El script siguiente deriva las relaciones cinemáticas, las curvaturas,
+        la rigidez a flexión <strong>D = E·t³ / 12(1−ν²)</strong> y la ecuación
+        biarmónica de gobierno. Las derivadas usan el bloque <code>#sym</code>
+        (simbólico real, no aproximación).</p>
+      <iframe class="theory-frame" src="/teoria/placas/rendered/thin_plate.html"
+              title="Derivación simbólica — placa delgada"></iframe>
+
+      <h2>Ecuación de gobierno</h2>
+      <p><em>D</em> (∂⁴w/∂x⁴ + 2 ∂⁴w/∂x²∂y² + ∂⁴w/∂y⁴) = q</p>
+      <p>Ecuación biarmónica en <em>w(x,y)</em> con carga transversal <em>q</em>.</p>
+
+      <h2>Solución navier (placa rectangular simplemente apoyada)</h2>
+      <p>Para carga sinusoidal <em>q = q<sub>0</sub></em>·sin(π·x/a)·sin(π·y/b):</p>
+      <p>w<sub>max</sub> = q<sub>0</sub> / [D·π⁴·(1/a² + 1/b²)²]</p>
+
+      <p><a href="/editor/" target="_blank" rel="noopener">▶ Abrir este script en el editor</a></p>
+    </div>
+  </section>
+
+  <div data-include="/partials/footer.html"></div>
+  <script src="/js/include.js"></script>
+</body>
+</html>

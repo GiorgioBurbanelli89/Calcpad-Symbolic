@@ -1,8 +1,4 @@
-
-L = 6
-h = 0.4
-M = L*h/2
-x + y = r"Viga simplemente apoyada - Matriz de Rigidez
+"Viga simplemente apoyada - Matriz de Rigidez
 
 "Datos
 E = 200000

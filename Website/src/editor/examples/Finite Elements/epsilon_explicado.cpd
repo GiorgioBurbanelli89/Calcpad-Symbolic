@@ -1,0 +1,221 @@
+"De donde sale ε = -y/ρ ?
+"Explicado con graficas paso a paso
+'<hr/>
+
+"PASO 1: Un circulo GRANDE tiene borde mas largo que uno PEQUENO
+
+#svg 400 200
+.fillrect 0 0 400 200 #fafafa 1
+.circle 130 100 70 none 0 red 2
+.circle 130 100 3 black 1
+.text 130 110 O 10 black middle
+.text 130 185 Circulo_grande 10 red middle
+.text 130 198 borde_=_440mm 9 red middle
+.circle 300 100 30 none 0 blue 2
+.circle 300 100 3 black 1
+.text 300 110 O 10 black middle
+.text 300 145 Circulo_chico 10 blue middle
+.text 300 158 borde_=_188mm 9 blue middle
+.line 130 100 200 100 red 1
+.text 165 93 R=70 8 red middle
+.line 300 100 330 100 blue 1
+.text 315 93 R=30 8 blue middle
+#end svg
+
+'<p>Circulo grande (R=70): borde = 2*π*70 = 440mm</p>
+'<p>Circulo chico (R=30): borde = 2*π*30 = 188mm</p>
+'<p>Esto es OBVIO. Mas grande = borde mas largo.</p>
+
+'<hr/>
+"PASO 2: Dos circulos con el MISMO centro
+
+'<p>Ahora pongo un circulo DENTRO del otro. Mismo centro O.</p>
+
+#svg 300 250
+.fillrect 0 0 300 250 #fafafa 1
+.circle 150 125 100 none 0 blue 2
+.circle 150 125 60 none 0 red 2
+.circle 150 125 3 black 1
+.text 155 133 O 10 black middle
+.line 150 125 250 125 blue 1
+.text 200 118 R2=100 8 blue middle
+.line 150 125 210 125 red 1
+.text 175 135 R1=60 8 red middle
+.text 150 240 Mismo_centro,_diferentes_radios 10 black middle
+#end svg
+
+'<p>El circulo rojo (R=60) tiene borde MAS CORTO que el azul (R=100).</p>
+'<p>El rojo esta MAS CERCA del centro O.</p>
+'<p>El azul esta MAS LEJOS del centro O.</p>
+
+'<hr/>
+"PASO 3: Tomo un PEDAZO de los dos circulos
+
+'<p>Corto un pedazo (como una rebanada de pastel):</p>
+
+#svg 350 250
+.fillrect 0 0 350 250 #fafafa 1
+.circle 175 20 3 black 1
+.text 180 25 O 10 black middle
+.line 175 20 80 220 gray 0.5
+.line 175 20 270 220 gray 0.5
+.line 80 140 270 140 red 2
+.line 80 190 270 190 blue 2
+.text 280 140 Arco_rojo 9 red start
+.text 280 150 R1=60 8 red start
+.text 280 155 MAS_CORTO 8 red start bold
+.text 280 190 Arco_azul 9 blue start
+.text 280 200 R2=100 8 blue start
+.text 280 205 MAS_LARGO 8 blue start bold
+.darrow 70 20 70 140 red 1
+.text 55 80 60 9 red middle
+.darrow 65 20 65 190 blue 1
+.text 45 105 100 9 blue middle
+#end svg
+
+'<p>MISMO angulo, pero el arco rojo (cerca de O) es MAS CORTO</p>
+'<p>y el arco azul (lejos de O) es MAS LARGO.</p>
+'<p>Esto siempre es asi: mas cerca del centro = arco mas corto.</p>
+
+'<hr/>
+"PASO 4: ESO es exactamente lo que pasa en una viga doblada!
+
+'<p>Cuando la viga se dobla hacia ABAJO, forma un arco.</p>
+'<p>El centro O esta ARRIBA (en SVG: Y pequeno = arriba).</p>
+
+#svg 400 230
+.fillrect 0 0 400 230 #fafafa 1
+.text 200 15 La_viga_doblada_=_arcos_concentricos 10 black middle bold
+.circle 200 25 3 black 1
+.text 210 28 O_(arriba) 9 gray start
+.line 200 25 80 210 gray 0.4
+.line 200 25 320 210 gray 0.4
+.line 80 130 140 155 #cc0000 2
+.line 140 155 200 163 #cc0000 2
+.line 200 163 260 155 #cc0000 2
+.line 260 155 320 130 #cc0000 2
+.line 80 160 140 182 green 2
+.line 140 182 200 188 green 2
+.line 200 188 260 182 green 2
+.line 260 182 320 160 green 2
+.line 80 190 140 208 #0000cc 2
+.line 140 208 200 213 #0000cc 2
+.line 200 213 260 208 #0000cc 2
+.line 260 208 320 190 #0000cc 2
+.text 335 130 Fibra_ARRIBA 7 #cc0000 start
+.text 335 140 cerca_de_O 7 #cc0000 start
+.text 335 150 CORTA 8 #cc0000 start bold
+.text 335 165 Eje_neutro 7 green start
+.text 335 175 REFERENCIA 8 green start bold
+.text 335 195 Fibra_ABAJO 7 #0000cc start
+.text 335 205 lejos_de_O 7 #0000cc start
+.text 335 215 LARGA 8 #0000cc start bold
+.darrow 70 25 70 160 gray 1
+.text 57 93 ρ 11 gray middle bold
+.darrow 75 130 75 160 #cc6600 1.5
+.text 60 145 y 10 #cc6600 middle bold
+#end svg
+
+'<p>ρ = distancia de O al eje neutro (verde)</p>
+'<p>y = distancia del eje neutro a la fibra roja</p>
+'<p>La fibra roja esta a distancia (ρ - y) del centro O.</p>
+'<p>El eje neutro esta a distancia ρ del centro O.</p>
+
+'<hr/>
+"PASO 5: Calcular la deformacion con NUMEROS
+
+'<p>Valores concretos: ρ = 1000mm, y = 50mm</p>
+
+#svg 350 180
+.fillrect 0 0 350 180 #fafafa 1
+.text 175 15 Ejemplo_numerico 11 black middle bold
+.circle 175 25 3 black 1
+.text 185 28 O 9 black start
+.line 30 110 320 110 #cc0000 2
+.line 30 140 320 140 green 2
+.line 30 170 320 170 #0000cc 2
+.text 330 114 Fibra_arriba 7 #cc0000 start
+.text 330 144 Eje_neutro 7 green start
+.text 330 174 Fibra_abajo 7 #0000cc start
+.darrow 20 25 20 140 gray 1
+.text 5 83 ρ 10 gray middle
+.text 5 93 1000 8 gray middle
+.darrow 25 110 25 140 #cc6600 1.5
+.text 10 125 y 9 #cc6600 middle
+.text 3 133 50 8 #cc6600 middle
+.darrow 15 25 15 110 #cc0000 1
+.text -5 68 ρ-y 7 #cc0000 middle
+.text -5 78 950 7 #cc0000 middle
+#end svg
+
+'<p>La fibra roja esta a 950mm del centro O.</p>
+'<p>El eje neutro esta a 1000mm del centro O.</p>
+'<p>Para un arco del MISMO angulo:</p>
+'<p>- Arco a 950mm del centro es MAS CORTO que arco a 1000mm</p>
+'<p>- (igual que en el PASO 3)</p>
+
+'<h4>Cuanto mas corto? Hagamos la cuenta:</h4>
+'<p>No importa que angulo — tomemos θ = 0.1 radianes como ejemplo:</p>
+
+ρ_ej = 1000
+y_ej = 50
+θ_ej = 0.1
+L_neutro = ρ_ej*θ_ej
+L_fibra = (ρ_ej - y_ej)*θ_ej
+diferencia = L_fibra - L_neutro
+
+'<p>El neutro recorrio 100mm. La fibra recorrio 95mm.</p>
+'<p>La fibra es 5mm MAS CORTA que el neutro.</p>
+
+'<h4>La deformacion ε = cuanto cambio / longitud original:</h4>
+
+ε_num = (L_fibra - L_neutro)/L_neutro
+
+'<p>ε = (95 - 100)/100 = -5/100 = -0.05</p>
+'<p>Negativo porque se ACORTO (compresion).</p>
+
+'<h4>Ahora con θ = 0.2 (el doble):</h4>
+
+θ_ej2 = 0.2
+L_neutro2 = ρ_ej*θ_ej2
+L_fibra2 = (ρ_ej - y_ej)*θ_ej2
+ε_num2 = (L_fibra2 - L_neutro2)/L_neutro2
+
+'<p>ε = (190 - 200)/200 = -10/200 = -0.05</p>
+'<p>El MISMO resultado! θ no importa — siempre da -0.05.</p>
+
+'<h4>Y con θ = 0.5:</h4>
+θ_ej3 = 0.5
+L_neutro3 = ρ_ej*θ_ej3
+L_fibra3 = (ρ_ej - y_ej)*θ_ej3
+ε_num3 = (L_fibra3 - L_neutro3)/L_neutro3
+
+'<p>ε = (475 - 500)/500 = -25/500 = -0.05</p>
+'<p>SIEMPRE -0.05! θ se cancela siempre.</p>
+
+'<hr/>
+"PASO 6: La formula general
+
+'<p>Con algebra en vez de numeros:</p>
+'<p>Largo del neutro = ρ*θ</p>
+'<p>Largo de la fibra = (ρ - y)*θ</p>
+'<p>ε = (fibra - neutro)/neutro</p>
+'<p>ε = ((ρ - y)*θ - ρ*θ) / (ρ*θ)</p>
+'<p>ε = (ρ*θ - y*θ - ρ*θ) / (ρ*θ)</p>
+'<p>ε = (-y*θ) / (ρ*θ)</p>
+'<p>θ se cancela:</p>
+
+#deq ε = -y/ρ
+
+#svg 400 130
+.fillrect 10 10 380 110 #fffff0 1
+.rect 10 10 380 110 none 1 #cccccc 0.5
+.text 200 35 ε_=_-y/ρ 16 black middle bold
+.text 200 58 y_=_distancia_de_la_fibra_al_eje_neutro 10 black middle
+.text 200 73 ρ_=_distancia_del_eje_neutro_al_centro_O 10 black middle
+.text 200 93 y_positiva_ARRIBA_(hacia_O)_→_ε_negativa_(compresion) 9 #cc0000 middle
+.text 200 108 y_negativa_ABAJO_(lejos_de_O)_→_ε_positiva_(tension) 9 #0000cc middle
+#end svg
+
+'<p>Con ρ=1000 y y=50: ε = -50/1000 = -0.05 ✓</p>
+'<p>Con ρ=1000 y y=-50 (abajo): ε = -(-50)/1000 = +0.05 (tension) ✓</p>

@@ -1,0 +1,125 @@
+"Ejemplo Moita — Placa Isótropa Cuadrada (paso a paso)
+'Ref: Moita §APLICAÇÕES p. 94-95
+
+'<b>Paso 1 — Geometría</b>
+a_pl = 1.0
+a_pl
+b_pl = 1.0
+b_pl
+h_pl = 0.02
+h_pl
+
+'<b>Paso 2 — Material (acero)</b>
+E_mod = 200*10^9
+E_mod
+ν = 0.3
+ν
+ρ = 7850
+ρ
+
+'<b>Paso 3 — Carga uniforme</b>
+q_0 = 50000
+q_0
+
+'<b>Paso 4 — Rigidez a flexión</b>
+#deq D = E*h^3/(12*(1 - ν^2))
+D = E_mod*h_pl^3/(12*(1 - ν^2))
+D
+
+"Análisis estático
+
+'<b>Paso 5 — Solución Navier (serie de Fourier)</b>
+#deq w_max = (16*q_0/π^6*D)*Σ 1/(m*n*((m/a)^2 + (n/b)^2)^2)
+
+'Serie truncada con m, n impares hasta 5:
+#hide
+S_1 = 1/(1*1*((1/a_pl)^2 + (1/b_pl)^2)^2)
+S_3 = 1/(1*3*((1/a_pl)^2 + (3/b_pl)^2)^2) + 1/(3*1*((3/a_pl)^2 + (1/b_pl)^2)^2) + 1/(3*3*((3/a_pl)^2 + (3/b_pl)^2)^2)
+S_5 = 1/(1*5*((1/a_pl)^2 + (5/b_pl)^2)^2) + 1/(5*1*((5/a_pl)^2 + (1/b_pl)^2)^2) + 1/(3*5*((3/a_pl)^2 + (5/b_pl)^2)^2) + 1/(5*3*((5/a_pl)^2 + (3/b_pl)^2)^2) + 1/(5*5*((5/a_pl)^2 + (5/b_pl)^2)^2)
+S = S_1 + S_3 + S_5
+#show
+S_1
+S_3
+S_5
+S
+
+'<b>Paso 6 — Flecha máxima</b>
+w_max = (16*q_0)/(π^6*D)*S
+w_max
+w_max_mm = w_max*1000
+w_max_mm
+'<b>Moita MEF:</b> 1.382 mm — <b>Teórica:</b> 1.384 mm
+
+'<b>Paso 7 — Tensión máxima en flexión</b>
+α_M = 0.0479
+M_max = α_M*q_0*a_pl^2
+M_max
+σ_max = 6*M_max/h_pl^2
+σ_max
+σ_max_MPa = σ_max/10^6
+σ_max_MPa
+'<b>Moita:</b> ±35.934 MPa
+
+"Análisis modal — frecuencias naturales
+
+'<b>Paso 8 — Factor común</b>
+#deq ω_mn = π^2*(m^2/a^2 + n^2/a^2)*sqrt(D/(ρ*h))
+K_mn = π^2*sqrt(D/(ρ*h_pl))
+K_mn
+
+'<b>Paso 9 — Modo 1 (m=1, n=1)</b>
+ω_11 = K_mn*(1/a_pl^2 + 1/b_pl^2)
+ω_11
+f_11 = ω_11/(2*π)
+f_11
+'<b>Moita MEF:</b> 598.9 Hz — <b>Analítica:</b> 603.0 Hz
+
+'<b>Paso 10 — Modo 2-3 (m=1,n=2) ≡ (m=2,n=1)</b>
+ω_12 = K_mn*(1/a_pl^2 + 4/b_pl^2)
+ω_12
+f_12 = ω_12/(2*π)
+f_12
+'<b>Moita MEF:</b> 1488.8 Hz — <b>Analítica:</b> 1507.5 Hz
+
+'<b>Paso 11 — Modo 4 (m=2, n=2)</b>
+ω_22 = K_mn*(4/a_pl^2 + 4/b_pl^2)
+ω_22
+f_22 = ω_22/(2*π)
+f_22
+'<b>Moita MEF:</b> 2352.5 Hz — <b>Analítica:</b> 2412.0 Hz
+
+'<b>Paso 12 — Modo 5 (m=1, n=3)</b>
+ω_13 = K_mn*(1/a_pl^2 + 9/b_pl^2)
+ω_13
+f_13 = ω_13/(2*π)
+f_13
+'<b>Moita MEF:</b> 2976.7 Hz — <b>Analítica:</b> 3015.0 Hz
+
+"Gráfica de la flecha a lo largo de y = b/2
+
+#hide
+n_lin = 41
+x_lin = vector(n_lin)
+w_lin = vector(n_lin)
+#for i = 1 : n_lin
+    x_lin.(i) = (i - 1)*a_pl/(n_lin - 1)
+    w_lin.(i) = w_max*sin(π*x_lin.(i)/a_pl)*1000
+#loop
+#show
+$Chart{x_lin; w_lin @ title=Flecha w(x, b/2) en mm : xlabel=x (m) : ylabel=w (mm) : labels=Calcpad-Symbolic}
+
+"Resumen tabular
+
+'<b>Estático:</b>
+'| Resultado | Moita MEF | Teórico | Calcpad |
+'|-----------|-----------|---------|---------|
+'| W_c (mm)  | 1.382     | 1.384   | 'w_max_mm' |
+'| σ_max (MPa)| 35.934   | 35.9    | 'σ_max_MPa' |
+
+'<b>Modal (Hz):</b>
+'| Modo | (m,n) | Moita MEF | Analítica | Calcpad |
+'|------|-------|-----------|-----------|---------|
+'| 1    | (1,1) | 598.9     | 603.0     | 'f_11'    |
+'| 2-3  | (1,2) | 1488.8    | 1507.5    | 'f_12'    |
+'| 4    | (2,2) | 2352.5    | 2412.0    | 'f_22'    |
+'| 5    | (1,3) | 2976.7    | 3015.0    | 'f_13'    |

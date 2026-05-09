@@ -1,0 +1,192 @@
+"1877 — Lord Rayleigh: El Metodo de la Energia
+"En vez de resolver la ecuacion diferencial, MINIMIZAR la energia
+'<hr/>
+
+"PARTE 1: El problema de Euler era DIFICIL
+'<p>Euler nos dio la ecuacion de la viga:</p>
+#deq EI*d^4v/dx^4 = q(x)
+
+'<p>Para una viga simple con carga uniforme, Euler la resolvio integrando 4 veces.</p>
+'<p>Pero para formas complicadas (vigas con secciones variables, cargas raras,</p>
+'<p>multiples tramos) integrar 4 veces es IMPOSIBLE a mano.</p>
+'<p>Lord Rayleigh tuvo una idea brillante: OTRO CAMINO al mismo resultado.</p>
+
+'<hr/>
+"PARTE 2: La analogia de la pelota en el valle
+
+'<p>Imagina una pelota en una superficie con forma de valle:</p>
+
+#hide
+n = 50
+x_valle = vector(n)
+y_valle = vector(n)
+#for i = 1 : n
+    x_valle.(i) = -3 + (i - 1)*6/(n - 1)
+    y_valle.(i) = x_valle.(i)^2
+#loop
+#show
+
+$Chart{x_valle; y_valle @ title=Energia potencial: la pelota va al punto mas bajo : xlabel=posicion : ylabel=energia}
+
+'<p>La pelota SIEMPRE rueda al punto mas bajo del valle.</p>
+'<p>En el punto mas bajo, la energia potencial es MINIMA.</p>
+'<p>Esto es un principio UNIVERSAL de la fisica:</p>
+'<p>Todo sistema busca el estado de MINIMA ENERGIA.</p>
+
+'<h4>La viga es igual!</h4>
+'<p>Cuando la viga se deforma, hay dos energias:</p>
+'<p>1. Energia INTERNA U: la viga "almacena" energia al deformarse</p>
+'<p>   (como un resorte comprimido almacena energia)</p>
+'<p>2. Trabajo EXTERNO W: la carga q "empuja" y hace trabajo</p>
+'<p>La viga se deforma hasta que la energia total es MINIMA.</p>
+
+'<hr/>
+"PARTE 3: Energia interna U (la viga como resorte)
+
+'<p>Un resorte almacena energia cuando lo comprimes:</p>
+
+$Struct{fixed,0,0 : spring,0,0,4,0,k : node,0,0,| : node,4,0,u : force,4,0,right,F @ title=Resorte: almacena energia U = kx^2/2 : w=500 : h=160}
+
+#deq U_resorte = k*x^2/2
+
+'<p>La viga almacena energia por la CURVATURA en cada punto.</p>
+'<p>Donde se curva mas, almacena mas energia.</p>
+'<p>La curvatura es v''(x) y la energia por unidad de longitud es:</p>
+
+#deq dU/dx = EI*(v''(x))^2/2
+
+'<p>La energia total es la suma (integral) a lo largo de toda la viga:</p>
+
+#deq U = ∫*EI/2*(d^2v/dx^2)^2*dx
+
+'<p>Esto dice: recorre la viga de 0 a L, en cada punto calcula</p>
+'<p>cuanto se curva, elevalo al cuadrado, multiplica por EI/2, y suma todo.</p>
+
+'<hr/>
+"PARTE 4: Trabajo externo W (la carga empujando)
+
+'<p>La carga q empuja la viga hacia abajo una distancia v(x).</p>
+'<p>El trabajo es fuerza × distancia:</p>
+
+#deq W = ∫*q*v(x)*dx
+
+'<p>Esto dice: en cada punto, la carga q empuja v(x) metros.</p>
+'<p>Suma el trabajo en todos los puntos.</p>
+
+'<hr/>
+"PARTE 5: La energia potencial total
+
+#deq Π = U - W
+
+'<p>Π (pi) = energia interna - trabajo externo.</p>
+'<p>La viga se deforma para MINIMIZAR Π.</p>
+'<p>Es como la pelota en el valle: busca el punto mas bajo.</p>
+
+'<hr/>
+"PARTE 6: LA IDEA DE RAYLEIGH — Adivinar la forma
+
+'<p>Rayleigh dijo: no necesito resolver la ecuacion diferencial.</p>
+'<p>Puedo ADIVINAR la forma de v(x) y calcular la energia.</p>
+'<p>La forma que de MENOR energia es la mejor aproximacion.</p>
+
+'<h4>Adivinar: v(x) = C * sin(π*x/L)</h4>
+
+'<p>Esta funcion es buena porque:</p>
+'<p>- v(0) = 0 (apoyo izquierdo) ✓</p>
+'<p>- v(L) = 0 (apoyo derecho) ✓</p>
+'<p>- Se parece a la forma real de la viga (curva suave) ✓</p>
+'<p>- Solo tiene UNA incognita: C (la amplitud)</p>
+
+E = 200000
+I_sec = 0.003125
+EI = E*I_sec
+L = 6
+q = 10
+
+#hide
+xr = vector(n)
+vr_shape = vector(n)
+#for i = 1 : n
+    xr.(i) = (i - 1)*L/(n - 1)
+    vr_shape.(i) = sin(180*xr.(i)/L)
+#loop
+#show
+
+$Chart{xr; vr_shape @ title=Forma adivinada: sin(pi*x/L) con C=1 : xlabel=x (m) : ylabel=v (normalizada)}
+
+'<hr/>
+"PARTE 7: Calcular U y W con la forma adivinada
+
+'<h4>Curvatura de sin(π*x/L):</h4>
+'<p>Si v(x) = C*sin(πx/L), entonces:</p>
+'<p>v''(x) = -C*(π/L)^2 * sin(πx/L)</p>
+
+'<h4>Energia interna U:</h4>
+'<p>U = EI/2 * integral de [v''(x)]^2 dx</p>
+'<p>U = EI/2 * C^2 * (π/L)^4 * integral de sin^2(πx/L) dx</p>
+'<p>La integral de sin^2 en [0,L] = L/2, entonces:</p>
+
+#deq U = EI*C^2*π^4/(4*L^3)
+
+'<h4>Trabajo externo W:</h4>
+'<p>W = integral de q * C*sin(πx/L) dx</p>
+'<p>La integral de sin en [0,L] = 2L/π, entonces:</p>
+
+#deq W = 2*q*C*L/π
+
+'<h4>Energia total:</h4>
+#deq Π = EI*C^2*π^4/(4*L^3) - 2*q*C*L/π
+
+'<hr/>
+"PARTE 8: Minimizar — encontrar C
+
+'<p>Para minimizar, derivamos Π con respecto a C e igualamos a cero:</p>
+
+#deq dΠ/dC = EI*C*π^4/(2*L^3) - 2*q*L/π = 0
+
+'<p>Despejando C:</p>
+
+#deq C = 4*q*L^4/(π^5*EI)
+
+C_r = 4*q*L^4/(π^5*EI)
+
+'<h4>Verifiquemos con la solucion exacta de Euler:</h4>
+v_euler = 5*q*L^4/(384*EI)
+v_rayleigh = C_r
+
+error_pct = (v_rayleigh - v_euler)/v_euler*100
+
+'<p>Error de solo 0.4%! Rayleigh ADIVINO la forma y la energia hizo el resto.</p>
+
+'<hr/>
+"PARTE 9: Comparacion grafica Euler vs Rayleigh
+
+#hide
+ve = vector(n)
+vr = vector(n)
+#for i = 1 : n
+    ve.(i) = q*xr.(i)/(24*EI)*(L^3 - 2*L*xr.(i)^2 + xr.(i)^3)
+    vr.(i) = C_r*sin(180*xr.(i)/L)
+#loop
+#show
+
+$Chart{xr; ve; xr; vr @ title=Euler exacto vs Rayleigh aproximado : xlabel=x (m) : ylabel=v (m) : labels=Euler (exacto),Rayleigh (adivinado)}
+
+'<p>Las curvas son CASI identicas! Solo adivinando una funcion seno.</p>
+'<p>El metodo de la energia es MUY poderoso.</p>
+
+'<hr/>
+"PARTE 10: Por que funciona?
+
+'<p>El principio de minima energia es EQUIVALENTE a la ecuacion diferencial.</p>
+'<p>Son dos formas de decir lo mismo:</p>
+'<p>- Ecuacion diferencial: EI*v'''' = q (equilibrio de fuerzas)</p>
+'<p>- Energia: minimizar Π = U - W (minima energia)</p>
+'<p>Rayleigh encontro que la segunda forma es mas facil de aproximar.</p>
+
+'<p>Limitacion: la solucion depende de la funcion que "adivines".</p>
+'<p>Si adivinas mal (funcion que no se parece), el error es grande.</p>
+'<p>Ritz (1909) resolvio esto: usar VARIAS funciones!</p>
+
+'<hr/>
+"Siguiente: 1909 — Ritz y las funciones base

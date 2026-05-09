@@ -3974,6 +3974,22 @@ namespace Calcpad.Wpf
             Execute(AppInfo.Path + "Cli.exe");
         }
 
+        private ExcelViewerWindow _excelViewerWindow;
+
+        private void MenuExcelViewer_Click(object sender, RoutedEventArgs e)
+        {
+            if (_excelViewerWindow == null || !_excelViewerWindow.IsLoaded)
+            {
+                _excelViewerWindow = new ExcelViewerWindow { Owner = this };
+                _excelViewerWindow.Closed += (_, _) => _excelViewerWindow = null;
+                _excelViewerWindow.Show();
+            }
+            else
+            {
+                _excelViewerWindow.Activate();
+            }
+        }
+
         private void ZeroSmallMatrixElementsCheckBox_Click(object sender, RoutedEventArgs e) => ClearOutput();
 
         private void MaxOutputCountTextBox_KeyUp(object sender, KeyEventArgs e)

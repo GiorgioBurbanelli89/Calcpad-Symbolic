@@ -1,0 +1,101 @@
+"Laminado: Matrices A, B, D + Análisis Estático + Pandeo
+'Ref: Moita §5.3.3, §5.3.4, §5.4, §5.5. Usando el parser de Calcpad-Symbolic
+'para derivar las matrices constitutivas y un ejemplo concreto de pandeo.
+
+"§5.3.3 Relacion tension-deformacion en ejes locales
+'Matriz Q (3x3) de una lamina ortotropa orientada:
+#deq σ_x = Q_11*ε_x + Q_12*ε_y + Q_16*γ_xy
+#deq σ_y = Q_21*ε_x + Q_22*ε_y + Q_26*γ_xy
+#deq τ_xy = Q_61*ε_x + Q_62*ε_y + Q_66*γ_xy
+
+"Descomposicion
+'La tension se separa en parte membrana (sigma_m) y parte flexion (sigma_b):
+#deq σ_m = Q*ε_m
+#deq σ_b = Q*z*ε_b
+#deq σ = Q*(ε_m + z*ε_b)
+
+"§5.3.4 Resultantes del laminado
+'Integrando a lo largo del espesor:
+#deq N = integral(σ*dz) = A*ε_m + B*ε_b
+#deq M = integral(σ*z*dz) = B*ε_m + D*ε_b
+
+"Matriz constitutiva del laminado (Moita p. 88)
+#deq A_ij = Σ Q_ij_k*(h_k - h_k_minus_1)
+#deq B_ij = Σ Q_ij_k*(h_k^2 - h_k_minus_1^2)/2
+#deq D_ij = Σ Q_ij_k*(h_k^3 - h_k_minus_1^3)/3
+
+'Forma compacta: D_hat = [A; B | B; D]
+'Para laminados simetricos: B = 0 (membrana y flexion desacopladas).
+
+"EJEMPLO NUMERICO — laminado isotropo equivalente (placa monolitica)
+'Material: acero E = 200 GPa, nu = 0.3, espesor t = 10 mm
+E_mod = 200000
+ν = 0.3
+t_pl = 10
+'Q_ij para isotropo:
+Q_11 = E_mod/(1 - ν^2)
+Q_12 = ν*Q_11
+Q_66 = E_mod/(2*(1 + ν))
+
+'Para placa monolitica isotropa: A = Q*t, B = 0, D = Q*t^3/12
+A_11 = Q_11*t_pl
+A_12 = Q_12*t_pl
+A_66 = Q_66*t_pl
+D_11 = Q_11*t_pl^3/12
+D_12 = Q_12*t_pl^3/12
+D_66 = Q_66*t_pl^3/12
+
+"§5.4 Análisis estático lineal — ecuación
+'Por principio trabajos virtuales: integral(delta_eps^T*Q*eps*dV) = W_ext
+'Resultado: [K_L]*{q} = {F_ext}
+#deq K_L = integral(B^T*D_hat*B*dA)
+
+"§5.5 Análisis de estabilidad (pandeo lineal)
+'Deformacion no-lineal (parte cuadratica):
+#deq ε_xx_NL = 0.5*((du_0/dx)^2 + (dv_0/dx)^2 + (dw_0/dx)^2)
+
+'Matriz tau de fuerzas de membrana N_xx, N_yy, N_xy:
+#deq τ = [N_xx; N_xy; 0; 0; 0; 0 | N_xy; N_yy; 0; 0; 0; 0 | 0; 0; N_xx; N_xy; 0; 0 | 0; 0; N_xy; N_yy; 0; 0 | 0; 0; 0; 0; N_xx; N_xy | 0; 0; 0; 0; N_xy; N_yy]
+
+'Matriz de rigidez geometrica del elemento:
+#deq K_σ = integral(G^T*τ*G*dA)
+
+"Condición de pandeo
+'El sistema (K_L + K_σ)*q = F_ext se vuelve indeterminado cuando:
+#deq det(K_L + λ_cr*K_σ) = 0
+'donde λ_cr es el factor multiplicador critico de la carga aplicada.
+
+"EJEMPLO — pandeo de placa cuadrada simplemente apoyada bajo N_x
+'Formula clasica de Timoshenko para placa cuadrada isotropa:
+'N_cr = k*π^2*D / b^2,  con k = 4 para placa cuadrada apoyada.
+a_pl = 1000
+b_pl = 1000
+k_buck = 4
+D_flex = E_mod*t_pl^3/(12*(1 - ν^2))
+N_cr = k_buck*π^2*D_flex/b_pl^2
+'Tension critica:
+σ_cr = N_cr/t_pl
+
+"Ejemplo numerico final
+'Para acero E=200GPa, placa 1000x1000 mm, t=10 mm:
+#hide
+N_cr_kN_per_m = N_cr
+σ_cr_MPa = σ_cr
+#show
+N_cr_kN_per_m
+σ_cr_MPa
+'Comparacion: para acero σ_y = 250 MPa, el pandeo ocurre bien antes de la fluencia.
+
+"Coeficiente k de pandeo (depende a/b y condiciones de apoyo)
+'Para placa biapoyada (short sides) con N_x uniforme:
+'  a/b = 1.0  →  k = 4.00
+'  a/b = 1.5  →  k = 4.34
+'  a/b = 2.0  →  k = 4.00 (min local)
+'  a/b = 3.0  →  k = 4.00 (min)
+'El minimo ocurre cada vez que m = a/b (numero entero de semiondas).
+
+"Conclusion
+'  • Usando matrices [A], [B], [D] se maneja laminados compuestos.
+'  • Para acero monolitico, [B] = 0 y [A], [D] son diagonales.
+'  • El pandeo lineal se resuelve como problema de autovalores:
+'    (K_L + λ*K_σ)*φ = 0   →   det = 0   →   λ_cr minimo.

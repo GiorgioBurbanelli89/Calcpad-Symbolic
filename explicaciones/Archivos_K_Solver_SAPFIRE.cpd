@@ -1,0 +1,295 @@
+"Archivos .K_0 / .K_I / .K_J / .K_M — la matriz de rigidez factorizada de SAPFIRE
+'<p>Cuando ETABS / SAFE corren un analisis, el solver SAPFIRE genera
+'una familia de archivos binarios cuyas extensiones empiezan con .K
+'(K_0, K_I, K_J, K_M). Este documento explica que contiene cada uno
+'<b>desde primeros principios</b>: por que K es la matriz fundamental
+'del FEM, por que es esparsa, como se almacena en CSR, y por que
+'conviene factorizarla una sola vez para reusarla en todas las
+'combinaciones de carga.</p>
+'<hr/>
+
+"Cap 0 — La ecuacion fundamental del FEM
+'<p>Despues de ensamblar el modelo, todo FEM lineal se reduce a UNA
+'ecuacion matricial:</p>
+
+'<p style="margin-left:1em;font-size:120%"><b>K · u = F</b></p>
+
+'<p>donde:</p>
+'<p>• <b>K</b> = matriz de rigidez global (n×n)</p>
+'<p>• <b>u</b> = vector de desplazamientos nodales desconocidos (n×1)</p>
+'<p>• <b>F</b> = vector de cargas nodales (n×1)</p>
+'<p>• <b>n</b> = numero total de grados de libertad (DOFs)</p>
+
+'<p>Para un edificio de 10 pisos × 4 vanos × 4 vanos con 6 DOFs por
+'nodo, n puede llegar a 30000–50000. Resolver este sistema es la
+'tarea central del solver. Todo lo demas (ensamblar, post-procesar)
+'es overhead.</p>
+
+'<hr/>
+
+"Cap 1 — Ejemplo minimo: ensamblaje de K para 3 resortes en serie
+'<p>Para entender que es K, armemos un sistema de 3 resortes en
+'serie (4 nodos, 1 GDL por nodo: desplazamiento horizontal):</p>
+
+'<p>nodo1 ──k1── nodo2 ──k2── nodo3 ──k3── nodo4</p>
+
+k1 = 100
+k2 = 200
+k3 = 150
+
+'<p>Cada resorte aporta una matriz local de 2×2. Para el resorte
+'entre nodo i y nodo j:</p>
+
+'<p style="margin-left:1em">k_e = [k; -k | -k; k]</p>
+
+'<p>Ensamblando los 3 resortes en la matriz global de 4×4 (sumando
+'donde se solapan los DOFs compartidos):</p>
+
+K_full = [k1; -k1; 0; 0 | -k1; k1+k2; -k2; 0 | 0; -k2; k2+k3; -k3 | 0; 0; -k3; k3]
+
+'<p>Notar la <b>simetria</b> (K_ij = K_ji) y la presencia de
+'<b>ceros</b> en las posiciones (1,3), (1,4), (2,4), (3,1), (4,1),
+'(4,2). Solo los nodos directamente conectados por un elemento
+'tienen entradas no nulas.</p>
+
+'<hr/>
+
+"Cap 2 — K es siempre ESPARSA (la mayoria son ceros)
+'<p>En el ejemplo arriba, de 16 entradas totales, solo 10 son no
+'nulas. Esto es <b>caracteristico de TODO modelo FEM</b>: cada nodo
+'solo se conecta con un puñado de vecinos directos (5–20 tipicamente).
+'Por lo tanto:</p>
+
+'<p style="margin-left:1em;font-size:110%">nnz(K) ≈ k · n</p>
+
+'<p>donde nnz = "numero de no-zeros" y k es el promedio de vecinos
+'por nodo (constante, no crece con n). Como K es n×n con n^2
+'entradas totales, la <b>fraccion ocupada</b> es:</p>
+
+frac_llena_3R = 10/16
+frac_llena_edif10 = 200000/(50000^2)
+
+'<p>Para un edificio de n=50000 con ~200000 no-zeros, la fraccion
+'ocupada es ridiculamente pequeña: 0.000080 = 0.008 %. Almacenar K
+'como matriz densa requeriria 50000² × 8 bytes = <b>20 GB</b>.
+'Almacenarla como esparsa requiere 200000 × 16 bytes = <b>3.2 MB</b>.
+'Factor de ahorro: 6250×.</p>
+
+'<hr/>
+
+"Cap 3 — Formato CSR (Compressed Sparse Row): los archivos K_0, K_I, K_J
+'<p>SAPFIRE almacena K en formato <b>CSR</b> (Compressed Sparse Row),
+'el estandar de la industria para matrices esparsas. CSR usa
+'<b>3 arrays</b>:</p>
+
+'<p>• <b>values</b> (vector de valores no nulos) → archivo <b>.K_0</b></p>
+'<p>• <b>col_indices</b> (columna de cada valor)  → archivo <b>.K_J</b></p>
+'<p>• <b>row_pointers</b> (donde empieza cada fila) → archivo <b>.K_I</b></p>
+
+"Ejemplo CSR concreto sobre la K de los 3 resortes
+'<p>Tomando solo el triangulo superior (K es simetrica) y los valores
+'no nulos en orden fila-por-fila:</p>
+
+'<p>Fila 0: (0,0)=100  (0,1)=-100</p>
+'<p>Fila 1: (1,1)=300  (1,2)=-200</p>
+'<p>Fila 2: (2,2)=350  (2,3)=-150</p>
+'<p>Fila 3: (3,3)=150</p>
+
+values = [100; -100; 300; -200; 350; -150; 150]
+K_J_idx = [0; 1; 1; 2; 2; 3; 3]
+K_I_idx = [0; 2; 4; 6; 7]
+
+'<p>Lectura del CSR:</p>
+'<p>• values[i] es el i-esimo valor no nulo (en orden fila-por-fila)</p>
+'<p>• K_J_idx[i] es la columna donde vive ese valor</p>
+'<p>• K_I_idx[r] es el indice de values donde empieza la fila r;
+'   la fila r tiene K_I_idx[r+1] - K_I_idx[r] valores no nulos</p>
+
+'<p>Esto permite multiplicar K por un vector u en tiempo O(nnz)
+'en lugar de O(n²) — fundamental para iteraciones de Krylov
+'(CG, GMRES) o productos K·u en analisis no-lineal.</p>
+
+'<hr/>
+
+"Cap 4 — Resolver K·u = F: por que factorizar?
+'<p>Tres opciones para resolver K·u = F:</p>
+
+'<p><b>(a) Inversa explicita</b>: u = K⁻¹·F. Calcular K⁻¹ es O(n³)
+'y K⁻¹ es <b>llena</b> aunque K sea esparsa. PROHIBIDO en FEM:
+'matar la esparsidad multiplica el costo por ~10000x.</p>
+
+'<p><b>(b) Iterativos</b> (Conjugate Gradient, GMRES): O(nnz·iter).
+'Bueno para n muy grande pero requiere precondicionador y puede
+'no converger.</p>
+
+'<p><b>(c) Directa con factorizacion</b>: K = L·Lᵀ (Cholesky) o
+'K = L·U. Una sola vez O(n^1.5) para K esparsa. Despues, cada
+'solve K·u = F es O(nnz·log n). <b>SAPFIRE usa esta.</b></p>
+
+"Por que Cholesky funciona en FEM
+'<p>K en FEM lineal es <b>simetrica positiva-definida</b> (SPD)
+'cuando hay restricciones suficientes (sin modos de cuerpo rigido).
+'Esto permite:</p>
+
+'<p style="margin-left:1em;font-size:120%"><b>K = L · Lᵀ</b></p>
+
+'<p>donde L es <b>triangular inferior</b>. Una vez factorizada,
+'resolver K·u = F se reduce a:</p>
+
+'<p>1) Forward substitution: L · y = F  (sistema triangular inferior, O(nnz))</p>
+'<p>2) Backward substitution: Lᵀ · u = y  (sistema triangular superior, O(nnz))</p>
+
+"Ejemplo simbolico: factorizacion 3×3
+'<p>Tomemos una K simetrica chica:</p>
+
+K3 = [4; 2; 0 | 2; 5; 1 | 0; 1; 3]
+
+'<p>Su factorizacion Cholesky K = L·Lᵀ donde L es triangular inferior
+'tiene la formula:</p>
+
+'<p>L₁₁ = √K₁₁,  L₂₁ = K₂₁/L₁₁,  L₂₂ = √(K₂₂ − L₂₁²),</p>
+'<p>L₃₁ = K₃₁/L₁₁,  L₃₂ = (K₃₂ − L₃₁·L₂₁)/L₂₂,  L₃₃ = √(K₃₃ − L₃₁² − L₃₂²)</p>
+
+L11 = sqrt(4)
+L21 = 2/L11
+L22 = sqrt(5 - L21^2)
+L31 = 0/L11
+L32 = (1 - L31*L21)/L22
+L33 = sqrt(3 - L31^2 - L32^2)
+
+'<p>Entonces:</p>
+
+L = [L11; 0; 0 | L21; L22; 0 | L31; L32; L33]
+
+'<p>Verificacion:</p>
+
+K_check = L*[L11; L21; L31 | 0; L22; L32 | 0; 0; L33]
+
+'<p>Coincide con K3 original. <b>L es triangular inferior</b> y
+'tiene <b>menos no-zeros</b> que la K original (en este caso
+'mantiene 5 entradas no nulas vs las 5 del triangulo inferior
+'de K — para matrices grandes, L tiende a tener mas fill-in,
+'pero con reordering de Cholesky el fill se controla).</p>
+
+'<hr/>
+
+"Cap 5 — El archivo .K_M = factorizacion de Cholesky persistida
+'<p>SAPFIRE guarda L (la triangular inferior) en el archivo
+'<b>.K_M</b>. Junto con K_I y K_J (que describen la estructura de
+'esparsidad), permite reconstruir la factorizacion sin recalcularla.</p>
+
+"Por que esto importa: combinaciones de carga
+'<p>Un edificio tipico tiene <b>20–80 combinaciones</b>
+'(NEC: 1.4D, 1.2D+1.6L, 1.2D+L+SX, 1.2D+L−SX, 1.2D+L+SY,
+'1.2D+L−SY, 0.9D+SX, ... y similares para sismo Y, vertical,
+'viento, etc).</p>
+
+'<p>Sin factorizacion guardada:</p>
+'<p style="margin-left:1em">tiempo_total = N_combos · O(n^1.5) factorizando + O(nnz log n) solve</p>
+
+'<p>Con factorizacion guardada (.K_M):</p>
+'<p style="margin-left:1em">tiempo_total = O(n^1.5) UNA VEZ + N_combos · O(nnz log n)</p>
+
+"Ejemplo numerico de speedup
+n = 30000
+N_combos = 50
+costo_factorizacion = n^1.5
+costo_solve = n*log(n)
+
+t_sin_K_M = N_combos*(costo_factorizacion + costo_solve)
+t_con_K_M = costo_factorizacion + N_combos*costo_solve
+
+speedup = t_sin_K_M/t_con_K_M
+
+'<p>Con n=30000 y 50 combos, el speedup es ~50×. Una corrida que
+'tomaria 50 minutos pasa a 1 minuto. <b>Por eso .K_M existe.</b></p>
+
+'<hr/>
+
+"Cap 6 — Resumen: que contiene cada archivo
+'<p>Mapping completo:</p>
+
+'<p>• <b>.K_0</b> = vector <i>values[]</i> de la matriz K original ensamblada
+'   (no nulos en orden fila-por-fila). El "qué" de la matriz.</p>
+
+'<p>• <b>.K_I</b> = vector <i>row_pointers[]</i> CSR. Indica donde empieza
+'   cada fila dentro de values[]. Tamaño n+1.</p>
+
+'<p>• <b>.K_J</b> = vector <i>col_indices[]</i> CSR. Indica la columna de
+'   cada entrada en values[]. Mismo tamaño que values.</p>
+
+'<p>• <b>.K_M</b> = factorizacion de Cholesky L (o LDLᵀ si K es SPD
+'   con pivoteo). Permite resolver cualquier nuevo F en O(nnz log n)
+'   sin re-ensamblar ni re-factorizar.</p>
+
+'<p>Por eso si los borras, ETABS / SAFE re-ensambla TODO en el
+'proximo Run (ensamblaje + factorizacion). Con los .K_*, solo
+'re-resuelve.</p>
+
+'<hr/>
+
+"Cap 7 — Comparacion con hekatan-fem
+'<p>El solver C++ de hekatan-fem (deform.cpp) usa exactamente la
+'misma estrategia conceptual:</p>
+
+'<p>1) Ensambla K esparsa (Eigen::SparseMatrix&lt;double&gt;)</p>
+'<p>2) Factoriza con Eigen::SimplicialLLT (Cholesky esparso)</p>
+'<p>3) Resuelve K·u = F via solver.solve(F)</p>
+
+'<p>La diferencia con SAPFIRE es que <b>hekatan-fem NO persiste la
+'factorizacion en disco</b> — cada llamada a deform() re-ensambla
+'y re-factoriza desde cero. Esto es aceptable para los ejemplos
+'didacticos del workspace (n &lt; 5000 tipicamente, factorizacion
+'subsegundo). Para edificios reales con 50+ combinaciones, valdria
+'la pena cachear la factorizacion entre llamadas — ese es
+'exactamente el rol que cumplen los archivos .K_M de SAPFIRE.</p>
+
+'<p>Notar tambien que Eigen guarda internamente la matriz en CSC
+'(Compressed Sparse Column) en lugar de CSR; ambos formatos son
+'equivalentes y para K simetrica son iguales modulo transposicion.</p>
+
+'<hr/>
+
+"Cap 8 — Reordering: por que K_M no explota en fill-in
+'<p>Un detalle critico: cuando factorizamos L·Lᵀ = K, la matriz L
+'tiene MAS no-zeros que K (efecto llamado <b>fill-in</b>). Sin
+'precaucion, el fill puede convertir 200000 nnz de K en 5 millones
+'de nnz de L — la factorizacion se vuelve cara.</p>
+
+'<p>SAPFIRE (igual que SuiteSparse, MUMPS, PARDISO) aplica una
+'<b>permutacion de reordering</b> P antes de factorizar:</p>
+
+'<p style="margin-left:1em;font-size:110%">P·K·Pᵀ = L·Lᵀ</p>
+
+'<p>donde P se elige (heuristica AMD = Approximate Minimum Degree
+'o nested dissection) para <b>minimizar el fill</b> de L. Esto
+'tipicamente reduce el fill 10–100× respecto a no reordenar.</p>
+
+'<p>El archivo .K_M de SAPFIRE incluye implicitamente la permutacion
+'P junto con L. Sin ella, los .K_M serian inutilmente grandes y
+'lentos.</p>
+
+'<hr/>
+
+"Cap 9 — Conclusion practica
+'<p>Cuando ves esos 4 archivos en la carpeta de un modelo ETABS /
+'SAFE recien analizado:</p>
+
+'<p>• La <b>geometria</b> y <b>secciones</b> estan en <b>.EDB</b> y <b>.e2k</b></p>
+'<p>• Los <b>resultados</b> (u, F) estan en <b>.OUT</b> (texto) y <b>.Y00–.Y06</b> (binarios)</p>
+'<p>• La <b>matriz K</b> y su <b>factorizacion</b> estan en <b>.K_0 / .K_I / .K_J / .K_M</b></p>
+
+'<p>Estos ultimos son <b>archivos de cache del solver</b>. Si los
+'borras, no pierdes resultados (esos viven en .OUT y .Y*) ni el
+'modelo (vive en .EDB) — solo obligas a SAPFIRE a re-factorizar
+'al proximo Run, lo cual cuesta segundos a minutos segun tamaño.</p>
+
+'<p>Si <b>copias todos juntos</b> a otra maquina, la nueva maquina
+'puede correr nuevas combinaciones casi instantaneamente sin
+'re-factorizar (asumiendo misma version SAPFIRE).</p>
+
+'<p style="margin-top:1em;font-style:italic">Filosoficamente, los .K_*
+'representan el <b>conocimiento condensado</b> de cuanto cuesta
+'deformar el edificio en cada modo. Es el "cerebro numerico" del
+'modelo, separado del modelo geometrico (.EDB) y de la respuesta
+'a cargas concretas (.OUT, .Y*).</p>

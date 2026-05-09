@@ -1,0 +1,450 @@
+"Zapata Lindero — Forma 3: Layered (Shell) + Joint Spring
+'Shell Thick (Mindlin MITC4) — Viga como SHELL + Winkler Joint Spring
+'<hr/>
+'Zapata lindero + viga de amarre (shell) + zapata aislada — malla continua.
+'La viga es un ELEMENTO SHELL, resortes Winkler puntuales en cada nudo.
+
+"1. Datos
+'<b>Zapata de lindero (izquierda):</b>
+'Dimensiones -'Lz1 = 1 m','Bz1 = 1.5 m
+'(Lz1 = 1m en la direccion de la viga de amarre)
+'Columna -'Lc1 = 300 mm
+'Posicion columna (borde izquierdo, centro Y):
+xCol1 = 150 mm','yCol1 = 750 mm
+'<b>Viga de amarre:</b>
+'Longitud -'Lv = 2 m
+'Ancho -'Bv = 300 mm
+'<b>Zapata aislada (derecha):</b>
+'Dimensiones -'Lz2 = 1.5 m','Bz2 = 1.5 m
+'Columna -'Lc2 = 300 mm
+'Posicion columna (centro):
+'(se calcula automaticamente)
+'<b>Propiedades comunes:</b>
+'Espesor zapatas -'tz = 400 mm
+'Espesor viga -'tv = 400 mm
+'Concreto fc = 210 kg/cm2:
+'Modulo elasticidad -'Ec = 22000 MPa','νc = 0.2
+'Modulo de corte -
+Gc = Ec/(2*(1 + νc))
+'Factor corte -'κc = 5/6
+'Subgrade modulus (suelo medio) -'ks = 0.000003 tf/mm/mm
+'<b>Cargas:</b>
+'Columna lindero:
+'Carga vertical -'P1 = 20 tf
+'Momento X -'Mx1 = 0.2 tf*m
+'Momento Y -'My1 = 0.15 tf*m
+'Columna aislada:
+'Carga vertical -'P2 = 20 tf
+'Momento X -'Mx2 = 0.2 tf*m
+'Momento Y -'My2 = 0.15 tf*m
+
+"2. Unidades N-mm
+#hide
+Ew = Ec & MPa','tw = tz & mm','tvw = tv & mm
+Lz1w = Lz1 & m','Lz1w = Lz1w*1000
+Bz1w = Bz1 & m','Bz1w = Bz1w*1000
+Lvw = Lv & m','Lvw = Lvw*1000
+Bvw = Bv & mm
+Lz2w = Lz2 & m','Lz2w = Lz2w*1000
+Bz2w = Bz2 & m','Bz2w = Bz2w*1000
+Lc1w = Lc1 & mm','Lc2w = Lc2 & mm
+xC1w = xCol1 & mm','yC1w = yCol1 & mm
+'Longitud total del modelo
+Ltotal = Lz1w + Lvw + Lz2w
+'Centro zapata 2
+xC2w = Lz1w + Lvw + Lz2w/2
+yC2w = Bz2w/2
+'Ancho maximo (para la malla) - ambas zapatas alineadas al borde inferior (lindero Y=0)
+Bmax = max(Bz1w; Bz2w)
+'Centro de la viga en Y (promedio entre ejes de columnas)
+yviga = (yC1w + yC2w)/2
+Gw = Ew/(2*(1 + νc))
+P1N = P1 & tf','P1N = P1N*9806.65
+P2N = P2 & tf','P2N = P2N*9806.65
+Mx1N = Mx1 & tf*m','Mx1N = Mx1N*9806.65*1000
+My1N = My1 & tf*m','My1N = My1N*9806.65*1000
+Mx2N = Mx2 & tf*m','Mx2N = Mx2N*9806.65*1000
+My2N = My2 & tf*m','My2N = My2N*9806.65*1000
+kwN = ks & tf/mm/mm','kwN = kwN*9806.65
+nd = 3
+
+"3. Malla rectangular (cubre todo el dominio)
+'Discretizacion en X (a lo largo del sistema):
+dex = 200','ne1x = round(Ltotal/dex)
+'Discretizacion en Y (transversal):
+dey = 200','ne1y = round(Bmax/dey)
+nj1x = ne1x + 1','nj1y = ne1y + 1
+nj = nj1x*nj1y','nt = nd*nj
+#hide
+xj = vector(nj)','yj = vector(nj)
+#for j = 0 : ne1y
+	#for i = 0 : ne1x
+		k = j*nj1x + i + 1
+		xj.k = i*dex','yj.k = j*dey
+	#loop
+#loop
+'Clasificar elementos: zapata1, viga, zapata2, o fuera
+ne = ne1x*ne1y
+ej = matrix(ne; 4)
+eType = vector(ne)
+nea = 0
+#for j = 0 : ne1y - 1
+	#for i = 0 : ne1x - 1
+		e = j*ne1x + i + 1
+		bl = j*nj1x + i + 1
+		ej.(e; 1) = bl','ej.(e; 2) = bl + 1
+		ej.(e; 3) = bl + nj1x + 1','ej.(e; 4) = bl + nj1x
+		'Centro del elemento
+		xce = (i + 0.5)*dex','yce = (j + 0.5)*dey
+		'Zapata 1: x < Lz1w, y < Bz1w (alineada a Y=0, lindero)
+		#if xce < Lz1w ∧ yce < Bz1w
+			eType.e = 1','nea = nea + 1
+		'Viga: entre zapatas, centrada en eje de columnas
+		#else if xce ≥ Lz1w ∧ xce ≤ Lz1w + Lvw ∧ abs(yce - yviga) < Bvw/2 + dey/2
+			eType.e = 2','nea = nea + 1
+		'Zapata 2: x > Lz1w+Lvw, y < Bz2w (alineada a Y=0)
+		#else if xce > Lz1w + Lvw ∧ yce < Bz2w
+			eType.e = 3','nea = nea + 1
+		#else
+			eType.e = 0
+		#end if
+	#loop
+#loop
+#show
+'Elementos: zapata1 + viga + zapata2 = 'nea' activos de 'ne
+
+"4. SVG
+#hide
+ws = 350','ksc = ws/Ltotal','ds = 25','hs = Bmax*ksc
+#show
+#svg ws+2*ds hs+2*ds+20
+.text ds+ws/2 ds-8 "Zapata_Medianera_+_Viga_+_Zapata_Centrada" 8 navy middle bold
+'Fondo
+.rect ds ds ws hs whitesmoke 0.2 lightgray 0.5
+'Elementos activos
+#hide
+#for e = 1 : ne
+	#if eType.e > 0
+		i1 = ej.(e; 1)','i3 = ej.(e; 3)
+		ex = xj.i1*ksc+ds','ey = hs-yj.i3*ksc+ds
+		ew = (xj.i3 - xj.i1)*ksc','eh = (yj.i3 - yj.i1)*ksc
+		#if eType.e ≡ 1
+			#show
+			.rect ex ey ew eh lightcyan 0.15 steelBlue 0.3
+			#hide
+		#else if eType.e ≡ 2
+			#show
+			.rect ex ey ew eh lightyellow 0.2 orange 0.5
+			#hide
+		#else
+			#show
+			.rect ex ey ew eh honeydew 0.15 seaGreen 0.3
+			#hide
+		#end if
+	#end if
+#loop
+'Columna 1 (medianera)
+cc1x = xC1w*ksc+ds','cc1y = hs-yC1w*ksc+ds
+cl1 = Lc1w*ksc
+#show
+.rect cc1x-cl1/2 cc1y-cl1/2 cl1 cl1 salmon 0.5 red 2
+.text cc1x cc1y-cl1 "Col1_(med)" 6 darkred middle bold
+'Columna 2 (centrada)
+#hide
+cc2x = xC2w*ksc+ds','cc2y = hs-yC2w*ksc+ds
+cl2 = Lc2w*ksc
+#show
+.rect cc2x-cl2/2 cc2y-cl2/2 cl2 cl2 salmon 0.5 red 2
+.text cc2x cc2y-cl2 "Col2_(cen)" 6 darkred middle bold
+'Labels
+.text ds+Lz1w/2*ksc ds+hs+15 "Zapata_1" 7 steelBlue middle
+.text ds+(Lz1w+Lvw/2)*ksc ds+hs+15 "Viga" 7 orange middle
+.text ds+(Lz1w+Lvw+Lz2w/2)*ksc ds+hs+15 "Zapata_2" 7 seaGreen middle
+#end svg
+#equ
+
+"5. Ensamblaje MITC4
+#hide
+Dbm = Ew*tw^3/(12*(1 - νc^2))*[1; νc; 0|νc; 1; 0|0; 0; (1 - νc)/2]
+Dsm = κc*Gw*tw*[1; 0|0; 1]
+'Viga (mismo espesor pero sin Winkler)
+Dbv = Ew*tvw^3/(12*(1 - νc^2))*[1; νc; 0|νc; 1; 0|0; 0; (1 - νc)/2]
+Dsv = κc*Gw*tvw*[1; 0|0; 1]
+gp = 1/sqr(3)','nk = 12
+dN1x(η) = -(1 - η)/4','dN2x(η) = (1 - η)/4
+dN3x(η) = (1 + η)/4','dN4x(η) = -(1 + η)/4
+dN1y(ξ) = -(1 - ξ)/4','dN2y(ξ) = -(1 + ξ)/4
+dN3y(ξ) = (1 + ξ)/4','dN4y(ξ) = (1 - ξ)/4
+
+K = symmetric(nt)
+#for e = 1 : ne
+	#if eType.e > 0
+		i1 = ej.(e; 1)','i3 = ej.(e; 3)
+		dx = xj.i3 - xj.i1','dy = yj.i3 - yj.i1
+		J11 = dx/2','J22 = dy/2','detJ = J11*J22
+		#if eType.e ≡ 2
+			DbL = Dbv','DsL = Dsv
+		#else
+			DbL = Dbm','DsL = Dsm
+		#end if
+		Ke = symmetric(nk)
+		'Flexion 2x2
+		#for ig = 1 : 4
+			#if ig ≡ 1
+				ξg = -gp','ηg = -gp
+			#else if ig ≡ 2
+				ξg = gp','ηg = -gp
+			#else if ig ≡ 3
+				ξg = gp','ηg = gp
+			#else
+				ξg = -gp','ηg = gp
+			#end if
+			dx1 = dN1x(ηg)/J11','dy1 = dN1y(ξg)/J22
+			dx2 = dN2x(ηg)/J11','dy2 = dN2y(ξg)/J22
+			dx3 = dN3x(ηg)/J11','dy3 = dN3y(ξg)/J22
+			dx4 = dN4x(ηg)/J11','dy4 = dN4y(ξg)/J22
+			Bb = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+			      0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+			      0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+			BtDB = transp(Bb)*DbL*Bb*detJ
+			#for i = 1 : nk
+				#for j = i : nk
+					Ke.(i; j) = Ke.(i; j) + BtDB.(i; j)
+				#loop
+			#loop
+		#loop
+		'Corte MITC4 2x2
+		#for ig = 1 : 4
+			#if ig ≡ 1
+				ξg = -gp','ηg = -gp
+			#else if ig ≡ 2
+				ξg = gp','ηg = -gp
+			#else if ig ≡ 3
+				ξg = gp','ηg = gp
+			#else
+				ξg = -gp','ηg = gp
+			#end if
+			Bs = matrix(2; nk)
+			#for it = 1 : 2
+				#if it ≡ 1
+					ηt = -1
+				#else
+					ηt = 1
+				#end if
+				wt = (1 + ηt*ηg)/2
+				dt1 = dN1x(ηt)/J11','dt2 = dN2x(ηt)/J11
+				dt3 = dN3x(ηt)/J11','dt4 = dN4x(ηt)/J11
+				Nt1 = (1 - ξg)*(1 - ηt)/4','Nt2 = (1 + ξg)*(1 - ηt)/4
+				Nt3 = (1 + ξg)*(1 + ηt)/4','Nt4 = (1 - ξg)*(1 + ηt)/4
+				Bs.(1; 1) = Bs.(1; 1) + wt*dt1','Bs.(1; 3) = Bs.(1; 3) - wt*Nt1
+				Bs.(1; 4) = Bs.(1; 4) + wt*dt2','Bs.(1; 6) = Bs.(1; 6) - wt*Nt2
+				Bs.(1; 7) = Bs.(1; 7) + wt*dt3','Bs.(1; 9) = Bs.(1; 9) - wt*Nt3
+				Bs.(1; 10) = Bs.(1; 10) + wt*dt4','Bs.(1; 12) = Bs.(1; 12) - wt*Nt4
+			#loop
+			#for it = 1 : 2
+				#if it ≡ 1
+					ξt = -1
+				#else
+					ξt = 1
+				#end if
+				wt = (1 + ξt*ξg)/2
+				dt1 = dN1y(ξt)/J22','dt2 = dN2y(ξt)/J22
+				dt3 = dN3y(ξt)/J22','dt4 = dN4y(ξt)/J22
+				Nt1 = (1 - ξt)*(1 - ηg)/4','Nt2 = (1 + ξt)*(1 - ηg)/4
+				Nt3 = (1 + ξt)*(1 + ηg)/4','Nt4 = (1 - ξt)*(1 + ηg)/4
+				Bs.(2; 1) = Bs.(2; 1) + wt*dt1','Bs.(2; 2) = Bs.(2; 2) + wt*Nt1
+				Bs.(2; 4) = Bs.(2; 4) + wt*dt2','Bs.(2; 5) = Bs.(2; 5) + wt*Nt2
+				Bs.(2; 7) = Bs.(2; 7) + wt*dt3','Bs.(2; 8) = Bs.(2; 8) + wt*Nt3
+				Bs.(2; 10) = Bs.(2; 10) + wt*dt4','Bs.(2; 11) = Bs.(2; 11) + wt*Nt4
+			#loop
+			BtDBs = transp(Bs)*DsL*Bs*detJ
+			#for i = 1 : nk
+				#for j = i : nk
+					Ke.(i; j) = Ke.(i; j) + BtDBs.(i; j)
+				#loop
+			#loop
+		#loop
+		'Ensamblar
+		#for i = 1 : 4
+			#for j = i : 4
+				j1 = ej.(e; i)','j2 = ej.(e; j)
+				i1 = nd*(j1 - 1) + 1','i2 = nd*(j2 - 1) + 1
+				kij = submatrix(Ke; nd*(i - 1) + 1; nd*i; nd*(j - 1) + 1; nd*j)
+				#if j1 > j2
+					add(transp(kij); K; i2; i1)
+				#else
+					add(kij; K; i1; i2)
+				#end if
+			#loop
+		#loop
+	#end if
+#loop
+
+"6. Winkler + Cargas
+'Winkler solo en zapatas (NO en viga)
+#for j = 0 : ne1y
+	#for i = 0 : ne1x
+		k = j*nj1x + i + 1
+		xk = xj.k','yk = yj.k
+		'Verificar si esta en zapata 1 o zapata 2
+		enZapata = 0
+		#if xk ≤ Lz1w ∧ yk ≤ Bz1w
+			enZapata = 1
+		#end if
+		#if xk ≥ Lz1w + Lvw ∧ yk ≤ Bz2w
+			enZapata = 1
+		#end if
+		#if enZapata ≡ 1
+			#if i ≡ 0 ∨ i ≡ ne1x
+				txk = dex/2
+			#else
+				txk = dex
+			#end if
+			#if j ≡ 0 ∨ j ≡ ne1y
+				tyk = dey/2
+			#else
+				tyk = dey
+			#end if
+			K.(nd*(k - 1) + 1; nd*(k - 1) + 1) = K.(nd*(k - 1) + 1; nd*(k - 1) + 1) + kwN*txk*tyk
+		#end if
+	#loop
+#loop
+'Fijar nodos fuera del dominio activo
+pen = 10^12
+#for j = 0 : ne1y
+	#for i = 0 : ne1x
+		k = j*nj1x + i + 1
+		xk = xj.k','yk = yj.k
+		'Verificar si el nodo esta en algun elemento activo
+		enDom = 0
+		#if xk ≤ Lz1w + dex/2 ∧ yk ≤ Bz1w + dey/2
+			enDom = 1
+		#end if
+		#if xk ≥ Lz1w - dex/2 ∧ xk ≤ Lz1w + Lvw + dex/2 ∧ abs(yk - Bmax/2) ≤ Bvw/2 + dey
+			enDom = 1
+		#end if
+		#if xk ≥ Lz1w + Lvw - dex/2 ∧ yk ≤ Bz2w + dey/2
+			enDom = 1
+		#end if
+		#if enDom ≡ 0
+			K.(nd*(k - 1) + 1; nd*(k - 1) + 1) = K.(nd*(k - 1) + 1; nd*(k - 1) + 1) + pen
+			K.(nd*(k - 1) + 2; nd*(k - 1) + 2) = K.(nd*(k - 1) + 2; nd*(k - 1) + 2) + pen
+			K.(nd*(k - 1) + 3; nd*(k - 1) + 3) = K.(nd*(k - 1) + 3; nd*(k - 1) + 3) + pen
+		#end if
+	#loop
+#loop
+'Cargas en columnas
+F = vector(nt)
+'Columna 1 (medianera)
+qc1 = P1N/(Lc1w^2)
+#for j = 0 : ne1y
+	#for i = 0 : ne1x
+		k = j*nj1x + i + 1
+		#if abs(xj.k - xC1w) ≤ Lc1w/2 + 1 ∧ abs(yj.k - yC1w) ≤ Lc1w/2 + 1
+			txk = dex','tyk = dey
+			#if i ≡ 0 ∨ i ≡ ne1x
+				txk = dex/2
+			#end if
+			#if j ≡ 0 ∨ j ≡ ne1y
+				tyk = dey/2
+			#end if
+			F.(nd*(k - 1) + 1) = F.(nd*(k - 1) + 1) - qc1*txk*tyk
+		#end if
+	#loop
+#loop
+'Columna 2 (centrada)
+qc2 = P2N/(Lc2w^2)
+#for j = 0 : ne1y
+	#for i = 0 : ne1x
+		k = j*nj1x + i + 1
+		#if abs(xj.k - xC2w) ≤ Lc2w/2 + 1 ∧ abs(yj.k - yC2w) ≤ Lc2w/2 + 1
+			txk = dex','tyk = dey
+			#if i ≡ 0 ∨ i ≡ ne1x
+				txk = dex/2
+			#end if
+			#if j ≡ 0 ∨ j ≡ ne1y
+				tyk = dey/2
+			#end if
+			F.(nd*(k - 1) + 1) = F.(nd*(k - 1) + 1) - qc2*txk*tyk
+		#end if
+	#loop
+#loop
+
+'Momentos en columna 1 (DOF θx=2, θy=3 del nudo mas cercano):
+kc1 = round(yC1w/dey)*nj1x + round(xC1w/dex) + 1
+F.(nd*(kc1 - 1) + 2) = F.(nd*(kc1 - 1) + 2) + Mx1N
+F.(nd*(kc1 - 1) + 3) = F.(nd*(kc1 - 1) + 3) + My1N
+'Momentos en columna 2:
+kc2 = round(yC2w/dey)*nj1x + round(xC2w/dex) + 1
+F.(nd*(kc2 - 1) + 2) = F.(nd*(kc2 - 1) + 2) + Mx2N
+F.(nd*(kc2 - 1) + 3) = F.(nd*(kc2 - 1) + 3) + My2N
+
+"7. Solucion
+#show
+Z = clsolve(K; F)
+
+"8. Deflexion (mm)
+#hide
+'Extraer deflexion de cada nudo (parte real):
+wn = vector(nj)','wmin = 0
+#for k = 1 : nj
+    wk = re(Z.(nd*(k - 1) + 1))
+    wn.k = wk
+    #if wk < wmin
+        wmin = wk
+    #end if
+#loop
+'Conectividad solo de elementos activos para PlotMap:
+ej_act = matrix(nea; 4)','wn_mm = vector(nj)
+ia = 0
+#for e = 1 : ne
+    #if eType.e > 0
+        ia = ia + 1
+        ej_act.(ia; 1) = ej.(e; 1)','ej_act.(ia; 2) = ej.(e; 2)
+        ej_act.(ia; 3) = ej.(e; 3)','ej_act.(ia; 4) = ej.(e; 4)
+    #end if
+#loop
+#for k = 1 : nj
+    wn_mm.k = wn.k
+#loop
+#show
+'<b>Deflexion w (mm):</b>
+$PlotMap{xj; yj; wn_mm; ej_act}
+'w_min = 'round(wmin*10000)/10000' mm
+
+"9. Presion de contacto (tonf/m2)
+#hide
+qn = vector(nj)','qmax = 0
+#for k = 1 : nj
+    xk = xj.k','yk = yj.k
+    enZ = 0
+    #if xk ≤ Lz1w + 1 ∧ yk ≤ Bz1w + 1
+        enZ = 1
+    #end if
+    #if xk ≥ Lz1w + Lvw - 1 ∧ yk ≤ Bz2w + 1
+        enZ = 1
+    #end if
+    #if enZ ≡ 1 ∧ abs(wn.k) < 100
+        qn.k = kwN*wn.k/9806.65*10^6
+        #if abs(qn.k) > abs(qmax)
+            qmax = qn.k
+        #end if
+    #end if
+#loop
+#show
+'<b>Presion de contacto q (tonf/m2):</b>
+$PlotMap{xj; yj; qn; ej_act}
+'q_max = 'round(qmax*100)/100' tonf/m2
+
+"10. Corte longitudinal
+#hide
+wcut = vector(nj1x)','xcut = vector(nj1x)
+jmid = round(yC1w/dey)
+#for i = 1 : nj1x
+    k = jmid*nj1x + i
+    xcut.i = xj.k','wcut.i = wn.k
+#loop
+PlotWidth = 350','PlotHeight = 150
+#show
+'w(x) corte por eje columna 1:
+$Chart{xcut; wcut @ title=Deflexion w(x) corte longitudinal : xlabel=x (mm) : ylabel=w (mm)}

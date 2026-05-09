@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/partials/head.html"></div>
+  <title>Calcpad-Symbolic — Simbólico + Numérico + FEM para ingeniería</title>
+  <meta name="description" content="Plataforma abierta de cálculos simbólicos, numéricos y elementos finitos. Parser C# (Blazor/WASM) + solver FEM C++/WASM.">
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+
+  <section class="hero">
+    <div class="container">
+      <h1>Calcpad-Symbolic</h1>
+      <p class="lead">
+        Cálculos de ingeniería abiertos: álgebra simbólica, matrices con unidades,
+        elementos finitos y visualización 3D — todo en un solo editor.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="/editor/">Abrir editor online</a>
+        <a class="btn btn-ghost" href="/downloads.html">Descargar desktop</a>
+        <a class="btn btn-ghost" href="/examples.html">Ver ejemplos</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container">
+      <h2>¿Qué resuelve?</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="icon">∑</div>
+          <h3>Simbólico</h3>
+          <p>Derivadas, integrales, simplificación vía AngouriMath y fallback Maxima.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">⟦ ⟧</div>
+          <h3>Matrices con unidades</h3>
+          <p>Álgebra lineal con coherencia dimensional (kN, MPa, m, in…).</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">▲</div>
+          <h3>FEM (C++/WASM)</h3>
+          <p>Pórticos 3D, placas Q4/DKQ, sólidos C3D8. Validado vs SAP2000.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">📊</div>
+          <h3>Visualización</h3>
+          <p>$Draw, $Chart, $Fem2D/3D, $Map — salida HTML interactiva.</p>
+        </div>
+      </div>
+      <p><a href="/features.html">Lista completa de características →</a></p>
+    </div>
+  </section>
+
+  <div data-include="/partials/footer.html"></div>
+  <script src="/js/include.js"></script>
+</body>
+</html>

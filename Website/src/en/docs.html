@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/en/partials/head.html"></div>
+  <title>Docs — Calcpad-Symbolic</title>
+</head>
+<body>
+  <div data-include="/en/partials/header.html"></div>
+
+  <section class="block">
+    <div class="container">
+      <h1>Documentation</h1>
+      <p class="muted">Quick reference of language and directives.</p>
+
+      <h2>First example</h2>
+      <pre class="code">"Example — simply supported beam
+E = 200000  'MPa
+I = 833.33  'cm^4
+L = 6       'm
+q = 10      'kN/m
+
+'Maximum midspan deflection:
+#deq δ_max = 5*q*L^4/(384*E*I)
+δ_max = 5*q*L^4/(384*E*I)
+
+$Draw{line, 0, 0, L, 0, #27ae60, 2
+  : arrow, 1, 1, 1, 0.2, #e74c3c, 2
+  @ w=600 : h=200 : title=Simple beam}</pre>
+
+      <h2>Main directives</h2>
+      <ul>
+        <li><code>"Title"</code> — section heading</li>
+        <li><code>'comment</code> — paragraph text</li>
+        <li><code>#deq expr @@(N)</code> — displayed equation with numbering</li>
+        <li><code>#sym … #end sym</code> — symbolic block</li>
+        <li><code>#function f(x;y) … #end function</code> — user function</li>
+        <li><code>#hide</code> / <code>#show</code> — hide/show definitions</li>
+        <li><code>#for i = 1 : n … #loop</code> — loop</li>
+      </ul>
+
+      <h2>More</h2>
+      <ul>
+        <li><a href="https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/blob/main/README.md" target="_blank" rel="noopener">Full README</a></li>
+        <li><a href="https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/blob/main/Symbolic.Cli/doc/HELP.TXT" target="_blank" rel="noopener">CLI HELP.TXT</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <div data-include="/en/partials/footer.html"></div>
+  <script src="/js/include.js"></script>
+</body>
+</html>

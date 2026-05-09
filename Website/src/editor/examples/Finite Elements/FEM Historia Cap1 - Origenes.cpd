@@ -1,0 +1,230 @@
+"Capitulo 1: Origenes del Metodo de Elementos Finitos
+"De Euler (1744) al primer elemento finito (1956)
+'<hr/>
+
+"1.1 El problema original: La viga de Euler (1744)
+'<p>Leonhard Euler en 1744 resolvio el problema de la viga elastica.</p>
+'<p>Encontro una ecuacion diferencial que describe como se dobla:</p>
+
+#deq E*I*d^4*v/d*x^4 = q(x)
+
+'<p>E = modulo de elasticidad (rigidez del material)</p>
+'<p>I = momento de inercia (geometria de la seccion)</p>
+'<p>v = deflexion vertical (lo que buscamos)</p>
+'<p>q = carga distribuida</p>
+
+'<p>Para casos simples, Euler podia resolverla a mano:</p>
+
+$Struct{pin,0,0 : roller,10,0 : beam,0,0,10,0,Viga de Euler : node,0,0,A : node,10,0,B : label,5,2,q (carga uniforme) : dim,0,0,10,0,L @ title=Viga de Euler con carga uniforme q : w=600 : h=200}
+
+'<h4>Solucion exacta de Euler para viga SA con carga uniforme:</h4>
+E_1 = 200000
+I_1 = 5*10^(-5)
+L_1 = 6
+q_1 = 10
+
+#deq v(x) = q*x/(24*E*I)*(L^3 - 2*L*x^2 + x^3)
+#deq v_{max} = 5*q*L^4/(384*E*I)
+
+v_max1 = 5*q_1*L_1^4/(384*E_1*I_1)
+
+#hide
+n = 50
+xe = vector(n)
+ve = vector(n)
+#for i = 1 : n
+    xe.(i) = (i - 1)*L_1/(n - 1)
+    ve.(i) = q_1*xe.(i)/(24*E_1*I_1)*(L_1^3 - 2*L_1*xe.(i)^2 + xe.(i)^3)
+#loop
+#show
+
+$Chart{xe; ve @ title=Solucion exacta de Euler: deflexion v(x) : xlabel=x (m) : ylabel=v (m)}
+
+'<p>Euler podia resolver esto porque la geometria es simple (rectangular).</p>
+'<p>Pero que pasa con formas complicadas? Ahi empezo el problema...</p>
+
+'<hr/>
+"1.2 Lord Rayleigh (1877): Metodo de la Energia
+'<p>Rayleigh tuvo una idea brillante: en vez de resolver la ecuacion diferencial,</p>
+'<p>MINIMIZAR la energia. La estructura se deforma de la manera que minimiza</p>
+'<p>la energia total = energia interna - trabajo externo.</p>
+
+#deq Π = U - W
+
+'<p>U = energia de deformacion (la estructura almacena energia al deformarse)</p>
+'<p>W = trabajo de las fuerzas externas</p>
+
+'<p>Para una viga:</p>
+#deq U = 1/2*∫_{0}^{L} E*I*(d^2*v/d*x^2)^2*d*x
+#deq W = ∫_{0}^{L} q*v*d*x
+
+'<p>La idea de Rayleigh: ADIVINAR la forma de v(x) con una funcion simple</p>
+'<p>y minimizar la energia. No es exacto, pero es muy buena aproximacion!</p>
+
+'<h4>Ejemplo: Adivinar v(x) = C*sin(pi*x/L)</h4>
+'<p>Esta funcion cumple: v(0)=0 y v(L)=0 (condiciones de apoyo).</p>
+'<p>Solo tenemos que encontrar C (la amplitud).</p>
+
+#hide
+xr = vector(n)
+vr_shape = vector(n)
+#for i = 1 : n
+    xr.(i) = (i - 1)*L_1/(n - 1)
+    vr_shape.(i) = sin(180*xr.(i)/L_1)
+#loop
+#show
+
+$Chart{xr; vr_shape @ title=Funcion adivinada: sin(pi*x/L) : xlabel=x (m) : ylabel=forma (normalizada)}
+
+'<p>Minimizando la energia, encontramos C:</p>
+#deq C = q*L^4/(π^4*E*I)
+
+C_r = q_1*L_1^4/(π^4*E_1*I_1)
+
+'Deflexion maxima por Rayleigh:
+v_max_rayleigh = C_r
+
+'Comparacion con Euler exacto:
+error_rayleigh = (v_max_rayleigh - v_max1)/v_max1*100
+
+'<p>Error de solo ~0.4%! Rayleigh adivino la forma y la energia hizo el resto.</p>
+
+#hide
+vr = vector(n)
+#for i = 1 : n
+    vr.(i) = C_r*sin(180*xr.(i)/L_1)
+#loop
+#show
+
+$Chart{xe; ve; xr; vr @ title=Euler exacto vs Rayleigh aproximado : xlabel=x (m) : ylabel=v (m) : labels=Euler (exacto),Rayleigh (aproximado)}
+
+'<p>Las dos curvas son casi identicas! El metodo de la energia funciona.</p>
+
+'<hr/>
+"1.3 Ritz (1909): Mejorar la aproximacion
+'<p>Walter Ritz mejoro la idea de Rayleigh: en vez de UNA funcion,</p>
+'<p>usar VARIAS funciones sumadas con coeficientes:</p>
+
+#deq v(x) = a_1*φ_1(x) + a_2*φ_2(x) + a_3*φ_3(x) + ...
+
+'<p>Cada phi es una funcion base (como sin(n*pi*x/L) para n=1,2,3...).</p>
+'<p>Mas funciones = mejor aproximacion.</p>
+
+'<h4>Ejemplo: Ritz con 1, 2 y 3 terminos</h4>
+#hide
+v_1t = vector(n)
+v_2t = vector(n)
+v_3t = vector(n)
+'Coeficientes de la serie (solucion de Navier):
+c1 = 4*q_1*L_1^4/(π^5*E_1*I_1)
+c3 = 4*q_1*L_1^4/(3^5*π^5*E_1*I_1)
+c5 = 4*q_1*L_1^4/(5^5*π^5*E_1*I_1)
+#for i = 1 : n
+    v_1t.(i) = c1*sin(180*xr.(i)/L_1)
+    v_2t.(i) = c1*sin(180*xr.(i)/L_1) + c3*sin(3*180*xr.(i)/L_1)
+    v_3t.(i) = c1*sin(180*xr.(i)/L_1) + c3*sin(3*180*xr.(i)/L_1) + c5*sin(5*180*xr.(i)/L_1)
+#loop
+#show
+
+$Chart{xe; ve; xr; v_1t; xr; v_2t; xr; v_3t @ title=Ritz: mas terminos = mejor aproximacion : xlabel=x (m) : ylabel=v (m) : labels=Exacto,1 termino,2 terminos,3 terminos}
+
+'<p>Con 3 terminos ya es practicamente exacto!</p>
+'<p>Pero esto solo funciona si las funciones phi cubren toda la estructura.</p>
+'<p>Para formas complicadas no hay funciones phi simples...</p>
+
+'<hr/>
+"1.4 Galerkin (1915): Otro camino al mismo resultado
+'<p>Boris Galerkin propuso: en vez de minimizar energia,</p>
+'<p>hacer que el ERROR sea cero en promedio.</p>
+
+'<p>Si la ecuacion real es EI*v'''' = q, y nuestra aproximacion da un residuo R:</p>
+#deq R = E*I*v''''_{aprox} - q
+
+'<p>Galerkin dice: el residuo ponderado por las funciones base debe ser cero:</p>
+#deq ∫_{0}^{L} R*φ_i*d*x = 0
+
+'<p>Esto da el MISMO resultado que Rayleigh-Ritz para problemas de elasticidad!</p>
+'<p>Son dos caminos diferentes que llegan al mismo lugar.</p>
+
+'<hr/>
+"1.5 Courant (1943): Dividir en TRIANGULOS
+'<p>Richard Courant tuvo la idea clave: en vez de funciones que cubren</p>
+'<p>TODA la estructura, dividir en pedazos pequenos (triangulos) y</p>
+'<p>usar funciones simples en cada pedazo.</p>
+
+'<p>Esto es el NACIMIENTO del concepto de elemento finito!</p>
+
+$Struct{node,0,0,1 : node,5,0,2 : node,2.5,3,3 : beam,0,0,5,0,elem 1 : beam,5,0,2.5,3,elem 2 : beam,2.5,3,0,0,elem 3 : label,2.5,0.8,Triangulo de Courant @ title=Courant 1943: dividir en triangulos : w=500 : h=250}
+
+'<p>Dentro de cada triangulo, el desplazamiento es LINEAL (plano).</p>
+'<p>Las funciones de forma son simples porque cada elemento es pequeno.</p>
+'<p>Muchos elementos pequenos = buena aproximacion de formas complicadas.</p>
+
+'<hr/>
+"1.6 Turner, Clough, Martin y Topp (1956): El primer FEM real
+'<p>Ingenieros de Boeing necesitaban analizar alas de aviones.</p>
+'<p>Combinaron las ideas de Ritz + Courant y crearon el primer programa.</p>
+'<p>Dividieron el ala en triangulos, calcularon rigidez de cada uno,</p>
+'<p>y ensamblaron todo en una gran ecuacion K*u = F.</p>
+
+'<p>El nombre "Finite Element Method" lo puso Ray Clough en 1960.</p>
+
+'<hr/>
+"1.7 Como funciona FEM: el proceso completo
+
+'<p>1. DIVIDIR la estructura en elementos (barras, triangulos, quads)</p>
+'<p>2. Para cada elemento: calcular su matriz de RIGIDEZ K usando funciones de forma</p>
+'<p>3. ENSAMBLAR todas las K en una K global grande</p>
+'<p>4. Aplicar condiciones de FRONTERA (apoyos)</p>
+'<p>5. RESOLVER K*u = F para encontrar desplazamientos u</p>
+'<p>6. Calcular esfuerzos y reacciones</p>
+
+'<h4>Ejemplo: 2 barras — el FEM mas simple posible</h4>
+
+$Struct{fixed,0,0 : bar,0,0,4,0,Elem 1 (k1) : bar,4,0,8,0,Elem 2 (k2) : node,0,0,1 (fijo) : node,4,0,2 : node,8,0,3 : force,8,0,right,F=100 @ title=FEM con 2 barras: ensamblar K1+K2 y resolver : w=600 : h=180}
+
+'Paso 1: Rigidez de cada elemento
+E_fem = 200000
+A_fem = 0.001
+L_fem = 4
+k_fem = E_fem*A_fem/L_fem
+
+'Paso 2: K local de cada barra (2x2)
+'<p>K1 = k*[1,-1; -1,1] para nodos (1,2)</p>
+'<p>K2 = k*[1,-1; -1,1] para nodos (2,3)</p>
+
+'Paso 3: Ensamblar K global (nodo 1 fijo, quedan 2 DOF)
+K_fem = [2*k_fem; -k_fem | -k_fem; k_fem]
+F_fem = [0; 100]
+
+'Paso 4: Resolver
+u_fem = lsolve(K_fem; F_fem)
+u2_fem = u_fem.(1)
+u3_fem = u_fem.(2)
+
+'Paso 5: Fuerzas internas
+N1_fem = k_fem*u2_fem
+N2_fem = k_fem*(u3_fem - u2_fem)
+'Reaccion en apoyo:
+R_fem = -N1_fem
+
+#hide
+xfem = [0; 4; 8]
+ufem = [0; u2_fem; u3_fem]
+#show
+
+$Chart{xfem; ufem @ title=Resultado FEM: desplazamiento en cada nodo : xlabel=x (m) : ylabel=u (mm)}
+
+'<p>Eso es TODO el metodo de elementos finitos:</p>
+'<p>Dividir → Rigidez → Ensamblar → Resolver → Resultados</p>
+
+'<hr/>
+"Resumen historico
+'<p>1744 — Euler: ecuacion de la viga (solucion exacta para casos simples)</p>
+'<p>1877 — Rayleigh: minimizar energia (aproximacion con 1 funcion)</p>
+'<p>1909 — Ritz: varias funciones base (mejor aproximacion)</p>
+'<p>1915 — Galerkin: residuos ponderados (mismo resultado que Ritz)</p>
+'<p>1943 — Courant: dividir en triangulos (el concepto clave)</p>
+'<p>1956 — Turner/Clough/Boeing: primer FEM computacional</p>
+'<p>1960 — Clough: inventa el nombre "Finite Element Method"</p>
+'<p>Hoy — SAP2000, ETABS, ANSYS, OpenSees: todos usan FEM</p>

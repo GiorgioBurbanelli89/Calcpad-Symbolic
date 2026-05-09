@@ -1,0 +1,19 @@
+'Ejemplo 22: Vectores y valores propios: Análisis modal pseudotridimensional
+'Matriz de masa condensada de un edificio tridimensional considerando excentricidad accidental.
+M_m = [9.664; 0; 0; 0; 0; 0; -3.383; 0; 0|0; 8.102; 0; 0; 0; 0; 0; -2.836; 0|0; 0; 2.956; 0; 0; 0; 0; 0; -1.035|0; 0; 0; 9.664; 0; 0; 5.799; 0; 0|0; 0; 0; 0; 8.102; 0; 0; 4.861; 0|0; 0; 0; 0; 0; 2.956; 0; 0; 0.887|-3.383; 0; 0; 5.799; 0; 0; 160.097; 0; 0|0; -2.836; 0; 0; 4.861; 0; 0; 134.217; 0|0; 0; -1.035; 0; 0; 0.887; 0; 0; 21.569]
+'Matriz de rigidez de un edificio tridimensional:
+K_EDIFICIO = [9256.99; -5773.83; 443.906; 0; 0; 0; 0; 0; 0|-5773.83; 8616.398; -3449.302; 0; 0; 0; 0; 0; 0|443.906; -3449.302; 3029.824; 0; 0; 0; 0; 0; 0|0; 0; 0; 9083.663; -5751.948; 619.8; -567.114; 2383.074; 0|0; 0; 0; -5751.948; 8431.724; -3425.93; 2383.074; -12482.682; 0|0; 0; 0; 619.8; -3425.93; 2852.154; -1859.4; 10277.79; 0|0; 0; 0; -567.114; 2383.074; -1859.4; 330271.812; -204010.022; 11016.049|0; 0; 0; 2383.074; -12482.682; 10277.79; -204010.022; 282946.888; -73087.32|0; 0; 0; 0; 0; 0; 11016.049; -73087.32; 62784.73]
+'Análisis modal:
+
+"Obtención de vectores y valores propios de manera muy sencilla con ayuda de Mathcad Prime. La diferencia con los resultados de ETABS se debe a que se realizo un análisis pseudotridimensional. Conozca como formular la matriz de rigidez tridimensional "exacta" en nuestro curso: ANALISIS MATRICIAL DE ESTRUCTURAS CON MATHCAD PRIME.
+'Solución del problema característico:
+λ = (M_m^(-1))*K_EDIFICIO
+w2 = sort(eigenvalues(λ))
+'Frecuencias y periodos:
+w = ?^(1/w2)
+T_e = 2*π/w
+'Normalización de modos con respecto a la masa:
+j = 1 : 9
+'matcol(ϕ; j) = eigenvec(λ; w2.j)
+'matcol(ϕ_n; j) = 'matcol(ϕ; j)/?^(1/transp(('matcol(ϕ; j)))*M_m*'matcol(ϕ; j))
+ϕ_n

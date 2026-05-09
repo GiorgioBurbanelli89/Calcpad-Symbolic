@@ -1,0 +1,7 @@
+services:
+  website:
+    build: .
+    image: calcpad-symbolic-website:latest
+    ports:
+      - "8080:80"
+    restart: unless-stopped

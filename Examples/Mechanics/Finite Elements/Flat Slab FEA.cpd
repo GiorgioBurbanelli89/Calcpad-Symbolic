@@ -91,41 +91,38 @@ d = 10
 h = l_b/l_a*w
 r = 0.04*k
 #show
-'<svg viewbox="'-d' '-d' 'w + 2*d' 'h + 2*d'" xmlns="http://www.w3.org/2000/svg" version="1.1" style=" font-family: Segoe UI; font-size:5px; width:'w'pt; height:'h'pt">
-'<style>.joint{fill:orangeRed;} .support{stroke:red; stroke-width:1; fill:lightpink;} .element{stroke:seaGreen; stroke-width:1; fill:lime; fill-opacity:0.1; stroke-opacity:0.5}</style>
-'<rect x="'0'" y="'0'" width="'w'" height="'h'" style="fill:yellow; fill-opacity:0.2" />
+'En #svg el `y` del .text es la BASELINE (estándar SVG); para centrar
+'verticalmente sumamos size/3 al y. font-size pequeño aquí porque la
+'malla puede ser más densa que en Rectangular Slab.
+
+#svg w+2*d h+2*d
+.rect 0 0 w h yellow 0.2 goldenRod 0.5
 #for e = 1 : n_e
-	#hide
-	j_e = j_e(e)
-	j1 = j_e.1
+	j_e_v = j_e(e)
+	j1 = j_e_v.1
 	x1 = x_j.j1*k
 	y1 = y_j.j1*k
-	j2 = j_e.3
+	j2 = j_e_v.3
 	x2 = x_j.j2*k
 	y2 = y_j.j2*k
 	x = (x1 + x2)/2
-	y = (y1 + y2)/2
-	#show
-	'<text x="'x'" y="'h - y'" text-anchor="middle">'e'</text>
-	'<rect x="'x1'" y="'h - y2'" width="'x2 - x1'" height="'y2 - y1'" class="element" />
+	y = h - (y1 + y2)/2
+	.rect x1 h-y2 x2-x1 y2-y1 lime 0.1 seaGreen 1
+	.text x y+2 e 7 black middle
 #loop
 #for i = 1 : n_s
 	j = s_j.i
-	#hide
 	x = x_j.j*k
 	y = h - y_j.j*k
-	#show
-	'<circle cx="'x'" cy="'y'" r="'2*r'" class="support"/>
+	.circle x y 2*r lightpink 1 red 1
 #loop
 #for j = 1 : n_j
-	#hide
 	x = x_j.j*k
 	y = h - y_j.j*k
-	#show
-	'<circle cx="'x'" cy="'y'" r="'r'" class="joint" />
-	'<text x="'x + 2*r'" y="'y - r'" text-anchor="start">'j'</text>
+	.circle x y r orangeRed 1
+	.text x+2*r y-r j 6 navy start
 #loop
-'</svg>
+#end svg
 #equ
 '<h4>Finite element formulation</h4>
 '<p><b>Shape functions</b></p>

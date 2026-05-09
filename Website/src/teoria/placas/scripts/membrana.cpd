@@ -1,0 +1,80 @@
+"Membrana — Estado Plano de Tensión
+'Hipótesis:
+'  (1) El espesor t es pequeño respecto a las dimensiones en el plano.
+'  (2) Las cargas son paralelas al plano (sin carga transversal).
+'  (3) Solo se consideran tensiones en el plano: sigma_x, sigma_y, tau_xy.
+'  (4) sigma_z = tau_xz = tau_yz = 0.
+
+"Campo de desplazamientos
+'Dos grados de libertad por punto: u, v. No hay w.
+#deq u(x; y) = u(x; y)
+#deq v(x; y) = v(x; y)
+
+"Deformaciones
+'Solo las componentes en el plano:
+#deq ε_x = du/dx
+#deq ε_y = dv/dy
+#deq γ_xy = du/dy + dv/dx
+
+"Matriz constitutiva [D] — tension plana
+E = 200000
+ν = 0.3
+t = 0.01
+d_11 = E/(1 - ν^2)
+d_12 = ν*E/(1 - ν^2)
+d_33 = E/(2*(1 + ν))
+D = [d_11; d_12; 0 | d_12; d_11; 0 | 0; 0; d_33]
+
+"Relaciones tensión-deformación
+#deq σ = D*ε
+
+"Matriz [B] para elemento triangular CST
+'Coordenadas de un triangulo ejemplo:
+x_1 = 0
+y_1 = 0
+x_2 = 4
+y_2 = 0
+x_3 = 2
+y_3 = 3
+b_1 = y_2 - y_3
+c_1 = x_3 - x_2
+b_2 = y_3 - y_1
+c_2 = x_1 - x_3
+b_3 = y_1 - y_2
+c_3 = x_2 - x_1
+A_e = abs(x_1*(y_2-y_3) + x_2*(y_3-y_1) + x_3*(y_1-y_2))/2
+B = (1/(2*A_e))*[b_1;0;b_2;0;b_3;0 | 0;c_1;0;c_2;0;c_3 | c_1;b_1;c_2;b_2;c_3;b_3]
+
+"Matriz de rigidez elemental
+'K_e = t * A * B^T * D * B (constante para CST):
+K_e = t*A_e*transp(B)*D*B
+n_rows(K_e)
+n_cols(K_e)
+
+"Aplicaciones
+'• Muros sometidos a carga en el plano
+'• Losas de cimentación apoyadas en suelo (acciones horizontales)
+'• Diafragmas rígidos en edificios
+'• Elementos Q4 (cuadrilateros 4 nodos) para mayor precision
+
+"Derivación simbólica de las funciones de forma CST
+'N_i = L_i = (a_i + b_i*x + c_i*y)/(2*A). Derivadas dN_i/dx = b_i/(2*A):
+#sym
+diff((a_1 + b_1*x + c_1*y)/(2*A_e); x)
+#end sym
+#sym
+diff((a_1 + b_1*x + c_1*y)/(2*A_e); y)
+#end sym
+
+'Las derivadas son CONSTANTES en todo el triangulo (deformacion constante).
+'Esto es lo que da el nombre CST = Constant Strain Triangle.
+
+"Ejemplo simbolico — deformacion para u(x,y) = u0 + u1*x + u2*y
+#sym
+diff(u_0 + u_1*x + u_2*y; x)
+#end sym
+
+"Diferencia con tension plana vs deformacion plana
+'Tension plana:       sigma_z = 0 (placas delgadas cargadas en su plano)
+'Deformacion plana:   epsilon_z = 0 (tuneles, presas, muros de contencion)
+'La matriz [D] cambia entre los dos casos.
