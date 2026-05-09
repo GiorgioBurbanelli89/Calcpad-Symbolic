@@ -974,29 +974,34 @@ namespace Calcpad.Wpf
                         //   • INSIDE a text region of same quote type → literal
                         //     escaped quote. Append both chars; stay in text mode.
                         //   • OUTSIDE any region (default expression mode) → user
-                        //     typo for "close expression + re-enter text". Skip
-                        //     the pair entirely; switch to text mode for what
-                        //     follows.
+                        //     typo for "close expression + re-enter text". Both
+                        //     chars are RENDERED as part of the new text region
+                        //     (so the editor still shows them — just without the
+                        //     red Variable error on whatever follows).
                         var nextChar = (i + 1 < text.Length) ? text[i + 1] : '\0';
                         if ((c == '\'' || c == '"') && nextChar == c)
                         {
                             if (_state.TextComment == c)
                             {
                                 // Inside-text escape → emit both chars as part of
-                                // the comment region.
+                                // the active comment region.
                                 _builder.Append(c);
                                 _builder.Append(c);
                             }
                             else if (_state.TextComment == '\0')
                             {
-                                // Outside any text region. Flush whatever was
-                                // being built, then ENTER text mode for content
-                                // that follows the pair.
+                                // Outside any text region. Flush the pending Run
+                                // (e.g. "#deqξ"), then start a NEW comment region
+                                // and put both '' chars at its start so the user
+                                // sees them in the editor as the visual delimiter
+                                // they typed.
                                 Append(_state.CurrentType);
                                 _state.TextComment = c;
                                 _state.TagComment = c == '\'' ? '"' : '\'';
                                 _state.IsUnits = false;
                                 _state.CurrentType = Types.Comment;
+                                _builder.Append(c);
+                                _builder.Append(c);
                             }
                             else
                             {
