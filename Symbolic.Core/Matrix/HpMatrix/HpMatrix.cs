@@ -3607,10 +3607,28 @@ namespace Calcpad.Core
         internal static HpMatrix CreateFromRows(HpVector[] rows, int n)
         {
             var m = rows.Length;
-            var u = rows[0].Units;
+            // Pick a reference unit: prefer the LAST non-null unit (matches the
+            // "unit on last element" syntax that Calcpad's vector/matrix
+            // literals use). Falls back to the first row's unit, which may be
+            // null (= unitless matrix).
+            Unit u = null;
+            for (int i = m - 1; i >= 0; --i)
+            {
+                if (rows[i].Units is not null) { u = rows[i].Units; break; }
+            }
+            if (u is null) u = rows[0].Units;
             var M = new HpMatrix(m, n, u);
             for (int i = m - 1; i >= 0; --i)
             {
+                // If this row has no unit but the matrix does, adopt the matrix's
+                // unit silently (the user wrote "[1000; -500| -500; 1500kN/m]"
+                // expecting last-element-unit propagation across rows too).
+                if (u is not null && rows[i].Units is null)
+                {
+                    rows[i].Units = u;
+                    M.SetRow(i, rows[i]);
+                    continue;
+                }
                 var d = Unit.Convert(u, rows[i].Units, ',');
                 if (d == 1d)
                     M.SetRow(i, rows[i]);
