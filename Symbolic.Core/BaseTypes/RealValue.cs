@@ -83,6 +83,10 @@ namespace Calcpad.Core
 
         public int CompareTo(RealValue other)
         {
+            // Zero is the additive identity — comparing against 0 is well-defined
+            // regardless of units (e.g., "5 m > 0" or "0 < 3 kN/m²").
+            if (D == 0d || other.D == 0d)
+                return D.CompareTo(other.D);
             var d = Unit.Convert(Units, other.Units, ',');
             return D.CompareTo(other.D * d);
         }
@@ -216,37 +220,45 @@ namespace Calcpad.Core
             return new(c, uc, isUnit);
         }
 
+        // Zero is compatible with any unit for comparisons — "5 m > 0" makes sense
+        // regardless of what 0 is (additive identity has no inherent unit).
         public static RealValue operator ==(RealValue a, RealValue b) =>
-            a.D.AlmostEquals(b.D * Unit.Convert(a.Units, b.Units, '≡')) ? One : Zero;
+            (a.D == 0d || b.D == 0d
+                ? a.D.AlmostEquals(b.D)
+                : a.D.AlmostEquals(b.D * Unit.Convert(a.Units, b.Units, '≡')))
+            ? One : Zero;
 
         public static RealValue operator !=(RealValue a, RealValue b) =>
-            a.D.AlmostEquals(b.D * Unit.Convert(a.Units, b.Units, '≠')) ? Zero : One;
+            (a.D == 0d || b.D == 0d
+                ? a.D.AlmostEquals(b.D)
+                : a.D.AlmostEquals(b.D * Unit.Convert(a.Units, b.Units, '≠')))
+            ? Zero : One;
 
         public static RealValue operator <(RealValue a, RealValue b)
         {
             var c = a.D;
-            var d = b.D * Unit.Convert(a.Units, b.Units, '<');
+            var d = (a.D == 0d || b.D == 0d) ? b.D : b.D * Unit.Convert(a.Units, b.Units, '<');
             return c < d && !c.AlmostEquals(d) ? One : Zero;
         }
 
         public static RealValue operator >(RealValue a, RealValue b)
         {
             var c = a.D;
-            var d = b.D * Unit.Convert(a.Units, b.Units, '>');
+            var d = (a.D == 0d || b.D == 0d) ? b.D : b.D * Unit.Convert(a.Units, b.Units, '>');
             return c > d && !c.AlmostEquals(d) ? One : Zero;
         }
 
         public static RealValue operator <=(RealValue a, RealValue b)
         {
             var c = a.D;
-            var d = b.D * Unit.Convert(a.Units, b.Units, '≤');
+            var d = (a.D == 0d || b.D == 0d) ? b.D : b.D * Unit.Convert(a.Units, b.Units, '≤');
             return c <= d || c.AlmostEquals(d) ? One : Zero;
         }
 
         public static RealValue operator >=(RealValue a, RealValue b)
         {
             var c = a.D;
-            var d = b.D * Unit.Convert(a.Units, b.Units, '≥');
+            var d = (a.D == 0d || b.D == 0d) ? b.D : b.D * Unit.Convert(a.Units, b.Units, '≥');
             return c >= d || c.AlmostEquals(d) ? One : Zero;
         }
 

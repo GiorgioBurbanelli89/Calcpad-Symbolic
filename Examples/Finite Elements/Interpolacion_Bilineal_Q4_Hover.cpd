@@ -1,0 +1,125 @@
+"Interpolación bilineal en elementos Q4 — el "hover ETABS"
+'<hr/>
+'<h2>¿Qué pasa cuando paso el cursor sobre un shell Q4 en ETABS, SAP, Robot, Hekatan?</h2>
+'<p>El software muestra un valor que <b>cambia continuamente</b> dentro de cada elemento finito. Pero el FEM solo calcula valores en los <b>4 nodos del Q4</b>. ¿De dónde viene el valor que se ve en cualquier punto interior?</p>
+'<p style="background:#fff3cd; padding:10px; border-left:4px solid #ffa500;">
+'<b>Respuesta:</b> de la <b>interpolación bilineal</b> usando las funciones de forma del Q4. Es exactamente lo que hace el solver FEM internamente para integrar la energía de deformación.</p>
+'<hr/>
+'<h2>1. El elemento Q4 en coordenadas naturales (ξ, η)</h2>
+'<p>Cada Q4 se mapea desde sus coordenadas globales (x, y) a un cuadrado natural canónico:</p>
+'<p style="text-align:center; font-family:monospace;">
+'(ξ, η) ∈ [-1, +1] × [-1, +1]
+'</p>
+'<p>Las 4 esquinas tienen coordenadas naturales fijas:</p>
+'<table border="1" cellpadding="6" style="border-collapse:collapse;">
+'<tr><th>Esquina</th><th>(ξ, η)</th><th>Coord global ejemplo</th></tr>
+'<tr><td>v0</td><td>(-1, -1)</td><td>(x0, y0)</td></tr>
+'<tr><td>v1</td><td>(+1, -1)</td><td>(x1, y1)</td></tr>
+'<tr><td>v2</td><td>(+1, +1)</td><td>(x2, y2)</td></tr>
+'<tr><td>v3</td><td>(-1, +1)</td><td>(x3, y3)</td></tr>
+'</table>
+'<hr/>
+'<h2>2. Funciones de forma N_i(ξ, η)</h2>
+'<p>Las funciones de forma <b>bilineales</b> del Q4 son productos de funciones lineales 1D:</p>
+N_0(xi; eta) = 1/4*(1 - xi)*(1 - eta)
+'N_0(ξ;η) = ¼·(1-ξ)·(1-η) ='N_0(xi; eta)
+N_1(xi; eta) = 1/4*(1 + xi)*(1 - eta)
+'N_1(ξ;η) = ¼·(1+ξ)·(1-η) ='N_1(xi; eta)
+N_2(xi; eta) = 1/4*(1 + xi)*(1 + eta)
+'N_2(ξ;η) = ¼·(1+ξ)·(1+η) ='N_2(xi; eta)
+N_3(xi; eta) = 1/4*(1 - xi)*(1 + eta)
+'N_3(ξ;η) = ¼·(1-ξ)·(1+η) ='N_3(xi; eta)
+'<p><b>Propiedad de Kronecker:</b> en cada esquina i, N_i = 1 y todas las demás son 0:</p>
+'<p>N_0(-1;-1) = 'N_0(-1; -1)' (debe valer 1)</p>
+'<p>N_0(+1;-1) = 'N_0(1; -1)' (debe valer 0)</p>
+'<p>N_0(+1;+1) = 'N_0(1; 1)' (debe valer 0)</p>
+'<p>N_0(-1;+1) = 'N_0(-1; 1)' (debe valer 0)</p>
+'<hr/>
+'<h2>3. La interpolación bilineal</h2>
+'<p>Si tenemos los <b>4 valores nodales</b> del campo (presión, momento, von Mises, etc.):</p>
+'<p>Valor en cualquier punto (ξ, η) interior:</p>
+'<p style="font-family:monospace; text-align:center; padding:10px; background:#f0f4f8;">
+'v(ξ, η) = N_0·v_0 + N_1·v_1 + N_2·v_2 + N_3·v_3
+'</p>
+'<p>Es <b>idéntica</b> a la fórmula que usa el solver FEM para integrar K = ∫B^T·D·B dΩ — el mismo Q4 que da la rigidez es el que da el valor del hover.</p>
+'<hr/>
+'<h2>4. Ejemplo numérico — caso de Hekatan zapata</h2>
+'<p>Caso real: cursor del usuario sobre el elemento #25 de una zapata Q4 con presiones nodales (de Hekatan):</p>
+'<p>Valores nodales (kN/m², compresión):</p>
+v_0 = -0.39
+v_1 = -0.18
+v_2 = -0.45
+v_3 = -0.62
+'<p>v_0 = 'v_0' v_1 = 'v_1' v_2 = 'v_2' v_3 = 'v_3'</p>
+'<h3>El cursor cae en (ξ, η) = (-0.78, -0.62)</h3>
+xi_cursor = -0.78
+eta_cursor = -0.62
+'<p>ξ_cursor = 'xi_cursor', η_cursor = 'eta_cursor'</p>
+'<p>Funciones de forma evaluadas:</p>
+N0_eval = 1/4*(1 - xi_cursor)*(1 - eta_cursor)
+'N_0(ξ_c;η_c) ='N0_eval
+N1_eval = 1/4*(1 + xi_cursor)*(1 - eta_cursor)
+'N_1(ξ_c;η_c) ='N1_eval
+N2_eval = 1/4*(1 + xi_cursor)*(1 + eta_cursor)
+'N_2(ξ_c;η_c) ='N2_eval
+N3_eval = 1/4*(1 - xi_cursor)*(1 + eta_cursor)
+'N_3(ξ_c;η_c) ='N3_eval
+'<p>Verificación: la suma de las funciones de forma debe ser 1 (partition of unity):</p>
+sum_N = N0_eval + N1_eval + N2_eval + N3_eval
+'ΣN_i = 'sum_N' (debe = 1.0)
+'<h3>Valor interpolado:</h3>
+v_interp = N0_eval*v_0 + N1_eval*v_1 + N2_eval*v_2 + N3_eval*v_3
+'v(ξ_c;η_c) = 'v_interp' kN/m²
+'<p style="background:#d1f7e0; padding:10px; border-left:4px solid #4ade80;">
+'<b>Ese valor</b> (≈ -0.45 kN/m²) es lo que aparece en el tooltip del hover. NO es el valor de un nodo — es el <b>valor en el punto exacto</b> donde está el cursor, calculado con las mismas N_i del FEM.</p>
+'<hr/>
+'<h2>5. ¿Cómo encuentra el software (ξ, η) desde el cursor?</h2>
+'<p>El cursor está en coordenadas globales (x_cursor, y_cursor). Para hacer la interpolación necesitamos (ξ, η). Hay que <b>invertir la mapa isoparamétrica</b>:</p>
+'<p style="text-align:center; font-family:monospace;">
+'x(ξ,η) = N_0·x_0 + N_1·x_1 + N_2·x_2 + N_3·x_3<br>
+'y(ξ,η) = N_0·y_0 + N_1·y_1 + N_2·y_2 + N_3·y_3
+'</p>
+'<p>Para Q4 generales esto es no-lineal en (ξ, η) → se resuelve por <b>Newton-Raphson</b>:</p>
+'<ol>
+'<li>Empezar con (ξ₀, η₀) = (0, 0) — centro del elemento</li>
+'<li>Calcular el residual: r = (x(ξ,η) - x_cursor, y(ξ,η) - y_cursor)</li>
+'<li>Calcular la matriz Jacobiana J = [[∂x/∂ξ, ∂x/∂η], [∂y/∂ξ, ∂y/∂η]]</li>
+'<li>Actualizar: (ξ, η) ← (ξ, η) - J⁻¹·r</li>
+'<li>Repetir hasta |Δξ| + |Δη| &lt; 1e-6 (típico 3-5 iteraciones)</li>
+'</ol>
+'<p>Esto es lo que el código de Hekatan hace en cada movimiento del mouse:</p>
+'<pre style="background:#1e293b; color:#fff; padding:10px; font-size:11px;">
+'for (let iter = 0; iter &lt; 8; iter++) {
+'  const Nv = N(xi, eta);
+'  const fx = corners.reduce((s,c,i) => s + Nv[i]*c[0], 0) - tx;
+'  const fy = corners.reduce((s,c,i) => s + Nv[i]*c[1], 0) - ty;
+'  const dNdxi  = [-(1-eta), (1-eta), (1+eta), -(1+eta)].map(v => 0.25*v);
+'  const dNdeta = [-(1-xi),  -(1+xi), (1+xi),   (1-xi) ].map(v => 0.25*v);
+'  const J11 = corners.reduce((s,c,i) => s + dNdxi[i]*c[0],  0);
+'  const J12 = corners.reduce((s,c,i) => s + dNdeta[i]*c[0], 0);
+'  const J21 = corners.reduce((s,c,i) => s + dNdxi[i]*c[1],  0);
+'  const J22 = corners.reduce((s,c,i) => s + dNdeta[i]*c[1], 0);
+'  const det = J11*J22 - J12*J21;
+'  const dxi  = ( J22*fx - J12*fy) / det;
+'  const deta = (-J21*fx + J11*fy) / det;
+'  xi -= dxi; eta -= deta;
+'  if (Math.abs(dxi) + Math.abs(deta) &lt; 1e-6) break;
+'}
+'</pre>
+'<hr/>
+'<h2>6. Diferencia con valor "del nodo más cercano"</h2>
+'<p>Algunos viewers (versiones simples) muestran simplemente el valor del <b>nodo más cercano</b> al cursor. Eso da:</p>
+'<ul>
+'<li><b>Ventaja:</b> simple, sin matemática</li>
+'<li><b>Desventaja:</b> el valor mostrado <b>salta discretamente</b> al cruzar la línea media entre 2 nodos. No es el valor real en el punto del cursor.</li>
+'</ul>
+'<p>La interpolación bilineal Q4 da el <b>valor correcto continuo</b>: en las esquinas coincide con los valores nodales, en cualquier punto interior es el valor "real" según la suposición FEM (que el campo varía bilinealmente dentro del elemento).</p>
+'<hr/>
+'<h2>7. Resumen — ¿por qué importa?</h2>
+'<table border="1" cellpadding="6" style="border-collapse:collapse;">
+'<tr><th>Pregunta del ingeniero</th><th>Respuesta del FEM</th></tr>
+'<tr><td>¿Cuál es la presión bajo mi columna?</td><td>Hover en ese punto → valor interpolado bilineal</td></tr>
+'<tr><td>¿Cuál es el momento Mxx en el centro del paño?</td><td>Hover en el centro → bilineal de los 4 momentos nodales</td></tr>
+'<tr><td>¿En qué nodo σ excede q_adm?</td><td>Hover sobre las esquinas (ξ, η = ±1) → valores nodales puros</td></tr>
+'</table>
+'<p>El <b>hover ETABS-style</b> es <b>FEM puro</b>: las mismas N_i(ξ, η) que se usan para integrar la matriz K se reusan para mostrar el valor del campo en cualquier punto del elemento.</p>

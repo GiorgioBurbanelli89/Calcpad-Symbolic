@@ -70,7 +70,29 @@ namespace Calcpad.Core
             Pip,
             SkipLine,
             Svg,
-            End_Svg
+            End_Svg,
+            Plotly,
+            End_Plotly,
+            // Web graphics phase 1 — visualisation libraries (CDN-loaded)
+            Three,        // Three.js 3D
+            End_Three,
+            Mermaid,      // Flowcharts / sequence / gantt
+            End_Mermaid,
+            Canvas,       // HTML5 Canvas 2D
+            End_Canvas,
+            Cyto,         // Cytoscape (graphs / networks)
+            End_Cyto,
+            Dot,          // Graphviz via viz.js
+            End_Dot,
+            Jsx,          // JSXGraph (interactive geometry)
+            End_Jsx,
+            Map,          // Leaflet (maps)
+            End_Map,
+            Math,         // KaTeX (LaTeX rendering)
+            End_Math,
+            Chart         // Chart.js (simple charts)
+            ,
+            End_Chart
         }
         private enum KeywordResult  
         {
@@ -249,6 +271,66 @@ namespace Calcpad.Core
                     return KeywordResult.Continue;
                 case Keyword.End_Svg:
                     ParseKeywordEndSvg();
+                    return KeywordResult.Continue;
+                case Keyword.Plotly:
+                    ParseKeywordPlotly(s);
+                    return KeywordResult.Continue;
+                case Keyword.End_Plotly:
+                    ParseKeywordEndPlotly();
+                    return KeywordResult.Continue;
+                case Keyword.Three:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Three);
+                    return KeywordResult.Continue;
+                case Keyword.End_Three:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Three);
+                    return KeywordResult.Continue;
+                case Keyword.Mermaid:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Mermaid);
+                    return KeywordResult.Continue;
+                case Keyword.End_Mermaid:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Mermaid);
+                    return KeywordResult.Continue;
+                case Keyword.Canvas:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Canvas);
+                    return KeywordResult.Continue;
+                case Keyword.End_Canvas:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Canvas);
+                    return KeywordResult.Continue;
+                case Keyword.Cyto:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Cyto);
+                    return KeywordResult.Continue;
+                case Keyword.End_Cyto:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Cyto);
+                    return KeywordResult.Continue;
+                case Keyword.Dot:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Dot);
+                    return KeywordResult.Continue;
+                case Keyword.End_Dot:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Dot);
+                    return KeywordResult.Continue;
+                case Keyword.Jsx:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Jsx);
+                    return KeywordResult.Continue;
+                case Keyword.End_Jsx:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Jsx);
+                    return KeywordResult.Continue;
+                case Keyword.Map:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Map);
+                    return KeywordResult.Continue;
+                case Keyword.End_Map:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Map);
+                    return KeywordResult.Continue;
+                case Keyword.Math:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Math);
+                    return KeywordResult.Continue;
+                case Keyword.End_Math:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Math);
+                    return KeywordResult.Continue;
+                case Keyword.Chart:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Chart);
+                    return KeywordResult.Continue;
+                case Keyword.End_Chart:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Chart);
                     return KeywordResult.Continue;
                 case Keyword.NoSub:
                     _parser.VariableSubstitution = MathParser.VariableSubstitutionOptions.VariablesOnly;

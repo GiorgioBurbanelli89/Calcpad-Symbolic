@@ -1,0 +1,102 @@
+"TEST inline — mezcla de texto + ecuaciones + simbolico + numerico en una linea
+'<hr/>
+
+"Bloque 1 — Texto + #deq inline (apostrofe abre/cierra modo expresion)
+'La 2da ley de Newton es '#deq F = m*a' y describe la dinamica de cuerpos.
+'La energia cinetica '#deq E_c = 1/2*m*v^2' se conserva en sistemas aislados.
+'Para un resorte: '#deq F = -k*x' con k = constante de rigidez.
+
+"Bloque 2 — Texto + #sym (operacion simbolica) inline
+'La derivada de x^3 es '#sym diff(x^3; x)' segun AngouriMath.
+'Y la 4ta derivada de x^5 es '#sym diff(x^5; x; 4)' (3er argumento).
+'Integral de sin: '#sym integrate(sin(x); x)' una funcion.
+
+"Bloque 3 — Texto + $Sum / $Integral / $Product inline (sintaxis correcta: SIN comillas envolventes)
+'Suma -'S = $Sum{i^2 @ i = 1 : 10}
+'Trabajo -'W = $Integral{k*x @ x = 0 : 1}
+'Factorial -'P = $Product{i @ i = 1 : 5}
+
+"Bloque 3b — Mismas inline pero con prefijo de texto descriptivo
+'La suma de los cuadrados de 1 a 10 es -'S2 = $Sum{i^2 @ i = 1 : 10}
+'Resultado: la serie converge a su valor.
+
+"Bloque 4 — Texto + variable numerica + expresion en bloque
+"4.1 Inputs simples
+masa = 5
+acel = 9.81
+
+"4.2 Calculo en linea
+peso = masa*acel
+
+'El peso es entonces '#deq P = m*g' que para m=5kg y g=9.81 m/s² da P = 49.05 N.
+
+"Bloque 5 — Math display inline (v1.3 permissive — sin #deq)
+'Identidad notable: '(a + b)^2 = a^2 + 2*a*b + b^2' es directa.
+'Leibniz: 'χ_1 = -d^2*w/dx^2' renderiza como fraccion.
+'Biharmonica: 'd^4*w/dx^4 + 2*d^4*w/dx^2*dy^2 + d^4*w/dy^4 = q/D_f' multi-termino.
+
+"Bloque 6 — #deq con @@(...) numeracion de ecuaciones
+'La 2da ley:
+#deq F = m*a @@(2.1)
+
+'La fuerza electrica:
+#deq F = q*E @@(Ley de Coulomb)
+
+"Bloque 7 — #noc / #equ — equation as text (no eval)
+'Matriz de rigidez del elemento barra:
+#noc
+[F_1|F_2] = [k_e; -k_e|-k_e; k_e]*[u_1|u_2]
+#equ
+
+"Bloque 8 — #sym diff anidado (FIX recien aplicado)
+'Anidacion de derivadas: '#sym diff(diff(x^3; x); x)' deberia dar 6x.
+'O simplify de un polinomio: '#sym simplify((a+b)^2 - a^2 - b^2)'.
+
+"Bloque 9 — Mezcla todo en un parrafo
+'<p>Para una <b>viga simple</b> con carga uniforme q,
+'la deflexion es '#deq v(x) = q*x*(L^3 - 2*L*x^2 + x^3)/(24*E*I)'
+'cuya derivada cuarta '#sym diff(x*(1 - 2*x^3 + x^4)/24; x; 4)'
+'confirma la EDP de Euler-Bernoulli ($EI v'''' = q$).</p>
+
+"Bloque 10 — Inline vs Bloque comparativa
+'Inline: '#deq y = m*x + b' (ecuacion ocupa lugar en el flujo de texto)
+
+'Bloque (linea propia):
+#deq y = m*x + b
+
+'<hr/>
+
+"Bloque 11 — INLINE: lineas seguidas con texto + ecuacion + simbolico + numerico
+'<p>Aqui demostramos como mezclar todo en lineas consecutivas (modo INLINE):</p>
+
+'<p>Linea 1 — texto + ecuacion: la 2da ley es '#deq F = m*a' fundamental.</p>
+'<p>Linea 2 — texto + simbolico: derivada cubica '#sym diff(x^3; x; 3)' es constante.</p>
+'<p>Linea 3 — texto + numerico inline: si masa = 5 y g = 9.81 entonces P = 49.05 N.</p>
+'<p>Linea 4 — texto + identidad: el cuadrado del binomio '(a + b)^2 = a^2 + 2*a*b + b^2' es clasico.</p>
+'<p>Linea 5 — texto + Leibniz: la curvatura 'χ = -d^2*w/dx^2' es la base de la viga.</p>
+
+"Bloque 12 — BLOQUE: las mismas operaciones pero cada una en su propia linea
+'<p>Las mismas 5 operaciones pero en modo BLOQUE — cada una con su propio renglon:</p>
+
+"Bloque 12.1 — Ecuacion como bloque (linea propia)
+#deq F = m*a
+
+"Bloque 12.2 — Operacion simbolica como bloque
+#sym
+diff(x^3; x; 3)
+#end sym
+
+"Bloque 12.3 — Calculo numerico como bloque
+m_p = 5
+g_p = 9.81
+P_p = m_p*g_p
+
+"Bloque 12.4 — Identidad como bloque
+#deq (a + b)^2 = a^2 + 2*a*b + b^2
+
+"Bloque 12.5 — Leibniz como bloque
+#deq χ = -d^2*w/dx^2
+
+'<hr/>
+
+"Fin del test inline

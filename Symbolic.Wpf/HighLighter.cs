@@ -22,6 +22,8 @@ namespace Calcpad.Wpf
     {
         internal UserDefined Defined = new();
         private bool _isInCodeBlock;
+        private bool _isInSvgBlock;   // #svg ... #end svg — preserve raw spaces (dot primitives)
+        private bool _isInPlotlyBlock; // #plotly ... #end plotly — body is raw JSON, never tokenized
         private bool _isInVizBlock;
         private sealed class TagHelper
         {
@@ -586,6 +588,18 @@ namespace Calcpad.Wpf
             "$table",
             "$block",
             "$inline",
+            // Hekatan/CalcpadCE viz directives — VizParser.cs:
+            "$chart",
+            "$frame",
+            "$struct",
+            "$draw",
+            "$fem",
+            "$fem2d",
+            "$fem3d",
+            "$mesh",
+            "$meshr",
+            "$meshresults",
+            "$plotmap",
         }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -666,6 +680,65 @@ namespace Calcpad.Wpf
             return false;
         }
 
+        /// <summary>Walk backwards from <paramref name="start"/> through previous paragraphs
+        /// to determine whether we're currently inside a #svg/#python/#maxima block.
+        /// Sets <see cref="_isInSvgBlock"/> / <see cref="_isInCodeBlock"/> accordingly.</summary>
+        private void DetectBlockContextFromPrevious(Paragraph start)
+        {
+            if (start is null) return;
+            var prev = start.PreviousBlock as Paragraph;
+            while (prev is not null)
+            {
+                var prevText = new TextRange(prev.ContentStart, prev.ContentEnd).Text.TrimStart();
+                // Find FIRST matching directive walking backwards — that's the most recent
+                // block boundary; later #end directives would have been found first if closed.
+                if (prevText.StartsWith("#end svg", StringComparison.OrdinalIgnoreCase))
+                    return; // SVG block already closed before us
+                if (prevText.StartsWith("#svg", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInSvgBlock = true;
+                    return;
+                }
+                if (prevText.StartsWith("#end plotly", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end three", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end mermaid", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end canvas", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end cyto", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end dot", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end jsx", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end map", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end math", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end chart", StringComparison.OrdinalIgnoreCase))
+                    return; // Web-graphics block already closed
+                if (prevText.StartsWith("#plotly", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#three", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#mermaid", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#canvas", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#cyto", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#dot", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#jsx", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#map", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#math", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#chart", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInPlotlyBlock = true;
+                    return;
+                }
+                if (prevText.StartsWith("#end python", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end maxima", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end function", StringComparison.OrdinalIgnoreCase))
+                    return;
+                if (prevText.StartsWith("#python", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#maxima", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#function ", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInCodeBlock = true;
+                    return;
+                }
+                prev = prev.PreviousBlock as Paragraph;
+            }
+        }
+
         internal void Parse(Paragraph p, bool isComplex, int lineNumber, bool single, string textOverride = null, Paragraph skipParagraph = null)
         {
             var newline = true;
@@ -674,6 +747,15 @@ namespace Calcpad.Wpf
             {
                 _isInCodeBlock = false;
                 _isInVizBlock = false;
+                _isInSvgBlock = false;
+                _isInPlotlyBlock = false;
+                // HighLightAll calls Parse(p, single:false) for EACH paragraph in a loop.
+                // Each call must know if the starting paragraph is already INSIDE a code/svg
+                // block — otherwise the second call (starting in the middle of #svg)
+                // resets _isInSvgBlock=false and re-tokenizes the body lines, stripping
+                // spaces from "rect 10 10" → "rect101010". Walk backwards from p to find
+                // the most recent #svg/#end svg, #python/#end python, #plotly/#end plotly directive.
+                DetectBlockContextFromPrevious(p);
             }
             if (single)
                 p = FindStartingLine(p, ref lineNumber);
@@ -704,10 +786,41 @@ namespace Calcpad.Wpf
                 var isInCodeBlock = _isInCodeBlock;
                 if (trimmedText.StartsWith("#python", StringComparison.OrdinalIgnoreCase) ||
                     trimmedText.StartsWith("#maxima", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#function ", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#svg", StringComparison.OrdinalIgnoreCase))
+                    trimmedText.StartsWith("#function ", StringComparison.OrdinalIgnoreCase))
                 {
                     _isInCodeBlock = true;
+                    p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                if (trimmedText.StartsWith("#svg", StringComparison.OrdinalIgnoreCase))
+                {
+                    // #svg ... #end svg — body is SVG primitives (.line .rect .text …) where
+                    // spaces between args are SIGNIFICANT (the parser splits args by space).
+                    // Treat as raw passthrough — DO NOT tokenize via ParseExternalLanguageLine
+                    // because that strips/reorders whitespace and breaks the parser.
+                    _isInSvgBlock = true;
+                    p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                // Web-graphics block opener directives (Phase 1 — 10 libs incl. #plotly).
+                // Body is raw JS / JSON / DSL — tokenising would strip whitespace, colons,
+                // braces and quotes that the libraries need.
+                if (trimmedText.StartsWith("#plotly", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#three", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#mermaid", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#canvas", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#cyto", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#dot", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#jsx", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#map", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#math", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#chart", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInPlotlyBlock = true;   // reuse the same passthrough flag
                     p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
                     p = single ? null : p.NextBlock as Paragraph;
                     ++lineNumber;
@@ -716,11 +829,52 @@ namespace Calcpad.Wpf
                 if (trimmedText.StartsWith("#end python", StringComparison.OrdinalIgnoreCase) ||
                     trimmedText.StartsWith("#end maxima", StringComparison.OrdinalIgnoreCase) ||
                     trimmedText.StartsWith("#end function", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#end svg", StringComparison.OrdinalIgnoreCase) ||
                     trimmedText.Equals("#end sym", StringComparison.OrdinalIgnoreCase))
                 {
                     _isInCodeBlock = false;
                     p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                if (trimmedText.StartsWith("#end svg", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInSvgBlock = false;
+                    p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                if (trimmedText.StartsWith("#end plotly", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#end three", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#end mermaid", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#end canvas", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#end cyto", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#end dot", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#end jsx", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#end map", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#end math", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedText.StartsWith("#end chart", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInPlotlyBlock = false;
+                    p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                // Inside #svg block: emit each line as a SINGLE Run preserving every char
+                // (dot primitive args separated by spaces — must NOT be tokenized).
+                if (_isInSvgBlock)
+                {
+                    p.Inlines.Add(new Run(text) { Foreground = Brushes.Black });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                // Inside #plotly block: same passthrough — body is raw JSON.
+                if (_isInPlotlyBlock)
+                {
+                    p.Inlines.Add(new Run(text) { Foreground = Brushes.DarkSlateGray });
                     p = single ? null : p.NextBlock as Paragraph;
                     ++lineNumber;
                     continue;

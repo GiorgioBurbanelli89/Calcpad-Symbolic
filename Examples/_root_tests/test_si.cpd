@@ -1,0 +1,7 @@
+"Test SI factor
+x = 1*cm
+x|m
+x = 1*kgf
+x|N
+x = 1*kN
+x|N

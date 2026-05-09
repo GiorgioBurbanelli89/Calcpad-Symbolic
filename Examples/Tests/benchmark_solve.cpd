@@ -1,0 +1,21 @@
+"Benchmark: Solo Solve (sin ensamblaje FEM)
+'Crear matriz simétrica 500x500 con valores de prueba
+#hide
+n = 500
+K = symmetric(n)
+#for i = 1 : n
+	K.(i; i) = 4*n
+	#if i < n
+		K.(i; i + 1) = -1
+	#end if
+#loop
+F = vector(n)
+#for i = 1 : n
+	F.i = 1
+#loop
+#show
+'Dimensión: 'n' × 'n
+'Resolviendo...
+u = clsolve(K; F)
+'Listo. u(1) = 'u.(1)
+'u(250) = 'u.(250)

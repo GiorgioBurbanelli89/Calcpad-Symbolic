@@ -1,0 +1,24 @@
+"Test vectores y matrices con unidades
+
+"1. Vector con unidad despues de ]
+v_1 = [1000; -500] kN/m
+v_1
+
+"2. Vector con unidad por elemento
+v_2 = [1000 kN/m; -500 kN/m]
+v_2
+
+"3. Matriz con unidad despues de ]
+K_1 = [1000; -500|-500; 1500] kN/m
+K_1
+
+"4. Matriz con unidad por elemento
+K_2 = [1000 kN/m; -500 kN/m|-500 kN/m; 1500 kN/m]
+K_2
+
+"5. Operacion con unidades
+F_1 = [10; -5] kN
+u_1 = lsolve(K_2; F_1)
+u_1
+u_1 & [mm; mm]
+u_1 | [mm; mm]

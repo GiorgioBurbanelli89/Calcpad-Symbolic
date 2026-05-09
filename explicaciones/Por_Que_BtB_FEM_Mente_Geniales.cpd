@@ -1,0 +1,236 @@
+"Por que Bᵀ·B aparece INEVITABLEMENTE en FEM — la logica de los pioneros
+'<p>Para entender por que existe B<sup>T</sup>·B en FEM, hay que pensar
+'como pensaron Rayleigh, Ritz, Galerkin, Turner y Zienkiewicz. <b>No es
+'una eleccion arbitraria — es una consecuencia matematica forzada</b>
+'por dos hechos fisicos.</p>
+'<hr/>
+
+"Cap 1 — Hecho fisico 1: la energia es CUADRATICA en deformacion
+'<p>Cuando estiras un resorte con desplazamiento u, la fuerza es F = k·u
+'(lineal). Pero la <b>energia almacenada</b> es:</p>
+
+#deq U = (1/2)*k*u^2
+
+'<p>Notar el u<sup>2</sup>. La energia es <b>cuadratica</b>, no lineal.
+'Esa es una propiedad universal de sistemas elasticos: estirar un resorte
+'al doble cuesta cuatro veces mas energia.</p>
+
+"Verificacion numerica
+k_demo = 100   'N/m
+u_demo = 0.05  'm
+F_demo = k_demo*u_demo
+U_demo = 0.5*k_demo*u_demo^2
+
+'<p>Para k=100 N/m, u=5 cm: F = 5 N (lineal en u), U = 0.125 J
+'(cuadratica en u, depende de u<sup>2</sup>=0.0025).</p>
+
+"En el continuo (barra elastica), la energia interna es
+'<p>La densidad de energia por unidad de volumen es (1/2)·σ·ε. Como
+'σ = E·ε:</p>
+
+#deq u_dens = (1/2)*E*ε^2
+
+'<p>Otra vez <b>cuadratica en ε</b>. La energia total del elemento es
+'la integral:</p>
+
+'<p style="margin-left:1em;font-size:110%">U<sub>e</sub> = (1/2) ∫ E·ε<sup>2</sup> dV</p>
+
+'<p>O en notacion vectorial (cuando ε es vector con varios componentes):</p>
+
+'<p style="margin-left:1em;font-size:110%">U<sub>e</sub> = (1/2) ∫ ε<sup>T</sup>·D·ε dV</p>
+
+'<p>donde D es la matriz constitutiva. <b>Aca aparece la primera forma
+'cuadratica</b>: ε<sup>T</sup>·D·ε es cuadratica en ε.</p>
+
+'<hr/>
+
+"Cap 2 — Hecho fisico 2: solo conocemos los DESPLAZAMIENTOS NODALES
+'<p>El FEM discretiza el continuo en elementos. Las "incognitas" del
+'sistema son los <b>desplazamientos en los nodos</b>: u<sub>1</sub>,
+'u<sub>2</sub>, ... que forman el vector u<sub>e</sub>.</p>
+
+'<p>Pero la energia (Cap 1) esta escrita en funcion de la deformacion ε
+'que es <b>continua dentro del elemento</b>. Hay que conectar los dos
+'mundos: discreto (nodos) y continuo (todo punto).</p>
+
+"Idea clave de Ritz / Courant
+'<p>Aproximar el campo continuo de desplazamientos por una combinacion
+'lineal de los nodales:</p>
+
+#deq u(x) = N_1(x)*u_1 + N_2(x)*u_2
+
+'<p>Y derivando para obtener la deformacion:</p>
+
+#deq ε(x) = (dN_1/dx)*u_1 + (dN_2/dx)*u_2
+
+'<p>Que en forma matricial es <b>ε = B·u<sub>e</sub></b>. Esa es la
+'segunda pieza clave: <b>la deformacion depende LINEALMENTE de los
+'desplazamientos nodales</b>, mediada por B.</p>
+
+'<hr/>
+
+"Cap 3 — La sustitucion FORZADA: cuadratica + lineal = sandwich
+'<p>Ahora viene el momento del genio. Tenemos:</p>
+
+'<p>1. La energia U = (1/2) ∫ ε<sup>T</sup>·D·ε dV (cuadratica en ε)</p>
+'<p>2. La conexion ε = B·u<sub>e</sub> (lineal en u)</p>
+
+'<p>Sustituimos la segunda en la primera:</p>
+
+'<p style="margin-left:1em;font-size:110%">U<sub>e</sub> = (1/2) ∫ (B·u<sub>e</sub>)<sup>T</sup>·D·(B·u<sub>e</sub>) dV</p>
+
+'<p>Aplicamos la regla de la traspuesta del producto:
+'(B·u)<sup>T</sup> = u<sup>T</sup>·B<sup>T</sup>:</p>
+
+'<p style="margin-left:1em;font-size:110%">U<sub>e</sub> = (1/2) ∫ u<sub>e</sub><sup>T</sup>·B<sup>T</sup>·D·B·u<sub>e</sub> dV</p>
+
+'<p>El vector u<sub>e</sub> sale de la integral porque <b>no depende de
+'la posicion x</b> (es constante para el elemento dado):</p>
+
+'<p style="margin-left:1em;font-size:110%">U<sub>e</sub> = (1/2) u<sub>e</sub><sup>T</sup> [∫ B<sup>T</sup>·D·B dV] u<sub>e</sub></p>
+
+"¡AHI APARECE Bᵀ·D·B!
+'<p><b>El sandwich B<sup>T</sup>·D·B es la consecuencia matematica
+'inevitable de combinar una forma cuadratica en ε con una transformacion
+'lineal ε = B·u.</b></p>
+
+'<p>Identificamos:</p>
+
+'<p style="margin-left:1em;font-size:110%">K<sub>e</sub> = ∫ B<sup>T</sup>·D·B dV</p>
+
+'<p>Y la energia se reescribe en su forma final:</p>
+
+#deq U_e = (1/2)*u_e^T*K_e*u_e
+
+'<hr/>
+
+"Cap 4 — La intuicion fisica de Bᵀ·B
+'<p>¿Por que el sandwich tiene que ser B<sup>T</sup>·D·B y no algo distinto?
+'Geometricamente B<sup>T</sup>·B es la forma como el espacio de
+'desplazamientos nodales (n-dimensional) se "proyecta" al espacio de
+'deformaciones (m-dimensional).</p>
+
+"Caso barra lineal — calculo paso a paso
+L_demo = 2
+B1 = -1/L_demo
+B2 = 1/L_demo
+E_demo = 200000000   'kPa
+A_demo = 0.001       'm²
+
+'<p>B = [-0.5, +0.5] (1/m). El producto B<sup>T</sup>·B es:</p>
+
+BtB_11 = B1*B1
+BtB_12 = B1*B2
+BtB_21 = B2*B1
+BtB_22 = B2*B2
+
+'<p>B<sup>T</sup>·B = [0.25, -0.25; -0.25, 0.25] (1/m²).</p>
+
+"¿Que significa cada entrada?
+'<p>• <b>(1,1) = 0.25:</b> "cuanta deformacion al cuadrado produce mover
+'solo el nodo 1 una unidad". Es positivo porque cualquier movimiento
+'genera deformacion no-nula.</p>
+
+'<p>• <b>(2,2) = 0.25:</b> lo mismo para el nodo 2.</p>
+
+'<p>• <b>(1,2) = (2,1) = -0.25:</b> "cuanta deformacion compartida entre
+'mover el nodo 1 y el nodo 2 simultaneamente". Es <b>negativo</b> porque
+'si los dos nodos se mueven en la MISMA direccion (translacion rigida)
+'el elemento no se deforma — sus contribuciones se cancelan.</p>
+
+"El acoplamiento entre nodos
+'<p>El signo negativo de la off-diagonal captura la <b>fisica del cuerpo
+'rigido</b>: si u<sub>1</sub> = u<sub>2</sub> (los dos nodos se mueven
+'igual), la deformacion total es cero. Verifiquemos con el vector
+'[1, 1]<sup>T</sup>:</p>
+
+'<p style="margin-left:1em;font-size:110%">[1, 1] · B<sup>T</sup>·B · [1; 1] = 0.25 - 0.25 - 0.25 + 0.25 = 0</p>
+
+'<p>¡EXACTO 0! Esa es la <b>particion de la unidad</b> codificada en
+'B<sup>T</sup>·B. La matriz "sabe" que los modos de cuerpo rigido no
+'almacenan energia.</p>
+
+'<hr/>
+
+"Cap 5 — Por que la energia U_e debe ser ≥ 0 (PSD garantiza esto)
+
+'<p>La energia almacenada en un resorte deformado es siempre POSITIVA
+'(o cero). No tiene sentido fisico que un resorte estirado tenga energia
+'negativa — eso seria una bomba.</p>
+
+'<p>Matematicamente esto exige:</p>
+
+'<p style="margin-left:1em;font-size:110%">U<sub>e</sub> = (1/2) u<sub>e</sub><sup>T</sup>·K<sub>e</sub>·u<sub>e</sub> ≥ 0 &nbsp; para todo u<sub>e</sub></p>
+
+'<p>Esa es <b>literalmente la definicion de matriz PSD</b>. Por eso K_e
+'(y por extension B<sup>T</sup>·D·B) siempre debe ser PSD — es una
+'exigencia FISICA (energia no-negativa), no solo matematica.</p>
+
+"Verificacion para barra
+'<p>Energia con desplazamientos arbitrarios u<sub>1</sub>, u<sub>2</sub>:</p>
+
+'<p style="margin-left:1em;font-size:110%">U = (1/2) · (E·A/L) · (u<sub>2</sub> - u<sub>1</sub>)<sup>2</sup></p>
+
+'<p>El cuadrado garantiza que U ≥ 0 siempre. Si no hubiera B<sup>T</sup>·B
+'en la formula, podrias tener energia negativa — fisicamente imposible.</p>
+
+'<hr/>
+
+"Cap 6 — Resumen: Bᵀ·B es la contabilidad entre desplazamiento y energia
+
+'<p>En lenguaje simple:</p>
+
+'<p>1) <b>La fisica</b> dice que la energia elastica es cuadratica en
+'deformacion (U ∝ ε²).</p>
+
+'<p>2) <b>La discretizacion</b> dice que la deformacion sale linealmente
+'de los desplazamientos nodales (ε = B·u).</p>
+
+'<p>3) <b>La matematica</b> exige que al combinar (1) + (2), la energia
+'sea cuadratica en u con la matriz "sandwich" B<sup>T</sup>·D·B en el medio.</p>
+
+'<p>4) <b>El nombre</b>: K<sub>e</sub> = ∫ B<sup>T</sup>·D·B dV se llama
+'<b>matriz de rigidez del elemento</b> porque al multiplicarla por u
+'(cinematica) y derivar U respecto a u, obtienes las fuerzas internas
+'F<sub>int</sub> = K·u.</p>
+
+'<p>5) <b>El por que</b>: B<sup>T</sup>·B aparece <b>obligatoriamente</b>
+'porque cuando tomas una forma cuadratica en ε y la "discretizas" via
+'una transformacion lineal ε = B·u, la unica forma de mantener la
+'estructura cuadratica es con el sandwich B<sup>T</sup>·M·B.</p>
+
+"Comparacion con el resorte 1 GDL
+'<p>El resorte simple es el caso donde n=1 (un solo desplazamiento) y
+'no hay matriz, todo es escalar:</p>
+
+'<p style="margin-left:1em">Resorte: U = (1/2) · k · u<sup>2</sup></p>
+'<p style="margin-left:1em">FEM:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; U = (1/2) · u<sup>T</sup>·K·u</p>
+
+'<p>El FEM es la <b>generalizacion multidimensional</b> del resorte. K
+'(matriz) es el equivalente de k (escalar). u<sup>T</sup>·K·u es el
+'equivalente de k·u<sup>2</sup>. Y K se calcula via ∫B<sup>T</sup>·D·B dV
+'porque <b>esa es la unica forma de obtener una matriz cuadratica en u
+'partiendo de una forma cuadratica en ε</b>.</p>
+
+'<hr/>
+
+"La conclusion que querias entender
+'<p>B<sup>T</sup>·B no es un truco matematico arbitrario — es la
+'<b>contabilidad inevitable</b> entre dos espacios:</p>
+
+'<p>• <b>Espacio de desplazamientos nodales</b> (lo que conoces despues
+'de resolver) — n dimensiones, una por GDL.</p>
+
+'<p>• <b>Espacio de deformaciones</b> (donde vive la fisica de la
+'energia) — m dimensiones, depende del problema.</p>
+
+'<p>B es el "puente" lineal entre ambos. Y B<sup>T</sup>·D·B es lo que
+'te queda cuando "traduces" la energia (que vive en el espacio de
+'deformaciones) al espacio de desplazamientos. Es la unica traduccion
+'matematicamente consistente que preserva la estructura cuadratica.</p>
+
+'<p>Esa es la mente de los geniales: ven la formula K = ∫B<sup>T</sup>·D·B dV
+'no como un calculo a memorizar, sino como la <b>consecuencia inevitable
+'de la fisica + la geometria de los espacios vectoriales involucrados</b>.</p>
+
+"Fin del archivo

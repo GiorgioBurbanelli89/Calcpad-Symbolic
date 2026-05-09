@@ -1,0 +1,38 @@
+"Test — asignaciones dentro de #inl (inline columns)
+
+"1. Asignar escalares inline
+
+#inl x = 10 ; y = 20 ; z = x + y
+
+'Verificar:
+suma = x + y + z
+
+"2. Asignar con descripcion
+
+#inl E = 30000000 ; 'Modulo de elasticidad (psi)
+
+#inl A = 10 ; 'Area de seccion (in²)
+
+'Verificar:
+EA = E*A
+
+"3. Vectores inline
+
+#inl v = [3; 4] ; w = [1; 2]
+
+'Verificar:
+dot_vw = dot(v; w)
+
+"4. Matrices inline
+
+#inl M = [1; 2 | 3; 4] ; d_M = det(M)
+
+'Verificar:
+M_trans = transp(M)
+
+"5. Una sola linea con 3 asignaciones + 1 descripcion
+
+#inl k_1 = 100 ; k_2 = 200 ; k_3 = k_1 + k_2 ; 'Rigideces en serie
+
+'Verificar:
+total = k_1 + k_2 + k_3

@@ -1,0 +1,77 @@
+#margen 20
+#md on
+"Test denso linea a linea — texto y operaciones mezcladas sin espacios
+# Flujo continuo
+'Partimos con -'L = 5 m'y espesor -'t = 0.20 m'luego el area es'A = L*t'y la inercia -'I = L*t^3/12'con material -'E = 25 GPa'y Poisson -'ν = 0.20'.
+'La rigidez flexional es -'EI = E*I'la rigidez de placa -'D_f = E*t^3/(12*(1 - ν^2))'el modulo de corte -'G = E/(2*(1 + ν))'y los parametros de Lame -'λ_lame = E*ν/((1 + ν)*(1 - 2*ν))'con -'μ_lame = G'.
+'Simbolicamente la expansion -'(a + b)^2 = a^2 + 2·a·b + b^2'la diferencia -'a^2 - b^2 = (a + b)·(a - b)'la identidad trigonometrica -'sin(x)^2 + cos(x)^2 = 1'y la formula de Euler -'e^(i·π) + 1 = 0'.
+'Derivadas totales -'v(x) = dw/dx'curvaturas -'χ_1 = -d^2w/dx^2'y -'χ_2 = -d^2w/dy^2'con cruzada -'χ_12 = -2·d^2w/dxdy'y la biharmonica -'d^4w/dx^4 + 2·d^4w/dx^2dy^2 + d^4w/dy^4 = q/D_f'.
+'Derivadas parciales -'∂u/∂x + ∂v/∂y = 0'y las ecuaciones constitutivas -'σ_x = E·∂u/∂x'con -'σ_y = E·∂v/∂y'y el tensor deformacion -'ε_ij = (∂u_i/∂x_j + ∂u_j/∂x_i)/2'.
+'Integrales definidas -'W = integral(q·w; x; 0; L_num)'y momentos -'M_int = integral(σ·y; y; -h/2; h/2)'y energia de deformacion -'U = integral(integral(B^T·D·B·detJ; ξ; -1; 1); η; -1; 1)'.
+'Matrices inline: identidad 2x2 -'I_2 = [1; 0 | 0; 1]'matriz de rigidez elemental -'K_el = [12; 6; -12; 6 | 6; 4; -6; 2 | -12; -6; 12; -6 | 6; 2; -6; 4]'y el constitutivo -'D_const = [1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]'.
+'Asignaciones evaluables inline -'P = 10 kN'con deflexion -'δ = P*L^3/(3*E*I)'que en mm es -'δ_mm = δ | mm'y el momento maximo -'M_max = P*L'con reaccion -'R_v = P'.
+'Con literales Pitagoras -'a_pit = 3', -'b_pit = 4', -'c_pit = sqrt(a_pit^2 + b_pit^2)'y volumen de esfera -'V_esf = (4/3)·π·R^3'con -'R = 2 m'.
+'Directivas literales para documentar: usar -'#blk'en bloque -'#inl'en linea -'#deq'para display -'#sym'para simbolico -'#for'para loops -'#if'para condiciones -'$Plot'para 1D -'$Map'para 2D.
+'Exponenciales y logaritmos -'y_exp = exp(2)'con -'y_ln = ln(e^3)'y logaritmo base 10 -'y_log = log(1000)'y raices -'y_raiz = sqrt(2) + sqrt(3)'con cubica -'y_cub = sqrt(8; 3)'.
+'Trigonometricas -'s_30 = sin(π/6)'con -'c_60 = cos(π/3)'y tangente -'t_45 = tan(π/4)'mas hiperbolicas -'sh_1 = sinh(1)'y -'ch_1 = cosh(1)'.
+'Ecuaciones display aparte (centradas):
+#deq (E·t^3)/(12·(1 - ν^2))
+#deq -d^2w/dx^2 = M/(E·I)
+#deq integral(f(x); x; a; b) = F(b) - F(a)
+#deq D = (E·t^3)/(12·(1 - ν^2)) · [1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]
+'Operaciones simbolicas reales:
+#sym (a + b)^3
+#sym diff(sin(x)·cos(x); x)
+#sym integrate(x^2·e^x; x)
+#sym factor(x^3 - 1)
+#sym simplify((x^2 - 1)/(x - 1))
+'Asignaciones inline en una sola linea:
+#inl k_1 = 100 ; k_2 = 200 ; k_3 = k_1 + k_2 ; 'tres rigideces en serie
+'Loop numerico -'S_b = 0'luego iteramos:
+S_b = 0
+#for k = 1 : 10
+    S_b = S_b + 1/k^2
+#loop
+'y el resultado parcial es'S_b'con error -'err_b = π^2/6 - S_b'.
+'Condicional sobre -'L'comparado con -'t':
+#if L > t
+'La longitud L supera al espesor t, geometria aceptable.
+#else
+'Geometria degenerada, revisar datos.
+#end if
+'Gráfica 1D (momento y deflexion superpuestos):
+L_n = L/m
+P_n = P/kN
+EI_n = EI/(kN*m^2)
+M_plot(x) = P_n*(L_n - x)
+w_plot(x) = P_n*x^2*(3*L_n - x)/(6*EI_n)
+$Plot { M_plot(x) & w_plot(x) @ x = 0 : L_n }
+'Gráfica 2D (campo de una armonica senoidal):
+a_n = 4
+f_2d(x; y) = sin(π*x/a_n)*cos(π*y/a_n)
+$Map { f_2d(x; y) @ x = 0 : a_n & y = 0 : a_n }
+'Resumen final:
+#blk
+L      ; 'longitud
+t      ; 'espesor
+A      ; 'area transversal
+I      ; 'inercia
+E      ; 'modulo Young
+ν      ; 'Poisson
+D_f    ; 'rigidez placa
+G      ; 'modulo corte
+P      ; 'carga puntual
+δ      ; 'deflexion SI
+δ_mm   ; 'deflexion mm
+S_b    ; 'Basilea parcial
+err_b  ; 'error Basilea
+c_pit  ; 'hipotenusa Pitagoras
+V_esf  ; 'volumen esfera
+y_exp  ; 'exp(2)
+y_ln   ; 'ln(e^3)
+s_30   ; 'sin(π/6)
+k_3    ; 'suma rigideces
+total_k; 'sigue'total_k = k_1 + k_2 + k_3
+#end blk
+total_k = k_1 + k_2 + k_3
+'Si no hubo errores, el parser soporta texto + operaciones linea a linea con identidades, derivadas d^n, derivadas parciales ∂, integrales, matrices, unidades, loops, condicionales, simbolico, graficas, directivas literales y evaluacion numerica — todo mezclado sin espacios en blanco.

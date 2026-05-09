@@ -1,0 +1,9 @@
+"Test d_x
+a_z = 6 m
+a_a = a_z & m
+a_a
+d_x = a_a/6
+d_x
+J_11 = d_x/2
+J_11
+

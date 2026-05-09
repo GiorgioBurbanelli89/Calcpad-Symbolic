@@ -1,0 +1,9 @@
+"Test #svg with #for
+#svg 400 200
+.rect 0 0 400 200 yellow 0.2
+#for i = 1 : 5
+	x = i*60
+	.circle x 100 20 red
+	.text x 100 i 12 white middle
+#loop
+#end svg

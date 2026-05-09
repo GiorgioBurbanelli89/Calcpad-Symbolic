@@ -1,0 +1,153 @@
+#margen 20
+"Cap. 10 Paz — Derivación SIMBÓLICA de K_e y M_e para viga
+
+'Derivamos las matrices de rigidez y masa consistente para un
+'elemento de viga (Euler-Bernoulli) usando las funciones de
+'forma cúbicas de Hermite e integración simbólica.
+
+"Funciones de forma (Hermite cúbicas) — Ec. 10.9 Paz
+
+'Para un elemento de viga de longitud L, hay 4 DOFs:
+'   δ₁: translación en x = 0
+'   δ₂: rotación en x = 0
+'   δ₃: translación en x = L
+'   δ₄: rotación en x = L
+
+'Las 4 funciones de forma son:
+
+#blk
+N_1(x) = 1 - 3*(x/L)^2 + 2*(x/L)^3 ; 'Traslacion nudo 1 — delta_1 = v_1
+N_2(x) = x*(1 - x/L)^2 ; 'Rotacion nudo 1 — delta_2 = theta_1
+N_3(x) = 3*(x/L)^2 - 2*(x/L)^3 ; 'Traslacion nudo 2 — delta_3 = v_2
+N_4(x) = (x^2/L)*(x/L - 1) ; 'Rotacion nudo 2 — delta_4 = theta_2
+#end blk
+
+#pgb
+"Segundas derivadas — para los coeficientes de rigidez
+
+'k_ij = ∫₀^L EI · N_i''(x) · N_j''(x) dx
+
+'Segundas derivadas de las Hermitianas:
+
+#sym diff(1 - 3*(x/L)^2 + 2*(x/L)^3; x; 2)
+
+#sym diff(x*(1 - x/L)^2; x; 2)
+
+#sym diff(3*(x/L)^2 - 2*(x/L)^3; x; 2)
+
+#sym diff((x^2/L)*(x/L - 1); x; 2)
+
+#pgb
+"Coeficientes de rigidez — integración simbólica de EI·N_i''·N_j''
+
+'Coeficiente k_11 = EI · ∫₀^L (N_1'')²  dx
+
+#sym integrate((diff(1 - 3*(x/L)^2 + 2*(x/L)^3; x; 2))^2; x)
+
+'Coeficiente k_12 = EI · ∫₀^L N_1'' · N_2'' dx
+
+#sym integrate(diff(1 - 3*(x/L)^2 + 2*(x/L)^3; x; 2)*diff(x*(1 - x/L)^2; x; 2); x)
+
+'Coeficiente k_13 = EI · ∫₀^L N_1'' · N_3'' dx
+
+#sym integrate(diff(1 - 3*(x/L)^2 + 2*(x/L)^3; x; 2)*diff(3*(x/L)^2 - 2*(x/L)^3; x; 2); x)
+
+'Coeficiente k_22 = EI · ∫₀^L (N_2'')² dx
+
+#sym integrate((diff(x*(1 - x/L)^2; x; 2))^2; x)
+
+'Coeficiente k_33 = EI · ∫₀^L (N_3'')² dx
+
+#sym integrate((diff(3*(x/L)^2 - 2*(x/L)^3; x; 2))^2; x)
+
+'Coeficiente k_44 = EI · ∫₀^L (N_4'')² dx
+
+#sym integrate((diff((x^2/L)*(x/L - 1); x; 2))^2; x)
+
+#pgb
+"Matriz de rigidez clásica (resultado de Paz Ec. 10.20)
+
+'Después de integrar todas las 16 entradas y simplificar:
+
+#deq K_e = (EI/L^3)*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2 | -12; -6*L; 12; -6*L | 6*L; 2*L^2; -6*L; 4*L^2] @@(rigidez viga)
+
+"Verificación numérica — con L = 50, EI = 6.58e8
+
+L = 50
+E = 6580000
+I_z = 100
+EI = E*I_z
+
+k_e = (EI/L^3)*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2 | -12; -6*L; 12; -6*L | 6*L; 2*L^2; -6*L; 4*L^2]
+
+#pgb
+"Coeficientes de masa — m_ij = m_bar · ∫₀^L N_i · N_j dx
+
+'Matriz de masa consistente (Paz Ec. 10.24):
+
+'Coeficiente m_11 = m_bar · ∫₀^L (N_1)² dx
+
+#sym integrate((1 - 3*(x/L)^2 + 2*(x/L)^3)^2; x)
+
+'Coeficiente m_12 = m_bar · ∫₀^L N_1 · N_2 dx
+
+#sym integrate((1 - 3*(x/L)^2 + 2*(x/L)^3)*x*(1 - x/L)^2; x)
+
+'Coeficiente m_13 = m_bar · ∫₀^L N_1 · N_3 dx
+
+#sym integrate((1 - 3*(x/L)^2 + 2*(x/L)^3)*(3*(x/L)^2 - 2*(x/L)^3); x)
+
+'Coeficiente m_22 = m_bar · ∫₀^L (N_2)² dx
+
+#sym integrate((x*(1 - x/L)^2)^2; x)
+
+'Coeficiente m_33 = m_bar · ∫₀^L (N_3)² dx
+
+#sym integrate((3*(x/L)^2 - 2*(x/L)^3)^2; x)
+
+'Coeficiente m_44 = m_bar · ∫₀^L (N_4)² dx
+
+#sym integrate(((x^2/L)*(x/L - 1))^2; x)
+
+#pgb
+"Matriz de masa consistente (resultado final Paz Ec. 10.24)
+
+'Después de integrar simbólicamente y evaluar en x=L:
+
+#deq M_e = (m_bar*L/420)*[156; 22*L; 54; -13*L | 22*L; 4*L^2; 13*L; -3*L^2 | 54; 13*L; 156; -22*L | -13*L; -3*L^2; -22*L; 4*L^2] @@(masa consistente)
+
+"Verificación numérica — con m_bar = 0.1 y L = 50
+
+m_bar = 0.1
+
+m_e = (m_bar*L/420)*[156; 22*L; 54; -13*L | 22*L; 4*L^2; 13*L; -3*L^2 | 54; 13*L; 156; -22*L | -13*L; -3*L^2; -22*L; 4*L^2]
+
+#pgb
+"Comparación — simplificación simbólica de entradas individuales
+
+"k_11 simplificado:
+
+#sym simplify(integrate((diff(1 - 3*(x/L)^2 + 2*(x/L)^3; x; 2))^2; x))
+
+'Valor esperado: 12/L³ (multiplicado por EI queda 12·EI/L³).
+
+"m_11 simplificado:
+
+#sym simplify(integrate((1 - 3*(x/L)^2 + 2*(x/L)^3)^2; x))
+
+'Valor esperado: 13·L/35 (multiplicado por m_bar/420 queda 156·m_bar·L/420).
+
+#pgb
+"Resumen
+
+'El flujo completo:
+'   1. Hermite shape functions N_i(x) definen la deformada
+'   2. Derivadas segundas N_i''(x) dan curvatura
+'   3. Integración simbólica ∫ EI·N_i''·N_j'' dx → k_ij
+'   4. Integración simbólica ∫ m_bar·N_i·N_j dx → m_ij
+'   5. Ensamble en matrices 4×4 K_e y M_e
+
+'Ambas matrices son simétricas (Maxwell reciprocidad).
+'Las matrices resultantes son las que usamos en el ejemplo 10.7
+'y en cualquier análisis FEM de vigas Euler-Bernoulli.
+#end margen

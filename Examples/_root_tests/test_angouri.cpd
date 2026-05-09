@@ -1,0 +1,5 @@
+"Test AngouriMath integration
+'<p>Si este archivo compila, AngouriMath está disponible en CalcpadCE</p>
+x = 5
+y = x^2 + 3*x + 1
+y

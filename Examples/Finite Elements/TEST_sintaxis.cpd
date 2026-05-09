@@ -1,0 +1,194 @@
+"TEST de sintaxis Calcpad-Symbolic
+'<p>Cada bloque dice "OK?" — verificar visualmente si renderiza como math o como texto plano.</p>
+'<hr/>
+
+"Bloque A — #deq simple
+'A1 — algebraico simple — OK?
+#deq y = a*x + b
+
+'A2 — fraccion — OK?
+#deq f = (a + b)/(c - d)
+
+'A3 — exponentes — OK?
+#deq E = m*c^2
+
+'A4 — subindice numerico — OK?
+#deq u_1 = N_1*ua + N_2*ub
+
+'A5 — subindice palabra (sin llaves) — OK?
+#deq v_max = 5*q*L^4/(384*E*I)
+
+'A6 — subindice multi-caracter en variable Greek — OK?
+#deq σ_xx = E*ε_xx
+
+'A7 — subindice con llaves _{abc} — OK?
+#deq T_{max} = K*L^2
+
+'A8 — superindice con llaves ^{abc} — OK?
+#deq A^{2} = π*r^2
+
+'<hr/>
+
+"Bloque B — #deq con anotacion @@(...)
+'B1 — anotacion en expresion simple — OK?
+#deq F = m*a @@(2da ley de Newton)
+
+'B2 — anotacion despues de fraccion sin parentesis — OK?
+#deq v = q*L^4/(EI) @@(deflexion)
+
+'B3 — anotacion despues de expresion con parentesis — OK?
+#deq v = q*x*(L - x)/(2*EI) @@(con paren)
+
+'B4 — anotacion despues de derivada con apostrofes — OK?
+#deq v''''(x) = q/EI @@(con apostrofes)
+
+'<hr/>
+
+"Bloque C — #deq con integrales
+'C1 — integral simple sin asteriscos — OK?
+#deq U = ∫f(x)dx
+
+'C2 — integral con asterisco interior — OK?
+#deq U = ∫*f(x)*dx
+
+'C3 — integral con limites entre llaves — OK?
+#deq U = ∫_{0}^{L} f(x) dx
+
+'C4 — integral con limites simple (sin llaves) — OK?
+#deq U = ∫_0^L f(x) dx
+
+'C5 — integral doble — OK?
+#deq K = ∫∫ f(x,y) dx dy
+
+'<hr/>
+
+"Bloque D — #sym diff (derivadas simbolicas)
+'D1 — diff de polinomio simple
+#sym
+diff(x^3 + 2*x; x)
+#end sym
+
+'D2 — diff de orden 2 (3er argumento)
+#sym
+diff(x^4; x; 2)
+#end sym
+
+'D3 — diff de orden 4
+#sym
+diff(x^5; x; 4)
+#end sym
+
+'D4 — diff inline
+#sym diff(sin(x); x)
+
+'D5 — diff anidado (esto deberia FALLAR)
+#sym
+diff(diff(x^3; x); x)
+#end sym
+
+'<hr/>
+
+"Bloque E — #sym integrate
+'E1 — integral indefinida
+#sym
+integrate(x^2; x)
+#end sym
+
+'E2 — integral definida con bounds numericos
+#sym
+integrate(x^2; x; 0; 2)
+#end sym
+
+'E3 — integral definida con bounds simbolicos (CUIDADO)
+#sym
+integrate(x; x; 0; L)
+#end sym
+
+'<hr/>
+
+"Bloque F — #sym simplify, expand, factor
+'F1 — simplify
+#sym
+simplify((a + b)^2 - a^2 - 2*a*b)
+#end sym
+
+'F2 — expand
+#sym
+expand((a + b)^3)
+#end sym
+
+'F3 — factor
+#sym
+factor(x^2 - 4)
+#end sym
+
+'F4 — solve
+#sym
+solve(x^2 - 5*x + 6; x)
+#end sym
+
+'<hr/>
+
+"Bloque G — Mezcla texto + variable numerica en misma linea
+'G1 — variable simple
+a_v = 25
+'(la linea anterior se evalua y muestra a_v = 25)
+
+'G2 — operacion en una linea
+b_v = 3*4 + 2
+'(deberia mostrar b_v = 14)
+
+'G3 — formula con variables previas
+c_v = a_v + b_v
+'(deberia mostrar la sustitucion y el resultado)
+
+'<hr/>
+
+"Bloque H — HTML inline
+'H1 — sub/sup HTML — σ<sub>xx</sub>, x<sup>2</sup>
+'H2 — italica <i>texto</i>
+'H3 — negrita <b>importante</b>
+'H4 — codigo <code>diff(x; y)</code>
+
+'<hr/>
+
+"Bloque I — Charts inline
+#hide
+n_t = 20
+xt = vector(n_t)
+yt = vector(n_t)
+#for i = 1 : n_t
+    xt.(i) = (i - 1)*2*π/(n_t - 1)
+    yt.(i) = sin(xt.(i))
+#loop
+#show
+
+$Chart{xt; yt @ title=sin(x) test : xlabel=x : ylabel=sin(x)}
+
+'<hr/>
+
+"Bloque J — Mezcla #deq + numerico en linea
+'J1 — definir y mostrar
+k_v = 100
+#deq k_v = 100 N/m
+'(que se ve mejor: el #deq o la asignacion?)
+
+'<hr/>
+
+"Bloque K — Apostrofes en lineas '<p>...
+'K1 — los anios 60 (sin apostrofe) — OK?
+'<p>los anios 60 fueron decisivos</p>
+
+'K2 — los '60 (con apostrofe — esperamos FALLA)
+'<p>los '60 fueron decisivos</p>
+
+'<hr/>
+
+"Bloque L — em dash
+'L1 — texto con em dash en parrafo HTML — OK?
+'<p>Esto es importante — muy importante.</p>
+
+'L2 — em dash en #deq
+#deq E = m*c^2 — formula famosa
+
+"Fin del test

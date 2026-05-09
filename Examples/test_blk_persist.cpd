@@ -1,0 +1,10 @@
+"Test — las asignaciones dentro de #blk persisten?
+
+#blk
+L = 60 ; 'Longitud
+E = 30000000 ; 'Modulo
+#end blk
+
+"Usar L y E:
+k = E/L
+EA = E*10

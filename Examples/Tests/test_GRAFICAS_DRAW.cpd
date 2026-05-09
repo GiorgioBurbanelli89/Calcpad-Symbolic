@@ -1,0 +1,152 @@
+#margen 20
+#md on
+"Test — $Plot, $Map, $Chart, $PlotMap, $Draw
+
+# 1. $Plot — funciones 1D
+
+f(x) = x^2 - 4*x + 3
+$Plot { f(x) @ x = -2 : 6 }
+
+s(x) = sin(x)
+c(x) = cos(x)
+$Plot { s(x) & c(x) @ x = 0 : 2*π }
+
+p2(x) = x^2
+p3(x) = x^3
+pe(x) = exp(-x^2)
+$Plot { p2(x) & p3(x) & pe(x) @ x = -2 : 2 }
+
+# 2. $Map — campo 2D (heatmap)
+
+m1(x; y) = sin(x)*cos(y)
+$Map { m1(x; y) @ x = 0 : 2*π & y = 0 : 2*π }
+
+g2(x; y) = exp(-((x-2)^2 + (y-2)^2)/2)
+$Map { g2(x; y) @ x = 0 : 4 & y = 0 : 4 }
+
+sd(x; y) = x^2 - y^2
+$Map { sd(x; y) @ x = -2 : 2 & y = -2 : 2 }
+
+# 3. $Chart — vectores con etiquetas
+
+w_load = 15
+L_beam = 6
+n_pts = 20
+
+#hide
+xv = vector(n_pts + 1)
+Vv = vector(n_pts + 1)
+Mv = vector(n_pts + 1)
+#for i = 1 : n_pts + 1
+    xv.(i) = (i - 1)*L_beam/n_pts
+    Vv.(i) = w_load*L_beam/2 - w_load*xv.(i)
+    Mv.(i) = w_load*L_beam/2*xv.(i) - w_load*xv.(i)^2/2
+#loop
+#show
+
+$Chart{xv; Vv; xv; Mv @ title=Cortante y Momento (Viga simple) : xlabel=Posicion x (m) : ylabel=Valor : labels=Cortante V (kN), Momento M (kN m)}
+
+#hide
+t_v = vector(50)
+sv_v = vector(50)
+cv_v = vector(50)
+#for i = 1 : 50
+    t_v.(i) = (i - 1)*360/49
+    sv_v.(i) = sin(t_v.(i))
+    cv_v.(i) = cos(t_v.(i))
+#loop
+#show
+
+$Chart{t_v; sv_v; t_v; cv_v @ title=Funciones Trigonometricas : xlabel=Angulo (grados) : ylabel=f(t) : labels=sin,cos}
+
+# 4. $PlotMap — puntos dispersos interpolados
+
+#hide
+xj = vector(25)
+yj = vector(25)
+zj = vector(25)
+kk = 0
+#for i = 1 : 5
+    #for j = 1 : 5
+        kk = kk + 1
+        xj.(kk) = (i - 1)*1.0
+        yj.(kk) = (j - 1)*1.0
+        zj.(kk) = sin(xj.(kk))*cos(yj.(kk)) + 0.1*xj.(kk)
+    #loop
+#loop
+#show
+
+$PlotMap { xj; yj; zj }
+
+# 5. Convergencia serie de Basilea (Σ 1/k^2 → π^2/6)
+
+#hide
+n_terms = 30
+N_v = vector(n_terms)
+S_v = vector(n_terms)
+S_v.(1) = 1
+N_v.(1) = 1
+#for i = 2 : n_terms
+    N_v.(i) = i
+    S_v.(i) = S_v.(i - 1) + 1/i^2
+#loop
+#show
+
+$Chart{N_v; S_v @ title=Convergencia serie de Basilea : xlabel=N terminos : ylabel=Suma parcial : labels=S(N)}
+
+# 6. $Draw — CAD interactivo (viga simplemente apoyada)
+
+L_v = 6
+h_v = 0.4
+
+$Draw{fillrect,0,0,L_v,h_v,#d4e6f1,black,1.5 : line,0,h_v/2,L_v,h_v/2,green,1 : arrow,L_v/2,h_v+1.5,L_v/2,h_v,red,2 : text,L_v/2,h_v+1.8,P=10kN,12,red,middle,bold : dim,0,-0.3,L_v,-0.3,-0.5,L=6m : circle,0,0,0.08,black,#ddd : circle,L_v,0,0.08,black,#ddd @ w=600 : h=300 : title=Viga simplemente apoyada : grid=true}
+
+# 7. $Draw — seccion de hormigon
+
+b = 0.3
+d = 0.5
+
+$Draw{fillrect,0,0,b,d,#e8e8e8,black,1.5 : hatch,0,0,b,d,gray : line,0,d/2,b,d/2,green,2 : text,b/2,d+0.05,b=30cm,10,black,middle : text,b+0.05,d/2,h=50cm,10,black,start : circle,0.05,0.05,0.008,black,black : circle,0.25,0.05,0.008,black,black : circle,0.15,0.05,0.008,black,black : circle,0.05,0.45,0.008,black,black : circle,0.25,0.45,0.008,black,black @ w=400 : h=400 : title=Seccion de hormigon : bg=#fafafa}
+
+# 8. $DrawStruct — masa-resorte (con primitivas nativas)
+
+'$DrawStruct (alias: $Struct) tiene primitivas atomicas para mecanica:
+'  spring (zigzag auto)  bar (con hatches)  beam  damper (cilindro)
+'  mass (rectangulo)  wall (con hatches)
+'  fixed/pin/roller  force  moment  node  label  dim
+'No calcula nada — solo DIBUJA esquemas. Para calculo usar #sym, #deq, lsolve.
+
+'Resorte solo (la fuerza sale del lado derecho de la masa):
+
+$DrawStruct{fixed,0,0 : spring,0,0,4,0,k=1000 : mass,4.6,0,0.7,m : force,5.0,0,right,F(t) : dim,0,-1,5,-1,L_total @ title=Masa-resorte 1 GDL : w=700 : h=260}
+
+# 9. $DrawStruct — masa-resorte-amortiguador (sistema completo)
+
+'Sistema con resorte k y amortiguador c en paralelo:
+
+$DrawStruct{fixed,0,0 : spring,0,0.5,4,0.5,k : damper,0,-0.5,4,-0.5,c : mass,4.6,0,0.7,m : force,5.0,0,right,F(t) @ title=Sistema masa-resorte-amortiguador (k y c en paralelo) : w=750 : h=320}
+
+# 10. $DrawStruct — viga simplemente apoyada con carga puntual
+
+$DrawStruct{pin,0,0 : roller,6,0 : beam,0,0,6,0,EI : node,0,0,A : node,3,0,centro : node,6,0,B : force,3,0,down,P=20 kN : dim,0,-0.6,6,-0.6,L=6m @ title=Viga simplemente apoyada : w=600 : h=250}
+
+# 11. $DrawStruct — pórtico empotrado
+
+$DrawStruct{fixed,0,0 : fixed,6,0 : beam,0,0,0,4,Col : beam,6,0,6,4,Col : beam,0,4,6,4,Viga : node,0,0,1 : node,6,0,2 : node,0,4,3 : node,6,4,4 : force,0,4,right,F=10 kN @ title=Portico plano : w=550 : h=350}
+
+# 9. $Struct — viga simplemente apoyada con carga puntual
+
+$Struct{pin,0,0 : roller,6,0 : beam,0,0,6,0,EI : node,0,0,A : node,3,0,centro : node,6,0,B : force,3,0,down,P=20 kN : dim,0,-0.6,6,-0.6,L=6m @ title=Viga simplemente apoyada : w=600 : h=250}
+
+# 10. $Struct — pórtico empotrado
+
+$Struct{fixed,0,0 : fixed,6,0 : beam,0,0,0,4,Col : beam,6,0,6,4,Col : beam,0,4,6,4,Viga : node,0,0,1 : node,6,0,2 : node,0,4,3 : node,6,4,4 : force,0,4,right,F=10 kN @ title=Portico plano : w=550 : h=350}
+
+# Cierre
+
+'Tipos de gráficas plot/draw probados:
+'  $Plot     — funciones 1D (1, 2, 3 superpuestas)
+'  $Map      — campo 2D (heatmap)
+'  $Chart    — vectores con titulo + ejes + leyenda
+'  $PlotMap  — puntos dispersos interpolados
+'  $Draw     — CAD con primitivas (line, fillrect, arrow, dim, hatch, ...)

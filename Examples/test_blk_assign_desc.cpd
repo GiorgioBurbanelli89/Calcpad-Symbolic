@@ -1,0 +1,20 @@
+"Test — asignacion + descripcion en #blk
+
+"Patron: columna 1 = asignacion, columna 2 = descripcion
+
+#blk
+'Asignacion ; 'Descripcion
+E = 30000000 ; 'Modulo de elasticidad (psi)
+A = 10 ; 'Area de seccion (in²)
+I_z = 100 ; 'Momento de inercia (in⁴)
+J = 200 ; 'Constante torsional (in⁴)
+G = 12000000 ; 'Modulo de rigidez (psi)
+I_0 = 125 ; 'Momento polar (in⁴)
+m_bar = 10 ; 'Masa distribuida (lb·s²/in²)
+L = 60 ; 'Longitud (in)
+#end blk
+
+'Verificar — usar los valores asignados:
+EA = E*A
+EI = E*I_z
+GJ = G*J

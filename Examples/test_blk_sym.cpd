@@ -1,0 +1,30 @@
+"Test — #blk con operaciones simbolicas, Maxima y numericas
+
+"Caso 1: Integrales simbolicas (se resuelven con Maxima si AngouriMath falla)
+#blk
+integrate(x^2; x) ; 'Integral de x²
+integrate(sin(x); x) ; 'Integral del seno
+integrate((x*(1-x/L)^2)^2; x) ; 'Caso duro — solo Maxima
+#end blk
+
+"Caso 2: Derivadas
+#blk
+diff(x^3 + 2*x; x) ; 'Derivada de polinomio
+diff(sin(x)*cos(x); x) ; 'Producto trigonometrico
+diff(1 - 3*(x/L)^2 + 2*(x/L)^3; x; 2) ; 'Segunda derivada — Hermite
+#end blk
+
+"Caso 3: Simplificar y factorizar
+#blk
+simplify((x^2 - 1)/(x - 1)) ; 'Simplificacion racional
+factor(x^2 - 5*x + 6) ; 'Factorizar
+expand((a + b)^3) ; 'Binomio al cubo
+#end blk
+
+"Caso 4: Numerico mezclado con simbolico
+#blk
+E = 30000000 ; 'Modulo elasticidad
+A = 10 ; 'Area seccion
+EA = E*A ; 'Rigidez axial
+integrate(x^2; x; 0; 1) ; 'Integral definida
+#end blk

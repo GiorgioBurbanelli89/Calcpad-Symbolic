@@ -1,0 +1,26 @@
+"Test WPF — Todas las funcionalidades nuevas
+
+"1. #deq (doble igualdad simbólica)
+#deq f(x) = x^2 + 3*x + 1
+#deq K = E*I/L^3*[12; 6*L | -12; 6*L]
+
+"2. #sym (AngouriMath)
+#sym diff(x^2 + 3*x; x)
+#sym integrate(x^2; x)
+#sym solve(x^2 - 4; x)
+#sym pdiff(x^2*y + y^3; x)
+#sym gradient(x^2 + y^2; x; y)
+#sym laplace(sin(t); t; s)
+#sym ode2(0; 4)
+
+"3. #function
+#function Suma(a; b)
+c = a + b
+Suma = c
+#end function
+
+R = Suma(3; 5)
+
+"4. Cálculo normal
+x = 5
+y = x^2 + 3*x + 1

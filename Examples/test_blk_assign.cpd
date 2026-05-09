@@ -1,0 +1,40 @@
+"Test — asignaciones dentro de #blk
+
+"1. Asignar escalares dentro del blk
+
+#blk
+'Nombre ; 'Asignacion
+'x ; x = 10
+'y ; y = 20
+'z ; z = x + y
+#end blk
+
+'Verificar — debe valer 20, 40, 30:
+x_duplicado = 2*x
+y_duplicado = 2*y
+suma = x + y + z
+
+"2. Asignar VECTORES dentro del blk
+
+#blk
+'Nombre ; 'Vector
+'v ; v = [3; 4]
+'w ; w = [1; 2]
+'norma_v ; n_v = norm(v)
+#end blk
+
+'Verificar:
+dot_vw = dot(v; w)
+v_mas_w = v + w
+
+"3. Asignar MATRICES dentro del blk
+
+#blk
+'Nombre ; 'Matriz
+'A ; A = [1; 2 | 3; 4]
+'B ; B = [0; 1 | -1; 0]
+'det_A ; d_A = det(A)
+#end blk
+
+'Verificar:
+AB = A*B

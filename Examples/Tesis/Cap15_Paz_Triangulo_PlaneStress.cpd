@@ -1,0 +1,217 @@
+#margen 20
+"Cap. 15 Paz — Elemento triangular de elasticidad plana (plane stress)
+
+'Estructuras tipo "skeletal" (vigas, porticos, armaduras) son unidimensionales: su comportamiento se describe con una ODE a lo largo del eje longitudinal. Las estructuras CONTINUAS bidimensionales, como una placa, se rigen por una EDP mucho mas compleja — de aqui el Metodo de Elementos Finitos. El sistema global es '#deq [M]·u_pp + [K]·u = F(t)' donde las matrices elementales '#deq [K]_e' y '#deq [M]_e' se derivan abajo para el elemento CST ("Constant Strain Triangle") de 3 nudos.
+
+"15.1 Problemas de elasticidad plana — dos tipos
+
+'(a) Plane stress: plato delgado, '#deq σ_z = 0'. (b) Plane strain: '#deq ε_z = 0'. La diferencia esta solo en los coeficientes de la matriz '#deq [D]'.
+
+"Propiedades del material y geometria
+
+#blk
+E = 30000000 ; 'Modulo de elasticidad
+ν = 0.3 ; 'Coeficiente de Poisson
+t = 1 ; 'Espesor del plato
+ρ = 0.000733 ; 'Densidad volumetrica
+#end blk
+
+"Coordenadas nodales del triangulo
+
+#blk
+x_1 = 0 ; 'Nodo 1 en el origen
+y_1 = 0 ; '
+x_2 = 2 ; 'Nodo 2 sobre eje x
+y_2 = 0 ; '
+x_3 = 0 ; 'Nodo 3 sobre eje y
+y_3 = 3 ; '
+#end blk
+
+'Area del triangulo por formula vectorial '#deq Area = (x_1*(y_2 - y_3) + x_2*(y_3 - y_1) + x_3*(y_1 - y_2))/2' .
+
+Area = (x_1*(y_2 - y_3) + x_2*(y_3 - y_1) + x_3*(y_1 - y_2))/2
+
+#pgb
+"Paso I — Modelado: 6 DOF por elemento
+
+'Cada nudo tiene 2 DOF (desplazamiento '#deq u' y '#deq v'), total 6 por triangulo: '#deq q_e = [q_1; q_2; q_3; q_4; q_5; q_6]^T'. Las matrices '#deq [K]_e' y '#deq [M]_e' seran de dimension 6 x 6.
+
+#pgb
+"Paso II — Funcion de desplazamiento lineal completa
+
+'Polinomio lineal en '#deq (x; y)' con 6 coeficientes (uno por DOF): '#deq u(x; y) = c_1 + c_2*x + c_3*y' (Ec. 15.2a) y '#deq v(x; y) = c_4 + c_5*x + c_6*y' (Ec. 15.2b). En forma matricial: '#deq q(x; y) = [g(x; y)]*c' con '#deq [g(x; y)] = [1; x; y; 0; 0; 0 | 0; 0; 0; 1; x; y]'.
+
+#pgb
+"Paso III — c en terminos de q_e
+
+'Evaluando '#deq u' y '#deq v' en los 3 nudos se obtienen 6 ecuaciones '#deq q_e = [A]*c' (Ec. 15.4) donde '#deq [A]' depende solo de las coordenadas nodales. Invirtiendo '#deq c = [A]^(-1)*q_e' (Ec. 15.5).
+
+A = [1; x_1; y_1; 0; 0; 0 | 0; 0; 0; 1; x_1; y_1 | 1; x_2; y_2; 0; 0; 0 | 0; 0; 0; 1; x_2; y_2 | 1; x_3; y_3; 0; 0; 0 | 0; 0; 0; 1; x_3; y_3]
+
+Ainv = inverse(A)
+
+'Sustituyendo (15.5) en (15.3) se obtiene '#deq q(x; y) = [f(x; y)]*q_e' (Ec. 15.7) con '#deq [f(x; y)] = [g(x; y)]*[A]^(-1)'. La linealidad garantiza continuidad de desplazamientos entre bordes adyacentes.
+
+#pgb
+"Paso IV — Deformaciones
+
+'Segun Timoshenko & Goodier (1970) la deformacion axial es '#deq ε_x = du/dx', '#deq ε_y = dv/dy', y la distorsion angular '#deq γ_xy = du/dy + dv/dx'. Aplicando estas definiciones:
+
+#blk
+ε_x(x; y) = diff(c_1 + c_2*x + c_3*y; x) ; 'Deformacion axial en x
+ε_y(x; y) = diff(c_4 + c_5*x + c_6*y; y) ; 'Deformacion axial en y
+γ_xy(x; y) = diff(c_1 + c_2*x + c_3*y; y) + diff(c_4 + c_5*x + c_6*y; x) ; 'Distorsion angular
+#end blk
+
+'Las deformaciones resultan CONSTANTES (de ahi el nombre CST): '#deq ε_x = c_2', '#deq ε_y = c_6' y '#deq γ_xy = c_3 + c_5'. En forma matricial '#deq ε = [B]*q_e' (Ec. 15.9).
+
+'La matriz '#deq [B]' explicita (3 x 6) es:
+
+#deq [B] = (1/(2*Area))*[y_23; 0; y_31; 0; y_12; 0 | 0; x_32; 0; x_13; 0; x_21 | x_32; y_23; x_13; y_31; x_21; y_12] @@(matriz B del CST)
+
+'con diferencias '#deq y_ij = y_i - y_j' y '#deq x_ij = x_i - x_j':
+
+#blk
+y_23 = y_2 - y_3 ; 'Y nudos 2 y 3
+y_31 = y_3 - y_1 ; 'Y nudos 3 y 1
+y_12 = y_1 - y_2 ; 'Y nudos 1 y 2
+x_32 = x_3 - x_2 ; 'X nudos 3 y 2
+x_13 = x_1 - x_3 ; 'X nudos 1 y 3
+x_21 = x_2 - x_1 ; 'X nudos 2 y 1
+#end blk
+
+B = (1/(2*Area))*[y_23; 0; y_31; 0; y_12; 0 | 0; x_32; 0; x_13; 0; x_21 | x_32; y_23; x_13; y_31; x_21; y_12]
+
+#pgb
+"Paso V — Ley constitutiva (plane stress)
+
+'Para esfuerzo plano (Ec. 15.13): '#deq d_11 = d_22 = E/(1 - ν^2)', '#deq d_12 = d_21 = ν*E/(1 - ν^2)' y '#deq d_33 = E/(2*(1 + ν))'.
+
+d_11 = E/(1 - ν^2)
+d_12 = ν*E/(1 - ν^2)
+d_33 = E/(2*(1 + ν))
+
+D = [d_11; d_12; 0 | d_12; d_11; 0 | 0; 0; d_33]
+
+'Entonces el vector de esfuerzos es '#deq σ = [D]*[B]*q_e' (Ec. 15.12).
+
+#pgb
+"Paso VI — Rigidez y masa por Trabajo Virtual
+
+'Principio de Trabajo Virtual (PVW): '#deq δW_I = δW_E' (Ec. 15.15). Cancelando '#deq δq^T' se obtiene la ecuacion dinamica elemental '#deq [M]·q_pp + [K]·q_e = P_e + P_be' (Ec. 15.21). Las matrices se definen como integrales de volumen '#deq [K]_e = ∫([B]^T·[D]·[B])dV' (Ec. 15.22) y '#deq [M]_e = ∫(ρ·[f]^T·[f])dV' (Ec. 15.23).
+
+'Como '#deq [B]' y '#deq [D]' son constantes en el CST, la integral de rigidez se reduce a '#deq [K]_e = t*Area*[B]^T*[D]*[B]'.
+
+K_e = t*Area*transp(B)*D*B
+
+'Para la masa se usan las funciones de forma '#deq N_i(x; y) = (a_i + b_i*x + c_i*y)/(2*Area)' con coeficientes derivados de las coordenadas nodales:
+
+#blk
+a_1 = x_2*y_3 - x_3*y_2 ; 'Constante de N_1
+b_1 = y_2 - y_3 ; 'Coef x de N_1
+c_1 = x_3 - x_2 ; 'Coef y de N_1
+a_2 = x_3*y_1 - x_1*y_3 ; 'Constante de N_2
+b_2 = y_3 - y_1 ; 'Coef x de N_2
+c_2 = x_1 - x_3 ; 'Coef y de N_2
+a_3 = x_1*y_2 - x_2*y_1 ; 'Constante de N_3
+b_3 = y_1 - y_2 ; 'Coef x de N_3
+c_3 = x_2 - x_1 ; 'Coef y de N_3
+#end blk
+
+#blk
+N_1(x; y) = (a_1 + b_1*x + c_1*y)/(2*Area) ; 'Forma nudo 1
+N_2(x; y) = (a_2 + b_2*x + c_2*y)/(2*Area) ; 'Forma nudo 2
+N_3(x; y) = (a_3 + b_3*x + c_3*y)/(2*Area) ; 'Forma nudo 3
+#end blk
+
+'Integrales exactas sobre un triangulo: '#deq ∫(N_i)dA = Area/3', '#deq ∫(N_i^2)dA = Area/6' y '#deq ∫(N_i·N_j)dA = Area/12' (para '#deq i ≠ j'). Integrando '#deq ρ·[f]^T·[f]·t·dA':
+
+#deq [M]_e = (ρ*t*Area/12)*[2; 0; 1; 0; 1; 0 | 0; 2; 0; 1; 0; 1 | 1; 0; 2; 0; 1; 0 | 0; 1; 0; 2; 0; 1 | 1; 0; 1; 0; 2; 0 | 0; 1; 0; 1; 0; 2] @@(masa consistente CST)
+
+M_e = (ρ*t*Area/12)*[2; 0; 1; 0; 1; 0 | 0; 2; 0; 1; 0; 1 | 1; 0; 2; 0; 1; 0 | 0; 1; 0; 2; 0; 1 | 1; 0; 1; 0; 2; 0 | 0; 1; 0; 1; 0; 2]
+
+#pgb
+"Paso VII — Ensamblaje del sistema
+
+'Las matrices globales se arman por suma directa sobre DOFs compartidos: '#deq [K]_s = Σ [K]_e' (Ec. 15.25) y '#deq [M]_s = Σ [M]_e' (Ec. 15.26). Igual que en estructuras skeletal del Cap. 13.
+
+"Paso VIII — Ecuacion dinamica y solucion
+
+'Sistema de ecuaciones diferenciales '#deq [M]*u_pp + [K]*u = F(t)' (Ec. 15.28). Solucion por superposicion modal (Cap. 8) para sistemas lineales, o integracion paso a paso (Newmark, Wilson-θ) para no lineales.
+
+"Paso IX — Recuperacion de esfuerzos
+
+'En el nudo '#deq j' del elemento: '#deq σ(x_j; y_j) = [D]·[B]·q_e' (Ec. 15.29). Como '#deq [B]' y '#deq [D]' son constantes en el CST, los esfuerzos son UNIFORMES en todo el elemento — no dependen del nudo '#deq j' elegido.
+
+σ_elem = D*B
+
+#pgb
+"Verificacion numerica — triangulo (0,0)-(2,0)-(0,3)
+
+'Con '#deq Area = 3', '#deq E = 30*10^6', '#deq ν = 0.3', '#deq t = 1' y '#deq ρ = 0.000733':
+
+"Matriz constitutiva [D] (plane stress)
+
+#blk
+d_11 = E/(1 - ν^2) ; 'd_11
+d_12 = ν*E/(1 - ν^2) ; 'd_12
+d_33 = E/(2*(1 + ν)) ; 'd_33
+#end blk
+
+"Matriz [B] 3 x 6
+
+B_num = (1/(2*Area))*[y_23; 0; y_31; 0; y_12; 0 | 0; x_32; 0; x_13; 0; x_21 | x_32; y_23; x_13; y_31; x_21; y_12]
+
+"Matriz de rigidez [K]_e 6 x 6
+
+K_num = t*Area*transp(B_num)*D*B_num
+
+"Matriz de masa [M]_e 6 x 6
+
+M_num = (ρ*t*Area/12)*[2; 0; 1; 0; 1; 0 | 0; 2; 0; 1; 0; 1 | 1; 0; 2; 0; 1; 0 | 0; 1; 0; 2; 0; 1 | 1; 0; 1; 0; 2; 0 | 0; 1; 0; 1; 0; 2]
+
+#pgb
+"Visualizacion — Funciones de forma con Map
+
+'La directiva Map grafica una funcion '#deq f(x; y)' como superficie rainbow sobre un rectangulo. Aqui visualizamos las 3 funciones de forma sobre el bounding box '#deq [0; 2] x [0; 3]'. Cada '#deq N_i' vale 1 en su nudo y 0 en los otros.
+
+PlotWidth = 500
+PlotHeight = 400
+
+'Funcion de forma del nudo 1 '#deq N_1(x; y) = (a_1 + b_1*x + c_1*y)/(2*Area)':
+
+$Map{(a_1 + b_1*x + c_1*y)/(2*Area) @ x = 0 : 2 & y = 0 : 3}
+
+'Funcion de forma del nudo 2 '#deq N_2(x; y) = (a_2 + b_2*x + c_2*y)/(2*Area)':
+
+$Map{(a_2 + b_2*x + c_2*y)/(2*Area) @ x = 0 : 2 & y = 0 : 3}
+
+'Funcion de forma del nudo 3 '#deq N_3(x; y) = (a_3 + b_3*x + c_3*y)/(2*Area)':
+
+$Map{(a_3 + b_3*x + c_3*y)/(2*Area) @ x = 0 : 2 & y = 0 : 3}
+
+#pgb
+"Visualizacion — Color map sobre el triangulo con PlotMap
+
+'La directiva PlotMap toma tres vectores '#deq x_j', '#deq y_j' y '#deq valores' y colorea la malla triangular por triangulacion automatica.
+
+xj = [0; 2; 0]
+yj = [0; 0; 3]
+
+'Caso 1 — desplazamiento unitario solo en el nudo 1 '#deq [1; 0; 0]':
+
+values_case1 = [1; 0; 0]
+
+$PlotMap{xj; yj; values_case1}
+
+'Caso 2 — campo lineal con valores distintos en cada nudo '#deq [0.5; 1.2; 0.8]':
+
+values_case2 = [0.5; 1.2; 0.8]
+
+$PlotMap{xj; yj; values_case2}
+
+#pgb
+"Resumen
+
+'Triangulo CST (3 nudos, 6 DOF, plane stress) con funciones de forma lineales '#deq N_i' y matriz '#deq [B]' constante. Rigidez '#deq [K]_e = t*Area*[B]^T*[D]*[B]' y masa '#deq [M]_e = (ρ*t*Area/12)*patron_consistente'. Derivacion simbolica siguiendo Paz Cap. 15 (Ec. 15.1-15.29) con visualizacion via Map y PlotMap.
+#end margen

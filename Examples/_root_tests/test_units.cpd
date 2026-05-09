@@ -1,0 +1,88 @@
+"Test completo de | y &
+'<hr/>
+"1. Escalares
+
+'<h4>Definición con unidad</h4>
+L = 6*m
+F = 10*kN
+E = 200000*MPa
+
+'<h4>| Conversión display</h4>
+L|cm
+L|mm
+F|N
+E|GPa
+
+'<h4>& Adimensionalizar y reasignar</h4>
+'L en base SI (m) → 6, luego × cm:
+L & cm
+'F en base SI (N=1000*kN) → 10000, luego × tonf:
+F & tonf
+'E en base SI (Pa) → 200000000000, luego × GPa:
+E & GPa
+
+'<h4>Adimensional puro (/ unidad)</h4>
+L_val = L/m
+F_val = F/kN
+E_val = E/MPa
+
+'<hr/>
+"2. Operaciones con unidades
+
+'<h4>Momento = F × L</h4>
+M_o = F*L
+M_o
+M_o|kN*m
+
+'<h4>Esfuerzo = F/A</h4>
+A = 0.01*m^2
+sigma = F/A
+sigma|MPa
+sigma|kN/m^2
+
+'<hr/>
+"3. Vectores con unidades
+
+'<h4>Vector de fuerzas</h4>
+F_v = [10*kN; 20*kN; -5*kN]
+F_v
+F_v|N
+
+'<h4>Vector de longitudes</h4>
+L_v = [3*m; 4*m; 5*m]
+L_v|cm
+
+'<h4>Vector adimensional (/ unidad)</h4>
+L_num = L_v/m
+
+'<hr/>
+"4. Matrices con unidades
+
+'<h4>Matriz de rigidez simple (kN/m)</h4>
+k1 = 100*kN/m
+k2 = 50*kN/m
+K_s = [k1 + k2; -k2 | -k2; k2]
+K_s|kN/m
+
+'<h4>Resolver Ku=F</h4>
+F_s = [10*kN; -5*kN]
+u_s = lsolve(K_s; F_s)
+u_s
+u_s|mm
+
+'<hr/>
+"5. Mezcla — adimensionalizar para matrices
+
+'<h4>Datos con unidades</h4>
+E_s = 200000*MPa
+A_1 = 50*cm^2
+L_1 = 3*m
+
+'<h4>Rigidez EA/L (debe ser kN/m)</h4>
+k_el = E_s*A_1/L_1
+k_el|kN/m
+
+'<h4>Rigidez adimensional (para matrices FEM)</h4>
+k_num = E_s/MPa * (A_1/cm^2) / (L_1/m)
+'<p>k_num es adimensional — vale lo mismo numéricamente en MPa·cm²/m</p>
+k_num

@@ -1,0 +1,288 @@
+"B^T·B — qué es y por qué importa (algebra lineal, sin FEM)
+'<p>Este archivo se enfoca <b>solo en la operacion B<sup>T</sup>·B</b>
+'desde la perspectiva del algebra lineal pura. Los ejemplos usan matrices
+'genericas, no del FEM. Al final hay una mencion breve de su rol en FEM.</p>
+'<hr/>
+
+"Cap 1 — ¿Que es B^T·B exactamente?
+'<p>Tomamos cualquier matriz B (rectangular o cuadrada). La traspuesta
+'B<sup>T</sup> intercambia filas con columnas: si B es m×n, entonces
+'B<sup>T</sup> es n×m.</p>
+
+'<p>El producto B<sup>T</sup>·B siempre tiene tamano n×n (cuadrada),
+'sin importar el tamano original.</p>
+
+"Ejemplo 1 — B de 2×2
+B = [1; 2|3; 4]
+
+'<p>Su traspuesta:</p>
+
+B_T = [1; 3|2; 4]
+
+'<p>El producto B<sup>T</sup>·B:</p>
+
+BtB = B_T*B
+
+'<p>Resultado: matriz 2×2 con entradas (1·1+3·3=10, 1·2+3·4=14, 2·1+4·3=14,
+'2·2+4·4=20). Notar que la entrada (1,2) es igual a la (2,1) — ambas
+'valen 14. Eso ya muestra <b>simetria</b>.</p>
+
+"Ejemplo 2 — B rectangular 3×2
+B2 = [1; 0|0; 1|1; 1]
+
+'<p>B<sup>T</sup> es 2×3:</p>
+
+B2_T = [1; 0; 1|0; 1; 1]
+
+'<p>El producto B2<sup>T</sup>·B2 es 2×2:</p>
+
+B2tB2 = B2_T*B2
+
+'<p>Resultado: 2×2 con entradas (2, 1, 1, 2). Otra vez simetrica.</p>
+
+'<hr/>
+
+"Cap 2 — Es la matriz de Gram (productos punto de columnas)
+'<p>Cada entrada (i,j) de B<sup>T</sup>·B es exactamente <b>el producto
+'punto entre la columna i y la columna j de B</b>:</p>
+
+'<p style="margin-left:1em;font-size:110%">(B<sup>T</sup>·B)<sub>ij</sub> = b<sub>i</sub> · b<sub>j</sub></p>
+
+'<p>donde b_i es la i-esima columna de B.</p>
+
+"Verificacion con el Ejemplo 1
+'<p>B tiene columnas b₁ = [1, 3]<sup>T</sup> y b₂ = [2, 4]<sup>T</sup>.</p>
+
+b1_dot_b1 = 1*1 + 3*3
+b1_dot_b2 = 1*2 + 3*4
+b2_dot_b2 = 2*2 + 4*4
+
+'<p>Las entradas de B<sup>T</sup>·B son:</p>
+'<p>• (1,1) = b₁·b₁ = 10</p>
+'<p>• (1,2) = b₁·b₂ = 14</p>
+'<p>• (2,1) = b₂·b₁ = 14 (igual a (1,2))</p>
+'<p>• (2,2) = b₂·b₂ = 20</p>
+
+'<p>Coincide con BtB calculado arriba. La <b>diagonal</b> tiene normas
+'cuadradas (||b_i||²) y la <b>off-diagonal</b> tiene productos punto
+'cruzados.</p>
+
+'<hr/>
+
+"Cap 3 — Por que es SIMETRICA (prueba en una linea)
+'<p>Sea M = B<sup>T</sup>·B. Tomamos su traspuesta:</p>
+
+'<p style="margin-left:1em;font-size:110%">M<sup>T</sup> = (B<sup>T</sup>·B)<sup>T</sup> = B<sup>T</sup>·(B<sup>T</sup>)<sup>T</sup> = B<sup>T</sup>·B = M</p>
+
+'<p>Usamos dos identidades:</p>
+'<p>1) (X·Y)<sup>T</sup> = Y<sup>T</sup>·X<sup>T</sup> (la traspuesta de un
+'producto invierte el orden y traspone cada factor)</p>
+'<p>2) (X<sup>T</sup>)<sup>T</sup> = X (la traspuesta de la traspuesta es
+'la matriz original)</p>
+
+'<p>El resultado M<sup>T</sup> = M significa <b>matriz simetrica</b>.
+'Y esto vale para CUALQUIER B — no importa su tamano ni sus valores.</p>
+
+'<hr/>
+
+"Cap 4 — Por que es POSITIVA SEMI-DEFINIDA (PSD)
+'<p>Una matriz M se llama PSD si para todo vector x:</p>
+
+'<p style="margin-left:1em;font-size:110%">x<sup>T</sup>·M·x ≥ 0</p>
+
+'<p>Veamos que B<sup>T</sup>·B siempre cumple esto:</p>
+
+'<p style="margin-left:1em;font-size:110%">x<sup>T</sup>·(B<sup>T</sup>·B)·x = (B·x)<sup>T</sup>·(B·x) = ‖B·x‖<sup>2</sup> ≥ 0</p>
+
+'<p>Reagrupamos como (B·x)<sup>T</sup>·(B·x), que es <b>la norma cuadrada
+'del vector B·x</b>. Una norma cuadrada nunca puede ser negativa
+'(es la suma de cuadrados de componentes reales). Por lo tanto
+'B<sup>T</sup>·B es siempre PSD.</p>
+
+"¿Cuando es DEFINIDA POSITIVA (no solo semi)?
+'<p>La forma cuadratica x<sup>T</sup>·(B<sup>T</sup>·B)·x = 0 solo si
+'B·x = 0. Si las columnas de B son <b>linealmente independientes</b>
+'(B tiene rango maximo en columnas), entonces B·x = 0 implica x = 0,
+'y la forma cuadratica es estrictamente positiva. En ese caso
+'B<sup>T</sup>·B es <b>definida positiva</b> (DP).</p>
+
+'<p>Si las columnas de B son dependientes, hay un x ≠ 0 con B·x = 0
+'(modo nulo) y B<sup>T</sup>·B es solo PSD (con autovalores cero).</p>
+
+'<hr/>
+
+"Cap 5 — Conexion con SVD (descomposicion en valores singulares)
+
+'<p>Toda matriz B tiene una descomposicion SVD:</p>
+
+'<p style="margin-left:1em;font-size:110%">B = U·Σ·V<sup>T</sup></p>
+
+'<p>donde U y V son ortogonales y Σ es diagonal con los <b>valores
+'singulares</b> σ_i ≥ 0.</p>
+
+'<p>Calculando B<sup>T</sup>·B:</p>
+
+'<p style="margin-left:1em;font-size:110%">B<sup>T</sup>·B = (U·Σ·V<sup>T</sup>)<sup>T</sup>·(U·Σ·V<sup>T</sup>) = V·Σ<sup>T</sup>·U<sup>T</sup>·U·Σ·V<sup>T</sup> = V·Σ<sup>2</sup>·V<sup>T</sup></p>
+
+'<p>(donde usamos U<sup>T</sup>·U = I por ortogonalidad de U).</p>
+
+"Conclusion clave
+'<p>Los <b>autovalores</b> de B<sup>T</sup>·B son exactamente los
+'<b>cuadrados de los valores singulares</b> de B:</p>
+
+'<p style="margin-left:1em;font-size:110%">λ_i (B<sup>T</sup>·B) = σ_i<sup>2</sup> (B)</p>
+
+'<p>Por eso si quieres calcular SVD numericamente, una via es resolver
+'el problema de autovalores de B<sup>T</sup>·B (Lanczos, jacobi, etc).</p>
+
+'<hr/>
+
+"Cap 6 — Minimos cuadrados (la aplicacion estrella)
+'<p>El problema de <b>regresion lineal</b> es: dados muchos puntos
+'(x_i, y_i), encontrar el coeficiente w que minimiza:</p>
+
+'<p style="margin-left:1em;font-size:110%">min ‖B·w - y‖<sup>2</sup></p>
+
+'<p>donde B es la matriz de "datos" (cada fila es un x_i) y y es el
+'vector de observaciones.</p>
+
+'<p>Tomando derivada respecto a w e igualando a cero:</p>
+
+'<p style="margin-left:1em;font-size:110%">B<sup>T</sup>·B·w = B<sup>T</sup>·y &nbsp;&nbsp; (ecuaciones normales)</p>
+
+'<p>Despejando:</p>
+
+'<p style="margin-left:1em;font-size:110%">w = (B<sup>T</sup>·B)<sup>-1</sup>·B<sup>T</sup>·y</p>
+
+'<p>El factor (B<sup>T</sup>·B)<sup>-1</sup>·B<sup>T</sup> se llama
+'<b>pseudoinversa de Moore-Penrose</b> y existe siempre que B tenga
+'columnas linealmente independientes.</p>
+
+"Por que B^T·B es la "matriz central" de la regresion
+'<p>El sistema B·w = y tipicamente <b>no tiene solucion exacta</b>
+'(mas ecuaciones que incognitas). B<sup>T</sup>·B "comprime" el problema
+'a tamano n×n donde si tiene solucion. Es la operacion clave que
+'transforma un sistema sobredeterminado en uno determinado.</p>
+
+'<hr/>
+
+"Cap 7 — Conexion con proyecciones ortogonales
+'<p>El operador P = B·(B<sup>T</sup>·B)<sup>-1</sup>·B<sup>T</sup> es
+'la <b>matriz de proyeccion</b> sobre el espacio columna de B:</p>
+
+'<p style="margin-left:1em;font-size:110%">P · y = proyeccion ortogonal de y sobre Col(B)</p>
+
+'<p>Propiedades de P:</p>
+'<p>• P<sup>2</sup> = P (idempotente — proyectar dos veces da lo mismo
+'que una)</p>
+'<p>• P<sup>T</sup> = P (simetrica)</p>
+'<p>• P · b<sub>i</sub> = b<sub>i</sub> para cada columna de B</p>
+
+'<p>Otra vez B<sup>T</sup>·B aparece en el centro. Sin la inversion de
+'B<sup>T</sup>·B no existe la formula de proyeccion.</p>
+
+'<hr/>
+
+"Cap 8 — Ejemplo numerico completo de regresion
+'<p>Tenemos 4 puntos: (1, 2), (2, 3), (3, 5), (4, 6). Buscamos la recta
+'y = a + b·x que mejor los ajusta.</p>
+
+"Construir B (matriz de diseno)
+B_reg = [1; 1|1; 2|1; 3|1; 4]
+
+'<p>4 filas (una por punto), 2 columnas (constante 1 + variable x).</p>
+
+"Vector y de observaciones
+y_reg = [2|3|5|6]
+
+"Calcular B^T·B
+B_reg_T = [1; 1; 1; 1|1; 2; 3; 4]
+BtB_reg = B_reg_T*B_reg
+
+'<p>B<sup>T</sup>·B = [4 10; 10 30] (2×2 simetrica).</p>
+
+"Calcular B^T·y
+Bty = B_reg_T*y_reg
+
+'<p>B<sup>T</sup>·y = [16; 49].</p>
+
+"Resolver con #sym
+'<p>El sistema 2×2 a resolver es:</p>
+
+'<p style="margin-left:1em;font-size:110%">4·a + 10·b = 16</p>
+'<p style="margin-left:1em;font-size:110%">10·a + 30·b = 49</p>
+
+#sym
+solve(4*a + 10*b - 16; a)
+#end sym
+
+'<p>Resolviendo el sistema (a mano o por inversion 2×2):</p>
+
+a_reg = (16*30 - 49*10)/(4*30 - 10*10)
+b_reg = (4*49 - 10*16)/(4*30 - 10*10)
+
+'<p>a = -10/20 = -0.5 (intercepto), b = 36/20 = 1.4 (pendiente).</p>
+
+'<p>La recta de mejor ajuste es <b>y = -0.5 + 1.4·x</b>. Verificamos:</p>
+'<p>• En x=1: -0.5 + 1.4·1 = 0.9 (real: 2, error 1.1)</p>
+'<p>• En x=2: -0.5 + 1.4·2 = 2.3 (real: 3, error 0.7)</p>
+'<p>• En x=3: -0.5 + 1.4·3 = 3.7 (real: 5, error 1.3)</p>
+'<p>• En x=4: -0.5 + 1.4·4 = 5.1 (real: 6, error 0.9)</p>
+
+'<p>La suma de errores cuadrados es minima — es lo que B<sup>T</sup>·B
+'garantiza al resolver las ecuaciones normales.</p>
+
+"Grafica — los datos y la recta ajustada
+#hide
+n_reg = 4
+x_reg = vector(n_reg)
+y_reg_v = vector(n_reg)
+x_reg.(1) = 1
+y_reg_v.(1) = 2
+x_reg.(2) = 2
+y_reg_v.(2) = 3
+x_reg.(3) = 3
+y_reg_v.(3) = 5
+x_reg.(4) = 4
+y_reg_v.(4) = 6
+'Recta ajustada
+n_line = 30
+x_line = vector(n_line)
+y_line = vector(n_line)
+#for i = 1 : n_line
+    x_line.(i) = (i - 1)*4/(n_line - 1)
+    y_line.(i) = a_reg + b_reg*x_line.(i)
+#loop
+#show
+
+$Chart{x_reg; y_reg_v; x_line; y_line @ title=Regresion lineal — los puntos y la recta ajustada por minimos cuadrados : xlabel=x : ylabel=y : labels=Datos,Recta ajustada}
+
+'<hr/>
+
+"Cap 9 — Donde aparece B^T·B en otros contextos
+
+'<p>La estructura B<sup>T</sup>·B aparece en MUCHISIMOS problemas:</p>
+
+'<table border="1" cellpadding="6">
+'<tr><th>Contexto</th><th>Donde aparece B<sup>T</sup>·B</th><th>Que representa</th></tr>
+'<tr><td>Regresion lineal / OLS</td><td>(B<sup>T</sup>·B)<sup>-1</sup>·B<sup>T</sup>·y</td><td>Coeficientes optimos</td></tr>
+'<tr><td>SVD / PCA</td><td>autovalores = σ<sup>2</sup></td><td>Direcciones principales</td></tr>
+'<tr><td>FEM</td><td>K_e = ∫ B<sup>T</sup>·D·B dV</td><td>Matriz de rigidez</td></tr>
+'<tr><td>Filtros Kalman</td><td>Matriz de covarianza</td><td>Estimacion estado</td></tr>
+'<tr><td>Redes neuronales</td><td>Hessiano = J<sup>T</sup>·J</td><td>Curvatura del loss</td></tr>
+'<tr><td>Optimizacion no-lineal</td><td>Gauss-Newton update</td><td>Aproximacion del Hessiano</td></tr>
+'<tr><td>Tomografia / inversion</td><td>Operador adjunto</td><td>Reconstruccion estable</td></tr>
+'</table>
+
+'<p>En todos estos casos B<sup>T</sup>·B juega el mismo rol: <b>convertir
+'un sistema posiblemente sobredeterminado en uno cuadrado y simetrico</b>
+'que puede invertirse o factorizarse de forma estable.</p>
+
+"Resumen — B^T·B en una linea
+'<p>B<sup>T</sup>·B es la <b>matriz de Gram</b> de las columnas de B:
+'simetrica, PSD, contiene los productos punto entre todas las parejas
+'de columnas. Es la herramienta universal para "comprimir" un problema
+'rectangular a uno cuadrado conservando la informacion geometrica
+'esencial. Por eso aparece en regresion, SVD, FEM y muchos otros lugares.</p>
+
+"Fin del archivo

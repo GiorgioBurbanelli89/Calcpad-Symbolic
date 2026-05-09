@@ -66,6 +66,8 @@ namespace Calcpad.Core
             { '\\', 2 },
             { '⦼', 3 },
             { '*', 4 },
+            { '·', 4 },   // U+00B7 middle dot — alias for multiplication (Spanish/EU notation)
+            { '×', 4 },   // U+00D7 multiplication sign — alias for *
             { '-', 5 },
             { '+', 6 },
             { '<', 7 },

@@ -1,0 +1,103 @@
+"Operador & - Unidades en Calcpad
+
+"1. Escalares - con y sin unidades
+
+"1.1 Sin unidades
+k = 500
+u = 0.02
+F = k*u
+'F = k·u ='F
+
+"1.2 Con unidades consistentes (todo en kN y m)
+k_u = 500 kN/m
+u_u = 0.02 m
+F_u = k_u*u_u
+F_u
+
+"1.3 Unidades inconsistentes (kN/m * mm)
+k_i = 500 kN/m
+u_i = 20 mm
+'Directo (Calcpad convierte internamente):
+F_i = k_i*u_i
+F_i
+'Con & para forzar resultado en kN:
+F_a = k_i*u_i & kN
+F_a
+
+"2. Vectores - con y sin unidades
+
+"2.1 Sin unidades
+v_1 = [10; 20; 30]
+v_1
+
+"2.2 Con unidades homogeneas
+v_2 = [10; 20; 30] kN
+v_2
+
+"2.3 Con & para unidades mixtas (desplazamientos + rotacion)
+v_3 = [0.005; 0.003; 0.012]
+'Vector adimensional:
+v_3
+'Estampar unidades mixtas con & :
+v_4 = v_3 & [m; m; rad]
+v_4
+
+"3. Matrices - con y sin unidades
+
+"3.1 Matriz de rigidez sin unidades
+K_m = [100; -50|-50; 200]
+K_m
+
+"3.2 Matriz con unidades
+K_u = [100; -50|-50; 200] kN/m
+K_u
+
+"3.3 Sistema K·u = F (unidades consistentes)
+K_s = [1000; -500|-500; 1500] kN/m
+F_s = [10; -5] kN
+u_s = lsolve(K_s; F_s)
+'Solucion en m:
+u_s
+'Convertir a mm con | :
+u_mm = u_s | [mm; mm]
+u_mm
+
+"4. Sistema con DOFs mixtos (& necesario)
+
+"4.1 Placa: desplazamiento + rotaciones
+'Vector solucion del FEA (3 DOFs: w, θx, θy):
+Z_raw = [0.00234; 0.00056; -0.00089]
+'Sin unidades no se sabe que es cada DOF.
+'Con & se estampan unidades mixtas:
+Z_units = Z_raw & [mm; rad; rad]
+Z_units
+
+"4.2 Portico: desplazamientos + rotaciones
+'Vector solucion (6 DOFs: u1, v1, θ1, u2, v2, θ2):
+u_frame = [2.5; -0.3; 0.0015; 1.8; -0.1; 0.0008]
+'Con & para unidades mixtas:
+u_frame & [mm; mm; rad; mm; mm; rad]
+
+"4.3 Matriz de rigidez con unidades mixtas
+'Para un resorte con traslacion y rotacion:
+K_mix = [1000; 500|500; 2000]
+'Estampar unidades por fila/columna:
+K_mix & [kN/m; kN/rad|kN/rad; kN*m/rad]
+
+"5. Graficas
+
+"5.1 Resorte simple - diagrama de rigidez
+f(x) = k_u*x
+$Plot{f(x) @ x = 0 m : 0.05 m}
+
+"5.2 Momento vs rotacion
+M_r(θ) = 2000*θ
+$Plot{M_r(θ) @ θ = 0 : 0.01}
+
+"6. Resumen
+'valor unidad → unidad REAL del parser (kN, m, MPa, etc.)
+'valor'unidad → texto despues del valor (NO es unidad real)
+'expr & unidad → adimensionalizar y re-estampar con unidad
+'expr | unidad → convertir a unidad compatible
+'expr & [u1; u2] → unidades mixtas por componente (vectores)
+'expr & [u1; u2 | u3; u4] → unidades mixtas (matrices, filas|columnas)

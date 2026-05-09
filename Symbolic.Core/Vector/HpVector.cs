@@ -34,6 +34,16 @@ namespace Calcpad.Core
                     if (index >= _capacity)
                         ExpandCapacity(index);
                 }
+                // If this vector was initialised as unitless (e.g. via symmetric(N) /
+                // matrix(N) / vector(N)) and the first non-zero assignment carries units,
+                // adopt those units. This lets users build matrices with `K.(j;j) = K.(j;j)
+                // + k_node` without pre-declaring Unit on the matrix template.
+                if (Units is null && value.Units is not null && value.D != 0d)
+                {
+                    Units = value.Units;
+                    _values[index] = value.D;
+                    return;
+                }
                 var d = Unit.Convert(Units, value.Units, '.');
                 if (d == 1d)
                     _values[index] = value.D;

@@ -1,0 +1,31 @@
+#margen 20
+#md on
+"Test — inline permisivo (identidades, derivadas, literales, matrices)
+
+# Caso 1 — identidad inline con LHS NO asignable
+
+'La expansion del cuadrado de un binomio es la identidad clasica'(a + b)^2 = a^2 + 2·a·b + b^2'que se usa una y otra vez en algebra elemental.
+
+'La diferencia de cuadrados es'a^2 - b^2 = (a + b)·(a - b)'y la identidad trigonometrica fundamental es'sin(x)^2 + cos(x)^2 = 1'.
+
+# Caso 2 — derivadas Leibniz inline (antes fallaba "dxdy as units")
+
+'La curvatura en direccion x de una placa delgada es'χ_1 = -d^2w/dx^2'y la curvatura cruzada es'χ_12 = -2·d^2w/dxdy'. La ecuacion biharmonica es'd^4w/dx^4 + 2·d^4w/dx^2dy^2 + d^4w/dy^4 = q/D_f'.
+
+# Caso 3 — matriz literal inline
+
+'El tensor constitutivo es'D = [1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]'y la identidad es'I = [1; 0 | 0; 1]'.
+
+# Caso 4 — menciones literales a directivas #xxx y $xxx
+
+'Para agrupar variables usamos'#blk'en bloque o'#inl'en la misma linea. Para ecuaciones display usamos'#deq'. Para graficas usamos'$Plot'y'$Map'. Para operaciones simbolicas'#sym'.
+
+# Caso 5 — dependencia y evaluacion numerica (el path clasico debe seguir funcionando)
+
+'Con valores'a = 3'y'b = 4'obtenemos'c = sqrt(a^2 + b^2)'por Pitagoras.
+
+'Una asignacion con unidades -'L = 5 m'produce el perimetro -'P_sq = 4*L'en un cuadrado.
+
+# Caso 6 — todo mezclado en la misma linea
+
+'Partiendo de la identidad'(a + b)^2 = a^2 + 2·a·b + b^2'y aplicando la definicion'κ = -d^2w/dx^2'al modelo constitutivo'D = [1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]', combinamos'#blk'y'#deq'para estructurar el informe, con valores numericos'E = 25 GPa'y'ν = 0.20'.

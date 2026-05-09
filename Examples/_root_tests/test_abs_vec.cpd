@@ -1,0 +1,20 @@
+"Test abs con vector indexing
+v = [-3; 5; -7]
+a1 = abs(v.(1))
+a2 = abs(v.(2))
+a3 = abs(v.(3))
+a1
+a2
+a3
+
+"Test #if con abs
+max_v = 0
+#hide
+#for i = 1 : 3
+    val = abs(v.(i))
+    #if val > max_v
+        max_v = val
+    #end if
+#loop
+#show
+max_v

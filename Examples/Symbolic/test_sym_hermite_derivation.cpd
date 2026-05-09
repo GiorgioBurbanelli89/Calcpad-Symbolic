@@ -1,0 +1,127 @@
+"Tutorial: Funciones de Forma en Elementos Finitos
+
+"¿Qué problema resuelve FEM?
+'Una viga real tiene infinitos puntos. En cada punto hay un desplazamiento w(x) diferente. El computador no puede resolver infinitos valores, entonces DISCRETIZAMOS: elegimos solo unos pocos puntos (NODOS) y asumimos una forma entre ellos.
+
+"¿Qué es una función de forma?
+'La función de forma Nᵢ(x) responde la pregunta: "Si el nodo i se mueve 1 unidad, ¿cuánto se mueve cada punto intermedio?"
+
+"═══════════════════════════════════════════
+"CASO 1: Barra axial (lo más simple)
+"═══════════════════════════════════════════
+
+'Tenemos 2 nodos con desplazamiento u₁ y u₂. Queremos conocer u(x) en cualquier punto intermedio.
+'Si el punto está a la izquierda, está más cerca del nodo 1, si está a la derecha, más cerca del nodo 2.
+'La forma más simple de interpolar es LINEAL:
+
+#deq u(x) = N_1*u_1 + N_2*u_2
+
+'Donde las funciones de forma son:
+#deq N_1(ξ) = 1 - ξ
+#deq N_2(ξ) = ξ
+'con ξ = x/L (coordenada normalizada de 0 a 1)
+
+"¿Por qué funciona?
+'Cuando ξ=0 (nodo 1): N₁=1 y N₂=0, entonces u = 1·u₁ + 0·u₂ = u₁ ✓
+'Cuando ξ=1 (nodo 2): N₁=0 y N₂=1, entonces u = 0·u₁ + 1·u₂ = u₂ ✓
+'Verificación con #sym:
+#sym subs(1-t; t; 0)
+#sym subs(1-t; t; 1)
+#sym subs(t; t; 0)
+#sym subs(t; t; 1)
+
+"¿Por qué se DERIVAN las funciones de forma?
+'Porque lo que genera ESFUERZO es la DEFORMACIÓN, y la deformación es la DERIVADA del desplazamiento:
+#deq ε = du/dx
+'Si u(x) = N₁·u₁ + N₂·u₂, entonces:
+#deq ε = dN_1/dx*u_1 + dN_2/dx*u_2
+'Las derivadas de N son la MATRIZ B:
+#sym diff(1-t; t)
+#sym diff(t; t)
+#deq B = [-1/L; 1/L]
+'La deformación es CONSTANTE (B no depende de x). Esto es correcto para una barra.
+
+"¿Cómo se obtiene la RIGIDEZ?
+'La energía de deformación es:
+#deq U = 1/2*ε^T*E*A*ε*L
+'Sustituyendo ε = B·u:
+#deq U = 1/2*u^T*B^T*E*A*B*L*u = 1/2*u^T*K*u
+'Entonces la MATRIZ DE RIGIDEZ es:
+#deq K = B^T*E*A*B*L
+'Como B = [-1/L, 1/L] es constante:
+#deq K = E*A/L*[1; -1 | -1; 1]
+
+"═══════════════════════════════════════════
+"CASO 2: Viga en flexión (Euler-Bernoulli)
+"═══════════════════════════════════════════
+
+"¿Por qué se necesitan polinomios de mayor grado?
+'Para axial, teníamos 2 DOF (u₁, u₂) → polinomio grado 1 (lineal) → 2 coeficientes.
+'Para flexión, cada nodo tiene 2 DOF: desplazamiento w Y rotación θ.
+'Con 2 nodos tenemos 4 DOF: w₁, θ₁, w₂, θ₂.
+'Necesitamos un polinomio con 4 coeficientes → GRADO 3 (cúbico):
+
+#deq w(ξ) = a_0 + a_1*ξ + a_2*ξ^2 + a_3*ξ^3
+
+'La rotación es la derivada del desplazamiento:
+#deq θ(ξ) = dw/dξ = a_1 + 2*a_2*ξ + 3*a_3*ξ^2
+
+"Regla general: N coeficientes = N condiciones de frontera = grado N-1
+
+"Derivación de N₁: w(0)=1, θ(0)=0, w(1)=0, θ(1)=0
+'Significado: El nodo 1 se desplaza 1 unidad hacia abajo, sin rotar. El nodo 2 no se mueve.
+#deq w(0) = a_0 = 1
+#deq θ(0) = a_1 = 0
+#deq w(1) = 1 + 0 + a_2 + a_3 = 0
+#deq 2*a_2 + 3*a_3 = 0
+'De la 3ra: a₂ = -(1+a₃). Sustituir en la 4ta:
+#sym solve(2*(-1-a_3)+3*a_3; a_3)
+'a₃=2, a₂=-3:
+#deq N_1 = 1 - 3*ξ^2 + 2*ξ^3
+
+"Derivación de N₂: w(0)=0, θ(0)=1, w(1)=0, θ(1)=0
+'Significado: El nodo 1 rota 1 radian, sin desplazarse. El nodo 2 no se mueve.
+#deq a_0 = 0
+#deq a_1 = 1
+#sym solve(1+2*(-1-a_3)+3*a_3; a_3)
+'a₃=1, a₂=-2:
+#deq N_2 = ξ - 2*ξ^2 + ξ^3 = ξ*(1 - ξ)^2
+
+"Derivación de N₃: w(0)=0, θ(0)=0, w(1)=1, θ(1)=0
+'Significado: El nodo 2 se desplaza 1 unidad. El nodo 1 no se mueve.
+#deq a_0 = 0
+#deq a_1 = 0
+#sym solve(2*a_2+3*(1-a_2); a_2)
+'a₂=3, a₃=-2:
+#deq N_3 = 3*ξ^2 - 2*ξ^3
+
+"Derivación de N₄: w(0)=0, θ(0)=0, w(1)=0, θ(1)=1
+'Significado: El nodo 2 rota 1 radian. El nodo 1 no se mueve.
+#deq a_0 = 0
+#deq a_1 = 0
+#sym solve(-a_3+1; a_3)
+'a₃=1, a₂=-1:
+#deq N_4 = -ξ^2 + ξ^3 = ξ^2*(ξ - 1)
+
+"¿Por qué se necesita la SEGUNDA derivada para flexión?
+'En flexión, el esfuerzo depende de la CURVATURA, no de la pendiente:
+#deq M = E*I*κ
+#deq κ = d^2*w/dx^2
+'La curvatura es la SEGUNDA derivada del desplazamiento.
+'Por eso la matriz B de flexión usa d²N/dx²:
+#sym diff(1 - 3*t^2 + 2*t^3; t; 2)
+#sym diff(t - 2*t^2 + t^3; t; 2)
+#sym diff(3*t^2 - 2*t^3; t; 2)
+#sym diff(-t^2 + t^3; t; 2)
+
+"Verificación de K: ∫₀¹ BᵢBⱼ dξ
+'B = [d²N/dξ²] = [-6+12ξ, -4+6ξ, 6-12ξ, -2+6ξ]
+'K₁₁ debe ser 12 (coeficiente de EI/L³):
+#sym integrate((-6+12*t)^2; t; 0; 1)
+'K₁₂ debe ser 6:
+#sym integrate((-6+12*t)*(-4+6*t); t; 0; 1)
+'K₂₂ debe ser 4:
+#sym integrate((-4+6*t)^2; t; 0; 1)
+
+"Resumen
+#deq K_flexion = E*I/L^3*[12; 6*L; -12; 6*L | 6*L; 4*L^2; -6*L; 2*L^2 | -12; -6*L; 12; -6*L | 6*L; 2*L^2; -6*L; 4*L^2]

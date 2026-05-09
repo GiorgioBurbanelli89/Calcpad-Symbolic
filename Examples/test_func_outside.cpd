@@ -1,0 +1,8 @@
+"Test — definicion fuera de #blk
+
+f(x) = x^2 + 3*x + 1
+g(x) = sin(x)
+
+"Uso:
+f(2) = ?
+g(0) = ?

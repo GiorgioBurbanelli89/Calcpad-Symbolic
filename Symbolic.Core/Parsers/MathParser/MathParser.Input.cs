@@ -83,7 +83,9 @@ namespace Calcpad.Core
                 '≤' or '≥' or
                 '÷' or '⦼' or
                 '∧' or '∨' or
-                '⊕' => TokenTypes.Operator,
+                '⊕' or
+                '·' or '×' =>            // U+00B7 middle dot, U+00D7 multiplication sign
+                    TokenTypes.Operator,
                 '∠' when _isComplex => TokenTypes.Operator,
                 _ => Validator.IsLetter(c) ? TokenTypes.Unit :
                 TokenTypes.Error,

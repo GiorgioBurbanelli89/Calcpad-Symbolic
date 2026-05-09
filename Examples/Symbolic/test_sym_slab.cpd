@@ -1,0 +1,73 @@
+"Losa Rectangular — Funciones de Forma y Derivadas Simbólicas
+`Elemento Q4 bilineal en coordenadas naturales (ξ, η) → (a, b)
+
+"1. Funciones de Forma N_i(ξ,η)
+`Nodos: 1(-1,-1), 2(+1,-1), 3(+1,+1), 4(-1,+1)
+#deq N_1 = (1-a)*(1-b)/4
+#deq N_2 = (1+a)*(1-b)/4
+#deq N_3 = (1+a)*(1+b)/4
+#deq N_4 = (1-a)*(1+b)/4
+
+"2. Primera Derivada ∂N_i/∂ξ
+#sym pdiff((1-a)*(1-b)/4; a)
+#sym pdiff((1+a)*(1-b)/4; a)
+#sym pdiff((1+a)*(1+b)/4; a)
+#sym pdiff((1-a)*(1+b)/4; a)
+
+"3. Primera Derivada ∂N_i/∂η
+#sym pdiff((1-a)*(1-b)/4; b)
+#sym pdiff((1+a)*(1-b)/4; b)
+#sym pdiff((1+a)*(1+b)/4; b)
+#sym pdiff((1-a)*(1+b)/4; b)
+
+"4. Segunda Derivada ∂²N_i/∂ξ²
+#sym pdiff((1-a)*(1-b)/4; a; 2)
+#sym pdiff((1+a)*(1-b)/4; a; 2)
+#sym pdiff((1+a)*(1+b)/4; a; 2)
+#sym pdiff((1-a)*(1+b)/4; a; 2)
+
+"5. Segunda Derivada ∂²N_i/∂η²
+#sym pdiff((1-a)*(1-b)/4; b; 2)
+#sym pdiff((1+a)*(1-b)/4; b; 2)
+#sym pdiff((1+a)*(1+b)/4; b; 2)
+#sym pdiff((1-a)*(1+b)/4; b; 2)
+
+"6. Derivada Cruzada ∂²N_i/∂ξ∂η
+#sym pdiff((-1+b)/4; b)
+#sym pdiff((1-b)/4; b)
+#sym pdiff((1+b)/4; b)
+#sym pdiff((-1-b)/4; b)
+
+"7. Jacobiano del mapeo isoparamétrico
+#sym jacobian((1-a)*(1-b)/4*0 + (1+a)*(1-b)/4*L_x + (1+a)*(1+b)/4*L_x + (1-a)*(1+b)/4*0; (1-a)*(1-b)/4*0 + (1+a)*(1-b)/4*0 + (1+a)*(1+b)/4*L_y + (1-a)*(1+b)/4*L_y; a; b)
+
+"8. Gradiente de N_1
+#sym gradient((1-a)*(1-b)/4; a; b)
+
+"9. Laplaciano de N_i
+#sym laplacian((1-a)*(1-b)/4; a; b)
+#sym laplacian((1+a)*(1-b)/4; a; b)
+#sym laplacian((1+a)*(1+b)/4; a; b)
+#sym laplacian((1-a)*(1+b)/4; a; b)
+
+"10. Hessiano de N_1
+#sym hessian((1-a)*(1-b)/4; a; b)
+
+"11. Placa de Kirchhoff — Elemento rectangular 12 DOF
+`Funciones de forma Hermite para w(x,y)
+#deq H_1(ξ) = (2 - 3*ξ + ξ^3)/4
+#sym simplify((2-3*t+t^3)/4)
+#sym diff((2-3*t+t^3)/4; t)
+#sym diff((2-3*t+t^3)/4; t; 2)
+#deq H_2(ξ) = (1 - ξ - ξ^2 + ξ^3)/4
+#sym simplify((1-t-t^2+t^3)/4)
+#sym diff((1-t-t^2+t^3)/4; t)
+#sym diff((1-t-t^2+t^3)/4; t; 2)
+#deq H_3(ξ) = (2 + 3*ξ - ξ^3)/4
+#sym simplify((2+3*t-t^3)/4)
+#sym diff((2+3*t-t^3)/4; t)
+#sym diff((2+3*t-t^3)/4; t; 2)
+#deq H_4(ξ) = (-1 - ξ + ξ^2 + ξ^3)/4
+#sym simplify((-1-t+t^2+t^3)/4)
+#sym diff((-1-t+t^2+t^3)/4; t)
+#sym diff((-1-t+t^2+t^3)/4; t; 2)

@@ -213,7 +213,14 @@ namespace Calcpad.Wpf
             var docPath = AppInfo.DocPath;
             var docUrl = $"file:///{docPath.Replace("\\", "/")}";
             var htmlExt = AddCultureExt("html");
-            _htmlWorksheet = ReadTextFromFile($"{docPath}\\template{htmlExt}").Replace("https:// calcpad.local", docUrl);
+            // Embed jQuery and calcpad-viz inline (avoids cross-origin warnings in WebView2/DevTools).
+            // Falls back to file:/// only if the JS file isn't found alongside the .exe.
+            var rawTemplate = ReadTextFromFile($"{docPath}\\template{htmlExt}");
+            rawTemplate = EmbedScriptInline(rawTemplate, "jquery-3.6.3.min.js", docPath);
+            rawTemplate = EmbedScriptInline(rawTemplate, "calcpad-viz.umd.js", docPath);
+            // Any remaining calcpad.local references → resolve to local doc URL.
+            // (Fixed typo: there used to be an erroneous space "https:// calcpad.local".)
+            _htmlWorksheet = rawTemplate.Replace("https://calcpad.local", docUrl);
             _htmlParsingPath = $"{docPath}\\parsing{htmlExt}";
             _htmlParsingUrl = $"{docUrl}/parsing{htmlExt}";
             _htmlHelpPath = GetHelp(MainWindowResources.calcpad_download_help_html);
@@ -1361,7 +1368,28 @@ namespace Calcpad.Wpf
             {
                 if (!string.IsNullOrEmpty(htmlResult))
                 {
-                    await _wv2Warper.NavigateToStringAsync(htmlResult);
+                    // NavigateToStringAsync uses document.write+ExecuteScriptAsync, which has
+                    // a ~2 MB JSON limit AND triggers parser-blocking warnings for external
+                    // scripts (calcpad-viz, jQuery). For HTML over ~1 MB or containing big
+                    // SVG meshes (>500 inline <line>s), write to %TEMP% and Navigate(file:///).
+                    const int NAV_STRING_LIMIT = 1_000_000; // 1 MB margin (UTF-16 in C# is 2 B/char)
+                    bool hasLargeSvg = htmlResult.Length > 200_000 &&
+                        System.Text.RegularExpressions.Regex.IsMatch(htmlResult,
+                            @"<svg[^>]*>.{0,500}<line", System.Text.RegularExpressions.RegexOptions.Singleline);
+                    if (htmlResult.Length > NAV_STRING_LIMIT || hasLargeSvg)
+                    {
+                        var tempHtml = Path.Combine(Path.GetTempPath(),
+                            $"calcpad_render_{Guid.NewGuid():N}.html");
+                        File.WriteAllText(tempHtml, htmlResult, Encoding.UTF8);
+                        // CoreWebView2.Navigate() requires a URI — convert Windows path
+                        // "C:\Users\…\file.html" → "file:///C:/Users/.../file.html"
+                        var fileUri = "file:///" + tempHtml.Replace("\\", "/");
+                        _wv2Warper.Navigate(fileUri);
+                    }
+                    else
+                    {
+                        await _wv2Warper.NavigateToStringAsync(htmlResult);
+                    }
                 }
             }
             catch (Exception e)
@@ -1521,6 +1549,20 @@ namespace Calcpad.Wpf
                 images[i] = matches[i].Value;
 
             return images;
+        }
+
+        /// <summary>Replace `<script src="https://calcpad.local/{file}">` with inline content.
+        /// Mirrors the CLI Converter.EmbedScript so both binaries produce browser-portable HTML.</summary>
+        private static string EmbedScriptInline(string html, string fileName, string docPath)
+        {
+            var scriptTag = $"<script src=\"https://calcpad.local/{fileName}\"></script>";
+            var filePath = Path.Combine(docPath, fileName);
+            if (File.Exists(filePath))
+            {
+                var content = File.ReadAllText(filePath);
+                return html.Replace(scriptTag, $"<script>{content}</script>");
+            }
+            return html;
         }
 
         private string HtmlApplyWorksheet(string s)

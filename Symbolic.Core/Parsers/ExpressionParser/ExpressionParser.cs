@@ -88,6 +88,18 @@ namespace Calcpad.Core
                     }
                     if (currentLineCache.IsCached && keyword == Keyword.None)
                     {
+                        // Inside #plotly block: every body line is raw JSON, never evaluated
+                        if (_insidePlotlyBlock)
+                        {
+                            ProcessPlotlyLine(textSpan.ToString());
+                            continue;
+                        }
+                        // Inside any other web-graphics block (#three/#mermaid/#canvas/etc.)
+                        if (_insideWebGraphicBlock)
+                        {
+                            ProcessWebGraphicLine(textSpan.ToString());
+                            continue;
+                        }
                         // Inside #svg block: don't use cache for dot-primitives — must re-evaluate
                         if (_insideSvgBlock)
                         {
@@ -126,7 +138,12 @@ namespace Calcpad.Core
                         _parser.Line = _currentLine + 1;
 
                     lineSpan = lineSpan.Trim();
-                    if (HasLineExtension(textSpan.TrimEnd()))
+                    // Inside web-graphics blocks (#plotly/#three/#canvas/etc.) and #svg
+                    // the body is raw text — don't apply line extension (`;`, `|`, `&` etc.
+                    // are valid JS/DSL chars that should NOT make the parser splice the
+                    // next line onto this one).
+                    var skipLineExtension = _insidePlotlyBlock || _insideWebGraphicBlock || _insideSvgBlock;
+                    if (!skipLineExtension && HasLineExtension(textSpan.TrimEnd()))
                     {
                         var c = textSpan[^1];
                         if (c == '_')
@@ -139,7 +156,7 @@ namespace Calcpad.Core
                     else
                         textSpan = lineSpan;
 
-                    if (HasLineExtension(textSpan.TrimEnd()))
+                    if (!skipLineExtension && HasLineExtension(textSpan.TrimEnd()))
                     {
                         _lineCache[_currentLine] = new(null, Keyword.SkipLine);
                         continue;
@@ -263,6 +280,19 @@ namespace Calcpad.Core
                                 _vizBlockLines.Add(line);
                             }
                         }
+                        continue;
+                    }
+
+                    // #plotly block mode: every body line is raw JSON content (never evaluated)
+                    if (_insidePlotlyBlock && keyword == Keyword.None)
+                    {
+                        ProcessPlotlyLine(textSpan.ToString());
+                        continue;
+                    }
+                    // Other web-graphics blocks (#three/#mermaid/#canvas/etc.)
+                    if (_insideWebGraphicBlock && keyword == Keyword.None)
+                    {
+                        ProcessWebGraphicLine(textSpan.ToString());
                         continue;
                     }
 
@@ -447,7 +477,16 @@ namespace Calcpad.Core
                             sb.Append(token.Value).Append(rs);
                     }
                 }
-                var pipeline = new MarkdownPipelineBuilder().UseEmphasisExtras().UseListExtras().Build();
+                // Markdig pipeline: emphasis + lists + pipe tables + GFM extras (strikethrough,
+                // task lists). UsePipeTables() converts "| col | col |" syntax to <table>.
+                var pipeline = new MarkdownPipelineBuilder()
+                    .UseEmphasisExtras()
+                    .UseListExtras()
+                    .UsePipeTables()
+                    .UseGridTables()
+                    .UseAutoLinks()
+                    .UseTaskLists()
+                    .Build();
                 var document = Markdown.Parse(sb.ToString(), pipeline);
                 using StringWriter writer = new();
                 HtmlRenderer renderer = new(writer)
@@ -627,6 +666,8 @@ namespace Calcpad.Core
                 _parser.SetVariable("Units", new RealValue(UnitsFactor()));
                 _previousKeyword = Keyword.None;
                 _isMarkdownOn = false;
+                ResetPlotlyState();
+                ResetWebGraphicsState();
                 OpenXmlExpressions.Clear();
             }
             else
@@ -689,6 +730,74 @@ namespace Calcpad.Core
             _errors.Clear();
         }
 
+        /// <summary>Heuristic: does this expression look like prose text rather
+        /// than a math formula? Used to decide whether a parse error should be
+        /// shown as a hard error or silently rendered as text. We say "yes" when
+        /// the value contains 2+ word-tokens separated by spaces where each word
+        /// has 3+ lowercase ASCII letters AND the value contains a space-letter
+        /// pattern that's never valid math (digit-letter without an operator,
+        /// or two consecutive lowercase words).</summary>
+        private static bool LooksLikeProseText(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+            var v = value.Trim();
+            // Must NOT start with operators / function-like syntax — those are math.
+            if (v.Length == 0) return false;
+            var first = v[0];
+            if (!(char.IsLetter(first) || first == '-' || first == '+'))
+                return false;
+            // Split into word-like tokens
+            int wordCount = 0;
+            int letterRunMax = 0;
+            int letterRun = 0;
+            bool sawDigitThenLetter = false;
+            char prev = '\0';
+            for (int i = 0; i < v.Length; i++)
+            {
+                var c = v[i];
+                if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')
+                {
+                    letterRun++;
+                    if (letterRun > letterRunMax) letterRunMax = letterRun;
+                    if (char.IsDigit(prev)) sawDigitThenLetter = true;
+                }
+                else
+                {
+                    if (letterRun >= 3) wordCount++;
+                    letterRun = 0;
+                }
+                prev = c;
+            }
+            if (letterRun >= 3) wordCount++;
+            // Heuristic: 2+ word-tokens of 3+ lowercase letters → likely prose,
+            // OR a digit immediately followed by letters with no operator → never
+            // valid math (e.g. "1a1enladireccion").
+            return wordCount >= 2 || (sawDigitThenLetter && letterRunMax >= 4);
+        }
+
+        /// <summary>If <paramref name="value"/> starts with the inline directive
+        /// <paramref name="prefix"/> (e.g. "#deq" or "#sym"), strip the prefix and
+        /// return the body (the rest of the expression to render).
+        /// Accepts both '#deq foo' (with space) and '#deqξ' (no space — useful when
+        /// the body starts with a greek letter or paren). The 5th char must be a
+        /// non-letter — otherwise '#deqs' could mistakenly match a longer keyword.</summary>
+        private static bool TryStripInlineDirective(string value, string prefix, out string body)
+        {
+            body = null;
+            var trimmed = value.TrimStart();
+            if (!trimmed.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (trimmed.Length == prefix.Length)
+                return false; // no body
+            var after = trimmed[prefix.Length];
+            // ASCII letter immediately after prefix → looks like a longer keyword
+            // (e.g. "#deqs"), don't match. Greek letters / (/digits / +/- are fine.
+            if ((after >= 'a' && after <= 'z') || (after >= 'A' && after <= 'Z') || after == '_')
+                return false;
+            body = trimmed[prefix.Length..].Trim();
+            return body.Length > 0;
+        }
+
         private void ParseTokens(List<Token> tokens, bool isOutput, bool getXml)
         {
             var isLoop = _loops.Count > 0 && _calculate && _isVal > -1;
@@ -698,17 +807,19 @@ namespace Calcpad.Core
                 if (token.Type == TokenTypes.Expression)
                 {
                     // Inline #sym: 'text '#sym diff(x^2; x)' more text'
-                    if (token.Value.TrimStart().StartsWith("#sym ", StringComparison.OrdinalIgnoreCase))
+                    // Or compact form '#symdiff(x; 1)' (no space) for greek-headed expressions.
+                    if (TryStripInlineDirective(token.Value, "#sym", out var symBody))
                     {
                         if (isOutput)
-                            ParseInlineSym(token.Value.TrimStart()[5..].Trim());
+                            ParseInlineSym(symBody);
                         continue;
                     }
                     // Inline #deq: 'text '#deq f(x) = expr' more text'
-                    if (token.Value.TrimStart().StartsWith("#deq ", StringComparison.OrdinalIgnoreCase))
+                    // Or compact form '#deqξ' / '#deqη' (no space, greek letter as expression).
+                    if (TryStripInlineDirective(token.Value, "#deq", out var deqBody))
                     {
                         if (isOutput)
-                            ParseInlineDeq(token.Value.TrimStart()[5..].Trim());
+                            ParseInlineDeq(deqBody);
                         continue;
                     }
 
@@ -751,6 +862,18 @@ namespace Calcpad.Core
                     catch (MathParserException ex)
                     {
                         _parser.ResetStack();
+
+                        // Graceful fallback: if the expression looks like prose text
+                        // (multiple lowercase word-tokens separated by spaces, not a
+                        // typical math formula), render it as plain text instead of
+                        // erroring. This handles cases like '...' #deq ξ ''quevade — 1a1'
+                        // where the user's quote pairing broke and a text fragment ends
+                        // up in an Expression token.
+                        if (isOutput && LooksLikeProseText(token.Value))
+                        {
+                            _sb.Append(System.Web.HttpUtility.HtmlEncode(token.Value));
+                            continue;
+                        }
 
                         // If the expression has multiple '=' (like f(x)=x^2+1=0),
                         // try rendering as #deq (display-only double equality)

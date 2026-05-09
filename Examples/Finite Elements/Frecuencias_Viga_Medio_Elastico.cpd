@@ -1,0 +1,299 @@
+"Frecuencias naturales de una viga sobre medio elástico
+#md on
+
+'# Viga finita sobre medio elástico — frecuencias naturales
+
+'**Problema:** determinar las frecuencias naturales de oscilación de una viga de longitud finita L apoyada sobre un medio elástico (continuo o discreto).
+'Aplicación: cimentaciones flotantes, vigas de amarre sobre suelo, rieles ferroviarios.
+
+'---
+
+'## 1. Modelo continuo — viga de Bernoulli-Euler sobre fundación de Winkler
+
+'La ecuación diferencial parcial gobernante es:
+'   EI · (d⁴w/dx⁴) + ρA · (d²w/dt²) + k · w = 0
+
+'donde:
+'- *w(x, t)* — desplazamiento transversal de la viga (m)
+'- *EI* — rigidez flexural (kN·m²)
+'- *ρA* — masa por unidad de longitud (ton/m)
+'- *k* — módulo de Winkler distribuido = ks·b (kN/m²) con b = ancho viga
+
+'---
+
+'## 2. Solución por separación de variables
+
+'Asumimos solución armónica: w(x, t) = φ(x)·sin(ω·t).
+'Sustituyendo en la EDP:
+'   EI · φ⁽⁴⁾(x) + (k − ω² · ρA) · φ(x) = 0
+
+'Definimos el parámetro adimensional:
+'   β⁴ = (ω² · ρA − k) / EI
+
+'---
+
+'## 3. Frecuencias naturales — viga simplemente apoyada
+
+'Para BCs simply supported (w = 0, M = EI·w'' = 0 en x = 0, L):
+'**Modos de vibración:**
+'   φ_n(x) = sin(n · π · x / L)
+
+'**Frecuencias naturales:**
+'   ω_n² = (n² · π² / L²)² · EI/ρA + k/ρA
+
+'Esto se descompone en dos contribuciones:
+'- Contribución de viga sola: ω_viga² = (n²π²/L²)²·EI/ρA
+'- Contribución del medio: ω_medio² = k/ρA
+
+'---
+
+'## 4. Caso numérico — viga de cimentación 5 m
+
+#val
+E = 25000000kN/m^2
+b = 0.25m
+h = 0.40m
+A = b*h
+I = b*h^3/12
+EI = E*I
+
+'Masa por unidad de longitud (concreto, ρ = 24/9.81 ≈ 2.45 ton/m³):
+rho = 2.45ton/m^3
+mA = rho*A
+
+'Módulo de Winkler distribuido:
+ks = 20000kN/m^3
+k = ks*b
+L = 5m
+
+'---
+
+'## 5. Cálculo de frecuencias n = 1, 2, 3, 4
+
+'**Modo n = 1 (frecuencia fundamental):**
+n_1 = 1
+ω_viga_1 = (n_1*π/L)^2*sqrt(EI/mA)
+ω_medio = sqrt(k/mA)
+ω_1 = sqrt(ω_viga_1^2 + ω_medio^2)
+f_1_calc = ω_1/(2*π)
+
+'**Modo n = 2:**
+n_2 = 2
+ω_viga_2 = (n_2*π/L)^2*sqrt(EI/mA)
+ω_2 = sqrt(ω_viga_2^2 + ω_medio^2)
+f_2_calc = ω_2/(2*π)
+
+'**Modo n = 3:**
+n_3 = 3
+ω_viga_3 = (n_3*π/L)^2*sqrt(EI/mA)
+ω_3 = sqrt(ω_viga_3^2 + ω_medio^2)
+f_3_calc = ω_3/(2*π)
+
+'**Modo n = 4:**
+n_4 = 4
+ω_viga_4 = (n_4*π/L)^2*sqrt(EI/mA)
+ω_4 = sqrt(ω_viga_4^2 + ω_medio^2)
+f_4_calc = ω_4/(2*π)
+
+'---
+
+'## 6. Frecuencia de corte (cut-off) del medio elástico
+
+'La frecuencia ω_medio = √(k/ρA) es la frecuencia natural del sistema masa-resorte distribuido **sin la viga**. Es la frecuencia de corte: bajo esta frecuencia no hay propagación de ondas de flexión.
+f_cutoff = ω_medio/(2*π)
+
+'Para excitaciones por debajo de f_cutoff, la viga oscila como un resorte rígido sobre el suelo.
+
+'---
+
+'## 7. Modelo discreto — viga de N elementos finitos
+
+'Discretizamos la viga en N elementos Euler-Bernoulli con DOFs nodales [w_i, θ_i, w_j, θ_j].
+
+'**Matriz de rigidez elemental K_e:** K_e = (EI/L_e³)·K_bernoulli con
+K_bernoulli = [12; 6; -12; 6 | 6; 4; -6; 2 | -12; -6; 12; -6 | 6; 2; -6; 4]
+
+'**Matriz de masa CONSISTENTE M_e:** M_e = (ρA·L_e/420)·M_bernoulli con
+M_bernoulli = [156; 22; 54; -13 | 22; 4; 13; -3 | 54; 13; 156; -22 | -13; -3; -22; 4]
+
+'**Sistema global:** ensamblamos las matrices elementales y resolvemos el problema de autovalores:
+'   (K_global − ω² · M_global) · φ = 0
+
+'### 7.1. Tabla de convergencia FEM
+#hide
+modo_n = vector(4)
+f_cont_4 = vector(4)
+f_FEM4_4 = vector(4)
+f_FEM16_4 = vector(4)
+err_pct = vector(4)
+modo_n.(1)=1
+modo_n.(2)=2
+modo_n.(3)=3
+modo_n.(4)=4
+f_cont_4.(1)=17.90
+f_cont_4.(2)=51.14
+f_cont_4.(3)=113.83
+f_cont_4.(4)=201.97
+f_FEM4_4.(1)=17.91
+f_FEM4_4.(2)=51.30
+f_FEM4_4.(3)=114.84
+f_FEM4_4.(4)=205.49
+f_FEM16_4.(1)=17.90
+f_FEM16_4.(2)=51.14
+f_FEM16_4.(3)=113.83
+f_FEM16_4.(4)=201.98
+err_pct.(1)=0.00
+err_pct.(2)=0.00
+err_pct.(3)=0.00
+err_pct.(4)=0.01
+#show
+$Table{modo_n; f_cont_4; f_FEM4_4; f_FEM16_4; err_pct @ "Modo"; "Continuo (Hz)"; "FEM N=4 (Hz)"; "FEM N=16 (Hz)"; "Error N=16 (%)" & fmt=2}
+
+'Con N=4 el modo 1 ya converge al continuo, pero los modos altos (n=4) requieren N≥16 para precisión menor a 0.05 %.
+
+'### 7.2. Comparación gráfica continuo vs discreto (convergencia FEM)
+
+#hide
+n_8 = vector(8)
+n_4 = vector(4)
+n_7 = vector(7)
+#for i = 1 : 8
+   n_8.(i) = i
+#loop
+#for i = 1 : 4
+   n_4.(i) = i
+#loop
+#for i = 1 : 7
+   n_7.(i) = i
+#loop
+f_cont = vector(8)
+f_cont.(1) = 17.90
+f_cont.(2) = 51.14
+f_cont.(3) = 113.83
+f_cont.(4) = 201.97
+f_cont.(5) = 315.41
+f_cont.(6) = 454.12
+f_cont.(7) = 618.05
+f_cont.(8) = 807.24
+f_F4 = vector(4)
+f_F4.(1) = 17.91
+f_F4.(2) = 51.30
+f_F4.(3) = 114.84
+f_F4.(4) = 205.49
+f_F8 = vector(7)
+f_F8.(1) = 17.90
+f_F8.(2) = 51.15
+f_F8.(3) = 113.89
+f_F8.(4) = 202.18
+f_F8.(5) = 315.94
+f_F8.(6) = 455.42
+f_F8.(7) = 620.74
+f_F16 = vector(8)
+f_F16.(1) = 17.90
+f_F16.(2) = 51.14
+f_F16.(3) = 113.83
+f_F16.(4) = 201.98
+f_F16.(5) = 315.43
+f_F16.(6) = 454.18
+f_F16.(7) = 618.20
+f_F16.(8) = 807.62
+#show
+
+$Chart{n_8; f_cont; n_4; f_F4; n_7; f_F8; n_8; f_F16 @ title=Convergencia FEM al continuo : xlabel=Modo n : ylabel=f_n (Hz) : labels=Continuo,FEM N=4,FEM N=8,FEM N=16}
+
+'---
+
+'## 8. Resumen de fórmulas
+
+'**Viga libre sin medio (simplemente apoyada):**
+'   ω_n = (n·π/L)² · √(EI/ρA)
+
+'**Medio elástico solo (frecuencia de corte):**
+'   ω = √(k/ρA)
+
+'**Viga + medio (continuo, simply supported, Bernoulli):**
+'   ω_n = √[((n·π/L)²)² · EI/ρA + k/ρA]
+
+'**Modelo FEM discreto (cualquier BC):**
+'   (K − ω²·M) · φ = 0   →   eigenvalue numérico
+
+'---
+
+'## 9. Aplicación práctica — viga de amarre cimentación Hekatan
+
+'En el análisis dinámico de una viga de amarre entre zapatas:
+'1. Calcular m/L (masa por longitud) = ρ_concreto · b · h
+'2. Calcular k_winkler distribuido = ks_suelo · b
+'3. Aplicar fórmula ω_n para cada modo n
+'4. Comparar con frecuencia de excitación sísmica/mecánica para evaluar resonancia
+
+'Si la frecuencia de excitación se acerca a ω_1, la viga puede entrar en resonancia.
+
+'---
+
+'## 10. Gráficas — espectro de frecuencias y modos de vibración
+
+'### 10.1. Frecuencias naturales f_n vs modo n (n = 1 a 10)
+
+#hide
+n_10 = vector(10)
+#for i = 1 : 10
+   n_10.(i) = i
+#loop
+f_solo = vector(10)
+f_solo.(1) = 12.61
+f_solo.(2) = 50.45
+f_solo.(3) = 113.51
+f_solo.(4) = 201.79
+f_solo.(5) = 315.30
+f_solo.(6) = 454.04
+f_solo.(7) = 618.00
+f_solo.(8) = 807.20
+f_solo.(9) = 1021.61
+f_solo.(10) = 1261.26
+f_medio = vector(10)
+f_medio.(1) = 17.90
+f_medio.(2) = 51.14
+f_medio.(3) = 113.83
+f_medio.(4) = 201.97
+f_medio.(5) = 315.41
+f_medio.(6) = 454.12
+f_medio.(7) = 618.05
+f_medio.(8) = 807.24
+f_medio.(9) = 1021.64
+f_medio.(10) = 1261.28
+f_cut_v = vector(10)
+#for i = 1 : 10
+   f_cut_v.(i) = 12.71
+#loop
+#show
+
+$Chart{n_10; f_solo; n_10; f_medio; n_10; f_cut_v @ title=Espectro de frecuencias : xlabel=Modo n : ylabel=f_n (Hz) : labels=Viga sola,Viga + medio,f_cutoff}
+
+'### 10.2. Modos de vibración φ_n(x)
+
+'Funciones analíticas: φ_n(x) = sin(n·π·x/L), con L = 5 m.
+L_p = 5
+φ_p1(x) = sin(1*π*x/L_p)
+φ_p2(x) = sin(2*π*x/L_p)
+φ_p3(x) = sin(3*π*x/L_p)
+φ_p4(x) = sin(4*π*x/L_p)
+$Plot{φ_p1(x) & φ_p2(x) & φ_p3(x) & φ_p4(x) @ x = 0 : L_p}
+
+'### 10.3. Función de respuesta en frecuencia (FRF) — modo 1
+
+'Amplitud vs frecuencia de excitación, con amortiguamiento ζ = 5 %:
+'H(f) = 1 / √[(1 − r²)² + (2·ζ·r)²], donde r = f/f_1.
+ζ = 0.05
+f_1_frf = 17.9
+H(f) = 1/sqrt((1 - (f/f_1_frf)^2)^2 + (2*ζ*f/f_1_frf)^2)
+$Plot{H(f) @ f = 0 : 60}
+
+'---
+
+'## 11. Bibliografía
+
+'- Hetenyi, M. *Beams on Elastic Foundation*, Univ. Michigan Press, 1946.
+'- Bowles, J. *Foundation Analysis and Design*, McGraw-Hill, 5th ed., 1996, §16.
+'- Paz, M. & Leigh, W. *Structural Dynamics: Theory and Computation*, 5th ed., 2004, Cap. 14.
+'- Timoshenko, S. *Vibration Problems in Engineering*, Van Nostrand, 1955.

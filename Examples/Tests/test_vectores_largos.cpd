@@ -1,0 +1,70 @@
+"Test — vectores y matrices largos (truncado vs render completo)
+
+# 1. Vector corto (5 elementos)
+
+v_5 = [1; 2; 3; 4; 5]
+v_5
+
+# 2. Vector mediano (15 elementos)
+
+v_15 = vector(15)
+#hide
+#for i = 1 : 15
+    v_15.i = i^2
+#loop
+#show
+v_15
+
+# 3. Vector largo (50 elementos) — DEBE truncarse
+
+v_50 = vector(50)
+#hide
+#for i = 1 : 50
+    v_50.i = sin(i*π/10)*100
+#loop
+#show
+v_50
+
+# 4. Vector muy largo (200 elementos)
+
+v_200 = vector(200)
+#hide
+#for i = 1 : 200
+    v_200.i = i
+#loop
+#show
+v_200
+
+# 5. Matriz pequeña (3x3)
+
+M_3 = [1; 2; 3 | 4; 5; 6 | 7; 8; 9]
+M_3
+
+# 6. Matriz mediana (10x10)
+
+M_10 = matrix(10; 10)
+#hide
+#for i = 1 : 10
+    #for j = 1 : 10
+        M_10.(i; j) = i*10 + j
+    #loop
+#loop
+#show
+M_10
+
+# 7. Matriz grande (50x50) — DEBE truncar filas y columnas
+
+M_50 = matrix(50; 50)
+#hide
+#for i = 1 : 50
+    #for j = 1 : 50
+        M_50.(i; j) = i*100 + j
+    #loop
+#loop
+#show
+M_50
+
+# Cierre
+
+'maxCount default = 20. Para vectores y matrices > 20 debe truncar
+'con elipsis (... ⋮ ⋯ ⋱).

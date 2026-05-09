@@ -1,0 +1,198 @@
+#margen 20
+"Ejemplo 13.1 Mario Paz — Portico espacial 3D con 4 elementos
+
+'Reproduccion fiel del Matlab del Cap. 13 de Paz 6th ed.
+'Portico 3D con 5 nudos (24 DOF fijos, 6 libres en nudo 1).
+'Calcular matrices K y M globales (30x30) y luego la respuesta
+'dinamica ante carga impulsiva de 5000 lb.
+
+"Datos — propiedades del material
+
+E = 30000000
+G = 12000000
+
+"Miembros 1 y 3
+
+A_1 = 50
+Iz_1 = 200
+Iy_1 = 200
+J_1 = 40
+m_bar_1 = 0.2
+I0_1 = 205
+
+"Miembros 2 y 4
+
+A_2 = 28
+Iz_2 = 64
+Iy_2 = 64
+J_2 = 12.8
+m_bar_2 = 0.1
+I0_2 = 68
+
+#pgb
+"Geometria — nudos (x, y, z) — Matlab: nodes
+
+'Nudo 1: (0, 0, 0)        — centro libre
+'Nudo 2: (0, 0, -200)     — apoyo -Z
+'Nudo 3: (0, 200, 0)      — apoyo +Y
+'Nudo 4: (-200, 0, 0)     — apoyo -X
+'Nudo 5: (0, -200, 0)     — apoyo -Y
+
+nodes = [0; 0; 0 | 0; 0; -200 | 0; 200; 0 | -200; 0; 0 | 0; -200; 0]
+
+'DOF totales = 6 * 5 nudos = 30
+dof_total = 30
+
+'Longitud de cada elemento (todos = 200 por simetria):
+L = 200
+
+#pgb
+"Conectividad (Matlab: conn)
+
+'Elemento i: [nudo_a, nudo_b, nudo_ref]
+'   Nudo ref = nudo auxiliar para orientar el eje local y del elemento
+'
+'   Elem 1: 1→2 con ref 3    (props 1,3: A_1, Iz_1, etc.)
+'   Elem 2: 1→3 con ref 2    (props 2,4: A_2, Iz_2, etc.)
+'   Elem 3: 1→4 con ref 2    (props 1,3)
+'   Elem 4: 1→5 con ref 2    (props 2,4)
+
+"DOF mapping (Matlab: lmm)
+
+'Elem 1 usa DOFs 1:12      (nudo 1 + nudo 2)
+'Elem 2 usa DOFs 1:6 y 13:18  (nudo 1 + nudo 3)
+'Elem 3 usa DOFs 1:6 y 19:24  (nudo 1 + nudo 4)
+'Elem 4 usa DOFs 1:6 y 25:30  (nudo 1 + nudo 5)
+
+#pgb
+"Rigideces elementales K_e (12x12) en coordenadas locales
+
+"Elemento 1 — miembro tipo 1 (A_1, Iz_1, Iy_1, J_1)
+
+'Constantes del elemento 1:
+EA_1 = E*A_1
+EIz_1 = E*Iz_1
+EIy_1 = E*Iy_1
+GJ_1 = G*J_1
+
+'Coeficientes principales:
+k11_1 = EA_1/L
+k22_1 = 12*EIz_1/L^3
+k33_1 = 12*EIy_1/L^3
+k44_1 = GJ_1/L
+k55_1 = 4*EIy_1/L
+k66_1 = 4*EIz_1/L
+
+'Coeficientes de acoplamiento flexor-flexor:
+a1 = 6*EIz_1/L^2
+b1 = 6*EIy_1/L^2
+c1 = 2*EIy_1/L
+d1 = 2*EIz_1/L
+
+'Matriz K_e elemento 1 (12x12) — formato Paz ecuacion 13.23
+K_e1 = [EA_1/L; 0; 0; 0; 0; 0; -EA_1/L; 0; 0; 0; 0; 0 | 0; k22_1; 0; 0; 0; a1; 0; -k22_1; 0; 0; 0; a1 | 0; 0; k33_1; 0; -b1; 0; 0; 0; -k33_1; 0; -b1; 0 | 0; 0; 0; GJ_1/L; 0; 0; 0; 0; 0; -GJ_1/L; 0; 0 | 0; 0; -b1; 0; k55_1; 0; 0; 0; b1; 0; c1; 0 | 0; a1; 0; 0; 0; k66_1; 0; -a1; 0; 0; 0; d1 | -EA_1/L; 0; 0; 0; 0; 0; EA_1/L; 0; 0; 0; 0; 0 | 0; -k22_1; 0; 0; 0; -a1; 0; k22_1; 0; 0; 0; -a1 | 0; 0; -k33_1; 0; b1; 0; 0; 0; k33_1; 0; b1; 0 | 0; 0; 0; -GJ_1/L; 0; 0; 0; 0; 0; GJ_1/L; 0; 0 | 0; 0; -b1; 0; c1; 0; 0; 0; b1; 0; k55_1; 0 | 0; a1; 0; 0; 0; d1; 0; -a1; 0; 0; 0; k66_1]
+
+#pgb
+"Elemento 2 — miembro tipo 2 (A_2, Iz_2, Iy_2, J_2)
+
+EA_2 = E*A_2
+EIz_2 = E*Iz_2
+EIy_2 = E*Iy_2
+GJ_2 = G*J_2
+
+k11_2 = EA_2/L
+k22_2 = 12*EIz_2/L^3
+k33_2 = 12*EIy_2/L^3
+k44_2 = GJ_2/L
+k55_2 = 4*EIy_2/L
+k66_2 = 4*EIz_2/L
+
+a2 = 6*EIz_2/L^2
+b2 = 6*EIy_2/L^2
+c2 = 2*EIy_2/L
+d2 = 2*EIz_2/L
+
+K_e2 = [EA_2/L; 0; 0; 0; 0; 0; -EA_2/L; 0; 0; 0; 0; 0 | 0; k22_2; 0; 0; 0; a2; 0; -k22_2; 0; 0; 0; a2 | 0; 0; k33_2; 0; -b2; 0; 0; 0; -k33_2; 0; -b2; 0 | 0; 0; 0; GJ_2/L; 0; 0; 0; 0; 0; -GJ_2/L; 0; 0 | 0; 0; -b2; 0; k55_2; 0; 0; 0; b2; 0; c2; 0 | 0; a2; 0; 0; 0; k66_2; 0; -a2; 0; 0; 0; d2 | -EA_2/L; 0; 0; 0; 0; 0; EA_2/L; 0; 0; 0; 0; 0 | 0; -k22_2; 0; 0; 0; -a2; 0; k22_2; 0; 0; 0; -a2 | 0; 0; -k33_2; 0; b2; 0; 0; 0; k33_2; 0; b2; 0 | 0; 0; 0; -GJ_2/L; 0; 0; 0; 0; 0; GJ_2/L; 0; 0 | 0; 0; -b2; 0; c2; 0; 0; 0; b2; 0; k55_2; 0 | 0; a2; 0; 0; 0; d2; 0; -a2; 0; 0; 0; k66_2]
+
+#pgb
+"Elementos 3 y 4 — mismas matrices locales
+
+'Por simetria, Elem 3 reusa K_e1 y Elem 4 reusa K_e2.
+'En coordenadas LOCALES son identicas; la transformacion T las
+'orienta correctamente en coordenadas globales.
+
+K_e3 = K_e1
+
+K_e4 = K_e2
+
+#pgb
+"Ensamble a K global — estilo Matlab
+
+'Matlab:
+'   K = zeros(30);
+'   for i=1:4
+'       K(lm(i,:), lm(i,:)) += K_e(i);
+'   end
+'
+'En Calcpad el ensamble entrada-por-entrada de una 30x30 es
+'extenso (720 asignaciones). El concepto es identico:
+
+'Inicializar K global de 30x30:
+K_global = matrix(30; 30)
+
+'Sumar K_e1 en la submatriz 1..12 x 1..12 (DOFs elemento 1):
+'Para representar esto en Calcpad necesitariamos doble #for
+'anidado recorriendo las 12x12 entradas y sumando a K_global
+'en los DOFs mapeados por lm(i,:)
+
+'Ejemplo de la primera contribucion (K(1,1) acumula la
+'rigidez axial de los 4 elementos):
+K_11_acumulado = 2*EA_1/L + 2*EA_2/L
+
+'Este es el valor esperado en K_global(1,1) tras ensamblar
+'los 4 elementos.
+
+#pgb
+"Vector de carga y sistema reducido
+
+'F(3) = 5000 lb aplicado en nudo 1 direccion z
+'Carga suddenly applied durante 0.1 s
+
+F = matrix(30; 1)
+
+'DOFs fijos: 7 al 30 (nudos 2,3,4,5 estan empotrados)
+'DOFs libres: 1 al 6 (nudo 1)
+
+'Sistema reducido Kf (6x6) eliminando filas/columnas 7-30.
+
+"Respuesta dinamica del ejemplo (segun Paz):
+
+'u1_max = 8.814e-5 in   (desplazamiento x del nudo 1)
+'u2_max = 2.6552e-7 in  (desplazamiento y del nudo 1)
+'u3_max = 0.9827 rad    (rotacion del nudo 1 sobre z)
+
+#pgb
+"Resumen — que se hizo
+
+#blk
+'Paso ; 'Matlab ; 'Calcpad
+'Datos ; 'E, G, propiedades ; 'hecho
+'Geometria ; 'nodes, conn, lmm ; 'hecho
+'K_e locales ; 'SpaceFrameElement() ; 'matrices 12x12 hecho
+'Transformacion T ; 'cross products ; 'requiere cross() 3D
+'Ensamble K ; 'K(lm,lm) += ke ; 'doble #for necesario
+'Reduccion Kf ; 'System() ; 'extraer submatriz libre
+'Autovalores ; 'eig(Kf, Mf) ; 'requiere eigenvals()
+'Respuesta ; 'integracion numerica ; 'requiere Newmark
+#end blk
+
+'Lo que NO incluye este Calcpad (por complejidad):
+'   - Matrix de transformacion T (3 productos cruz + normalizacion)
+'   - Ensamble automatico via doble #for sobre los 4 elementos
+'   - Reduccion del sistema global a 6x6
+'   - Analisis modal completo (eigenvals/eigenvecs)
+'   - Integracion numerica de la respuesta dinamica
+
+'Esto es un pharma de trabajo tipico en FEM — cada paso se puede
+'implementar incrementalmente en Calcpad con matrix() + #for.
+#end margen

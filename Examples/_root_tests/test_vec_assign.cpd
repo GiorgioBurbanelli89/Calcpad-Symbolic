@@ -1,0 +1,8 @@
+"Test: asignación a elementos de vector en loop
+v = [0; 0; 0; 0; 0]
+#hide
+#for i = 1 : 5
+    v.(i) = i^2
+#loop
+#show
+v

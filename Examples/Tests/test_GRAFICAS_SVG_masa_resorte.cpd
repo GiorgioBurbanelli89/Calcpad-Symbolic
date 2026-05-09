@@ -1,0 +1,164 @@
+#margen 20
+#md on
+"Test #svg — primitivas básicas, una por bloque
+
+# 1. Rectángulo y texto
+
+#svg 400 120
+.rect 0 0 400 120 #f5f5f5 1 #888 1
+.rect 50 30 100 60 #ffd966 1 #444 2
+.text 100 65 m 24 black middle bold
+#end svg
+
+# 2. Línea y flecha
+
+#svg 400 120
+.rect 0 0 400 120 #f5f5f5 1 #888 1
+.line 50 60 200 60 #555 2
+.arrow 250 60 380 60 red 3
+.text 315 50 F 14 red middle bold
+#end svg
+
+# 3. Círculo y arco
+
+#svg 400 200
+.rect 0 0 400 200 #f5f5f5 1 #888 1
+.circle 100 100 35 #4da6ff 0.7 #1a4d80 2
+.text 100 105 nodo 11 white middle bold
+.arc 280 100 50 0 270 #c33 3
+.text 280 105 M 14 #c33 middle bold
+#end svg
+
+# 4. Pared (hatches manuales con líneas explícitas)
+
+#svg 400 200
+.rect 0 0 400 200 #f5f5f5 1 #888 1
+.line 100 30 100 170 black 3
+.line 80 40 100 50 black 1
+.line 80 60 100 70 black 1
+.line 80 80 100 90 black 1
+.line 80 100 100 110 black 1
+.line 80 120 100 130 black 1
+.line 80 140 100 150 black 1
+.line 80 160 100 170 black 1
+.text 200 100 pared_empotrada 14 black middle
+#end svg
+
+# 5. Resorte zigzag (con coordenadas explícitas, sin loops)
+
+'13 segmentos forman un zigzag de 6 vueltas + 2 segmentos rectos
+
+#svg 480 160
+.rect 0 0 480 160 #f5f5f5 1 #888 1
+.line 60 80 90 80 #555 2.5
+.line 90 80 110 60 #555 2.5
+.line 110 60 130 100 #555 2.5
+.line 130 100 150 60 #555 2.5
+.line 150 60 170 100 #555 2.5
+.line 170 100 190 60 #555 2.5
+.line 190 60 210 100 #555 2.5
+.line 210 100 230 60 #555 2.5
+.line 230 60 250 100 #555 2.5
+.line 250 100 270 60 #555 2.5
+.line 270 60 290 100 #555 2.5
+.line 290 100 310 60 #555 2.5
+.line 310 60 330 80 #555 2.5
+.line 330 80 360 80 #555 2.5
+.text 200 35 k 16 #1f77b4 middle bold
+#end svg
+
+# 6. Composición — masa-resorte completo
+
+'Pared (líneas inclinadas) + zigzag resorte + cuadrado masa + flecha F(t)
+'+ piso. Coordenadas absolutas, sin variables, sin loops — todo explícito.
+
+#svg 600 220
+.rect 0 0 600 220 #fafafa 1 #ccc 1
+.text 300 22 Masa-resorte_1_GDL 14 black middle bold
+
+'Pared izquierda
+.line 60 60 60 180 black 3
+.line 40 70 60 80 black 1
+.line 40 90 60 100 black 1
+.line 40 110 60 120 black 1
+.line 40 130 60 140 black 1
+.line 40 150 60 160 black 1
+
+'Piso (hatch)
+.line 30 180 570 180 black 2
+.line 40 180 30 195 black 0.7
+.line 60 180 50 195 black 0.7
+.line 80 180 70 195 black 0.7
+.line 100 180 90 195 black 0.7
+.line 120 180 110 195 black 0.7
+.line 140 180 130 195 black 0.7
+.line 160 180 150 195 black 0.7
+.line 180 180 170 195 black 0.7
+.line 200 180 190 195 black 0.7
+.line 220 180 210 195 black 0.7
+.line 240 180 230 195 black 0.7
+.line 260 180 250 195 black 0.7
+.line 280 180 270 195 black 0.7
+.line 300 180 290 195 black 0.7
+.line 320 180 310 195 black 0.7
+.line 340 180 330 195 black 0.7
+.line 360 180 350 195 black 0.7
+
+'Resorte (zigzag explícito de 6 vueltas)
+.line 60 120 90 120 #555 2.5
+.line 90 120 110 100 #555 2.5
+.line 110 100 130 140 #555 2.5
+.line 130 140 150 100 #555 2.5
+.line 150 100 170 140 #555 2.5
+.line 170 140 190 100 #555 2.5
+.line 190 100 210 140 #555 2.5
+.line 210 140 230 100 #555 2.5
+.line 230 100 250 140 #555 2.5
+.line 250 140 270 100 #555 2.5
+.line 270 100 290 140 #555 2.5
+.line 290 140 310 100 #555 2.5
+.line 310 100 330 120 #555 2.5
+.line 330 120 360 120 #555 2.5
+.text 195 75 k 16 #1f77b4 middle bold
+
+'Masa (cuadrado)
+.rect 360 80 80 80 #ffe699 1 #444 3
+.text 400 125 m 26 black middle bold
+
+'Flecha F(t) saliendo del lado derecho de la masa
+.arrow 450 120 540 120 red 3
+.text 495 105 F(t) 14 red middle bold
+#end svg
+
+# 7. Anotaciones de la teoría
+
+'Ecuación gobernante:
+
+#deq m·d^2x/dt^2 + c·dx/dt + k·x = F(t)
+
+m_kg = 10
+k_Nm = 1000
+ω_n = sqrt(k_Nm/m_kg)
+T_n = 2*π/ω_n
+
+#blk
+m_kg ; 'masa
+k_Nm ; 'rigidez
+ω_n  ; 'frecuencia natural rad/s
+T_n  ; 'periodo natural s
+#end blk
+
+# Cierre
+
+'Test #svg — 6 dibujos:
+'  1. rect + text
+'  2. line + arrow
+'  3. circle + arc
+'  4. pared (hatches manuales)
+'  5. resorte zigzag (coordenadas explícitas)
+'  6. composición masa-resorte completa
+'
+'Todo con coordenadas absolutas en píxeles, sin loops complejos.
+'#svg es ideal para diagramas didácticos donde controlas cada píxel.
+'Para esquemas estructurales con primitivas auto-renderizadas
+'(spring, mass, damper, force, etc.) usa $DrawStruct en su lugar.

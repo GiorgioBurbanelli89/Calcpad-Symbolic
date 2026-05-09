@@ -1,0 +1,63 @@
+"Test & avanzado — expresiones, vectores, matrices
+'<hr/>
+"1. Expresiones con unidades resultantes
+
+fy = 4200*kgf/cm^2
+'14/fy tiene unidad cm²/kgf:
+r1 = 14/fy
+
+'& cm (adimensionalizar fuerza, dejar longitud en cm):
+14/fy & cm
+
+'<hr/>
+"2. Diseño de acero típico
+
+Fy = 2530*kgf/cm^2
+b = 30*cm
+t_f = 1.5*cm
+'Esbeltez:
+lambda = b/t_f
+'Límite:
+lim = 170/sqr(Fy/(kgf/cm^2))
+'Verificación:
+lambda
+lim
+
+'<hr/>
+"3. Vector con diferentes unidades
+
+'<p>Vector de cargas en pórtico: fuerza y momento</p>
+F_1 = 100*kN
+F_2 = 50*kN
+M_1 = 200*kN*m
+
+'Vector mixto (kN y kN·m):
+F_vec = [F_1; F_2; M_1]
+F_vec
+
+'<hr/>
+"4. Rigidez con unidades — sistema kN, m
+
+E = 200000*MPa
+A = 50*cm^2
+I = 8000*cm^4
+L_e = 3*m
+
+'<h4>Componentes de rigidez</h4>
+k_ax = E*A/L_e
+k_ax|kN/m
+k_fl = 12*E*I/L_e^3
+k_fl|kN/m
+k_mr = 4*E*I/L_e
+k_mr|kN*m
+
+'<h4>& para adimensionalizar al sistema kN, m</h4>
+k_ax & kN/m
+k_fl & kN/m
+k_mr & kN*m
+
+'<hr/>
+"5. Matriz de rigidez con &
+
+K_loc = [k_ax; 0; 0 | 0; k_fl; 6*E*I/L_e^2 | 0; 6*E*I/L_e^2; k_mr]
+K_loc

@@ -1,0 +1,97 @@
+#margen 20
+"Test — zeros y operaciones con #for usando visibility control
+
+'En Matlab: K = zeros(dof). En Calcpad: matrix(dof; dof).
+'La inicializacion a ceros NO se muestra (es obvio que es cero).
+
+#pgb
+"1. Llenar diagonal con #for — solo se muestra el resultado
+
+#hide
+n = 4
+K = matrix(n; n)
+
+#for i = 1 : n
+    K.(i; i) = 10*i
+#loop
+#show
+
+K
+
+'K tiene diagonal [10, 20, 30, 40].
+
+#pgb
+"2. Ensamblaje tipo FEM — 3 elementos a matriz global
+
+'Rigideces de cada elemento:
+k_e = [100; 200; 300]
+
+#hide
+K_global = matrix(n; n)
+
+#for i = 1 : 3
+    k = k_e.(i)
+    K_global.(i; i) = K_global.(i; i) + k
+    K_global.(i; i+1) = K_global.(i; i+1) - k
+    K_global.(i+1; i) = K_global.(i+1; i) - k
+    K_global.(i+1; i+1) = K_global.(i+1; i+1) + k
+#loop
+#show
+
+'Matriz tridiagonal resultado del ensamblaje:
+K_global
+
+#pgb
+"3. Vector de cargas
+
+#hide
+F = vector(n)
+F.(1) = 1000
+F.(4) = -500
+#show
+
+F
+
+#pgb
+"4. Resolver sistema con BC (nudo 1 fijo)
+
+#hide
+K_red = [K_global.(2;2); K_global.(2;3); K_global.(2;4) | K_global.(3;2); K_global.(3;3); K_global.(3;4) | K_global.(4;2); K_global.(4;3); K_global.(4;4)]
+F_red = [F.(2); F.(3); F.(4)]
+#show
+
+'Sistema reducido (3x3):
+K_red
+
+'Vector fuerza reducido:
+F_red
+
+'Solucion:
+u_red = lsolve(K_red; F_red)
+
+#pgb
+"5. Verificacion
+
+F_check = K_red*u_red
+
+'F_check debe coincidir con F_red.
+
+#pgb
+"Resumen — patron con visibility control
+
+'Principio: NO mostrar matrices/vectores de ceros.
+'Iniciacion + ensamblaje + BC → todo dentro de #hide.
+'Solo se muestra el resultado final tras el procesamiento.
+
+#blk
+'Operacion ; 'Matlab ; 'Calcpad
+'Zeros matriz ; 'zeros(m,n) ; 'matrix(m; n) (oculto con #hide)
+'Zeros vector ; 'zeros(n,1) ; 'vector(n) (oculto con #hide)
+'Loop ; 'for i=1:n ; '#for i = 1:n
+'Cerrar loop ; 'end ; '#loop
+'Ocultar calculos ; '; ; '#hide ... #show
+'Acceso matriz ; 'M(i,j) ; 'M.(i; j)
+'Acceso vector ; 'V(i) ; 'V.(i)
+'Solver ; 'A\b ; 'lsolve(A; b)
+#end blk
+#end margen

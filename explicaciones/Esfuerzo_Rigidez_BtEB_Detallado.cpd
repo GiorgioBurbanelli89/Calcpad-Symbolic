@@ -1,0 +1,287 @@
+"Esfuerzo, rigidez y la formula B^T·E·B — curso exhaustivo
+'<p>Este archivo se enfoca <b>solo</b> en la formula universal del FEM
+'para construir la matriz de rigidez del elemento: K_e = ∫B^T·E·B·dV.
+'Cada paso con grafica + derivacion simbolica + ejemplo numerico.</p>
+'<hr/>
+
+"Cap 1 — Ley de Hooke uniaxial (la base de todo)
+'<p>La ley de Hooke dice que el esfuerzo (σ) es proporcional a la
+'deformacion (ε) por el modulo de elasticidad (E):</p>
+
+#deq σ = E*ε
+
+'<p>Es una ecuacion <b>constitutiva</b>: relaciona variables fisicas distintas
+'mediante una propiedad del material (E).</p>
+
+"Caso numerico — acero con ε = 0.001 (0.1%)
+E_acero = 200000   'MPa
+ε_test = 0.001
+σ_test = E_acero*ε_test
+
+'<p>Para el acero (E = 200,000 MPa = 200 GPa) con una deformacion de 0.1%,
+'el esfuerzo resultante es σ = 200 MPa.</p>
+
+"Grafica 1 — Curva σ vs ε del acero (recta de pendiente E)
+#hide
+n_g1 = 30
+ε_v = vector(n_g1)
+σ_v = vector(n_g1)
+#for i = 1 : n_g1
+    ε_v.(i) = (i - 1)*0.002/(n_g1 - 1)
+    σ_v.(i) = E_acero*ε_v.(i)
+#loop
+#show
+
+$Chart{ε_v; σ_v @ title=Ley de Hooke σ = E·ε para acero (E = 200 GPa) : xlabel=ε (deformacion unitaria) : ylabel=σ (MPa)}
+
+"Para que sirve esta grafica
+'<p>La <b>pendiente</b> de la recta es E. Eso es todo lo que captura el modulo
+'de Young: la "dureza" elastica del material. Cuanto mayor E, mas rigido.
+'Acero E=200 GPa es mucho mas rigido que aluminio E=70 GPa o concreto
+'E=25 GPa.</p>
+
+'<hr/>
+
+"Cap 2 — Generalizacion 2D — la matriz constitutiva D
+'<p>En 2D no hay UN esfuerzo y UNA deformacion, hay TRES: σ_xx, σ_yy, τ_xy
+'(los tres componentes del tensor en plano). Igual con la deformacion. La
+'ley de Hooke se generaliza a una <b>matriz constitutiva D 3×3</b>:</p>
+
+#deq σ = D*ε
+
+'<p>donde σ y ε son vectores de 3 componentes y D depende de E y ν (modulo
+'de Poisson).</p>
+
+"Caso plane stress (esfuerzo plano) — ejemplo concreto
+E_c = 25000        'MPa concreto
+ν_c = 0.20
+
+'<p>La matriz D tiene la forma:</p>
+
+#noc
+D = (E/(1-ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1-ν)/2]
+#equ
+
+D11_calc = E_c/(1 - ν_c^2)
+D12_calc = E_c*ν_c/(1 - ν_c^2)
+D33_calc = E_c*(1 - ν_c)/(2*(1 - ν_c^2))
+
+'<p>Para concreto (E = 25,000 MPa, ν = 0.20) los valores son:</p>
+'<p>• D₁₁ = E/(1-ν²) ≈ 26,041 MPa</p>
+'<p>• D₁₂ = E·ν/(1-ν²) ≈ 5,208 MPa</p>
+'<p>• D₃₃ = E/(2(1+ν)) ≈ 10,416 MPa (modulo de corte G)</p>
+
+'<hr/>
+
+"Cap 3 — La matriz B (deformacion-desplazamiento)
+'<p>B es la <b>matriz que conecta los desplazamientos nodales con la
+'deformacion del elemento</b>. Sale de derivar las funciones de forma N_i.</p>
+
+"Para barra lineal 1D
+'<p>La deformacion uniaxial es ε = du/dx. Como u = N₁·u₁ + N₂·u₂:</p>
+
+#deq ε = (dN_1/dx)*u_1 + (dN_2/dx)*u_2
+
+'<p>Calculamos las derivadas de N₁ y N₂:</p>
+
+#sym
+diff(1 - x/L; x)
+#end sym
+
+#sym
+diff(x/L; x)
+#end sym
+
+'<p>O sea, dN₁/dx = -1/L y dN₂/dx = +1/L. Por lo tanto:</p>
+
+#deq B = [-1/L, 1/L]
+
+'<p>B es un <b>vector fila constante</b> para barra lineal — la deformacion
+'no varia dentro del elemento.</p>
+
+"Caso numerico
+L_b = 2     'm
+B11 = -1/L_b
+B12 = 1/L_b
+
+'<p>Para una barra de L=2m: B = [-0.5, 0.5] (1/m).</p>
+
+'<hr/>
+
+"Cap 4 — La energia interna U como integral
+'<p>La <b>energia de deformacion</b> almacenada en el elemento es:</p>
+
+#deq U_e = (1/2)*∫(σ*ε)*dV
+
+'<p>Sustituyendo σ = E·ε:</p>
+
+#deq U_e = (1/2)*∫(E*ε^2)*dV
+
+'<p>Y ahora ε = B·u (con u = vector de desplazamientos nodales):</p>
+
+#deq U_e = (1/2)*∫(B^T*E*B)*dV*u^T*u
+
+'<p>El integrando B^T·E·B es una <b>matriz</b> (no un escalar), porque B
+'es un vector. La integral sobre el volumen del elemento da la matriz de
+'rigidez del elemento:</p>
+
+#deq K_e = ∫(B^T*E*B)*dV
+
+'<p>Y la energia se reescribe como:</p>
+
+#deq U_e = (1/2)*u^T*K_e*u
+
+'<p>Esa es la <b>formula universal del FEM</b>. Funciona para barras,
+'placas, cascaras, solidos — solo cambia la dimension de B y D.</p>
+
+'<hr/>
+
+"Cap 5 — Calcular K_e para la barra lineal
+'<p>Aplicamos la formula al elemento barra. El volumen es A·dx (area de
+'seccion por longitud), B = [-1/L, 1/L], y E es escalar:</p>
+
+"Paso 5.1 — El producto B^T·B (matriz 2×2)
+
+#deq B^T*B = [(-1/L)^2; (-1/L)*(1/L)|(1/L)*(-1/L); (1/L)^2]
+
+#deq B^T*B = (1/L^2)*[1; -1|-1; 1]
+
+"Paso 5.2 — Multiplicar por E·A y integrar sobre x de 0 a L
+
+#sym
+integrate(E*A/L^2; x; 0; L)
+#end sym
+
+'<p>El resultado es E·A/L (constante × longitud = constante).</p>
+
+"Paso 5.3 — Matriz K_e final
+#noc
+K_e = (E*A/L)*[1; -1|-1; 1]
+#equ
+
+'<p>Esa es la matriz 2×2 de rigidez axial de un elemento barra. Coincide
+'EXACTAMENTE con el resorte equivalente k = E·A/L (rigidez axial clasica
+'de la mecanica de materiales).</p>
+
+"Caso numerico — barra de acero
+E_s = 200000000   'kN/m² (200 GPa)
+A_s = 0.001       'm² (10 cm²)
+L_s = 2           'm
+k_axial = E_s*A_s/L_s   'kN/m
+
+'<p>Para acero E=200 GPa, seccion 10 cm² (=0.001 m²), longitud 2 m:</p>
+'<p>k = E·A/L = 100,000 kN/m = 100 kN/mm. Una barra muy rigida.</p>
+
+"Grafica 5 — Como cambia K_e con cada parametro
+#hide
+n_g5 = 20
+L_v5 = vector(n_g5)
+k_porL = vector(n_g5)
+A_v5 = vector(n_g5)
+k_porA = vector(n_g5)
+#for i = 1 : n_g5
+    L_v5.(i) = 0.5 + (i - 1)*4.5/19
+    k_porL.(i) = E_s*A_s/L_v5.(i)
+    A_v5.(i) = 0.0002 + (i - 1)*0.005/19
+    k_porA.(i) = E_s*A_v5.(i)/L_s
+#loop
+#show
+
+$Chart{L_v5; k_porL @ title=Rigidez axial vs longitud (E y A fijos) : xlabel=L (m) : ylabel=k (kN/m)}
+
+$Chart{A_v5; k_porA @ title=Rigidez axial vs area (E y L fijos) : xlabel=A (m²) : ylabel=k (kN/m)}
+
+"Para que sirven estas graficas
+'<p>La primera muestra que k cae como 1/L (hiperbola). La segunda muestra
+'que k crece linealmente con A (recta). Esto te enseña <b>como cambiar
+'la rigidez de una barra</b>: hacerla mas corta o mas gruesa, o usar
+'material mas rigido (mayor E).</p>
+
+'<hr/>
+
+"Cap 6 — Generalizacion: por que B^T·D·B es UNIVERSAL
+'<p>La estructura B^T·D·B aparece igual para cualquier elemento finito:</p>
+
+'<table border="1" cellpadding="6">
+'<tr><th>Elemento</th><th>Dim B</th><th>Dim D</th><th>Dim K_e</th></tr>
+'<tr><td>Barra (1D)</td><td>1×2</td><td>1×1 (escalar E)</td><td>2×2</td></tr>
+'<tr><td>Triangulo CST (plane stress)</td><td>3×6</td><td>3×3</td><td>6×6</td></tr>
+'<tr><td>Q4 cuadrilatero</td><td>3×8</td><td>3×3</td><td>8×8</td></tr>
+'<tr><td>Tetraedro T4</td><td>6×12</td><td>6×6</td><td>12×12</td></tr>
+'<tr><td>Hexaedro H8</td><td>6×24</td><td>6×6</td><td>24×24</td></tr>
+'<tr><td>Viga Bernoulli</td><td>1×4</td><td>1×1 (E·I)</td><td>4×4</td></tr>
+'<tr><td>Placa Kirchhoff</td><td>3×12</td><td>3×3 (D placa)</td><td>12×12</td></tr>
+'</table>
+
+'<p>El producto B^T·D·B siempre da una matriz de tamano (n_dof × n_dof) que
+'es la rigidez del elemento. La <b>integracion</b> sobre el dominio (volumen,
+'area o longitud) acumula la contribucion punto por punto.</p>
+
+'<hr/>
+
+"Cap 7 — Por que el integrando B^T·D·B no es B·D·B^T
+'<p>Una pregunta comun: ¿por que B^T va PRIMERO? La respuesta es por
+'consistencia dimensional con la forma cuadratica de la energia:</p>
+
+#deq U_e = (1/2)*u^T*K_e*u
+
+'<p>Para que u^T·K_e·u sea un escalar (numero), K_e debe ser cuadrada y
+'el producto u^T·K_e·u debe contraer todos los indices.</p>
+
+'<p>Si K_e = ∫B^T·D·B·dV con B una matriz (n_strain × n_dof) y D una matriz
+'(n_strain × n_strain), entonces:</p>
+
+'<p>• B^T es (n_dof × n_strain)</p>
+'<p>• B^T·D es (n_dof × n_strain)</p>
+'<p>• B^T·D·B es (n_dof × n_dof) ✓</p>
+
+'<p>Si invertieras a B·D·B^T te quedaria (n_strain × n_strain) — del tamano
+'del tensor de deformaciones, no del numero de DOFs. No serviria para ensamblar.</p>
+
+'<hr/>
+
+"Cap 8 — La rigidez global K es el ENSAMBLAJE de los K_e
+
+'<p>Una vez que tienes K_e para cada elemento, la matriz global K se
+'arma <b>sumando</b> las contribuciones en las posiciones de los DOFs
+'globales. Eso es el ensamblaje del FEM.</p>
+
+#deq K_global = Σ K_e (en posiciones globales)
+
+'<p>La matriz global tiene tamano (N_total_DOFs × N_total_DOFs). Es <b>banda</b>
+'(la mayoria de las entradas son 0) porque cada elemento solo conecta unos
+'pocos nodos.</p>
+
+"Para ver el ensamblaje en accion
+'<p>Mira el archivo <code>FEM_Curso_Paso_a_Paso.cpd</code>, Lecciones 3 y 10,
+'donde se muestra el ensamblaje paso a paso para 2 y 3 elementos.</p>
+
+'<hr/>
+
+"Cap 9 — Resumen — la cadena completa B → ε → σ → U → K
+
+'<p>La cadena de razonamiento del FEM, desde nodal hasta rigidez:</p>
+
+'<p>1) <b>Funciones de forma N_i</b> interpolan el desplazamiento dentro
+'del elemento: u(x) = Σ N_i·u_i</p>
+
+'<p>2) <b>Matriz B = derivada de N</b> conecta desplazamientos nodales con
+'deformaciones: ε = B·u</p>
+
+'<p>3) <b>Matriz constitutiva D</b> (Hooke) conecta deformacion con esfuerzo:
+'σ = D·ε</p>
+
+'<p>4) <b>Energia interna</b> U = (1/2) ∫ σ·ε dV = (1/2) ∫ ε^T·D·ε dV</p>
+
+'<p>5) <b>Sustituir ε = B·u</b>: U = (1/2) u^T (∫B^T·D·B·dV) u = (1/2) u^T·K_e·u</p>
+
+'<p>6) <b>Identificar la matriz de rigidez del elemento</b>:
+'K_e = ∫B^T·D·B·dV</p>
+
+'<p>7) <b>Ensamblar</b> en K_global y resolver K·u = F.</p>
+
+'<p>Cada paso es lineal — esa es la magia del FEM lineal: una cadena de
+'productos matriciales que reduce la mecanica del continuo a un sistema
+'de ecuaciones lineales.</p>
+
+"Fin del curso de esfuerzo, rigidez y B^T·E·B

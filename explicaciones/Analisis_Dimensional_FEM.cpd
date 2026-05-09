@@ -1,0 +1,149 @@
+"Analisis dimensional — cada "constante" del FEM lleva las unidades justas
+'<p>Pregunta: <i>"En ε = B·u, ¿B esta hecha para que al multiplicar por u
+'(metros) de adimensional (epsilon)? ¿Y si fuera F = B·u, B llevaria las
+'unidades para dar fuerza? ¿La constante toma en cuenta la forma para
+'equiparar las dimensiones?"</i></p>
+
+'<p><b>Respuesta corta: SI, exactamente.</b> Cada "constante" del FEM
+'(B, k, E, D, K) lleva las unidades necesarias para que la ecuacion sea
+'dimensionalmente consistente. Veamos cada una.</p>
+'<hr/>
+
+"Caso 1 — ε = B·u (deformacion = matriz B por desplazamientos)
+'<p>Lo que conocemos:</p>
+'<p>• u tiene unidades de longitud: <b>m</b></p>
+'<p>• ε es adimensional (m/m): <b>sin unidades</b></p>
+
+'<p>Para que la ecuacion balancee:</p>
+
+#deq [adimensional] = [B]*[m]
+
+'<p>Despejando: <b>[B] = 1/m</b>. Y de hecho B = [-1/L, 1/L] tiene
+'precisamente esas unidades. La derivada dN/dx hereda 1/m porque N es
+'adimensional y x es metros.</p>
+
+"Verificacion numerica
+L_1 = 2
+B_1 = -1/L_1
+B_2 = 1/L_1
+u_v1 = 0.001
+ε_v = B_2*u_v1
+
+'<p>Para L=2m, u=1mm: ε = (1/2)·(0.001) = 0.0005 (adimensional, OK).</p>
+
+'<hr/>
+
+"Caso 2 — F = k·u (resorte clasico)
+'<p>Lo que conocemos:</p>
+'<p>• u en metros: <b>m</b></p>
+'<p>• F en newtons: <b>N</b></p>
+
+'<p>Para que la ecuacion balancee:</p>
+
+#deq [N] = [k]*[m]
+
+'<p>Despejando: <b>[k] = N/m</b>. Y la formula del resorte axial
+'k = E·A/L confirma esto:</p>
+
+#deq [k] = [N/m^2]*[m^2]/[m] = N/m
+
+'<p>Eso es porque E (modulo) tiene unidades N/m², A (area) m², L (longitud) m.</p>
+
+"Verificacion numerica
+E_2 = 200000000   'kN/m² (200 GPa)
+A_2 = 0.001       'm²
+L_2 = 2           'm
+k_2 = E_2*A_2/L_2
+
+'<p>k = 100,000 kN/m. Si F = 50 kN entonces u = 0.5 mm — coherente.</p>
+
+'<hr/>
+
+"Caso 3 — σ = D·ε (Hooke)
+'<p>Lo que conocemos:</p>
+'<p>• ε adimensional</p>
+'<p>• σ en N/m² (Pascal): <b>Pa = N/m²</b></p>
+
+'<p>Para que balancee:</p>
+
+#deq [N/m^2] = [D]*[adimensional]
+
+'<p>Despejando: <b>[D] = N/m²</b>. Esto coincide con E (modulo de Young
+'en N/m²). En 2D/3D, D es matriz pero sus entradas todas tienen unidades
+'de N/m².</p>
+
+'<hr/>
+
+"Caso 4 — F = K·u (FEM matricial completo)
+'<p>Aca todo se vuelve matricial pero la idea es la misma:</p>
+'<p>• u (vector de desplazamientos): <b>m</b></p>
+'<p>• F (vector de fuerzas): <b>N</b></p>
+
+'<p>Cada entrada K_ij debe tener:</p>
+
+#deq [K_ij] = N/m
+
+'<p>O sea, la matriz K es <b>matriz de rigideces</b> con todas sus entradas
+'en N/m. Verifiquemos con la barra:</p>
+
+#noc
+K_e = (E*A/L)*[1; -1|-1; 1]
+#equ
+
+'<p>El factor E·A/L tiene unidades N/m. Los numeros [1; -1; -1; 1] son
+'adimensionales. Por lo tanto cada entrada de K_e tiene unidades N/m.
+'Consistente.</p>
+
+'<hr/>
+
+"Caso 5 — Por que la formula K_e = ∫B^T·D·B·dV cierra dimensionalmente
+
+'<p>Hagamos el analisis dimensional del integrando para barra:</p>
+
+'<p>• B: 1/m → B^T tambien 1/m (es la traspuesta)</p>
+'<p>• D = E: N/m²</p>
+'<p>• dV = A·dx con A en m² y dx en m, asi que dV = m³</p>
+
+'<p>El integrando:</p>
+
+#deq [B^T*D*B] = [1/m]*[N/m^2]*[1/m] = N/m^4
+
+'<p>Multiplicado por dV (m³):</p>
+
+#deq [B^T*D*B]*[dV] = [N/m^4]*[m^3] = N/m
+
+'<p>Justo lo que K_e necesita (N/m por entrada). <b>La integral entrega
+'automaticamente las unidades correctas.</b></p>
+
+"Verificacion simbolica con Calcpad
+#sym
+integrate(E*A/L^2; x; 0; L)
+#end sym
+
+'<p>Resultado E·A/L. Unidades [N/m²]·[m²]/[m] = N/m ✓.</p>
+
+'<hr/>
+
+"Resumen — tabla de constantes y sus unidades
+'<table border="1" cellpadding="6">
+'<tr><th>Constante</th><th>Ecuacion</th><th>Unidades input</th><th>Unidades output</th><th>Unidades constante</th></tr>
+'<tr><td>k</td><td>F = k·u</td><td>m (u)</td><td>N (F)</td><td>N/m</td></tr>
+'<tr><td>B</td><td>ε = B·u</td><td>m (u)</td><td>1 (ε)</td><td>1/m</td></tr>
+'<tr><td>D</td><td>σ = D·ε</td><td>1 (ε)</td><td>N/m² (σ)</td><td>N/m²</td></tr>
+'<tr><td>K_e</td><td>F_e = K_e·u_e</td><td>m (u)</td><td>N (F)</td><td>N/m por entrada</td></tr>
+'<tr><td>E·I (viga)</td><td>M = E·I·κ</td><td>1/m (κ)</td><td>N·m (M)</td><td>N·m²</td></tr>
+'<tr><td>k_s (Winkler)</td><td>p = k_s·u</td><td>m (u)</td><td>N/m² (p)</td><td>N/m³</td></tr>
+'</table>
+
+"Conclusion
+'<p>Tu intuicion es CORRECTA: cada "constante" del FEM esta construida
+'para que las dimensiones balanceen. No es coincidencia — es <b>consistencia
+'dimensional</b>, una de las dos pruebas basicas de cualquier formula
+'fisica (la otra es el sentido numerico).</p>
+
+'<p>La construccion sigue la regla universal: <b>la constante lleva las
+'unidades necesarias para convertir el input en el output</b>. Si cambias
+'lo que pones a la entrada (u, ε, etc) o lo que sacas (F, σ, etc), la
+'constante se ajusta automaticamente.</p>
+
+"Fin del archivo

@@ -1,0 +1,201 @@
+#margen 20
+#md on
+"PLANTILLA DE REFERENCIA — texto + operaciones inline y en bloque
+
+'Este archivo documenta los patrones correctos para mezclar texto y operaciones
+'matematicas en Calcpad Symbolic. Las notas con NOTA: explican los gotchas
+'que siempre aparecen.
+
+# 1. Patron inline basico — apostrofes alternan texto y math
+
+'Cada par de apostrofes abre y cierra un fragmento math dentro del texto.
+'Ejemplo clasico: la longitud es -'L = 5 m'y el ancho es -'b = 0.30 m'.
+'El resultado queda entre el texto en flujo continuo.
+
+'NOTA: entre apostrofes solo se aceptan ASIGNACIONES o EXPRESIONES. No
+'puedes escribir ahi palabras sueltas, comentarios, ni marcadores sin math
+'valido (salvo los 4 casos especiales cubiertos mas abajo).
+
+# 2. Asignacion numerica con o sin unidades
+
+'Sin unidades: -'π_est = 3.14159'. Con unidades SI: -'E = 25 GPa', con
+'combinaciones: -'q = -10 kN/m^2'. Conversion de unidades: -'E_MPa = E | MPa'.
+
+'NOTA: unidades compuestas como kN*m o kN/m^2 van directo. Para TONF se
+'escribe tonf (no "tn"). Para grados Celsius usa °C.
+
+# 3. Expresion matematica que depende de variables previas
+
+'El area es -'A = b*L'. La inercia -'I = b*L^3/12'. La rigidez -'EI = E*I'.
+'Verifica que cada variable estuvo definida ANTES de usarla.
+
+'NOTA: el orden importa. Si usas'X = Y + Z'antes de definir Y y Z, error.
+
+# 4. Identidades algebraicas (LHS no asignable) — DESDE v1.3
+
+'La expansion clasica -'(a + b)^2 = a^2 + 2·a·b + b^2'se renderiza display-only
+'porque el LHS (a+b)^2 no es una variable. Otros ejemplos:
+'- Diferencia de cuadrados: -'a^2 - b^2 = (a + b)·(a - b)'
+'- Identidad trigonometrica: -'sin(x)^2 + cos(x)^2 = 1'
+'- Identidad de Euler: -'e^(i·π) + 1 = 0'
+
+'NOTA: hasta v1.2 estas identidades fallaban inline con "assignment must be
+'preceded by variable". Desde v1.3 se ruteran automaticamente al render
+'display. Si quieres evaluacion numerica, pon una variable en el LHS.
+
+# 5. Derivadas Leibniz inline — DESDE v1.3
+
+'Curvatura x: -'χ_1 = -d^2w/dx^2', curvatura y: -'χ_2 = -d^2w/dy^2',
+'curvatura cruzada: -'χ_12 = -2·d^2w/dxdy', biharmonica (4° orden):
+'-'d^4w/dx^4 + 2·d^4w/dx^2dy^2 + d^4w/dy^4 = q/D'. Tambien derivadas
+'parciales con sımbolo: -'∂u/∂x + ∂v/∂y = 0'.
+
+'NOTA: escribe explicitamente d^2, d^4 (con circunflejo). NO escribas d2,
+'d4 sin el ^ porque eso tokeniza como "d2" variable. Las formas d^n y ∂^n
+'con superindice se detectan como derivadas.
+
+# 6. Matriz literal inline — DESDE v1.3
+
+'El tensor constitutivo: -'D = [1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]'.
+'La identidad 2x2: -'I_2 = [1; 0 | 0; 1]'. Vector columna (sin |):
+'esto ya evalua numericamente si las celdas son numeros: -'v = [1; 2; 3]'.
+
+'NOTA: en Calcpad ; separa columnas dentro de una fila y | separa filas.
+'Si el RHS es una matriz literal el parser la renderiza aunque las celdas
+'contengan variables no definidas (caso tipico cuando la describes antes
+'de dar los valores numericos).
+
+# 7. Literal de directiva #xxx o $xxx — DESDE v1.3
+
+'Para documentar, puedes poner literalmente: -'#blk', -'#inl', -'#deq',
+'-'#sym', -'#for', -'#if', -'#md on', -'$Plot', -'$Map', -'$Chart'.
+'Todas se renderizan como <code>directiva</code>.
+
+'NOTA: antes habia que escapar con backticks markdown (que tambien sirven,
+'pero para mencionar una sola vez no es necesario).
+
+# 8. Bloque #deq — ecuacion display sola en una linea
+
+'La rigidez flexional de placa es:
+
+#deq D_f = (E·t^3)/(12·(1 - ν^2))
+
+'el modulo de corte es:
+
+#deq G = E/(2·(1 + ν))
+
+'y la ecuacion biharmonica:
+
+#deq d^4w/dx^4 + 2·d^4w/dx^2dy^2 + d^4w/dy^4 = q/D_f
+
+'NOTA: en #deq puedes escribir identidades, derivadas, matrices, integrales.
+'NO se evalua, solo se renderiza. Usa #deq cuando la ecuacion es "central"
+'y merece su propia linea visible.
+
+# 9. Bloque #sym — operacion simbolica (CAS)
+
+'Expansion:
+
+#sym (a + b)^2
+
+'Derivada:
+
+#sym diff(x^3 + 2*x^2 + x; x)
+
+'Integral indefinida:
+
+#sym integrate(sin(x); x)
+
+'Factorizacion:
+
+#sym factor(x^2 - 1)
+
+'NOTA: #sym invoca el motor simbolico (AngouriMath). Devuelve la respuesta
+'evaluada simbolicamente. NO mezcla unidades fisicas.
+
+# 10. Bloque #inl — varias asignaciones en una linea
+
+#inl k_1 = 100 ; k_2 = 200 ; k_3 = k_1 + k_2 ; 'tres rigideces en serie
+
+'Luego las variables persisten: -'total = k_1 + k_2 + k_3'.
+
+'NOTA: separa asignaciones con ; y añade descripcion con ; 'texto al final.
+
+# 11. Bloque #blk — tabla de resumen
+
+#blk
+E    ; 'modulo de Young
+ν    ; 'Poisson
+D_f  ; 'rigidez flexional de placa
+G    ; 'modulo de corte
+L    ; 'longitud
+#end blk
+
+'NOTA: cada linea es "variable ; 'descripcion". Las variables deben estar
+'definidas antes del #blk. Se rendere como tabla de 2 columnas.
+
+# 12. Bloque #for ... #loop — iteracion numerica
+
+'Suma parcial de la serie de Basilea (10 terminos):
+
+S = 0
+#for k = 1 : 10
+    S = S + 1/k^2
+#loop
+S
+
+'con error respecto al valor teorico: -'err = π^2/6 - S'.
+
+# 13. Bloque #if ... #else ... #end if — condicional
+
+'Comprobacion de que L > 0:
+
+#if L > 0 m
+'L es positiva, continuamos
+#else
+'L no es positiva, error de datos
+#end if
+
+# 14. Gráficas $Plot (1D) y $Map (2D)
+
+'Para plotear necesitas rangos SIN unidades. Usa versiones numericas:
+
+L_num = L/m
+f(x) = x^2*(3*L_num - x)/6
+$Plot { f(x) @ x = 0 : L_num }
+
+'un mapa 2D funciona igual:
+
+a_num = 4
+w_field(x; y) = sin(π*x/a_num)*sin(π*y/a_num)
+$Map { w_field(x; y) @ x = 0 : a_num & y = 0 : a_num }
+
+'NOTA: $Plot y $Map NO aceptan rangos con unidades fisicas. Siempre pasa
+'a numerico dividiendo por la unidad (ej. L/m).
+
+# 15. Salto de pagina
+
+#pgb
+
+# 16. Pagina 2 — recapitulacion
+
+'Todos los constructos de Calcpad Symbolic ejercitados:
+
+#blk
+L    ; 'longitud (ej. asignacion con unidad)
+A    ; 'area (dependencia transitiva)
+EI   ; 'rigidez flexional
+D_f  ; 'rigidez de placa
+G    ; 'modulo de corte
+S    ; 'suma parcial Basilea
+err  ; 'error Basilea
+#end blk
+
+'CHECKLIST de errores comunes evitados:
+'1. 'd2w vs d^2w — siempre con ^ para derivadas
+'2. $Plot con rango'x = 0 : L'falla si L tiene unidades — usa'L_num = L/m
+'3. #blk requiere variables YA definidas antes del bloque
+'4. En #inl separa con ; no con , (coma es parametro de funcion)
+'5. Matrices: ; separa columnas, | separa filas
+'6. Unidades compuestas: E = 25 GPa (no "25GPa" sin espacio)
+'7. Comentarios en math: -'var ; 'descripcion'- el apostrofe abre texto

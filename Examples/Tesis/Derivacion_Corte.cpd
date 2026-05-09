@@ -1,0 +1,112 @@
+#margen 20
+"Derivación FEM — Elemento de CORTE (viga Timoshenko)
+
+'Viga Timoshenko: la deformacion por cortante NO es despreciable.
+'Los DOF son el desplazamiento transversal w y la rotacion independiente
+'theta (no igual a dw/dx). Interpolacion lineal C0 con 2 nudos y 4 DOF.
+
+"Propiedades
+
+#blk
+E = 30000000 ; 'Modulo de elasticidad
+G = 12000000 ; 'Modulo de corte
+I_z = 100 ; 'Momento de inercia
+A_s = 8 ; 'Area efectiva a cortante
+L = 60 ; 'Longitud
+EI = E*I_z ; 'Rigidez a flexion
+GA = G*A_s ; 'Rigidez a corte
+#end blk
+
+#pgb
+"1. Funciones de forma lineales C0
+
+'A diferencia de Euler-Bernoulli, w y theta se interpolan independientemente
+'con funciones lineales, no Hermite.
+
+#blk
+N_1(x) = 1 - x/L ; 'Interpolacion nudo 1
+N_2(x) = x/L ; 'Interpolacion nudo 2
+#end blk
+
+"Se aplica la misma interpolacion a w y a theta por separado.
+
+#pgb
+"2. Deformaciones
+
+'Curvatura       kappa = d theta / dx
+'Cortante        gamma = dw/dx - theta
+
+#blk
+diff(1 - x/L; x) ; 'dN1/dx
+diff(x/L; x) ; 'dN2/dx
+#end blk
+
+'Vector B_b (flexion)  = [0, -1/L, 0, 1/L]
+'Vector B_s (cortante) = [-1/L, -(1 - x/L), 1/L, -x/L]
+
+#pgb
+"3. Rigidez a flexion K_b
+
+'Definicion: Kb_ij = integral de 0 a L de EI por Bb_i por Bb_j dx.
+
+#blk
+integrate((-1/L)*(-1/L); x; 0; L) ; 'Entrada theta1, theta1 entre EI
+integrate((-1/L)*(1/L); x; 0; L) ; 'Entrada theta1, theta2 entre EI
+integrate((1/L)*(1/L); x; 0; L) ; 'Entrada theta2, theta2 entre EI
+#end blk
+
+"K_b compacta (entradas en theta1 y theta2):
+
+#deq K_b = (EI/L)*[0; 0; 0; 0 | 0; 1; 0; -1 | 0; 0; 0; 0 | 0; -1; 0; 1] @@(flexion Timoshenko)
+
+#pgb
+"4. Rigidez a cortante K_s
+
+'Definicion: Ks_ij = integral de 0 a L de GA por Bs_i por Bs_j dx.
+
+#blk
+integrate((-1/L)^2; x; 0; L) ; 'Entrada w1, w1 entre GA
+integrate((-1/L)*(-(1 - x/L)); x; 0; L) ; 'Entrada w1, theta1 entre GA
+integrate((1 - x/L)^2; x; 0; L) ; 'Entrada theta1, theta1 entre GA
+integrate(((-x)/L)^2; x; 0; L) ; 'Entrada theta2, theta2 entre GA
+integrate((1 - x/L)*(x/L); x; 0; L) ; 'Entrada theta1, theta2 entre GA
+#end blk
+
+"Matriz de rigidez total Ke = Kb + Ks:
+
+#deq K_e = (GA/L)*[1; L/2; -1; L/2 | L/2; L^2/3; -L/2; L^2/6 | -1; -L/2; 1; -L/2 | L/2; L^2/6; -L/2; L^2/3] @@(rigidez cortante)
+
+"Aviso de locking: con interpolacion lineal igual para w y theta aparece
+"bloqueo por corte cuando L es grande frente al espesor. Se corrige con
+"integracion reducida (1 punto Gauss) o elementos mixtos.
+
+#pgb
+"5. Masa consistente
+
+"Parte traslacional (masa rho A):
+
+#blk
+integrate((1 - x/L)^2; x; 0; L) ; 'Traslacion 1,1 entre rho A
+integrate((1 - x/L)*(x/L); x; 0; L) ; 'Traslacion 1,2 entre rho A
+integrate((x/L)^2; x; 0; L) ; 'Traslacion 2,2 entre rho A
+#end blk
+
+"Parte rotacional (inercia rho I):
+
+#blk
+integrate((1 - x/L)^2; x; 0; L) ; 'Rotacion 1,1 entre rho I
+integrate((1 - x/L)*(x/L); x; 0; L) ; 'Rotacion 1,2 entre rho I
+integrate((x/L)^2; x; 0; L) ; 'Rotacion 2,2 entre rho I
+#end blk
+
+#deq M_e = (rhoA*L/6)*[2; 0; 1; 0 | 0; 0; 0; 0 | 1; 0; 2; 0 | 0; 0; 0; 0] @@(masa Timoshenko traslacional)
+
+#pgb
+"6. Resumen
+
+'   Timoshenko permite deformacion por corte independiente.
+'   Interpolacion lineal C0 en w y theta por separado.
+'   K = Kb (flexion) + Ks (cortante)
+'   M incluye inercia traslacional y rotacional.
+'   Evitar locking con integracion reducida o formulacion mixta.
+#end margen
