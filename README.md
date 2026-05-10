@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.10.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.11.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,20 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.11 (May 2026) — Highlighter block-context detection on single-paragraph re-parse
+
+Body lines of an open `#blk` (or `#cen`, `#margen`, `#noc`) block were
+sometimes shown with stale red-error highlighting in the editor after
+the user edited them. RichTextBox.TextChanged calls Parse with
+`single=true` to re-tokenise only the changed paragraph, but that path
+previously skipped both the flag-reset AND `DetectBlockContextFromPrevious`.
+The `_isIn*Block` flags kept whatever value they had at the end of the
+last full pass, so the Error→Comment demote in Append() didn't trigger.
+
+Fix: always reset the block flags and re-walk backwards to detect the
+surrounding open block on every Parse() entry — `single=true` included.
+A single-line edit now sees the correct context.
 
 ### v1.8.10 (May 2026) — Inline alternation inside `#blk` cells
 

@@ -806,25 +806,27 @@ namespace Calcpad.Wpf
         {
             var newline = true;
             var startParagraph = p;
-            if (!single)
-            {
-                _isInCodeBlock = false;
-                _isInVizBlock = false;
-                _isInSvgBlock = false;
-                _isInPlotlyBlock = false;
-                _isInSymBlock = false;
-                _isInBlkBlock = false;
-                _isInCenBlock = false;
-                _isInMargenBlock = false;
-                _isInNocBlock = false;
-                // HighLightAll calls Parse(p, single:false) for EACH paragraph in a loop.
-                // Each call must know if the starting paragraph is already INSIDE a code/svg
-                // block — otherwise the second call (starting in the middle of #svg)
-                // resets _isInSvgBlock=false and re-tokenizes the body lines, stripping
-                // spaces from "rect 10 10" → "rect101010". Walk backwards from p to find
-                // the most recent #svg/#end svg, #python/#end python, #plotly/#end plotly directive.
-                DetectBlockContextFromPrevious(p);
-            }
+            // Always reset and re-detect block context so the per-paragraph
+            // re-tokenisation triggered by TextChanged (single=true) sees the
+            // correct surrounding state. Without this, editing a body line of
+            // an open #blk left the highlighter with stale flags and marked
+            // valid display-cell identifiers as red Errors.
+            _isInCodeBlock = false;
+            _isInVizBlock = false;
+            _isInSvgBlock = false;
+            _isInPlotlyBlock = false;
+            _isInSymBlock = false;
+            _isInBlkBlock = false;
+            _isInCenBlock = false;
+            _isInMargenBlock = false;
+            _isInNocBlock = false;
+            // HighLightAll calls Parse(p, single:false) for EACH paragraph in a loop.
+            // Each call must know if the starting paragraph is already INSIDE a code/svg
+            // block — otherwise the second call (starting in the middle of #svg)
+            // resets _isInSvgBlock=false and re-tokenizes the body lines, stripping
+            // spaces from "rect 10 10" → "rect101010". Walk backwards from p to find
+            // the most recent #svg/#end svg, #python/#end python, #plotly/#end plotly directive.
+            DetectBlockContextFromPrevious(p);
             if (single)
                 p = FindStartingLine(p, ref lineNumber);
             else
