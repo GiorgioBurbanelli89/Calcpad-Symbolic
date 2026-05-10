@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.5.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.6.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,16 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.6 (May 2026) — Greek-letter panel fix (font typo)
+
+The toolbar `GreekLettersWarpPanel` (α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ
+υ φ χ ψ ω ϑ ø ° ′ ″ ‰ ∂) was showing as boxes / blank because the
+TextBlock style hard-coded `FontFamily = "Times New Romans"` (extra `s`).
+WPF couldn't resolve that face and fell back to a font without Unicode
+Greek glyphs. Fixed to `"Times New Roman"`. The Ctrl+G transliteration
+shortcut (e.g. `x` → `ξ`) was always working — this only affected the
+clickable panel rendering.
 
 ### v1.8.5 (May 2026) — Highlighter respects multi-line display blocks
 
