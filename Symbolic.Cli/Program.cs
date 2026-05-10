@@ -339,9 +339,17 @@ namespace Calcpad.Cli
             var ext = Path.GetExtension(outFile);
             try
             {
-                var path = Path.GetDirectoryName(fileName);
+                // Resolve to absolute paths BEFORE changing cwd; otherwise a
+                // relative fileName like "Examples/x.cpd" gets re-prefixed
+                // when the cwd changes to its containing folder, producing
+                // "Examples/Examples/x.cpd" and failing.
+                var absFileName = Path.GetFullPath(fileName);
+                var absOutFile = Path.GetFullPath(outFile);
+                var path = Path.GetDirectoryName(absFileName);
                 if (!string.IsNullOrWhiteSpace(path))
                     Directory.SetCurrentDirectory(path);
+                fileName = absFileName;
+                outFile = absOutFile;
 
                 var code = CalcpadReader.Read(fileName);
                 var macroParser = new MacroParser
@@ -386,7 +394,12 @@ namespace Calcpad.Cli
             WriteError(message, true);
             prompt ??= Messages.PressAnyKeyToContinue;
             Console.WriteLine(prompt);
-            return Console.ReadKey();
+            // Skip ReadKey when stdin is redirected (batch / piped invocation)
+            // — otherwise InvalidOperationException kills batch runs.
+            if (Console.IsInputRedirected)
+                return default;
+            try { return Console.ReadKey(); }
+            catch (InvalidOperationException) { return default; }
         }
 
         static string TryOpenOnStartup(List<Line> Lines)
