@@ -1315,6 +1315,27 @@ namespace Calcpad.Core
         // Expressions can be calculations (evaluated) or text ('comment).
         // Supports #deq-style decorative equations and normal calculations.
         // =====================================================================
+        /// <summary>
+        /// True iff <paramref name="s"/> is just one bare identifier (Latin
+        /// or Greek letters, digits, underscore, subscript). Used by
+        /// <see cref="ParseKeywordColumns"/> to override the default
+        /// TEXT-first alternation rule so that `'a' kN/m` evaluates `a`.
+        /// </summary>
+        private static bool IsBareIdentifierForBlk(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return false;
+            // First char must be a letter (Latin, Greek, or _ )
+            char first = s[0];
+            if (!char.IsLetter(first) && first != '_') return false;
+            for (int i = 1; i < s.Length; i++)
+            {
+                char c = s[i];
+                if (!char.IsLetterOrDigit(c) && c != '_' && c != '.')
+                    return false;
+            }
+            return true;
+        }
+
         private void ParseKeywordColumns(ReadOnlySpan<char> s, bool isBlock)
         {
             // Skip "#inl " or "#blk "
@@ -1381,6 +1402,18 @@ namespace Calcpad.Core
                     }
                     var fragments = part.Split('\'');
                     var cellSb = new System.Text.StringBuilder();
+                    // Detect the "alternation phase". Two conventions:
+                    //   Standard (Calcpad line convention): fragments[1] = TEXT
+                    //   Inverted: fragments[1] = EXPR
+                    // Pick INVERTED if fragments[1].Trim() is a bare identifier
+                    // (single variable / function name). This matches the
+                    // user's intuition: `'a' kN/m` should evaluate `a`,
+                    // `'a' esto es #blk` should show "a=5" then "esto es #blk"
+                    // as text. For `'a vale 'a' kN/m` fragments[1]="a vale "
+                    // is NOT a bare identifier → standard convention →
+                    // "a vale " text + "a" expr + " kN/m" text.
+                    bool invertConvention = fragments.Length >= 2 &&
+                                            IsBareIdentifierForBlk(fragments[1].Trim());
                     for (int fi = 0; fi < fragments.Length; fi++)
                     {
                         var frag = fragments[fi];
@@ -1389,15 +1422,19 @@ namespace Calcpad.Core
                             // Always empty before the opening `'`; skip.
                             continue;
                         }
-                        if ((fi & 1) == 1)
+                        // Standard: odd fi → TEXT, even fi → EXPR
+                        // Inverted: odd fi → EXPR, even fi → TEXT
+                        bool isOddIndex = (fi & 1) == 1;
+                        bool treatAsExpr = invertConvention ? isOddIndex : !isOddIndex;
+                        if (!treatAsExpr)
                         {
-                            // ODD index → TEXT fragment
+                            // TEXT fragment
                             if (!string.IsNullOrEmpty(frag))
                                 cellSb.Append($"<span>{frag}</span>");
                         }
                         else
                         {
-                            // EVEN index ≥2 → EXPRESSION fragment
+                            // EXPRESSION fragment — parse + render
                             var fragTrim = frag.Trim();
                             if (string.IsNullOrEmpty(fragTrim))
                             {

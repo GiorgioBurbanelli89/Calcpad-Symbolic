@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.11.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.12.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,31 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.12 (May 2026) — Smarter alternation in `#blk` cells (`'a'` evaluates)
+
+v1.8.10 used Calcpad's standard line convention for `#blk` cells:
+fragments[1] = TEXT, fragments[2] = EXPR, etc. This worked for
+`'a vale 'a' kN/m` (which has 3 `'`s and a TEXT prefix) but failed
+when the user typed `'a' kN/m` expecting `a` to evaluate — the
+standard convention puts `a` in TEXT mode.
+
+Fix: detect the case where the cell looks like `'<bare-identifier>'…`
+(fragments[1] trimmed is a single Latin/Greek/underscore identifier
+with no operators or spaces) and INVERT the alternation phase. Now:
+
+```
+'Esto es una variable;'a' esto es #blk
+   → "Esto es una variable" | (a=5) " esto es #blk"
+'a vale 'a' kN/m
+   → "a vale " (a=5) " kN/m"     ← standard, fragments[1]="a vale " is not a bare id
+'b vale 'b' al final
+   → "b vale " (b=10) " al final"
+```
+
+The override only kicks in when fragments[1] is unambiguous (matches
+`\w+`), so phrasing like `'La fórmula es 'expr' útil` (with leading
+prose) still uses the standard text/expr/text convention.
 
 ### v1.8.11 (May 2026) — Highlighter block-context detection on single-paragraph re-parse
 
