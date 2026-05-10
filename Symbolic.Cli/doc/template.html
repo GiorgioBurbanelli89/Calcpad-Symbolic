@@ -81,6 +81,17 @@
             line-height: 150%;
         }
 
+        /* Preserve leading and consecutive spaces inside line-tracked text
+           paragraphs (`'   x` should render as "   x", not collapsed to " x"). */
+        p.line {
+            white-space: pre-wrap;
+        }
+        /* But col-cell spans inside a #blk row should NOT inherit pre-wrap
+           — they have their own flex layout. */
+        .col-cell, .col-cell span {
+            white-space: normal;
+        }
+
         .col-cell {
             flex: 1;
         }

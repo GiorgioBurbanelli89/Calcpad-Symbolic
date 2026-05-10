@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.7.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.8.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,24 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.8 (May 2026) — Preserve leading/multiple spaces in text comments
+
+A `'   x` or `'                              x` text comment used to render
+with collapsed whitespace ("x" or " x") because HTML collapses runs of
+spaces in flow content by default. Two changes:
+
+1. CSS rule `p.line { white-space: pre-wrap }` added to both the WPF and
+   CLI `doc/template.html`. Now leading and consecutive internal spaces
+   inside text paragraphs are preserved verbatim while still allowing
+   wrapping at word boundaries.
+2. `HtmlLineClass` / `HtmlLineMarker` now emit `class="line"` regardless
+   of `Debug`, so the same CSS rule applies to BOTH the WPF (Debug=true)
+   and the CLI (Debug=false). Previously only WPF tagged paragraphs with
+   `class="line"`, so the CSS fix only worked there.
+
+A `.col-cell, .col-cell span { white-space: normal }` override prevents
+inheritance from messing up `#blk` flex cell layout.
 
 ### v1.8.7 (May 2026) — `#blk` columns render in WPF (duplicate class= attribute)
 

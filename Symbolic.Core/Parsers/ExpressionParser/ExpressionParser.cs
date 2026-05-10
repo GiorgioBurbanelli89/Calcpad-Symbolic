@@ -61,19 +61,15 @@ namespace Calcpad.Core
             Debug && (_loops.Count == 0 || _loops.Peek().Iteration == 1) ?
             $" id=\"line-{_currentLine + 1}\"" :
             string.Empty;
-        // Convenience: just the bare `class="line"` token. Used by elements
-        // that need the line-tracking hook but have no other class.
-        private string HtmlLineClass =>
-            Debug && (_loops.Count == 0 || _loops.Peek().Iteration == 1) ?
-            " class=\"line\"" :
-            string.Empty;
-        // Inline marker to inject inside an existing class attribute.
-        // Returns "line " (with trailing space) when Debug is on, "" otherwise,
-        // so callers can do: $"class=\"{HtmlLineMarker}cond\"".
-        private string HtmlLineMarker =>
-            Debug && (_loops.Count == 0 || _loops.Peek().Iteration == 1) ?
-            "line " :
-            string.Empty;
+        // Convenience: bare `class="line"` token. ALWAYS emitted (independent
+        // of Debug) so that CSS rules targeting `p.line` (e.g. `white-space:
+        // pre-wrap` to preserve leading/multiple spaces in text comments)
+        // work in CLI output too — not only in the WPF where Debug=true.
+        private string HtmlLineClass => " class=\"line\"";
+        // Inline marker to inject INSIDE an existing class attribute.
+        // Always emits "line " (with trailing space) so callers can do
+        // `class="{HtmlLineMarker}cond"` and end up with `class="line cond"`.
+        private string HtmlLineMarker => "line ";
 
         public void Parse(string sourceCode, bool calculate = true, bool getXml = true) =>
             Parse(sourceCode.AsSpan(), calculate, getXml);
