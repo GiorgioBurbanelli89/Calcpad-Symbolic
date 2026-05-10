@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.12.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.13.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,33 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.13 (May 2026) — `;` inside text region is literal + accent colour + `'cell'` is pure text
+
+Three improvements to `#blk` / `#inl` column splitting and editor UX:
+
+1. `;` inside an OPEN text region (between a `'` opener and the next `'`
+   or end-of-line) is now treated as a LITERAL character — so
+   `'una frase con ; punto y coma interno` renders as a single cell.
+   Legacy `'cell1 ; 'cell2` syntax still works (a `'` after the `;` is
+   recognised as the start of a new cell, so the `;` becomes a separator
+   even when text is open).
+
+2. New "pure text cell" rule: a cell matching exactly `'<content>'`
+   (one opening quote, content, one closing quote, optional trailing
+   whitespace) is rendered as plain text WITHOUT applying the
+   alternation/identifier heuristic. So `'col1'; 'col2'; 'col3` produces
+   three text cells, even when `col1` happens to look like an identifier
+   (previously the heuristic tried to evaluate it and showed a red
+   "undeclared variable" error).
+
+3. Editor highlight: `;` that acts as a column separator in `#blk`,
+   `#inl`, or `#cen` lines is now rendered in a strong DodgerBlue +
+   bold so the visual layout of cells is unambiguous.
+
+Combined effect: the recommended way to write a row is now
+`'col1'; 'col2'; 'col3` (close every quote, semicolon between cells).
+But the historic `'col1 ; 'col2` shorthand still produces two columns.
 
 ### v1.8.12 (May 2026) — Smarter alternation in `#blk` cells (`'a'` evaluates)
 

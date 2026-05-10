@@ -175,6 +175,10 @@ namespace Calcpad.Wpf
         private static readonly SolidColorBrush ToolTipBackground = new(Color.FromArgb(196, 0, 0, 0));
         private static readonly SolidColorBrush TitleBackground = new(Color.FromRgb(245, 255, 240));
         private static readonly SolidColorBrush ErrorBackground = new(Color.FromRgb(255, 225, 225));
+        // Strong accent for `;` when used as a column separator inside
+        // #blk / #inl / #cen — makes the layout visually obvious in the
+        // editor without changing how the parser treats the character.
+        private static readonly SolidColorBrush ColumnSeparatorBrush = new(Color.FromRgb(0, 120, 215)); // DodgerBlue-ish
         private static readonly SolidColorBrush BackgroundBrush = new(Color.FromArgb(160, 240, 248, 255));
         private static readonly SolidColorBrush HtmlCommentBrush = new(Color.FromRgb(160, 160, 160));
 
@@ -1719,7 +1723,31 @@ namespace Calcpad.Wpf
             Append(_state.CurrentTypeOrPreviousIfCurrentIsNone);
             _builder.Append(c);
             if (_state.CommandCount > 0 || c == ';')
+            {
                 Append(Types.Operator);
+                // Special highlight for `;` when it's acting as a column
+                // separator inside #blk, #inl, or #cen (display layout
+                // directives). Repaint the just-emitted Run in a strong
+                // accent colour so the user visually distinguishes
+                // "column break" from "regular operator".
+                if (c == ';')
+                {
+                    bool isLayoutSeparator = _isInBlkBlock || _isInCenBlock;
+                    if (!isLayoutSeparator && _state.Text != null)
+                    {
+                        var ts = _state.Text.AsSpan().TrimStart();
+                        isLayoutSeparator =
+                            ts.StartsWith("#inl", StringComparison.OrdinalIgnoreCase) ||
+                            ts.StartsWith("#blk", StringComparison.OrdinalIgnoreCase);
+                    }
+                    if (isLayoutSeparator && _state.LastInline is Run rSep
+                        && rSep.Text.Length > 0 && rSep.Text.TrimEnd().EndsWith(';'))
+                    {
+                        rSep.Foreground = ColumnSeparatorBrush;
+                        rSep.FontWeight = FontWeights.Bold;
+                    }
+                }
+            }
             else if (c == '|' && (_state.IsUnits || _state.MatrixCount > 0))
                 Append(Types.Bracket);
             else if (c == ':')
