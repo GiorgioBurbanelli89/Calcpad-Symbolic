@@ -1469,15 +1469,18 @@ namespace Calcpad.Core
                     // Detect the "alternation phase". Two conventions:
                     //   Standard (Calcpad line convention): fragments[1] = TEXT
                     //   Inverted: fragments[1] = EXPR
-                    // Pick INVERTED if fragments[1].Trim() is a bare identifier
-                    // (single variable / function name). This matches the
-                    // user's intuition: `'a' kN/m` should evaluate `a`,
-                    // `'a' esto es #blk` should show "a=5" then "esto es #blk"
-                    // as text. For `'a vale 'a' kN/m` fragments[1]="a vale "
-                    // is NOT a bare identifier → standard convention →
-                    // "a vale " text + "a" expr + " kN/m" text.
-                    bool invertConvention = fragments.Length >= 2 &&
-                                            IsBareIdentifierForBlk(fragments[1].Trim());
+                    //
+                    // Pick INVERTED ONLY IF fragments[1].Trim() is a bare
+                    // identifier (single name with no spaces/operators) AND
+                    // that name is already DEFINED as a variable in the
+                    // parser. So `'a' kN/m` (with `a = 5` defined) inverts
+                    // → expr `a` + text ` kN/m`. But `'texto'e = 4` where
+                    // `texto` is NOT defined keeps the standard convention
+                    // → text "texto" + expr `e = 4` (which assigns e).
+                    string frag1Trim = fragments.Length >= 2 ? fragments[1].Trim() : "";
+                    bool invertConvention = frag1Trim.Length > 0 &&
+                                            IsBareIdentifierForBlk(frag1Trim) &&
+                                            _parser.HasVariable(frag1Trim);
                     for (int fi = 0; fi < fragments.Length; fi++)
                     {
                         var frag = fragments[fi];
@@ -1520,6 +1523,53 @@ namespace Calcpad.Core
                             {
                                 cellSb.Append($"<span class=\"err\">{System.Web.HttpUtility.HtmlEncode(frag)}</span>");
                             }
+                        }
+                    }
+                    columns.Add(cellSb.ToString());
+                    continue;
+                }
+
+                // Cell does NOT start with `'` but contains `'` internally
+                // (e.g. `c = 3' texto'`). Treat as expression-first, then
+                // alternate: EXPR / TEXT / EXPR / TEXT … so the user can
+                // write `c = 3' suffix text'` and get the value of c plus
+                // the text appended.
+                if (!part.StartsWith("'") && part.Contains('\''))
+                {
+                    var fragments = part.Split('\'');
+                    var cellSb = new System.Text.StringBuilder();
+                    for (int fi = 0; fi < fragments.Length; fi++)
+                    {
+                        var frag = fragments[fi];
+                        // EVEN fi → EXPR, ODD fi → TEXT
+                        bool isEvenIndex = (fi & 1) == 0;
+                        if (isEvenIndex)
+                        {
+                            // EXPR
+                            var fragTrim = frag.Trim();
+                            if (string.IsNullOrEmpty(fragTrim))
+                                continue;
+                            _isVal = savedIsVal;
+                            _parser.IsCalculation = true;
+                            try
+                            {
+                                _parser.Parse(fragTrim);
+                                _parser.Calculate();
+                                var html = _parser.ToHtml();
+                                if (string.IsNullOrWhiteSpace(html))
+                                    html = System.Web.HttpUtility.HtmlEncode(fragTrim);
+                                cellSb.Append($"<span class=\"eq\">{html}</span>");
+                            }
+                            catch
+                            {
+                                cellSb.Append($"<span class=\"err\">{System.Web.HttpUtility.HtmlEncode(frag)}</span>");
+                            }
+                        }
+                        else
+                        {
+                            // TEXT
+                            if (!string.IsNullOrEmpty(frag))
+                                cellSb.Append($"<span>{frag}</span>");
                         }
                     }
                     columns.Add(cellSb.ToString());

@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.13.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.14.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,35 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.14 (May 2026) — Inversion only for DEFINED variables + expr-first cells
+
+Two corrections to `#blk` / `#inl` cell rendering:
+
+1. The "invert convention" heuristic (so `'a' kN/m` evaluates `a`) now
+   requires the bare identifier to actually be DEFINED as a variable
+   (`_parser.HasVariable(name)`). Otherwise standard text-first
+   convention applies. Before this, `'texto'e = 4` mis-fired the
+   heuristic — `texto` looked like an identifier, got marked as EXPR,
+   and showed as a red "undeclared" error. Now `texto` stays as text
+   and `e = 4` evaluates as expression (assigning `e`).
+
+2. Cells that DON'T start with `'` but contain `'` internally are now
+   processed with expression-first alternation (EXPR / TEXT / EXPR …).
+   So `c = 3' texto2'` produces: `c = 3` evaluated + " texto2" as text.
+   Previously this fell through to the regular expression parser which
+   choked on the literal `'` and produced an error.
+
+Combined with v1.8.13, the recommended canonical forms are now:
+
+```cpd
+#blk
+'col1'; 'col2'; 'col3                ← three text cells
+'text1'; 'a' kN/m                    ← text | expr (when a is defined)
+'text 'a = 4; b = a + 2              ← text + expr + expr in two cells
+c = 3' suffix text'                  ← expr + text (no leading quote)
+#end blk
+```
 
 ### v1.8.13 (May 2026) — `;` inside text region is literal + accent colour + `'cell'` is pure text
 
