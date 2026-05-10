@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.2.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.3.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,13 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.3 (May 2026) — Repackage clean (no contaminated examples)
+
+Same source as v1.8.2 but the v1.8.2 installer accidentally included a
+`.cpd` file that was overwritten by the WPF auto-save on close (lost
+inline `'#deqξ'` spaces and a `#blk` cell apostrophe). The repo `.cpd`
+was reverted to its clean form and the installer was recompiled.
 
 ### v1.8.2 (May 2026) — WPF highlighter polish + CLI batch mode
 
