@@ -50,9 +50,29 @@ namespace Calcpad.Core
         public void Cancel() => _parser?.Cancel();
         public void Pause() => _isPausedByUser = true;
 
+        // HtmlId returns ONLY the `id="line-N"` attribute (no `class="line"`).
+        // The `line` class must be added by callers as part of their own
+        // class attribute, e.g. `class="line col-blk"`. Embedding the class
+        // here used to produce malformed HTML with TWO `class` attributes
+        // when the caller also added its own class — `<div id=".." class="line"
+        // class="col-blk">` — and browsers silently dropped the second one,
+        // breaking flexbox layout for #blk / #inl rows.
         private string HtmlId =>
             Debug && (_loops.Count == 0 || _loops.Peek().Iteration == 1) ?
-            $" id=\"line-{_currentLine + 1}\" class=\"line\"" :
+            $" id=\"line-{_currentLine + 1}\"" :
+            string.Empty;
+        // Convenience: just the bare `class="line"` token. Used by elements
+        // that need the line-tracking hook but have no other class.
+        private string HtmlLineClass =>
+            Debug && (_loops.Count == 0 || _loops.Peek().Iteration == 1) ?
+            " class=\"line\"" :
+            string.Empty;
+        // Inline marker to inject inside an existing class attribute.
+        // Returns "line " (with trailing space) when Debug is on, "" otherwise,
+        // so callers can do: $"class=\"{HtmlLineMarker}cond\"".
+        private string HtmlLineMarker =>
+            Debug && (_loops.Count == 0 || _loops.Peek().Iteration == 1) ?
+            "line " :
             string.Empty;
 
         public void Parse(string sourceCode, bool calculate = true, bool getXml = true) =>
@@ -222,7 +242,7 @@ namespace Calcpad.Core
                     if (textSpan.IsEmpty)
                     {
                         if (_isVisible && _isVal != 1 && _htmlLines < MaxHtmlLines && IsEnabled())
-                            _sb.AppendLine($"<p{HtmlId}>&nbsp;</p>");
+                            _sb.AppendLine($"<p{HtmlId}{HtmlLineClass}>&nbsp;</p>");
 
                         continue;
                     }
@@ -615,9 +635,9 @@ namespace Calcpad.Core
                         if (_isVisible && !_calculate)
                         {
                             if (keyword == Keyword.Else)
-                                _sb.Append($"</div><p{HtmlId}>{_condition.ToHtml()}</p><div class = \"indent\">");
+                                _sb.Append($"</div><p{HtmlId}{HtmlLineClass}>{_condition.ToHtml()}</p><div class = \"indent\">");
                             else
-                                _sb.Append($"</div><p{HtmlId}>{_condition.ToHtml()}</p>");
+                                _sb.Append($"</div><p{HtmlId}{HtmlLineClass}>{_condition.ToHtml()}</p>");
                         }
                     }
                     else if (_condition.KeywordLength > 0 &&
@@ -688,7 +708,7 @@ namespace Calcpad.Core
                 if (lineType == TokenTypes.Heading)
                     _sb.Append($"<h3{HtmlId}>");
                 else if (lineType != TokenTypes.Html)
-                    _sb.Append($"<p{HtmlId}>");
+                    _sb.Append($"<p{HtmlId}{HtmlLineClass}>");
             }
 
             void AppendHtmlLineEnd(TokenTypes lineType, bool indent)

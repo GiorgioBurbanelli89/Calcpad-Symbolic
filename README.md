@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.6.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.7.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,35 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.7 (May 2026) — `#blk` columns render in WPF (duplicate class= attribute)
+
+`#blk`/`#inl` flexbox columns rendered as stacked single-column rows in
+the WPF WebView2 even though the CLI output produced correct multi-cell
+HTML. Root cause: the parser's `HtmlId` property (active when `Debug=true`)
+emitted ` id="line-N" class="line"` as a single token, and several callers
+appended their OWN `class="…"` afterwards, producing malformed HTML with
+TWO `class` attributes:
+
+```html
+<div id="line-203" class="line" class="col-blk">  ← second class silently dropped by browsers
+```
+
+`.col-blk { display: flex }` therefore never applied — every cell rendered
+as a block on its own line. The CLI output had no duplicate because Debug
+was off there, so the bug was invisible until WPF.
+
+Fix: split `HtmlId` into three pieces so each emission site picks the right
+combination:
+- `HtmlId` → just ` id="line-N"`
+- `HtmlLineClass` → just ` class="line"`
+- `HtmlLineMarker` → `"line "` to inject inside an existing class= value
+
+Updated all ~20 call sites in `ExpressionParser.cs` and
+`ExpressionParser.Keywords.cs` (`<p{HtmlId}>` → `<p{HtmlId}{HtmlLineClass}>`,
+and `<X{HtmlId} class="cond">` → `<X{HtmlId} class="{HtmlLineMarker}cond">`).
+Output now has exactly ONE class attribute per element, both line-tracking
+hooks and flex layout work simultaneously.
 
 ### v1.8.6 (May 2026) — Greek-letter panel fix (font typo)
 

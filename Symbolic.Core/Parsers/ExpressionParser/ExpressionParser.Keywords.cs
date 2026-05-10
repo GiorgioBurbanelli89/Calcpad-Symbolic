@@ -215,7 +215,7 @@ namespace Calcpad.Core
                         // If the user wants inline HTML in the title, they can still
                         // use the classic "Title syntax. Here we treat as plain text.
                         var safe = System.Web.HttpUtility.HtmlEncode(titleText);
-                        _sb.Append($"<h{hashCount}{HtmlId}>{safe}</h{hashCount}>\n");
+                        _sb.Append($"<h{hashCount}{HtmlId}{HtmlLineClass}>{safe}</h{hashCount}>\n");
                     }
                     return KeywordResult.Continue;
                 }
@@ -579,7 +579,7 @@ namespace Calcpad.Core
                 return KeywordResult.Break;
             }
             if (_isVisible && !_calculate)
-                _sb.Append($"<p{HtmlId} class=\"cond\">#pause</p>");
+                _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cond\">#pause</p>");
 
             return KeywordResult.Continue;
         }
@@ -647,13 +647,13 @@ namespace Calcpad.Core
             else if (_isVisible)
             {
                 if (expression.IsWhiteSpace())
-                    _sb.Append($"<p{HtmlId} class=\"cond\">#repeat</p><div class=\"indent\">");
+                    _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cond\">#repeat</p><div class=\"indent\">");
                 else
                 {
                     try
                     {
                         _parser.Parse(expression);
-                        _sb.Append($"<p{HtmlId}><span class=\"cond\">#repeat</span> <span class=\"eq\">{_parser.ToHtml()}</span></p><div class=\"indent\">");
+                        _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"cond\">#repeat</span> <span class=\"eq\">{_parser.ToHtml()}</span></p><div class=\"indent\">");
                     }
                     catch (MathParserException ex)
                     {
@@ -731,7 +731,7 @@ namespace Calcpad.Core
                             var startHtml = _parser.ToHtml();
                             _parser.Parse(endExpr);
                             var endHtml = _parser.ToHtml();
-                            _sb.Append($"<p{HtmlId}><span class=\"cond\">#for</span> <span class=\"eq\">{varHtml} = {startHtml} : {endHtml}</span></p><div class=\"indent\">");
+                            _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"cond\">#for</span> <span class=\"eq\">{varHtml} = {startHtml} : {endHtml}</span></p><div class=\"indent\">");
                         }
                         catch (MathParserException ex)
                         {
@@ -780,7 +780,7 @@ namespace Calcpad.Core
             {
                 try
                 {
-                    _sb.Append($"<p{HtmlId}><span class=\"cond\">#while</span> ");
+                    _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"cond\">#while</span> ");
                     ParseTokens(GetTokens(expression), true, false);
                     _sb.Append("</p><div class=\"indent\">");
                 }
@@ -812,7 +812,7 @@ namespace Calcpad.Core
                     _condition.SetCondition(Condition.RemoveConditionKeyword);
             }
             else if (_isVisible)
-                _sb.Append($"</div><p{HtmlId} class=\"cond\">#loop</p>");
+                _sb.Append($"</div><p{HtmlId} class=\"{HtmlLineMarker}cond\">#loop</p>");
         }
 
         private bool Iterate(Loop loop, bool removeWhileCondition)
@@ -864,7 +864,7 @@ namespace Calcpad.Core
                 }
             }
             else if (_isVisible)
-                _sb.Append($"<p{HtmlId} class=\"cond\">#break</p>");
+                _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cond\">#break</p>");
 
             return false;
         }
@@ -889,7 +889,7 @@ namespace Calcpad.Core
                 }
             }
             else if (_isVisible)
-                _sb.Append($"<p{HtmlId} class=\"cond\">#continue</p>");
+                _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cond\">#continue</p>");
         }
 
         private static (int, int) GetForLoopLimits(ReadOnlySpan<char> expression)
@@ -970,7 +970,7 @@ namespace Calcpad.Core
                 }
             }
             else if (_isVisible)
-                _sb.Append($"<p><span{HtmlId} class=\"cond\">#read</span> {s[5..]}</p>");
+                _sb.Append($"<p><span{HtmlId} class=\"{HtmlLineMarker}cond\">#read</span> {s[5..]}</p>");
         }
 
         private void ParseKeywordWrite(ReadOnlySpan<char> s, Keyword keyword)
@@ -990,13 +990,13 @@ namespace Calcpad.Core
                 }
             }
             else if (_isVisible)
-                _sb.Append($"<p><span{HtmlId} class=\"cond\">#write</span> {s[6..]}</p>");
+                _sb.Append($"<p><span{HtmlId} class=\"{HtmlLineMarker}cond\">#write</span> {s[6..]}</p>");
         }
 
         private void ReportDataExchageResult(ReadWriteOptions options, string command)
         {
             var url = $"file:///{options.FullPath.Replace('\\', '/')}";
-            _sb.Append($"<p{HtmlId}>")
+            _sb.Append($"<p{HtmlId}{HtmlLineClass}>")
                .Append($"Matrix <span class=\"eq\">{new HtmlWriter(Settings.Math, false).FormatVariable(options.Name.ToString(), string.Empty, true)}</span>")
                .Append($" was successfully {command} <a href=\"{url}\">{options.Path}.{options.Ext}</a>");
             if (options.IsExcel)
@@ -1118,12 +1118,12 @@ namespace Calcpad.Core
                 var sb2Str = sb2.ToString();
                 var eqStyle = EqStyleForMatrix(sb2Str);
                 if (eqNumber != null)
-                    _sb.Append($"<p{HtmlId} class=\"eqnum\"><span class=\"eq\"{eqStyle}>{sb2Str}</span><span class=\"eqn\">{eqNumber}</span></p>\n");
+                    _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}eqnum\"><span class=\"eq\"{eqStyle}>{sb2Str}</span><span class=\"eqn\">{eqNumber}</span></p>\n");
                 else
-                    _sb.Append($"<p{HtmlId}><span class=\"eq\"{eqStyle}>{sb2Str}</span></p>\n");
+                    _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"eq\"{eqStyle}>{sb2Str}</span></p>\n");
             }
             else
-                _sb.Append($"<p{HtmlId}><span class=\"err\">#formeq: no output for '{expr}'</span></p>\n");
+                _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">#formeq: no output for '{expr}'</span></p>\n");
         }
 
         /// <summary>
@@ -1255,7 +1255,7 @@ namespace Calcpad.Core
             // Check if it's a comment (starts with ')
             if (content.StartsWith("'"))
             {
-                _sb.Append($"<p{HtmlId} class=\"cen-line\">{content[1..]}</p>\n");
+                _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cen-line\">{content[1..]}</p>\n");
                 return;
             }
 
@@ -1273,7 +1273,7 @@ namespace Calcpad.Core
                     var val = _parser.ResultAsString;
                     html = $"{varHtml} = {val}";
                 }
-                _sb.Append($"<p{HtmlId} class=\"cen-line\"><span class=\"eq\">{html}</span></p>\n");
+                _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cen-line\"><span class=\"eq\">{html}</span></p>\n");
             }
             catch
             {
@@ -1284,11 +1284,11 @@ namespace Calcpad.Core
                 {
                     _parser.Parse(content, false);
                     var html = _parser.ToHtml();
-                    _sb.Append($"<p{HtmlId} class=\"cen-line\"><span class=\"eq\">{html}</span></p>\n");
+                    _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cen-line\"><span class=\"eq\">{html}</span></p>\n");
                 }
                 catch
                 {
-                    _sb.Append($"<p{HtmlId} class=\"cen-line\">{content}</p>\n");
+                    _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cen-line\">{content}</p>\n");
                 }
             }
             _isVal = savedIsVal;
@@ -1474,10 +1474,12 @@ namespace Calcpad.Core
             _isVal = savedIsVal;
             _parser.IsCalculation = _isVal != -1;
 
-            // Build HTML: flexbox row with equal columns
+            // Build HTML: flexbox row with equal columns. Combine the
+            // line-tracking class with col-blk/col-inl in ONE class attribute
+            // (browsers drop a second `class="…"` silently, which broke flex).
             var cssClass = isBlock ? "col-blk" : "col-inl";
             var sb2 = new System.Text.StringBuilder();
-            sb2.Append($"<div{HtmlId} class=\"{cssClass}\">");
+            sb2.Append($"<div{HtmlId} class=\"{HtmlLineMarker}{cssClass}\">");
             foreach (var col in columns)
                 sb2.Append($"<div class=\"col-cell\">{col}</div>");
             sb2.Append("</div>\n");
@@ -3537,7 +3539,7 @@ namespace Calcpad.Core
                     var matHtml = TryRenderMatrixLiteral(command);
                     if (!string.IsNullOrEmpty(matHtml))
                     {
-                        _sb.Append($"<p{HtmlId}><span class=\"eq\"{EqStyleForMatrix(matHtml)}>{matHtml}</span></p>\n");
+                        _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"eq\"{EqStyleForMatrix(matHtml)}>{matHtml}</span></p>\n");
                         return;
                     }
                 }
@@ -3554,7 +3556,7 @@ namespace Calcpad.Core
                             var lhs = command.Substring(0, eqIdx2).Trim();
                             var lhsHtml = DeqRenderVar(lhs);
                             var content = $"{lhsHtml} = {matHtml}";
-                            _sb.Append($"<p{HtmlId}><span class=\"eq\"{EqStyleForMatrix(content)}>{content}</span></p>\n");
+                            _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"eq\"{EqStyleForMatrix(content)}>{content}</span></p>\n");
                             return;
                         }
                     }
@@ -3568,7 +3570,7 @@ namespace Calcpad.Core
                     var specialHtml = TryRenderDeqSpecial(command);
                     if (!string.IsNullOrEmpty(specialHtml))
                     {
-                        _sb.Append($"<p{HtmlId}><span class=\"eq\"{EqStyleForMatrix(specialHtml)}>{specialHtml}</span></p>\n");
+                        _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"eq\"{EqStyleForMatrix(specialHtml)}>{specialHtml}</span></p>\n");
                         return;
                     }
                     // If it's an assignment, split and render each side
@@ -3579,7 +3581,7 @@ namespace Calcpad.Core
                         var lhsHtml = DeqRenderVar(lhs);
                         var rhsHtml = TryRenderDeqSpecial(rhs) ?? DeqRenderVar(rhs);
                         var content = $"{lhsHtml} = {rhsHtml}";
-                        _sb.Append($"<p{HtmlId}><span class=\"eq\"{EqStyleForMatrix(content)}>{content}</span></p>\n");
+                        _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"eq\"{EqStyleForMatrix(content)}>{content}</span></p>\n");
                         return;
                     }
                 }
@@ -3595,14 +3597,14 @@ namespace Calcpad.Core
 
             if (result.IsError)
             {
-                _sb.Append($"<p{HtmlId}><span class=\"err\">{System.Web.HttpUtility.HtmlEncode(result.Error)}</span></p>\n");
+                _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">{System.Web.HttpUtility.HtmlEncode(result.Error)}</span></p>\n");
                 return;
             }
 
             var sb2 = RenderSymResultBody(result);
 
             if (sb2.Length > 0)
-                _sb.Append($"<p{HtmlId}><span class=\"eq\">{sb2}</span></p>\n");
+                _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"eq\">{sb2}</span></p>\n");
         }
 
         // Reusable rendering of a SymResult's Parts into the inner HTML that
@@ -4046,13 +4048,13 @@ namespace Calcpad.Core
                     }
                 }
                 if (!string.IsNullOrWhiteSpace(stderr))
-                    _sb.Append($"<p{HtmlId}><span class=\"err\">{System.Web.HttpUtility.HtmlEncode(stderr.Trim())}</span></p>\n");
+                    _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">{System.Web.HttpUtility.HtmlEncode(stderr.Trim())}</span></p>\n");
                 PipProgressChanged?.Invoke(null);
             }
             catch (Exception ex)
             {
                 PipProgressChanged?.Invoke(null);
-                _sb.Append($"<p{HtmlId}><span class=\"err\">Python error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
+                _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">Python error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
             }
         }
 
@@ -4301,7 +4303,7 @@ namespace Calcpad.Core
             }
             catch (Exception ex)
             {
-                _sb.Append($"<p{HtmlId}><span class=\"err\">Maxima error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
+                _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">Maxima error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
             }
         }
 
@@ -4351,7 +4353,7 @@ namespace Calcpad.Core
                         if (trimmed.StartsWith("Successfully") || trimmed.StartsWith("Installing") ||
                             trimmed.StartsWith("Collecting") || trimmed.StartsWith("Downloading"))
                         {
-                            _sb.Append($"<p{HtmlId}><code>{System.Web.HttpUtility.HtmlEncode(trimmed)}</code></p>\n");
+                            _sb.Append($"<p{HtmlId}{HtmlLineClass}><code>{System.Web.HttpUtility.HtmlEncode(trimmed)}</code></p>\n");
                             hasOutput = true;
                         }
                     }
@@ -4363,7 +4365,7 @@ namespace Calcpad.Core
                             var trimmed = line.TrimEnd('\r').Trim();
                             if (trimmed.StartsWith("Requirement already satisfied"))
                             {
-                                _sb.Append($"<p{HtmlId}><code style=\"color:#888\">✓ {System.Web.HttpUtility.HtmlEncode(args)} (already installed)</code></p>\n");
+                                _sb.Append($"<p{HtmlId}{HtmlLineClass}><code style=\"color:#888\">✓ {System.Web.HttpUtility.HtmlEncode(args)} (already installed)</code></p>\n");
                                 break;
                             }
                         }
@@ -4376,7 +4378,7 @@ namespace Calcpad.Core
                         {
                             var trimmed = line.TrimEnd('\r').Trim();
                             if (!string.IsNullOrEmpty(trimmed) && !trimmed.StartsWith("[notice]"))
-                                _sb.Append($"<p{HtmlId}><span class=\"err\">pip: {System.Web.HttpUtility.HtmlEncode(trimmed)}</span></p>\n");
+                                _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">pip: {System.Web.HttpUtility.HtmlEncode(trimmed)}</span></p>\n");
                         }
                     }
                 }
@@ -4385,7 +4387,7 @@ namespace Calcpad.Core
             {
                 PipProgressChanged?.Invoke(null);
                 if (_isVisible)
-                    _sb.Append($"<p{HtmlId}><span class=\"err\">pip error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
+                    _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">pip error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
             }
         }
 
