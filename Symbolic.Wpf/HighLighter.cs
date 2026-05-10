@@ -26,6 +26,14 @@ namespace Calcpad.Wpf
         private bool _isInPlotlyBlock; // #plotly ... #end plotly — body is raw JSON, never tokenized
         private bool _isInVizBlock;
         private bool _isInSymBlock;   // #sym (alone) ... #end sym — body is symbolic (xi/eta valid)
+        // Display-block flags: each marks an open #blk / #cen / #margen / #noc
+        // block whose body lines are rendered for layout, not evaluated as
+        // arithmetic. While one of these is true, identifiers and bracketed
+        // tokens that would normally hit Types.Error are demoted to Comment.
+        private bool _isInBlkBlock;
+        private bool _isInCenBlock;
+        private bool _isInMargenBlock;
+        private bool _isInNocBlock;
         private sealed class TagHelper
         {
             internal enum Tags
@@ -763,6 +771,33 @@ namespace Calcpad.Wpf
                     _isInSymBlock = true;
                     return;
                 }
+                // Display-layout block openers — closed by their #end variant.
+                if (prevText.StartsWith("#end blk", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end cen", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end margen", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end noc", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#equ", StringComparison.OrdinalIgnoreCase))
+                    return; // already-closed display block
+                if (prevText.StartsWith("#blk", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInBlkBlock = true;
+                    return;
+                }
+                if (prevText.StartsWith("#cen", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInCenBlock = true;
+                    return;
+                }
+                if (prevText.StartsWith("#margen", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInMargenBlock = true;
+                    return;
+                }
+                if (prevText.StartsWith("#noc", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInNocBlock = true;
+                    return;
+                }
                 prev = prev.PreviousBlock as Paragraph;
             }
         }
@@ -778,6 +813,10 @@ namespace Calcpad.Wpf
                 _isInSvgBlock = false;
                 _isInPlotlyBlock = false;
                 _isInSymBlock = false;
+                _isInBlkBlock = false;
+                _isInCenBlock = false;
+                _isInMargenBlock = false;
+                _isInNocBlock = false;
                 // HighLightAll calls Parse(p, single:false) for EACH paragraph in a loop.
                 // Each call must know if the starting paragraph is already INSIDE a code/svg
                 // block — otherwise the second call (starting in the middle of #svg)
@@ -901,6 +940,32 @@ namespace Calcpad.Wpf
                     ++lineNumber;
                     continue;
                 }
+                // Display-layout block flag tracking. We DO want these lines to
+                // tokenize normally (so `'a ; 'b` gets the proper green-comment
+                // colours per cell), but we also need to know when we're INSIDE
+                // such a block so that any token that would otherwise hit
+                // Types.Error gets demoted to Comment in Append().
+                if (trimmedText.StartsWith("#blk", StringComparison.OrdinalIgnoreCase) &&
+                    !trimmedText.StartsWith("#end blk", StringComparison.OrdinalIgnoreCase))
+                    _isInBlkBlock = true;
+                else if (trimmedText.StartsWith("#end blk", StringComparison.OrdinalIgnoreCase))
+                    _isInBlkBlock = false;
+                if (trimmedText.StartsWith("#cen", StringComparison.OrdinalIgnoreCase) &&
+                    !trimmedText.StartsWith("#end cen", StringComparison.OrdinalIgnoreCase))
+                    _isInCenBlock = true;
+                else if (trimmedText.StartsWith("#end cen", StringComparison.OrdinalIgnoreCase))
+                    _isInCenBlock = false;
+                if (trimmedText.StartsWith("#margen", StringComparison.OrdinalIgnoreCase) &&
+                    !trimmedText.StartsWith("#end margen", StringComparison.OrdinalIgnoreCase))
+                    _isInMargenBlock = true;
+                else if (trimmedText.StartsWith("#end margen", StringComparison.OrdinalIgnoreCase))
+                    _isInMargenBlock = false;
+                if (trimmedText.StartsWith("#noc", StringComparison.OrdinalIgnoreCase) &&
+                    !trimmedText.StartsWith("#end noc", StringComparison.OrdinalIgnoreCase))
+                    _isInNocBlock = true;
+                else if (trimmedText.StartsWith("#end noc", StringComparison.OrdinalIgnoreCase) ||
+                         trimmedText.StartsWith("#equ", StringComparison.OrdinalIgnoreCase))
+                    _isInNocBlock = false;
                 // Inside #sym ... #end sym block: body is symbolic CAS code (xi, eta,
                 // theta, etc. are valid symbol names — must NOT be flagged as undeclared
                 // variables / shown in red). Render as plain dark text.
@@ -1767,15 +1832,32 @@ namespace Calcpad.Wpf
             // (#deq, #sym, #inl, #blk, #cen, #noc). These accept arbitrary
             // identifiers, @@-labels, ξ/η, xi/eta, etc. as display payload — they
             // must NOT show as crimson "undeclared" errors.
-            if (t == Types.Error && _state.Text != null)
+            //
+            // Two trigger paths:
+            //   1) The CURRENT line itself starts with one of these keywords
+            //      (handles inline forms like `#deqξ` and the keyword line
+            //      itself).
+            //   2) We are INSIDE an open multi-line display block (the
+            //      _isIn*Block flags), e.g. body lines of `#blk ... #end blk`.
+            if (t == Types.Error)
             {
-                var ts = _state.Text.AsSpan().TrimStart();
-                if (ts.StartsWith("#deq", StringComparison.OrdinalIgnoreCase) ||
-                    ts.StartsWith("#sym", StringComparison.OrdinalIgnoreCase) ||
-                    ts.StartsWith("#inl", StringComparison.OrdinalIgnoreCase) ||
-                    ts.StartsWith("#blk", StringComparison.OrdinalIgnoreCase) ||
-                    ts.StartsWith("#cen", StringComparison.OrdinalIgnoreCase) ||
-                    ts.StartsWith("#noc", StringComparison.OrdinalIgnoreCase))
+                bool inDisplayBlock =
+                    _isInBlkBlock || _isInCenBlock ||
+                    _isInMargenBlock || _isInNocBlock ||
+                    _isInSymBlock;
+                bool lineStartsWithDisplay = false;
+                if (_state.Text != null)
+                {
+                    var ts = _state.Text.AsSpan().TrimStart();
+                    lineStartsWithDisplay =
+                        ts.StartsWith("#deq", StringComparison.OrdinalIgnoreCase) ||
+                        ts.StartsWith("#sym", StringComparison.OrdinalIgnoreCase) ||
+                        ts.StartsWith("#inl", StringComparison.OrdinalIgnoreCase) ||
+                        ts.StartsWith("#blk", StringComparison.OrdinalIgnoreCase) ||
+                        ts.StartsWith("#cen", StringComparison.OrdinalIgnoreCase) ||
+                        ts.StartsWith("#noc", StringComparison.OrdinalIgnoreCase);
+                }
+                if (lineStartsWithDisplay || inDisplayBlock)
                 {
                     t = Types.Comment;
                     _state.Message = null;
@@ -1900,12 +1982,12 @@ namespace Calcpad.Wpf
 
         private Types CheckError(Types t, ref string s)
         {
-            // Skip error checking for display-only / symbolic directives. Two paths
-            // because _state.Keyword may not be set yet when the variable token is
-            // parsed (e.g. inline forms like `#deqξ`):
-            //   1) Look at _state.Keyword (set after #deq/#sym keyword runs through here)
-            //   2) Fall back to the full line text — these directives are line-level,
-            //      so any token in the same line should escape error promotion.
+            // Skip error checking for display-only / symbolic directives. Three
+            // trigger paths so that tokens inside multi-line display blocks
+            // also escape error promotion:
+            //   1) _state.Keyword is set to a display directive
+            //   2) The current LINE TEXT starts with a display directive
+            //   3) We are INSIDE an open multi-line display block (_isIn*Block)
             var kw = _state.Keyword;
             bool isDisplayDirective = kw != null && (
                 kw.Equals("#deq", StringComparison.OrdinalIgnoreCase) ||
@@ -1927,6 +2009,10 @@ namespace Calcpad.Wpf
                     ts.StartsWith("#cen", StringComparison.OrdinalIgnoreCase) ||
                     ts.StartsWith("#noc", StringComparison.OrdinalIgnoreCase);
             }
+            if (!isDisplayDirective)
+                isDisplayDirective =
+                    _isInBlkBlock || _isInCenBlock ||
+                    _isInMargenBlock || _isInNocBlock || _isInSymBlock;
             if (isDisplayDirective)
                 return t;
 
@@ -2140,6 +2226,11 @@ namespace Calcpad.Wpf
             var isDataExchangeKeyword = false;
             var i = 0;
             p = FindStartingLine(p, ref lineNumber);
+            // CheckHighlight runs as a SECOND pass after Parse(); the
+            // _isIn*Block flags hold the END-OF-DOCUMENT state, not the
+            // per-paragraph state we need here. Track block scope locally
+            // by walking paragraphs in order.
+            bool inBlk = false, inCen = false, inMargen = false, inNoc = false, inSym = false;
             while (p is not null)
             {
                 var inlines = p.Inlines;
@@ -2149,13 +2240,29 @@ namespace Calcpad.Wpf
                 // (1D,nodo1) labels, etc.). These directives accept arbitrary
                 // identifiers as display labels or symbolic placeholders.
                 var firstRunText = (inlines.FirstInline as Run)?.Text?.TrimStart()?.ToLower() ?? "";
+                // Update local block scope BEFORE evaluating tokens of THIS
+                // paragraph. Closing keywords disable the block for the
+                // current line too (the line itself is just a directive).
+                bool isOpenerOrCloser = false;
+                if (firstRunText.StartsWith("#end blk")) { inBlk = false; isOpenerOrCloser = true; }
+                else if (firstRunText.StartsWith("#blk")) { inBlk = true;  isOpenerOrCloser = true; }
+                if (firstRunText.StartsWith("#end cen")) { inCen = false; isOpenerOrCloser = true; }
+                else if (firstRunText.StartsWith("#cen")) { inCen = true;  isOpenerOrCloser = true; }
+                if (firstRunText.StartsWith("#end margen")) { inMargen = false; isOpenerOrCloser = true; }
+                else if (firstRunText.StartsWith("#margen"))  { inMargen = true;  isOpenerOrCloser = true; }
+                if (firstRunText.StartsWith("#end noc") || firstRunText.StartsWith("#equ")) { inNoc = false; isOpenerOrCloser = true; }
+                else if (firstRunText.StartsWith("#noc")) { inNoc = true; isOpenerOrCloser = true; }
+                if (firstRunText.StartsWith("#end sym")) { inSym = false; isOpenerOrCloser = true; }
+                else if (firstRunText.Equals("#sym")) { inSym = true; isOpenerOrCloser = true; }
+
                 var isDisplayOrSymbolicLine =
                     firstRunText.StartsWith("#deq") ||
                     firstRunText.StartsWith("#sym") ||
                     firstRunText.StartsWith("#inl") ||
                     firstRunText.StartsWith("#blk") ||
                     firstRunText.StartsWith("#cen") ||
-                    firstRunText.StartsWith("#noc");
+                    firstRunText.StartsWith("#noc") ||
+                    inBlk || inCen || inMargen || inNoc || inSym;
                 foreach (var inline in inlines)
                 {
                     if (inline is not Run r)

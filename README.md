@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.4.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.5.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,28 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.5 (May 2026) — Highlighter respects multi-line display blocks
+
+`#blk` body cells like `'2DOF(membrana)`, `'Ley: matriz D (3x3)` were
+flagged in pink because the second `'`-prefixed cell after the `;`
+separator triggered Variable→Error promotion (the parser tokenized
+`2DOF` as `2*DOF`, `(membrana)` as undeclared variable, etc.).
+
+The previous fix (v1.8.2) only escaped error promotion when the LINE
+itself started with `#deq`/`#sym`/etc. Body lines of `#blk` / `#cen`
+/ `#margen` / `#noc` blocks were not covered.
+
+Fix: added `_isInBlkBlock` / `_isInCenBlock` / `_isInMargenBlock` /
+`_isInNocBlock` flags mirroring `_isInSymBlock`. They flip on the
+opening keyword, reset on `#end <kind>`. The flags are honoured by
+`Append()` (Error → Comment demote), `CheckError()` (skip undeclared
+checks), and `CheckHighlight()` (skip post-pass error re-promotion —
+with its own per-paragraph local copy because it runs after Parse()
+finished).
+
+`DetectBlockContextFromPrevious` walks back to recover the active
+block when re-highlighting starts mid-block.
 
 ### v1.8.4 (May 2026) — Save round-trip protection (no .cpd corruption on close)
 
