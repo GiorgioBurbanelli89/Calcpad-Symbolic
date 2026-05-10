@@ -25,6 +25,7 @@ namespace Calcpad.Wpf
         private bool _isInSvgBlock;   // #svg ... #end svg — preserve raw spaces (dot primitives)
         private bool _isInPlotlyBlock; // #plotly ... #end plotly — body is raw JSON, never tokenized
         private bool _isInVizBlock;
+        private bool _isInSymBlock;   // #sym (alone) ... #end sym — body is symbolic (xi/eta valid)
         private sealed class TagHelper
         {
             internal enum Tags
@@ -745,11 +746,21 @@ namespace Calcpad.Wpf
                     prevText.StartsWith("#end maxima", StringComparison.OrdinalIgnoreCase) ||
                     prevText.StartsWith("#end function", StringComparison.OrdinalIgnoreCase))
                     return;
+                if (prevText.StartsWith("#end sym", StringComparison.OrdinalIgnoreCase))
+                    return; // sym block already closed
                 if (prevText.StartsWith("#python", StringComparison.OrdinalIgnoreCase) ||
                     prevText.StartsWith("#maxima", StringComparison.OrdinalIgnoreCase) ||
                     prevText.StartsWith("#function ", StringComparison.OrdinalIgnoreCase))
                 {
                     _isInCodeBlock = true;
+                    return;
+                }
+                // #sym ALONE (no inline expression after) opens a multi-line symbolic block.
+                // Inside the block, names like xi, eta, theta, alpha, etc. are valid
+                // symbols (not undeclared variables) — body must be passthrough-coloured.
+                if (prevText.Trim().Equals("#sym", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInSymBlock = true;
                     return;
                 }
                 prev = prev.PreviousBlock as Paragraph;
@@ -766,6 +777,7 @@ namespace Calcpad.Wpf
                 _isInVizBlock = false;
                 _isInSvgBlock = false;
                 _isInPlotlyBlock = false;
+                _isInSymBlock = false;
                 // HighLightAll calls Parse(p, single:false) for EACH paragraph in a loop.
                 // Each call must know if the starting paragraph is already INSIDE a code/svg
                 // block — otherwise the second call (starting in the middle of #svg)
@@ -840,6 +852,7 @@ namespace Calcpad.Wpf
                     trimmedText.Equals("#end sym", StringComparison.OrdinalIgnoreCase))
                 {
                     _isInCodeBlock = false;
+                    _isInSymBlock = false;
                     p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
                     p = single ? null : p.NextBlock as Paragraph;
                     ++lineNumber;
@@ -881,7 +894,19 @@ namespace Calcpad.Wpf
                 if (trimmedText.StartsWith("#pip ", StringComparison.OrdinalIgnoreCase) ||
                     trimmedText.Equals("#sym", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (trimmedText.Equals("#sym", StringComparison.OrdinalIgnoreCase))
+                        _isInSymBlock = true; // multi-line block opener (no inline expr)
                     p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                // Inside #sym ... #end sym block: body is symbolic CAS code (xi, eta,
+                // theta, etc. are valid symbol names — must NOT be flagged as undeclared
+                // variables / shown in red). Render as plain dark text.
+                if (_isInSymBlock)
+                {
+                    p.Inlines.Add(new Run(text) { Foreground = Brushes.DarkBlue });
                     p = single ? null : p.NextBlock as Paragraph;
                     ++lineNumber;
                     continue;
@@ -2082,6 +2107,18 @@ namespace Calcpad.Wpf
             {
                 var inlines = p.Inlines;
                 var inlineCount = inlines.Count;
+                // Detect display/symbolic-only lines whose identifiers must NOT be
+                // re-evaluated as undeclared variables (greek letters, xi/eta,
+                // (1D,nodo1) labels, etc.). These directives accept arbitrary
+                // identifiers as display labels or symbolic placeholders.
+                var firstRunText = (inlines.FirstInline as Run)?.Text?.TrimStart()?.ToLower() ?? "";
+                var isDisplayOrSymbolicLine =
+                    firstRunText.StartsWith("#deq") ||
+                    firstRunText.StartsWith("#sym") ||
+                    firstRunText.StartsWith("#inl") ||
+                    firstRunText.StartsWith("#blk") ||
+                    firstRunText.StartsWith("#cen") ||
+                    firstRunText.StartsWith("#noc");
                 foreach (var inline in inlines)
                 {
                     if (inline is not Run r)
@@ -2097,6 +2134,13 @@ namespace Calcpad.Wpf
                             isDataExchangeKeyword = true;
                     }
                     ++i;
+                    if (isDisplayOrSymbolicLine)
+                    {
+                        // Skip Error re-evaluation for body of display/symbolic
+                        // directives — preserve original Variable / Function types
+                        // so xi, eta, ξ, η, etc. don't get a red error background.
+                        continue;
+                    }
                     var t1 = r.Foreground == Colors[(int)Types.Function] &&
                              r.FontWeight == FontWeights.Bold ?
                              Types.Function :
