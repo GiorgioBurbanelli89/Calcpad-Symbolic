@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.0.0.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.2.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1135,4 +1135,88 @@ Calcpad-Symbolic/
   Examples/            Example files (.cpd)
   Include/             FEM_Graphics.cpd macro library
   calcpad-viz/         TypeScript visualization library
+  explicaciones/       FEM didactic .cpd lessons (B^T·D·B, Jacobian, K_e…)
 ```
+
+---
+
+## Changelog
+
+### v1.8.2 (May 2026) — WPF highlighter polish + CLI batch mode
+
+**WPF highlighter:**
+- `#sym ... #end sym` blocks now render as passthrough (dark blue). Symbol
+  names like `xi`, `eta`, `theta`, `alpha` no longer flagged as undeclared
+  variables / red error background.
+- Greek letters (`ξ`, `η`, etc.) and `@@(label)` after display equations no
+  longer marked as errors in `#deq`. Tokens that hit `Types.Error` from
+  `InitType` get demoted to `Types.Comment` (green) when the line is a
+  display directive (`#deq`, `#sym`, `#inl`, `#blk`, `#cen`, `#noc`).
+- `DetectBlockContextFromPrevious` recognizes `#sym` alone as block opener
+  for paragraph-by-paragraph re-highlighting.
+
+**CLI batch mode:**
+- No longer crashes with `InvalidOperationException` when stdin is
+  redirected (was blocking `for f in *.cpd; do cli.exe "$f" "$out" -s; done`).
+- Relative paths like `Examples/x.cpd` no longer get duplicated to
+  `Examples/Examples/x.cpd` after `cwd` change. Now resolves to absolute
+  paths *before* `Directory.SetCurrentDirectory`.
+
+### v1.8.0 (May 2026) — Merge with main lineage
+
+Brought 87 commits from `origin/main` into the parser-fixes branch:
+
+- **Excel Viewer** (Univer-based) with `#blk` Calculate() integration
+- **Sandbox + Maxima fallback** — `Symbolic.Sandbox` project, AngouriMath
+  fallback to Maxima for unsupported operations
+- **12 explicaciones FEM** in `explicaciones/` — curso paso a paso, B^T·B
+  desde álgebra lineal, funciones de forma, energía cuadrática, B vs k,
+  análisis dimensional, etc.
+- **Solver SAPFIRE doc** — `Archivos_K_Solver_SAPFIRE.cpd` explica
+  `.K_0/.K_I/.K_J/.K_M`, ensamblaje sparse, Cholesky, AMD reordering
+- **6 ejemplos Placas** — Kirchhoff, Mindlin, Q4 membrana, DKT, MITC4,
+  Layered Laminate
+- **Tesis Cap 15 Paz** — derivación triangular plate plane stress + axial,
+  corte, flexión, torsión
+
+### v1.7.0–v1.7.4 (May 2026) — Unit propagation + `''` semantics
+
+- **HpMatrix.CreateFromRows** unit propagation: when first row is unitless
+  but later rows have units, propagate to all rows (was assigning row units
+  in column-major confusion).
+- **HpVector setter** inherits Units from first non-zero unit-bearing
+  assignment when initially null. Lets users build matrices with
+  `K.(j;j) = K.(j;j) + k_node` without pre-declaring Unit on the template.
+- **MatrixCalculator.SetUnits**: literal `1` accepted as alias for
+  `clrunits` (`setunits(M; 1)` ≡ `setunits(M; clrunits(M))`).
+- **`''` (double single quote)** outside a text region = "close
+  expression and re-enter text mode" (`'expr''text'` ≡ `'expr' 'text'`).
+  Inside a text region of same quote type = literal escaped quote.
+- **WPF editor**: `''` is rendered as visible chars in the editor (the
+  delimiter the user typed) instead of being silently consumed.
+
+### v1.6.0 (May 2026) — Complete 22 web visualization directives
+
+Phase 1 (10): `#svg`, `#plotly`, `#three`, `#mermaid`, `#canvas`, `#cyto`,
+`#dot`, `#jsx`, `#map`, `#math`.
+Phase 3 (10): `#mathbox`, `#d3`, `#echarts`, `#vega`, `#visnet`, `#p5`,
+`#matter`, `#cannon`, `#geogebra`, `#chart`.
+Phase 4 (2): `#anime`, `#manim`.
+
+`Mathbox` enum reordered before `Math` to avoid prefix collision (`#mathbox`
+matched `#math` first because `GetKeyword` iterated bucket in declaration
+order).
+
+### v1.5.0 (May 2026) — Parser/units/web-graphics groundwork
+
+- **Unicode multiplication operator aliases** `·` (U+00B7), `×` (U+00D7)
+  added to `MathParser.Input.GetCharType` and `Calculator.OperatorIndex`
+  (slot 4, same as `*`).
+- **Prose-text fallback** in `ExpressionParser`: lines that look like prose
+  (no operators, no assignments, several spaces) are routed to text rendering
+  instead of being parsed and erroring out as undeclared identifiers.
+- **Inline directives** (`#deqξ`, `#sym expr`) compact form supported via
+  `TryStripInlineDirective`.
+- **Line-extension splice** (`_` continuation) skipped inside `#plotly`,
+  web-graphics, and `#svg` blocks so JavaScript `;` doesn't trigger
+  unintended line concatenation.

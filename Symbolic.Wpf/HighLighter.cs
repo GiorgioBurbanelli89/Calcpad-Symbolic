@@ -1763,6 +1763,24 @@ namespace Calcpad.Wpf
                 return;
             }
             _builder.Clear();
+            // Demote Error → Comment for tokens inside display/symbolic directives
+            // (#deq, #sym, #inl, #blk, #cen, #noc). These accept arbitrary
+            // identifiers, @@-labels, ξ/η, xi/eta, etc. as display payload — they
+            // must NOT show as crimson "undeclared" errors.
+            if (t == Types.Error && _state.Text != null)
+            {
+                var ts = _state.Text.AsSpan().TrimStart();
+                if (ts.StartsWith("#deq", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#sym", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#inl", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#blk", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#cen", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#noc", StringComparison.OrdinalIgnoreCase))
+                {
+                    t = Types.Comment;
+                    _state.Message = null;
+                }
+            }
             if (AppendOperatorShortcut(s))
             {
                 _state.CurrentType = Types.Operator;
@@ -1882,15 +1900,34 @@ namespace Calcpad.Wpf
 
         private Types CheckError(Types t, ref string s)
         {
-            // Skip error checking for #deq and #sym lines (display-only / symbolic)
+            // Skip error checking for display-only / symbolic directives. Two paths
+            // because _state.Keyword may not be set yet when the variable token is
+            // parsed (e.g. inline forms like `#deqξ`):
+            //   1) Look at _state.Keyword (set after #deq/#sym keyword runs through here)
+            //   2) Fall back to the full line text — these directives are line-level,
+            //      so any token in the same line should escape error promotion.
             var kw = _state.Keyword;
-            if (kw != null && (kw.Equals("#deq", StringComparison.OrdinalIgnoreCase) ||
-                               kw.Equals("#sym", StringComparison.OrdinalIgnoreCase) ||
-                               kw.Equals("#inl", StringComparison.OrdinalIgnoreCase) ||
-                               kw.Equals("#blk", StringComparison.OrdinalIgnoreCase) ||
-                               kw.Equals("#cen", StringComparison.OrdinalIgnoreCase) ||
-                               kw.Equals("#margen", StringComparison.OrdinalIgnoreCase) ||
-                               kw.Equals("#pgb", StringComparison.OrdinalIgnoreCase)))
+            bool isDisplayDirective = kw != null && (
+                kw.Equals("#deq", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#sym", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#inl", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#blk", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#cen", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#margen", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#pgb", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#noc", StringComparison.OrdinalIgnoreCase));
+            if (!isDisplayDirective && _state.Text != null)
+            {
+                var ts = _state.Text.AsSpan().TrimStart();
+                isDisplayDirective =
+                    ts.StartsWith("#deq", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#sym", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#inl", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#blk", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#cen", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#noc", StringComparison.OrdinalIgnoreCase);
+            }
+            if (isDisplayDirective)
                 return t;
 
             if (t == Types.Function)
