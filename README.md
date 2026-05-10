@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.8.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.9.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,22 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.9 (May 2026) — Preserve spaces in editor (not just in HTML output)
+
+v1.8.8 added the `p.line { white-space: pre-wrap }` CSS rule that kept
+multiple/leading spaces alive in the HTML output. But the WPF editor
+(RichTextBox over a FlowDocument) ALSO collapses consecutive spaces
+when rendering Run text, so `'    pico    pato` looked like
+`' pico pato` in the editor — even though the cached HTML had the
+spaces.
+
+Fix: when the highlighter emits a Comment run that contains two or
+more consecutive spaces, replace every space-after-a-space with
+U+00A0 NO-BREAK SPACE. WPF renders nbsp at the same width as a space
+but does not collapse it. `GetInputText()` converts the nbsp back to
+plain space before save/evaluation, so the on-disk `.cpd` stays
+ASCII-clean and the parser still sees regular spaces.
 
 ### v1.8.8 (May 2026) — Preserve leading/multiple spaces in text comments
 

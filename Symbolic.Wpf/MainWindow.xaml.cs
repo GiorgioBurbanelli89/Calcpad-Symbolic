@@ -1881,6 +1881,12 @@ namespace Calcpad.Wpf
                 if (n > 12)
                     n = 12;
                 var line = new TextRange(b.ContentStart, b.ContentEnd).Text;
+                // Convert NO-BREAK SPACE (U+00A0) back to regular space.
+                // The highlighter injects nbsp into comment runs so WPF
+                // doesn't collapse consecutive spaces in the editor, but
+                // the on-disk .cpd / the parser input should use plain ' '.
+                if (line.IndexOf(' ') >= 0)
+                    line = line.Replace(' ', ' ');
                 if (n == 0)
                     _stringBuilder.AppendLine(line);
                 else

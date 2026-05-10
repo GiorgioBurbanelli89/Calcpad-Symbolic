@@ -2162,6 +2162,32 @@ namespace Calcpad.Wpf
 
         private void AppendRun(Types t, string s)
         {
+            // WPF FlowDocument collapses runs of consecutive spaces when
+            // rendering Text content from a Run, so `'    pico    pato`
+            // displayed as `' pico pato`. For COMMENT/text runs we want the
+            // user-typed spaces preserved visually. Replace every space that
+            // follows another space with a NO-BREAK SPACE ( ). The
+            // first space of each gap stays as a normal space so word-wrap
+            // still works at gap boundaries. GetInputText() converts
+            //   back to regular space before save / evaluation.
+            if (t == Types.Comment && s.Length > 1 && s.Contains("  "))
+            {
+                // U+00A0 NO-BREAK SPACE — WPF renders same width as space but
+                // does NOT collapse consecutive instances. Replace every space
+                // that follows another space with nbsp so leading and inner
+                // multi-space gaps survive the editor's whitespace folding.
+                var sb = new System.Text.StringBuilder(s.Length);
+                char prev = ' ';
+                foreach (var ch in s)
+                {
+                    if (ch == ' ' && prev == ' ')
+                        sb.Append(' ');
+                    else
+                        sb.Append(ch);
+                    prev = ch;
+                }
+                s = sb.ToString();
+            }
             var run = new Run(s)
             {
                 Foreground = Colors[(int)t]
