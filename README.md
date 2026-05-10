@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.3.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.4.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,25 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.4 (May 2026) — Save round-trip protection (no .cpd corruption on close)
+
+The WPF editor used to silently corrupt `.cpd` files when the user opened
+them and clicked Save / answered Yes to "Save changes?" on close — even
+when no real edit had been made. The HighLighter's re-tokenization
+sometimes lost whitespace around inline `'#deqξ'` directives or dropped
+the leading apostrophe of a `#blk` cell, and `GetInputText()` re-emitted
+the corrupted reconstruction.
+
+Fix:
+- Snapshot the exact disk bytes (`_loadedFileText`) on every `FileOpen`.
+- Track whether the user actually typed something since load
+  (`_userTypedSinceLoad`) via `RichTextBox_PreviewKeyDown`.
+- On save: if `_userTypedSinceLoad == false`, write the original bytes
+  verbatim. Only emit `GetInputText()` when the user really edited.
+
+Net effect: opening + closing a file (without typing) is now a true
+no-op — the file on disk is byte-identical to what it was.
 
 ### v1.8.3 (May 2026) — Repackage clean (no contaminated examples)
 

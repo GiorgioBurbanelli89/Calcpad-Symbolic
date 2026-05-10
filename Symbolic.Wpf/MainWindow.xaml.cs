@@ -125,6 +125,14 @@ namespace Calcpad.Wpf
         private bool _isParsing;
         private bool _isPasting;
         private bool _isTextChangedEnabled;
+        // Round-trip protection: keep an exact copy of the file text loaded
+        // from disk. The HighLighter occasionally reformats whitespace and
+        // apostrophes during re-tokenization (e.g. `' #deqξ '` → `'#deqξ'`,
+        // `#blk` cell-2 leading `'` dropped). If the user has not actually
+        // typed anything, we prefer rewriting the original bytes verbatim
+        // over re-emitting the highlighter's reconstruction.
+        private string _loadedFileText;
+        private bool _userTypedSinceLoad;
         private readonly double _inputHeight;
         private bool _mustPromptUnlock;
         private bool _forceHighlight;
@@ -1047,7 +1055,27 @@ namespace Calcpad.Wpf
             }
             else
             {
-                WriteFile(fileName, GetInputText());
+                var newText = GetInputText();
+                // Round-trip protection: if the user has not actually typed
+                // anything since load, write the ORIGINAL bytes from disk
+                // verbatim. Otherwise the highlighter's reconstruction may
+                // strip whitespace around inline #deq directives or drop the
+                // leading apostrophe of a #blk cell — corrupting the file
+                // even though the user just opened it.
+                if (!_userTypedSinceLoad && _loadedFileText != null
+                    && string.Equals(fileName, CurrentFileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    WriteFile(fileName, _loadedFileText);
+                }
+                else
+                {
+                    WriteFile(fileName, newText);
+                    // After an explicit save the in-memory state IS the new disk
+                    // contents — refresh the snapshot so a second save without
+                    // edits stays a no-op.
+                    _loadedFileText = newText;
+                    _userTypedSinceLoad = false;
+                }
                 CurrentFileName = fileName;
             }
             SaveButton.Tag = null;
@@ -1679,6 +1707,12 @@ namespace Calcpad.Wpf
         private bool GetInputTextFromFile()
         {
             var lines = ReadLines(CurrentFileName);
+            // Snapshot exact disk text BEFORE any tokenization side-effect so
+            // we can detect "no real edit" later and avoid corrupting the file
+            // on save.
+            try { _loadedFileText = System.IO.File.ReadAllText(CurrentFileName); }
+            catch { _loadedFileText = null; }
+            _userTypedSinceLoad = false;
             _isTextChangedEnabled = false;
             RichTextBox.BeginChange();
             _document.Blocks.Clear();
@@ -2720,6 +2754,30 @@ namespace Calcpad.Wpf
             var modifiers = e.KeyboardDevice.Modifiers;
             var isCtrl = modifiers == ModifierKeys.Control;
             var isCtrlShift = modifiers == (ModifierKeys.Control | ModifierKeys.Shift);
+            // Detect "real user edit" vs autoformatting/highlight-induced change.
+            // Anything that mutates content (text key, backspace, delete, enter,
+            // tab, paste, cut) flips the flag; pure navigation / modifiers do not.
+            if (!_userTypedSinceLoad)
+            {
+                bool isMutating =
+                    e.Key == Key.Back || e.Key == Key.Delete ||
+                    e.Key == Key.Return || e.Key == Key.Enter || e.Key == Key.Tab ||
+                    (isCtrl && (e.Key == Key.V || e.Key == Key.X)) ||
+                    // Any printable key without Ctrl-only modifier
+                    (modifiers != ModifierKeys.Control &&
+                     modifiers != ModifierKeys.Alt &&
+                     ((e.Key >= Key.A && e.Key <= Key.Z) ||
+                      (e.Key >= Key.D0 && e.Key <= Key.D9) ||
+                      (e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9) ||
+                      e.Key == Key.Space || e.Key == Key.OemPeriod ||
+                      e.Key == Key.OemComma || e.Key == Key.OemMinus ||
+                      e.Key == Key.OemPlus || e.Key == Key.OemQuestion ||
+                      e.Key == Key.OemSemicolon || e.Key == Key.OemQuotes ||
+                      e.Key == Key.OemOpenBrackets || e.Key == Key.OemCloseBrackets ||
+                      e.Key == Key.OemBackslash || e.Key == Key.OemTilde));
+                if (isMutating)
+                    _userTypedSinceLoad = true;
+            }
             if (e.Key == Key.V && isCtrlShift)
             {
                 PasteAsCommentMenu_Click(PasteAsCommentMenu, e);
