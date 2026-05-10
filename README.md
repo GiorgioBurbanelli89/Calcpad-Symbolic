@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.9.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.10.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,34 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.10 (May 2026) — Inline alternation inside `#blk` cells
+
+Previously a `#blk` cell starting with `'` was rendered as pure text
+even when it contained internal `'` characters — the second apostrophe
+would appear literally in the output. Now each cell that starts with
+`'` and contains more `'`s applies the same alternation rule Calcpad
+uses on regular lines:
+
+  - The first `'` opens TEXT mode
+  - Each subsequent `'` toggles between EXPRESSION and TEXT
+
+Concrete examples:
+
+```cpd
+a = 5
+b = 10
+#blk
+'simple text                  ; 'just two text cells
+'a vale 'a' kN/m              ; text + expr `a` (=5) + text
+'b vale 'b' al final          ; text + expr `b` (=10) + text
+'1 DOF (barra) ; '2 DOF (m)   ; pure-text cells (no internal `'`)
+#end blk
+```
+
+To evaluate an expression with no leading text inside a cell, prefix
+with empty quotes: `'  'a = 2 + 3' more text` → empty text + expr +
+trailing text.
 
 ### v1.8.9 (May 2026) — Preserve spaces in editor (not just in HTML output)
 

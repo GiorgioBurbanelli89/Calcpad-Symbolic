@@ -1352,11 +1352,76 @@ namespace Calcpad.Core
                     continue;
                 }
 
-                // Check if part starts with ' (comment/text)
+                // Cell starts with ' — check for inline alternation
+                // following Calcpad's standard line convention:
+                //   `'` opens TEXT mode; each subsequent `'` toggles to EXPR
+                //   and back to TEXT. So the fragment BETWEEN the 1st and
+                //   2nd `'` is TEXT, between 2nd and 3rd is EXPR, etc.
+                //
+                // Examples (cell shown with leading `'`):
+                //   `'simple text`              → text "simple text"
+                //   `'a vale 'a' kN/m`          → "a vale " + expr `a` + " kN/m"
+                //   `'b vale 'b' al final`      → "b vale " + expr `b` + " al final"
+                //
+                // To EVALUATE an expression with NO leading text inside the
+                // cell, prefix with empty quotes: `'' 'a = 2 + 3' more text`
+                // → "" + "" + expr `a = 2 + 3` + " more text".
+                //
+                // Implementation: split the cell (including leading `'`) by
+                // `'`. fragments[0] is always "" (before opening quote).
+                // ODD fragments are TEXT, EVEN fragments (≥2) are EXPR.
                 if (part.StartsWith("'"))
                 {
-                    var text = part[1..];
-                    columns.Add($"<span>{text}</span>");
+                    if (!part.AsSpan(1).Contains('\''))
+                    {
+                        // Pure text cell — no internal toggles. Strip the
+                        // leading apostrophe and emit as text span.
+                        columns.Add($"<span>{part[1..]}</span>");
+                        continue;
+                    }
+                    var fragments = part.Split('\'');
+                    var cellSb = new System.Text.StringBuilder();
+                    for (int fi = 0; fi < fragments.Length; fi++)
+                    {
+                        var frag = fragments[fi];
+                        if (fi == 0)
+                        {
+                            // Always empty before the opening `'`; skip.
+                            continue;
+                        }
+                        if ((fi & 1) == 1)
+                        {
+                            // ODD index → TEXT fragment
+                            if (!string.IsNullOrEmpty(frag))
+                                cellSb.Append($"<span>{frag}</span>");
+                        }
+                        else
+                        {
+                            // EVEN index ≥2 → EXPRESSION fragment
+                            var fragTrim = frag.Trim();
+                            if (string.IsNullOrEmpty(fragTrim))
+                            {
+                                cellSb.Append("<span>&nbsp;</span>");
+                                continue;
+                            }
+                            _isVal = savedIsVal;
+                            _parser.IsCalculation = true;
+                            try
+                            {
+                                _parser.Parse(fragTrim);
+                                _parser.Calculate();
+                                var html = _parser.ToHtml();
+                                if (string.IsNullOrWhiteSpace(html))
+                                    html = System.Web.HttpUtility.HtmlEncode(fragTrim);
+                                cellSb.Append($"<span class=\"eq\">{html}</span>");
+                            }
+                            catch
+                            {
+                                cellSb.Append($"<span class=\"err\">{System.Web.HttpUtility.HtmlEncode(frag)}</span>");
+                            }
+                        }
+                    }
+                    columns.Add(cellSb.ToString());
                     continue;
                 }
 
