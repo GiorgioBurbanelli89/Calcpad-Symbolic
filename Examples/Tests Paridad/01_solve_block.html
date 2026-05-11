@@ -8830,67 +8830,55 @@ uniform ${Mr} ${Ar} u_${Qr};
         document.onmousedown = function () { contextMenu = false; };
     </script><h3>Test 01 - SolveBlock parser - todos los 14 SolverTypes </h3>
 <p class="line">Compara contra upstream Calcpad. Los 14 tipos deben funcionar igual. </p>
-<p class="line">========================================================================== </p>
 <p class="line">Este test ejercita cada token del SolveBlock: $find, $root, $sup, $inf, </p>
 <p class="line">$area, $integral, $slope, $derivative, $sum, $product, $repeat, $while, </p>
 <p class="line">$inline, $block. Si Symbolic tiene paridad, los resultados son los </p>
 <p class="line">estandar matematicos. </p>
 <p class="line">&nbsp;</p>
 <h3>1. $find - encuentra x tal que f(x) = target </h3>
-<p class="line">========================================================================== </p>
 <p class="line">$find{f(x) = target @ x = x0 : x1} </p>
 <p class="line">Buscamos x tal que x^2 - 4 = 0 en [0, 3]: respuesta esperada x = 2. </p>
 <p class="line"><span class="eq"><var>f1</var> ( <var>x</var> )  = <var>x</var><sup>2</sup> − 4</span></p>
 <p class="line"><code>$Find{f1(x) = 0 @ x = 0 : 3}</code></p>
 <p class="line">&nbsp;</p>
 <h3>2. $root - encuentra raiz (caso lineal: f(x) = 0) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Es lo mismo que $Find{f(x) = 0 @ ...}. </p>
 <p class="line"><span class="eq"><var>f2</var> ( <var>x</var> )  = <var>x</var> − 5</span></p>
 <p class="line"><code>$Root{f2(x) @ x = 0 : 10}</code></p>
 <p class="line">&nbsp;</p>
 <h3>3. $sup - busca el supremo (maximo) de f en un rango </h3>
-<p class="line">========================================================================== </p>
 <p class="line">f(x) = -x^2 + 4 tiene maximo 4 en x = 0. </p>
 <p class="line"><span class="eq"><var>f3</var> ( <var>x</var> )  = - ( <var>x</var><sup>2</sup> )  + 4</span></p>
 <p class="line"><code>$Sup{f3(x) @ x = -3 : 3}</code></p>
 <p class="line">&nbsp;</p>
 <h3>4. $inf - busca el infimo (minimo) de f en un rango </h3>
-<p class="line">========================================================================== </p>
 <p class="line">f(x) = x^2 - 1 tiene minimo -1 en x = 0. </p>
 <p class="line"><span class="eq"><var>f4</var> ( <var>x</var> )  = <var>x</var><sup>2</sup> − 1</span></p>
 <p class="line"><code>$Inf{f4(x) @ x = -2 : 2}</code></p>
 <p class="line">&nbsp;</p>
 <h3>5. $area - integral con regla adaptativa (Simpson/cuadratura) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">integral de x^2 entre 0 y 1 = 1/3 = 0.333 </p>
 <p class="line"><code>$Area{x^2 @ x = 0 : 1}</code></p>
 <p class="line">&nbsp;</p>
 <h3>6. $integral - sinonimo de $area (algunas versiones) </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><code>$Integral{x^2 @ x = 0 : 1}</code></p>
 <p class="line">&nbsp;</p>
 <h3>7. $slope - derivada numerica en un punto </h3>
-<p class="line">========================================================================== </p>
 <p class="line">derivada de x^2 en x = 3 es 6. </p>
 <p class="line"><code>$Slope{x^2 @ x = 3}</code></p>
 <p class="line">&nbsp;</p>
 <h3>8. $derivative - sinonimo o derivada de orden mayor </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><code>$Derivative{x^3 @ x = 2}</code></p>
 <p class="line">&nbsp;</p>
 <h3>9. $sum - suma con indice discreto </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Suma 1 + 2 + ... + 10 = 55 </p>
 <p class="line"><code>$Sum{i @ i = 1 : 10}</code></p>
 <p class="line">&nbsp;</p>
 <h3>10. $product - producto con indice discreto </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Producto 1*2*3*4*5 = 5! = 120 </p>
 <p class="line"><code>$Product{i @ i = 1 : 5}</code></p>
 <p class="line">&nbsp;</p>
 <h3>11. $repeat - loop con resultado acumulado </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Acumula 5 veces el valor 2 -> resultado = 10 (suma) o ultimo valor. </p>
 <p class="line"><span class="eq"><var>acc</var> = 0</span></p>
 <p class="line"><code>$Repeat{acc = acc + 2 @ i = 1 : 5}</code></p>
@@ -8898,18 +8886,15 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line"><span class="eq"><var>acc</var> = 0</span></p>
 <p class="line">&nbsp;</p>
 <h3>12. $while - loop con condicion </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>n</var> = 1</span></p>
 <p class="line"><code>$While{n &lt; 16 @ n = n*2}</code></p>
 <p class="line">n final (primera potencia de 2 >= 16): </p>
 <p class="line"><span class="eq"><var>n</var> = 1</span></p>
 <p class="line">&nbsp;</p>
 <h3>13. $inline / $block - solo formatos de display, sin calculo nuevo </h3>
-<p class="line">========================================================================== </p>
 <p class="line">(estos no se prueban como valores — son layout) </p>
 <p class="line">&nbsp;</p>
 <h3>14. Resumen de paridad SolveBlock </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Si TODOS los valores arriba se calcularon sin error, el SolveBlock </p>
 <p class="line">parser tiene paridad operacional completa con upstream Calcpad. </p>
  </body></html>

@@ -8831,10 +8831,8 @@ uniform ${Mr} ${Ar} u_${Qr};
     </script><h3>Test 06 - Derivadas parciales NUMERICAS </h3>
 <p class="line">Calcpad calcula derivadas parciales numericamente con $Slope (diferencias </p>
 <p class="line">centrales). Para multi-variable se fija el "otro" valor y se deriva. </p>
-<p class="line">========================================================================== </p>
 <p class="line">&nbsp;</p>
 <h3>1. Funcion de una variable - derivada simple </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>f1</var> ( <var>x</var> )  = <var>x</var><sup>2</sup> + 3 · <var>x</var> + 1</span></p>
 <p class="line">f <span class="eq"><var>x</var> = <var>2x + 3 analitico</var></span></p>
 <p class="line">f <span class="eq">2 = <var>7 (esperado)</var></span></p>
@@ -8846,7 +8844,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 </div>
 <p class="line">&nbsp;</p>
 <h3>2. Funcion de DOS variables - derivadas parciales </h3>
-<p class="line">========================================================================== </p>
 <p class="line">f(x; y) = x^2 + 3*x*y + y^2 </p>
 <p class="line">Analitico: </p>
 <p class="line">   df/dx = 2x + 3y </p>
@@ -8877,7 +8874,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 </div>
 <p class="line">&nbsp;</p>
 <h3>3. Gradiente numerico en (2, 1) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">El gradiente es el vector [df/dx; df/dy] en el punto. </p>
 <p class="line"><span class="eq" style="display:inline-flex;align-items:center;flex-wrap:nowrap;gap:0 0.3em;"><var><span class="vec">⃗</span>grad</var><sub>f</sub> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td"><var>df</var><sub>dx</sub></span><span class="td"><var>df</var><sub>dy</sub></span><span class="td"></span></span></span> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">7</span><span class="td">8</span><span class="td"></span></span></span> = <span class="matrix">
 <span class="tr"><span class="td"></span><span class="td">7</span><span class="td">8</span><span class="td"></span></span>
@@ -8890,7 +8886,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">Esperado: [7; 8] </p>
 <p class="line">&nbsp;</p>
 <h3>4. Derivada de orden superior (segunda derivada) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">d²f/dx² en x=2 (para f1(x) = x^2 + 3x + 1, deberia ser 2) </p>
 <p class="line">Calcpad: derivada de la derivada via $Slope anidado. </p>
 <p class="line">Definimos g(x) = $Slope{f1(t) @ t = x} y luego derivamos g(x). </p>
@@ -8903,7 +8898,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 </div>
 <p class="line">&nbsp;</p>
 <h3>5. Derivada parcial cruzada d²f/(dx dy) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Para f(x;y) = x^2 + 3xy + y^2: </p>
 <p class="line">   df/dx = 2x + 3y  ->  d/dy(df/dx) = 3 </p>
 <p class="line">Calculamos df/dx(x=2; y) como funcion de y, luego derivamos en y=1 </p>
@@ -8916,7 +8910,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 </div>
 <p class="line">&nbsp;</p>
 <h3>6. Aplicacion FEM - gradiente de una funcion de forma </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Tomemos la funcion de forma N_1(xi; eta) = (1-xi)*(1-eta)/4 del Q4. </p>
 <p class="line">Analiticamente: </p>
 <p class="line">   dN_1/dxi  = -(1-eta)/4 </p>
@@ -8935,7 +8928,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 </div>
 <p class="line">&nbsp;</p>
 <h3>7. Resumen </h3>
-<p class="line">========================================================================== </p>
 <p class="line">$Slope hace diferencias centrales: f <span class="eq"><var>(x) ~ (f(x+h) - f(x-h))/(2h).</var></span></p>
 <p class="line">Para derivadas parciales: fijamos las otras variables a una constante </p>
 <p class="line">y derivamos respecto a la que nos interesa. </p>

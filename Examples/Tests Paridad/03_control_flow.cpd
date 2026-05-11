@@ -1,10 +1,8 @@
 "Test 03 - Control flow - #if / #while / #for + Symbolic-only #trace
 'Verifica que los keywords de control mantienen semantica de upstream
 'y que el #trace de Symbolic NO rompe el comportamiento default.
-'==========================================================================
 
 "1. #if / #else_if / #else / #end_if (basico)
-'==========================================================================
 x = 7
 #if x > 10
 	'x es mayor que 10
@@ -15,7 +13,6 @@ x = 7
 #end if
 
 "2. #if anidados
-'==========================================================================
 a = 3
 b = 4
 #if a < b
@@ -29,7 +26,6 @@ b = 4
 #end if
 
 "3. #while loop
-'==========================================================================
 n = 1
 suma_w = 0
 #while n <= 5
@@ -40,7 +36,6 @@ suma_w = 0
 suma_w
 
 "4. #for loop con #break
-'==========================================================================
 encontrado = -1
 #for k = 1 : 20
 	#if k^2 > 50
@@ -52,7 +47,6 @@ encontrado = -1
 encontrado
 
 "5. #for loop con #continue
-'==========================================================================
 suma_pares = 0
 #for k = 1 : 10
 	#if mod(k; 2) ≡ 1
@@ -64,7 +58,6 @@ suma_pares = 0
 suma_pares
 
 "6. #for con unidades en los limites
-'==========================================================================
 '(esto es un fix de Symbolic — verificar que no rompe)
 suma_loop = 0
 #for ix = 0 : 5
@@ -74,7 +67,6 @@ suma_loop = 0
 suma_loop
 
 "7. #trace (SOLO Symbolic) - muestra todas las iteraciones
-'==========================================================================
 'En Symbolic, sin #trace, los #for loops muestran solo la ultima iteracion.
 'Con #trace dentro del loop, muestra TODAS las iteraciones.
 '(este es una mejora de Symbolic — NO existe en upstream).
@@ -87,7 +79,6 @@ contador = 0
 #loop
 
 "8. Resumen de paridad control flow
-'==========================================================================
 'Si los valores arriba son: 15 (suma), 8 (encontrado), 30 (pares), 15
 '(loop unidades), entonces #if/#while/#for/#break/#continue tienen
 'paridad operacional con upstream.

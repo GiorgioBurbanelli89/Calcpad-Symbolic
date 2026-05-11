@@ -8831,10 +8831,8 @@ uniform ${Mr} ${Ar} u_${Qr};
     </script><h3>Test 07 - Derivadas parciales SIMBOLICAS (AngouriMath via #sym) </h3>
 <p class="line">Symbolic-only feature. AngouriMath calcula derivadas ALGEBRAICAMENTE. </p>
 <p class="line">No es una aproximacion numerica — es manipulacion de expresiones reales. </p>
-<p class="line">========================================================================== </p>
 <p class="line">&nbsp;</p>
 <h3>1. Derivada simple de una funcion de UNA variable </h3>
-<p class="line">========================================================================== </p>
 <p class="line">d/dx(x^3 + 3*x + 1) = 3*x^2 + 3 </p>
 <p class="line">(Calcpad devuelve la EXPRESION, no un numero) </p>
 <p class="line"><span class="eq"><span class="dvc"><var>d</var><span class="dvl"></span><var>dx</var></span>  ( <var>x</var><sup>3</sup> + 3 · <var>x</var> + 1 )  = 3 + 3 · <var>x</var><sup>2</sup></span></p>
@@ -8844,7 +8842,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line"><span class="eq">3 + 3 · <var>x</var><sup>2</sup> = 15</span></p>
 <p class="line">&nbsp;</p>
 <h3>2. Derivadas de orden superior </h3>
-<p class="line">========================================================================== </p>
 <p class="line">d^2/dx^2(x^3 + 3x + 1) = 6x </p>
 <p class="line"><span class="eq"><span class="dvc"><var>d</var><sup>2</sup><span class="dvl"></span><var>dx</var><sup>2</sup></span>  ( <var>x</var><sup>3</sup> + 3 · <var>x</var> + 1 )  = 6 · <var>x</var></span></p>
 <p class="line">&nbsp;</p>
@@ -8852,7 +8849,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line"><span class="eq"><span class="dvc"><var>d</var><sup>3</sup><span class="dvl"></span><var>dx</var><sup>3</sup></span>  ( <var>x</var><sup>4</sup> )  = 24 · <var>x</var></span></p>
 <p class="line">&nbsp;</p>
 <h3>3. Derivadas parciales con pdiff </h3>
-<p class="line">========================================================================== </p>
 <p class="line">f(x; y) = x^2 + 3*x*y + y^2 </p>
 <p class="line">df/dx = 2x + 3y </p>
 <p class="line">df/dy = 3x + 2y </p>
@@ -8865,7 +8861,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line"><span class="eq"><span class="dvc"><i>∂</i><span class="dvl"></span><i>∂</i><var>y</var></span>  ( <var>x</var><sup>2</sup> + 3 · <var>x</var> · <var>y</var> + <var>y</var><sup>2</sup> )  = 3 · <var>x</var> + 2 · <var>y</var></span></p>
 <p class="line">&nbsp;</p>
 <h3>4. Evaluacion simbolica de las parciales en un punto </h3>
-<p class="line">========================================================================== </p>
 <p class="line">En (x=2, y=1): </p>
 <p class="line">   df/dx = 2*2 + 3*1 = 7 </p>
 <p class="line">   df/dy = 3*2 + 2*1 = 8 </p>
@@ -8880,7 +8875,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">(df/dy en (2,1) = 8) </p>
 <p class="line">&nbsp;</p>
 <h3>5. Gradiente simbolico (vector con todas las parciales) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">gradient(f; x; y) -> [df/dx; df/dy] </p>
 <p class="line"><span class="eq"><span style="font-size:120%;color:#C080F0;font-family:Georgia Pro Light,serif">∇</span> ( <var>x</var><sup>2</sup> + 3 · <var>x</var> · <var>y</var> + <var>y</var><sup>2</sup> )  = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">2 · <var>x</var> + 3 · <var>y</var></span><span class="td">3 · <var>x</var> + 2 · <var>y</var></span><span class="td"></span></span></span></span></p>
 <p class="line">&nbsp;</p>
@@ -8889,7 +8883,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">Esperado: [2x; 2y; 2z] </p>
 <p class="line">&nbsp;</p>
 <h3>6. Matriz Hessiana (segundas derivadas) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">H[i;j] = d^2 f / (d x_i d x_j) </p>
 <p class="line">Para f(x; y) = x^3 + x*y^2: </p>
 <p class="line">   d^2f/dx^2     = 6x </p>
@@ -8899,7 +8892,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line"><span class="eq"><b>H</b><var>x</var><sup>3</sup> + <var>x</var> · <var>y</var><sup>2</sup> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">6 · <var>x</var></span><span class="td">2 · <var>y</var></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">2 · <var>y</var></span><span class="td">2 · <var>x</var></span><span class="td"></span></span></span></span></p>
 <p class="line">&nbsp;</p>
 <h3>7. Matriz Jacobiana (sistema de funciones) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Para F = [f1; f2] = [x^2; y^2]: </p>
 <p class="line">   J = [df1/dx; df1/dy | df2/dx; df2/dy] = [2x; 0 | 0; 2y] </p>
 <p class="line"><span class="eq"><b>J</b> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">2 · <var>x</var></span><span class="td">0</span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td">0</span><span class="td">2 · <var>y</var></span><span class="td"></span></span></span></span></p>
@@ -8910,7 +8902,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line"><span class="eq"><b>J</b> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td"><b>cos</b> ( <var>θ</var> )</span><span class="td">-<b>sin</b> ( <var>θ</var> )  · <var>r</var></span><span class="td"></span></span><span class="tr"><span class="td"></span><span class="td"><b>sin</b> ( <var>θ</var> )</span><span class="td"><b>cos</b> ( <var>θ</var> )  · <var>r</var></span><span class="td"></span></span></span></span></p>
 <p class="line">&nbsp;</p>
 <h3>8. Divergencia y rotacional (calculo vectorial) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Para campo vectorial F = (x^2; y^2; z^2): </p>
 <p class="line">   div F = 2x + 2y + 2z </p>
 <p class="line"><span class="eq"><span style="font-size:120%;color:#C080F0;font-family:Georgia Pro Light,serif">∇</span> · <b><var>F</var></b> = 2 ·  ( <var>x</var> + <var>y</var> + <var>z</var> ) </span></p>
@@ -8919,14 +8910,12 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line"><span class="eq"><span style="font-size:120%;color:#C080F0;font-family:Georgia Pro Light,serif">∇</span> × <b><var>F</var></b> = <span class="matrix"><span class="tr"><span class="td"></span><span class="td">0</span><span class="td">0</span><span class="td">0</span><span class="td"></span></span></span></span></p>
 <p class="line">&nbsp;</p>
 <h3>9. Laplaciano </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Laplaciano = div(grad f) = d^2f/dx^2 + d^2f/dy^2 + d^2f/dz^2 </p>
 <p class="line">Para f = x^2 + y^2 + z^2: </p>
 <p class="line">   laplaciano = 2 + 2 + 2 = 6 </p>
 <p class="line"><span class="eq"><span style="font-size:120%;color:#C080F0;font-family:Georgia Pro Light,serif">∇</span>² ( <var>x</var><sup>2</sup> + <var>y</var><sup>2</sup> + <var>z</var><sup>2</sup> )  = 6</span></p>
 <p class="line">&nbsp;</p>
 <h3>10. Aplicacion FEM - derivadas de funciones de forma Q4 </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Funciones de forma Q4 en coordenadas naturales: </p>
 <p class="line">   N_1(ξ; η) = (1-ξ)*(1-η)/4 </p>
 <p class="line">   N_2(ξ; η) = (1+ξ)*(1-η)/4 </p>
@@ -8953,7 +8942,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">   dN_4/dξ = -(1+η)/4    dN_4/dη = +(1-ξ)/4 </p>
 <p class="line">&nbsp;</p>
 <h3>11. Verificacion: simbolico vs numerico deben coincidir </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Numero: derivada de N_1 respecto a xi en (xi=0, eta=0) = -1/4 </p>
 <p class="line"><span class="eq"><var>N</var><sub>1</sub> ( <var>ξ</var>; <var>η</var> )  = <span class="dvc"> ( 1 − <var>ξ</var> )  ·  ( 1 − <var>η</var> ) <span class="dvl"></span>4</span></span></p>
 <p class="line"><span class="eq"><var>N</var><sub>1_eta0</sub> ( <var>ξ</var> )  = <var>N</var><sub>1</sub>  ( <var>ξ</var>; 0 ) </span></p>
@@ -8967,7 +8955,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 </div>
 <p class="line">&nbsp;</p>
 <h3>12. Resumen — simbolico vs numerico </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Numerico ($Slope): </p>
 <p class="line">   - Diferencias centrales con paso pequeno. </p>
 <p class="line">   - Da un NUMERO. </p>

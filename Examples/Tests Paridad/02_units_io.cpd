@@ -1,36 +1,30 @@
 "Test 02 - UnitsParser - manejo de unidades reales
 'Verifica conversion, propagacion y aritmetica con unidades.
-'==========================================================================
 
 "1. Asignacion con unidades basicas
-'==========================================================================
 L = 5'm
 F = 100'kN
 A = 0.01'm^2
 '(estos son valores con DECORACION texto, no unidades reales)
 
 "2. Asignacion con unidades REALES (sin apostrofe)
-'==========================================================================
 L_real = 5 m
 F_real = 100 kN
 A_real = 0.01 m^2
 
 "3. Aritmetica con unidades reales (propagacion)
-'==========================================================================
 'fuerza / area = presion
 σ_real = F_real/A_real
 'presion en Pa por defecto, deberia mostrar 10 000 kN/m^2 = 10 MPa
 σ_real
 
 "4. Conversion explicita con operador &
-'==========================================================================
 σ_MPa = σ_real & MPa
 σ_MPa
 σ_kPa = σ_real & kPa
 σ_kPa
 
 "5. Suma de cantidades CONSISTENTES en unidades distintas
-'==========================================================================
 L_a = 1 m
 L_b = 50 cm
 L_total = L_a + L_b
@@ -38,7 +32,6 @@ L_total = L_a + L_b
 L_total
 
 "6. Multiplicacion creando nuevas unidades
-'==========================================================================
 P_force = 10 kN
 v_speed = 2 m/s
 Pow_power = P_force*v_speed
@@ -46,13 +39,11 @@ Pow_power = P_force*v_speed
 Pow_power
 
 "7. Funcion con unidades como argumento
-'==========================================================================
 density(m; V) = m/V
 ρ_test = density(7850 kg; 1 m^3)
 ρ_test
 
 "8. Comparacion con #if usando unidades
-'==========================================================================
 L_test = 2.5 m
 L_lim = 3000 mm
 #if L_test < L_lim
@@ -62,7 +53,6 @@ L_lim = 3000 mm
 #end if
 
 "9. Vectores y matrices con unidades
-'==========================================================================
 F_vec = [10; 20; 30] kN
 'Vector de fuerzas:
 F_vec
@@ -70,6 +60,5 @@ F_vec
 norm(F_vec)
 
 "10. Resumen de paridad UnitsParser
-'==========================================================================
 'Si todos los valores muestran las unidades correctas y las conversiones
 'salen bien, el UnitsParser tiene paridad operacional con upstream Calcpad.

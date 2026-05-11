@@ -8831,38 +8831,31 @@ uniform ${Mr} ${Ar} u_${Qr};
     </script><h3>Test 04 - MacroParser + #function + Local/Global scoping </h3>
 <p class="line">Verifica que macros estilo upstream y functions multi-linea (Symbolic-only) </p>
 <p class="line">no rompen las pruebas de scoping. </p>
-<p class="line">========================================================================== </p>
 <p class="line">&nbsp;</p>
 <h3>1. Funcion inline (compatible upstream) </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>f</var> ( <var>x</var> )  = <var>x</var><sup>2</sup> + 2 · <var>x</var> + 1</span></p>
 <p class="line">f(3) deberia dar 16 </p>
 <p class="line"><span class="eq"><var>f</var>  ( 3 )  = 16</span></p>
 <p class="line">&nbsp;</p>
 <h3>2. Funcion con varios argumentos </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>g</var> ( <var>x</var>; <var>y</var> )  = <var>x</var><sup>2</sup> + <var>y</var><sup>2</sup></span></p>
 <p class="line">g(3; 4) = 9 + 16 = 25 </p>
 <p class="line"><span class="eq"><var>g</var>  ( 3; 4 )  = 25</span></p>
 <p class="line">&nbsp;</p>
 <h3>3. Macro con ? (parametros) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Macros usan ? para parametros que se sustituyen textualmente. </p>
 <p class="line"><span class="eq"><var>suma</var><sub>cuadrados</sub>?a?b? = <var>?a?^2 + ?b?^2</var></span></p>
 <p class="line">Llamada con valores literales: </p>
 <p class="line">suma_cuadrados!3!4!</p>
 <p class="line">&nbsp;</p>
 <h3>4. #function multi-linea (SOLO Symbolic) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Volumen de 2x3x4: </p>
 <p class="line">&nbsp;</p>
 <h3>5. Scoping Local </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Una variable Local existe solo dentro del bloque. </p>
 <p class="line"><span class="eq"><var>y</var><sub>global</sub> = 100</span></p>
 <p class="line">&nbsp;</p>
 <h3>6. Funciones que llaman otras funciones </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>square</var> ( <var>x</var> )  = <var>x</var><sup>2</sup></span></p>
 <p class="line"><span class="eq"><var>cube</var> ( <var>x</var> )  = <var>x</var> · <var>square</var>  ( <var>x</var> ) </span></p>
 <p class="line">cube(3) = 3 * 9 = 27 </p>
@@ -8870,13 +8863,11 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">&nbsp;</p>
 <h3>7. Factorial via $Product (no usar recursion - upstream Calcpad no la soporta </h3>
 <p class="line">   en function definitions; uno arma un bloque dedicado). </p>
-<p class="line">========================================================================== </p>
 <p class="line">5! = 1*2*3*4*5 = 120 </p>
 <p class="line"><span class="eq"><var>n</var><sub>fact</sub> = 5</span></p>
 <p class="line"><code>$Product{i @ i = 1 : n_fact}</code></p>
 <p class="line">&nbsp;</p>
 <h3>8. Resumen de paridad MacroParser </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Si las funciones inline f(3)=16, g(3;4)=25, suma_cuadrados!3!4!=25, </p>
 <p class="line">cube(3)=27, $Product = 120 funcionan correctamente, el MacroParser </p>
 <p class="line">tiene paridad operacional con upstream. </p>

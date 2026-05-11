@@ -951,6 +951,110 @@ K & [kN/m; kN | kN; kN*m]
 
 ---
 
+## Gauss Quadrature — pedagogical primer (Q4 FEM)
+
+This section condenses the contents of `Examples/Mechanics/Finite Elements/sin unidades/Cuadratura de Gauss - Tutorial.cpd` (16 SVGs + 8 Chart.js charts + 13 `#sym integrate()` calls). Open the file in Calcpad-Symbolic to see all visualizations rendered.
+
+### Why these specific test functions?
+
+When evaluating Gauss quadrature with `f(x) = 1, x, x², x³, x⁴, x⁶`, we are not testing arbitrary curves — we are testing the **LEGO building blocks** of every polynomial:
+
+```
+f(x) = a₀·1 + a₁·x + a₂·x² + a₃·x³ + a₄·x⁴ + …
+```
+
+Because integration is **linear** (`∫(a·f + b·g) = a·∫f + b·∫g`), if a quadrature rule integrates each piece exactly, it integrates ANY polynomial built from those pieces exactly. So testing the pieces tells us the full operating range.
+
+### The rule — N points integrate exactly up to degree (2N - 1)
+
+| N points | Positions (Gauss-Legendre on [-1, +1]) | Weights | Exact up to degree |
+|---|---|---|---|
+| 1 | `0` | `2` | 1 (lines) |
+| 2 | `±1/√3 ≈ ±0.5774` | `1, 1` | 3 (cubics) |
+| 3 | `±√(3/5) ≈ ±0.7746, 0` | `5/9, 8/9, 5/9` | 5 (quintics) |
+
+Symbolic verification (these are the values `#sym integrate(...; x; -1; 1)` emits):
+
+| Piece | Exact integral | 1-pt result | 2-pt result | 3-pt result |
+|---|---|---|---|---|
+| `1` | `2` | `2` ✓ | `2` ✓ | `2` ✓ |
+| `x` | `0` | `0` ✓ | `0` ✓ | `0` ✓ |
+| `x²` | `2/3 ≈ 0.667` | `0` ✗ | `2/3` ✓ | `2/3` ✓ |
+| `x³` | `0` | `0` ✓ | `0` ✓ | `0` ✓ |
+| `x⁴` | `2/5 = 0.4` | `0` ✗ | `2/9 ≈ 0.222` ✗ | `2/5` ✓ |
+| `x⁶` | `2/7 ≈ 0.286` | `0` ✗ | `2/27 ≈ 0.074` ✗ | `0.246` ✗ |
+
+### Why Q4 membrane needs **2×2 Gauss**
+
+The Q4 shape functions are **bilinear** (degree 1 in each variable):
+
+```
+N₁(ξ, η) = (1-ξ)·(1-η)/4
+N₂(ξ, η) = (1+ξ)·(1-η)/4
+N₃(ξ, η) = (1+ξ)·(1+η)/4
+N₄(ξ, η) = (1-ξ)·(1+η)/4
+```
+
+Their derivatives are LINEAR (degree 1). When we form `Bᵀ·D·B` for the stiffness integrand we get products `linear × linear = QUADRATIC` (degree 2 in ξ, degree 2 in η).
+
+For example, `(Bᵀ·D·B)[1,1]` contains `(1 - η)²` which expanded by `#sym expand((1-η)²)` gives:
+
+```
+(1 - η)² = 1 - 2·η + η²
+           ↑    ↑    ↑
+         deg 0 deg 1 deg 2
+```
+
+The **highest-degree piece is η²** (degree 2). So the rule must be exact for degree 2:
+- `N = 1` ⇒ exact up to degree 1 ⇒ MISSES degree 2 ⇒ K_e under-integrated ⇒ **hourglass modes**.
+- `N = 2` ⇒ exact up to degree 3 ⇒ COVERS degree 2 ⇒ **full integration, correct K_e**.
+- `N = 3` ⇒ exact up to degree 5 ⇒ identical K_e to 2×2, just slower CPU.
+
+### Decision table — when to use each rule
+
+| Problem | Quadrature | Reason |
+|---|---|---|
+| Q4 membrane (plane stress) | **2×2** | Integrand degree 2 |
+| Mindlin plate **thick** (t/L > 0.1) | **2×2** | No shear locking risk |
+| Mindlin plate **thin** (t/L < 0.05) | **2×2 bending + 1×1 shear (selective)** | 2×2 shear would lock |
+| Q4 element **distorted** (curved sides) | **3×3** | det(J) no longer constant — effective degree > 2 |
+| Q9 / Q8 (quadratic shape functions) | **3×3 obligatory** | Shape functions degree 2 → Bᵀ·D·B degree 4 |
+| Nearly incompressible (ν → 0.5, rubber, saturated soil) | **2×2 deviatoric + 1×1 volumetric (B-bar)** | Volumetric locking |
+| ABAQUS S4R shell / C3D8R brick | **1×1 + hourglass control** | 8× faster than full integration |
+| Plasticity with non-linear hardening | **3×3 or higher** | Better spatial resolution of yielding |
+
+### The balance analogy (intuition)
+
+The stiffness integrand is a **SUM of pieces** of different polynomial degrees mixed together. Think of integrating it as **weighing several objects at once**. The Gauss rule is the balance. You need a balance strong enough for the HEAVIEST object — once you have that, every lighter object (and any combination) also weighs correctly.
+
+```
+Q4 stiffness:  heaviest piece = degree 2 → balance = 2-point Gauss
+Q9 stiffness:  heaviest piece = degree 4 → balance = 3-point Gauss
+```
+
+### Symbolic vs numeric partial derivatives
+
+For computing `∂f/∂x` of FEM shape functions (the `B` matrix), Calcpad-Symbolic offers BOTH:
+
+```calcpad
+'Numerical partial derivative ($Slope, central differences):
+f(x; y) = x^2 + 3*x*y + y^2
+f_x(x) = f(x; 1)
+df_dx_at_2_1 = $Slope{f_x(x) @ x = 2}     'gives 7
+
+'Symbolic partial derivative (#sym pdiff, AngouriMath):
+#sym pdiff(x^2 + 3*x*y + y^2; x)          'returns the expression 2x + 3y
+
+'Symbolic gradient, hessian, jacobian:
+#sym gradient(x^2 + 3*x*y + y^2; x; y)    'returns [2x + 3y; 3x + 2y]
+#sym hessian(x^3 + x*y^2; x; y)           'returns [[6x, 2y], [2y, 2x]]
+#sym jacobian(r*cos(θ); r*sin(θ); r; θ)   'polar→cartesian Jacobian
+```
+
+Verify in `Examples/Tests Paridad/06_derivadas_parciales_numericas.cpd` and `07_derivadas_parciales_simbolicas.cpd`.
+
+---
+
 ## Pitfalls & Best Practices — `#deq`, `#sym`, layout, HTML
 
 > Verified empirically with `Examples/Finite Elements/TEST_sintaxis.cpd` against the

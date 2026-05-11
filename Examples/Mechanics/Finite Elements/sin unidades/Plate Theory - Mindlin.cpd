@@ -371,7 +371,6 @@ q_max_mag = -q_min_val
 '- El modelo de Winkler NO redistribuye (resortes independientes)
 '- Un modelo de suelo elastico (Boussinesq) daria una distribucion diferente
 "Grafico 1: Reaccion del suelo sobre la placa (vista en elevacion)
-'==========================================================================
 'QUE ES ESTE GRAFICO:
 'Imagina que cortamos la zapata por el medio (y = b_z/2 = 1) con un
 'cuchillo y la miramos de costado. Lo que se ve abajo NO es la placa
@@ -398,7 +397,6 @@ q_perfil(x) = q_f(x; b_z/2)
 $Plot{q_perfil(x) @ x = 0 : a_z}
 
 "Grafico 2: Deformada de la placa (vista en elevacion, la flexion real)
-'==========================================================================
 'QUE ES ESTE GRAFICO:
 'Mismo corte que arriba (y = b_z/2 = 1), pero ahora se ve la PLACA
 'MISMA flexionada. La linea curva ES la silueta de la placa vista de

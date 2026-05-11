@@ -4,12 +4,10 @@
 'area real vs la aproximada en cada caso.
 
 "0. PRIMERO_LO_PRIMERO - por que probamos con f(x) = 1, x, x^2, x^3, x^4?
-'==========================================================================
 'Probablemente te preguntas: que tienen que ver esas funciones bobas
 'con Gauss? Te lo explico antes de empezar a hacer cuentas.
 
 "0.1 Los polinomios son piezas de LEGO
-'==========================================================================
 'CUALQUIER polinomio se construye sumando "piezas" que son potencias de x:
 
 #deq f(x) = a_0 + a_1*x + a_2*x^2 + a_3*x^3 + a_4*x^4 + ...
@@ -36,7 +34,6 @@
 #end svg
 
 "0.2 La propiedad clave de la integral - es LINEAL
-'==========================================================================
 'La integral de UNA suma es la suma de las integrales de cada parte:
 
 #deq ∫(a*f(x) + b*g(x)) dx = a*∫f(x) dx + b*∫g(x) dx
@@ -66,7 +63,6 @@
 'la parte par que no se anula.
 
 "0.3 ENTONCES, por que probamos con esas funciones?
-'==========================================================================
 'Por la razon mas simple posible:
 '   PROBAMOS LAS PIEZAS, NO LOS POLINOMIOS COMPLETOS.
 '
@@ -82,7 +78,6 @@
 'cualquier polinomio que tenga termino x^4 o superior.
 
 "0.4 Verificacion con un polinomio completo
-'==========================================================================
 'Tomemos:
 
 #deq f(x) = 3 - 2*x + 5*x^2 - x^3
@@ -127,7 +122,6 @@ I_2pt_poly   ; 'aproximacion 2 puntos (ACIERTA porque grado max = 3)
 'tambien integra exacto la SUMA 3 - 2x + 5x^2 - x^3.
 
 "0.5 La conexion con FEM (la razon por la que esto te importa)
-'==========================================================================
 'En FEM, cuando calculas la matriz de rigidez del elemento Q4 membrana
 'tienes que integrar:
 
@@ -152,7 +146,6 @@ I_2pt_poly   ; 'aproximacion 2 puntos (ACIERTA porque grado max = 3)
 '2N - 1 >= 2, es decir N >= 1.5, asi que N = 2 es el menor que alcanza.
 
 "0.5b Como se ve realmente el K_e por dentro (descomposicion en piezas)
-'==========================================================================
 'Tu intuicion en chat fue: "es como que tiene no solo una funcion sino
 'varias y hay que mezclar algo asi". EXACTO. El integrando de K_e no
 'es un solo bicho, es una SUMA de polinomios mezclados.
@@ -272,7 +265,6 @@ I_2pt_poly   ; 'aproximacion 2 puntos (ACIERTA porque grado max = 3)
 'el Q4 bilineal, por eso 2x2 Gauss es lo justo.
 
 "0.5c Analogia: la balanza
-'==========================================================================
 'Pensalo asi:
 '   - Los objetos a pesar = las piezas del polinomio (1, eta, eta^2, ...)
 '   - La balanza = la regla de Gauss
@@ -287,7 +279,6 @@ I_2pt_poly   ; 'aproximacion 2 puntos (ACIERTA porque grado max = 3)
 '   -> N=2 -> aguanta grado 3 -> sobra para el grado 2 del Q4. PERFECTO.
 
 "0.6 Vista con #chart - el polinomio del 0.4 dibujado
-'==========================================================================
 'Veamos el polinomio f(x) = 3 - 2x + 5x^2 - x^3 que probamos arriba,
 'dibujado con Chart.js (usando puntos calculados):
 
@@ -329,7 +320,6 @@ I_2pt_poly   ; 'aproximacion 2 puntos (ACIERTA porque grado max = 3)
 "========================================================================
 
 "1. El problema - integrar el area bajo una curva
-'==========================================================================
 
 #svg 700 260
 .text 350 18 "PROBLEMA:_calcular_el_area_entre_la_curva_f(x)_y_el_eje_x" 13 navy middle bold
@@ -352,7 +342,6 @@ I_2pt_poly   ; 'aproximacion 2 puntos (ACIERTA porque grado max = 3)
 'horrible (como B^T*D*B*det(J) del FEM), necesitamos un TRUCO numerico.
 
 "1. Idea ingenua - poner 1 rectangulo en el medio
-'==========================================================================
 'Lo mas simple posible: un solo rectangulo de ancho 2 y altura f(0):
 
 #svg 700 260
@@ -375,7 +364,6 @@ I_2pt_poly   ; 'aproximacion 2 puntos (ACIERTA porque grado max = 3)
 #end svg
 
 "1.1 Prueba con f(x) = 1 (linea horizontal constante)
-'==========================================================================
 'La funcion es una linea recta plana a altura y = 1.
 'AREA REAL = ancho * alto = 2 * 1 = 2.
 
@@ -430,7 +418,6 @@ err_const    ; 'error = 0  ->  EXACTO
 #end blk
 
 "1.2 Prueba con f(x) = x (linea diagonal)
-'==========================================================================
 'La funcion sube linealmente de (-1, -1) a (+1, +1).
 'AREA REAL = 0 (el triangulo positivo a la derecha cancela el negativo
 'a la izquierda — son simetricos).
@@ -486,7 +473,6 @@ err_lin    ; 'error = 0  ->  EXACTO
 #end blk
 
 "1.3 Prueba con f(x) = x^2 (parabola — la primera que FALLA)
-'==========================================================================
 'AREA REAL = integral de x^2 de -1 a +1 = (x^3/3) de -1 a +1 = 2/3 ~ 0.667
 'AHORA atencion: la regla de 1 punto solo mira f(0) = 0 -> "estima" area = 0
 'cuando la real es 0.667.
@@ -546,7 +532,6 @@ err_x2    ; 'error 0.667  ->  FALLA totalmente
 'fuera del medio se ignora.
 
 "1.4 Resumen visual de la regla de 1 punto
-'==========================================================================
 
 #svg 700 230
 .text 350 18 "REGLA_DE_1_PUNTO_-_resumen_de_los_3_casos" 13 navy middle bold
@@ -570,7 +555,6 @@ err_x2    ; 'error 0.667  ->  FALLA totalmente
 #end svg
 
 "2. El truco de Gauss - 2 puntos en posiciones MAGICAS
-'==========================================================================
 'Idea: en vez de poner 1 punto en el centro, pongo 2 puntos simetricos
 'en x_1 = -d y x_2 = +d, con pesos w_1 y w_2. Eligiendo bien d, w_1, w_2
 'se consigue que la formula sea exacta tambien para x^2 y x^3.
@@ -607,7 +591,6 @@ err_x2    ; 'error 0.667  ->  FALLA totalmente
 #end svg
 
 "2.1 Verificacion con f(x) = x^2 (donde 1 punto fallaba)
-'==========================================================================
 'La regla de 1 punto daba 0 cuando la real es 0.667.
 'Ahora la regla de 2 puntos:
 '   I ~ 1*(-1/sqrt(3))^2 + 1*(+1/sqrt(3))^2 = 1/3 + 1/3 = 2/3
@@ -664,7 +647,6 @@ err_g2_x2    ; 'error ~ 0  ->  EXACTO
 #end blk
 
 "2.2 Verificacion con f(x) = x^3 (funcion impar)
-'==========================================================================
 
 #chart 700 340
 {
@@ -711,7 +693,6 @@ I_g2_x3   ; 'Gauss 2 puntos: -0.192 + 0.192 = 0
 #end blk
 
 "2.3 Donde FALLA la regla de 2 puntos? Probamos con x^4 (grado 4)
-'==========================================================================
 
 #chart 700 340
 {
@@ -764,7 +745,6 @@ err_g2_x4 ; 'error: 0.178  ->  FALLA en grado 4
 #end blk
 
 "2.4 Resumen visual de la regla de 2 puntos
-'==========================================================================
 
 #svg 700 240
 .text 350 18 "REGLA_DE_2_PUNTOS_-_resumen" 13 navy middle bold
@@ -792,7 +772,6 @@ err_g2_x4 ; 'error: 0.178  ->  FALLA en grado 4
 #end svg
 
 "3. La regla general (memorizar esto)
-'==========================================================================
 
 #svg 700 270
 .text 350 18 "Regla_general_de_Gauss-Legendre" 13 navy middle bold
@@ -822,7 +801,6 @@ err_g2_x4 ; 'error: 0.178  ->  FALLA en grado 4
 #end svg
 
 "4. Aplicacion al Q4 (porque te importa esto)
-'==========================================================================
 
 #svg 700 320
 .text 350 20 "POR_QUE_EN_Q4_MEMBRANA_LA_REGLA_CORRECTA_ES_2x2" 13 navy middle bold
@@ -871,13 +849,11 @@ err_g2_x4 ; 'error: 0.178  ->  FALLA en grado 4
 #end svg
 
 "5. Cuando aplicas cada caso? Guia practica
-'==========================================================================
 'Esta es la pregunta clave: si para Q4 lineal "lo correcto" es 2x2,
 'cuando me conviene usar 1x1 (reducida) o 3x3 (sobre)?
 'Te lo explico con casos reales y luego un cuadro de decision.
 
 "5.1 La regla de 1x1 (reducida) - cuando se usa
-'==========================================================================
 '**Caso 1 - Mindlin plate / shell con SHEAR LOCKING:**
 'Cuando una placa Mindlin es DELGADA (t/L pequeno), la energia de
 'flexion deberia dominar pero la formulacion sobreestima la rigidez
@@ -931,7 +907,6 @@ err_g2_x4 ; 'error: 0.178  ->  FALLA en grado 4
 #end svg
 
 "5.2 La regla de 2x2 (completa) - el DEFAULT correcto
-'==========================================================================
 'Para la mayoria de los casos COTIDIANOS de FEM es lo que se usa por defecto:
 '
 '   - Q4 membrana (plane stress, plane strain): SIEMPRE 2x2.
@@ -946,7 +921,6 @@ err_g2_x4 ; 'error: 0.178  ->  FALLA en grado 4
 '   - Material casi incompresible -> mejor B-bar o reducida.
 
 "5.3 La regla de 3x3 (sobre-integracion) - cuando es necesaria
-'==========================================================================
 'Para Q4 lineal NO aporta nada (da identico al 2x2). PERO si la
 'geometria o la fisica complican el integrando, hace falta:
 '
@@ -1012,7 +986,6 @@ err_g2_x4 ; 'error: 0.178  ->  FALLA en grado 4
 #end svg
 
 "5.4 Integracion SELECTIVA - la mas usada en Mindlin
-'==========================================================================
 'Caso especial muy importante: el Q4 Mindlin (placa gruesa) tiene una
 'matriz K_e con DOS partes — flexion y corte:
 
@@ -1035,7 +1008,6 @@ err_g2_x4 ; 'error: 0.178  ->  FALLA en grado 4
 '   - Es la formulacion estandar de Hughes/Bathe para Mindlin.
 
 "5.5 Cuadro de decision final
-'==========================================================================
 
 #svg 700 360
 .text 350 20 "GUIA_PRACTICA:_que_cuadratura_uso_para_mi_problema?" 13 navy middle bold
@@ -1075,7 +1047,6 @@ err_g2_x4 ; 'error: 0.178  ->  FALLA en grado 4
 #end svg
 
 "5.6 Y tu en Hekatan/Calcpad?
-'==========================================================================
 'En todos los archivos de ejemplo del FEM de Calcpad-Symbolic:
 '   - Cantilever Wall Q4 Membrane.cpd          -> 2x2 (correcto)
 '   - Plate Theory - Mindlin.cpd               -> 2x2 (correcto, placa gruesa)
@@ -1090,7 +1061,6 @@ err_g2_x4 ; 'error: 0.178  ->  FALLA en grado 4
 '   "#for ig = 1 : 4"            -> el loop sobre los 4 puntos
 
 "6. Una linea para llevarte
-'==========================================================================
 'N puntos de Gauss integran EXACTO un polinomio hasta grado (2N-1).
 'El Q4 membrana tiene integrando de grado 2 -> 2x2 puntos es lo justo.
 '1x1 sub-integra (modos hourglass, salvo que sea selectiva contra locking).

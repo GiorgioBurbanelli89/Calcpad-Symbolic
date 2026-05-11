@@ -1,10 +1,8 @@
 "Test 07 - Derivadas parciales SIMBOLICAS (AngouriMath via #sym)
 'Symbolic-only feature. AngouriMath calcula derivadas ALGEBRAICAMENTE.
 'No es una aproximacion numerica — es manipulacion de expresiones reales.
-'==========================================================================
 
 "1. Derivada simple de una funcion de UNA variable
-'==========================================================================
 'd/dx(x^3 + 3*x + 1) = 3*x^2 + 3
 '(Calcpad devuelve la EXPRESION, no un numero)
 #sym diff(x^3 + 3*x + 1; x)
@@ -14,7 +12,6 @@
 #sym subs(diff(x^3 + 3*x + 1; x); x; 2)
 
 "2. Derivadas de orden superior
-'==========================================================================
 'd^2/dx^2(x^3 + 3x + 1) = 6x
 #sym diff(x^3 + 3*x + 1; x; 2)
 
@@ -22,7 +19,6 @@
 #sym diff(x^4; x; 3)
 
 "3. Derivadas parciales con pdiff
-'==========================================================================
 'f(x; y) = x^2 + 3*x*y + y^2
 'df/dx = 2x + 3y
 'df/dy = 3x + 2y
@@ -35,7 +31,6 @@
 #sym pdiff(x^2 + 3*x*y + y^2; y)
 
 "4. Evaluacion simbolica de las parciales en un punto
-'==========================================================================
 'En (x=2, y=1):
 '   df/dx = 2*2 + 3*1 = 7
 '   df/dy = 3*2 + 2*1 = 8
@@ -50,7 +45,6 @@
 '(df/dy en (2,1) = 8)
 
 "5. Gradiente simbolico (vector con todas las parciales)
-'==========================================================================
 'gradient(f; x; y) -> [df/dx; df/dy]
 #sym gradient(x^2 + 3*x*y + y^2; x; y)
 
@@ -59,7 +53,6 @@
 'Esperado: [2x; 2y; 2z]
 
 "6. Matriz Hessiana (segundas derivadas)
-'==========================================================================
 'H[i;j] = d^2 f / (d x_i d x_j)
 'Para f(x; y) = x^3 + x*y^2:
 '   d^2f/dx^2     = 6x
@@ -69,7 +62,6 @@
 #sym hessian(x^3 + x*y^2; x; y)
 
 "7. Matriz Jacobiana (sistema de funciones)
-'==========================================================================
 'Para F = [f1; f2] = [x^2; y^2]:
 '   J = [df1/dx; df1/dy | df2/dx; df2/dy] = [2x; 0 | 0; 2y]
 #sym jacobian(x^2; y^2; x; y)
@@ -80,7 +72,6 @@
 #sym jacobian(r*cos(θ); r*sin(θ); r; θ)
 
 "8. Divergencia y rotacional (calculo vectorial)
-'==========================================================================
 'Para campo vectorial F = (x^2; y^2; z^2):
 '   div F = 2x + 2y + 2z
 #sym divergence(x^2; y^2; z^2; x; y; z)
@@ -89,14 +80,12 @@
 #sym curl(y*z; x*z; x*y; x; y; z)
 
 "9. Laplaciano
-'==========================================================================
 'Laplaciano = div(grad f) = d^2f/dx^2 + d^2f/dy^2 + d^2f/dz^2
 'Para f = x^2 + y^2 + z^2:
 '   laplaciano = 2 + 2 + 2 = 6
 #sym laplacian(x^2 + y^2 + z^2; x; y; z)
 
 "10. Aplicacion FEM - derivadas de funciones de forma Q4
-'==========================================================================
 'Funciones de forma Q4 en coordenadas naturales:
 '   N_1(ξ; η) = (1-ξ)*(1-η)/4
 '   N_2(ξ; η) = (1+ξ)*(1-η)/4
@@ -123,7 +112,6 @@
 '   dN_4/dξ = -(1+η)/4    dN_4/dη = +(1-ξ)/4
 
 "11. Verificacion: simbolico vs numerico deben coincidir
-'==========================================================================
 'Numero: derivada de N_1 respecto a xi en (xi=0, eta=0) = -1/4
 N_1(ξ; η) = (1 - ξ)*(1 - η)/4
 N_1_eta0(ξ) = N_1(ξ; 0)
@@ -137,7 +125,6 @@ dN1_dxi_num ; 'derivada numerica (esperado -0.25)
 #end blk
 
 "12. Resumen — simbolico vs numerico
-'==========================================================================
 'Numerico ($Slope):
 '   - Diferencias centrales con paso pequeno.
 '   - Da un NUMERO.

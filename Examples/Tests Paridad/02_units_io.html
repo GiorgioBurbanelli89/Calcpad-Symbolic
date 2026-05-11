@@ -8830,37 +8830,31 @@ uniform ${Mr} ${Ar} u_${Qr};
         document.onmousedown = function () { contextMenu = false; };
     </script><h3>Test 02 - UnitsParser - manejo de unidades reales </h3>
 <p class="line">Verifica conversion, propagacion y aritmetica con unidades. </p>
-<p class="line">========================================================================== </p>
 <p class="line">&nbsp;</p>
 <h3>1. Asignacion con unidades basicas </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>L</var> = 5</span> m </p>
 <p class="line"><span class="eq"><var>F</var> = 100</span> kN </p>
 <p class="line"><span class="eq"><var>A</var> = 0.01</span> m^2 </p>
 <p class="line">(estos son valores con DECORACION texto, no unidades reales) </p>
 <p class="line">&nbsp;</p>
 <h3>2. Asignacion con unidades REALES (sin apostrofe) </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>L</var><sub>real</sub> = 5 <i>m</i></span></p>
 <p class="line"><span class="eq"><var>F</var><sub>real</sub> = 100 <i>kN</i></span></p>
 <p class="line"><span class="eq"><var>A</var><sub>real</sub> = 0.01 <i>m</i><sup class="unit">2</sup></span></p>
 <p class="line">&nbsp;</p>
 <h3>3. Aritmetica con unidades reales (propagacion) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">fuerza / area = presion </p>
 <p class="line"><span class="eq"><var>σ</var><sub>real</sub> = <span class="dvc"><var>F</var><sub>real</sub><span class="dvl"></span><var>A</var><sub>real</sub></span> = <span class="dvc">100 <i>kN</i><span class="dvl"></span>0.01 <i>m</i><sup class="unit">2</sup></span> = 10000 <i>kPa</i></span></p>
 <p class="line">presion en Pa por defecto, deberia mostrar 10 000 kN/m^2 = 10 MPa </p>
 <p class="line"><span class="eq"><var>σ</var><sub>real</sub> = 10000 <i>kPa</i></span></p>
 <p class="line">&nbsp;</p>
 <h3>4. Conversion explicita con operador & </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>σ</var><sub>MPa</sub> = <var>σ</var><sub>real</sub> = 10000 <i>kPa</i></span></p>
 <p class="line"><span class="eq"><var>σ</var><sub>MPa</sub> = 10 <i>MPa</i></span></p>
 <p class="line"><span class="eq"><var>σ</var><sub>kPa</sub> = <var>σ</var><sub>real</sub> = 10000 <i>kPa</i></span></p>
 <p class="line"><span class="eq"><var>σ</var><sub>kPa</sub> = 10000 <i>kPa</i></span></p>
 <p class="line">&nbsp;</p>
 <h3>5. Suma de cantidades CONSISTENTES en unidades distintas </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>L</var><sub>a</sub> = 1 <i>m</i></span></p>
 <p class="line"><span class="eq"><var>L</var><sub>b</sub> = 50 <i>cm</i></span></p>
 <p class="line"><span class="eq"><var>L</var><sub>total</sub> = <var>L</var><sub>a</sub> + <var>L</var><sub>b</sub> = 1 <i>m</i> + 50 <i>cm</i> = 1.5 <i>m</i></span></p>
@@ -8868,7 +8862,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line"><span class="eq"><var>L</var><sub>total</sub> = 1.5 <i>m</i></span></p>
 <p class="line">&nbsp;</p>
 <h3>6. Multiplicacion creando nuevas unidades </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>P</var><sub>force</sub> = 10 <i>kN</i></span></p>
 <p class="line"><span class="eq"><var>v</var><sub>speed</sub> = 2 <span class="dvc"><i>m</i><span class="dvl"></span><i>s</i></span></span></p>
 <p class="line"><span class="eq"><var>Pow</var><sub>power</sub> = <var>P</var><sub>force</sub> · <var>v</var><sub>speed</sub> = 10 <i>kN</i> · 2 <i>m</i><i class="unit"> ∕ </i><i>s</i> = 20 <i>t</i><i> · </i><i>m</i><sup class="unit">2</sup><i class="unit"> ∕ </i><i>s</i><sup class="unit">3</sup></span></p>
@@ -8876,19 +8869,16 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line"><span class="eq"><var>Pow</var><sub>power</sub> = 20 <i>t</i><i> · </i><i>m</i><sup class="unit">2</sup><i class="unit"> ∕ </i><i>s</i><sup class="unit">3</sup></span></p>
 <p class="line">&nbsp;</p>
 <h3>7. Funcion con unidades como argumento </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>density</var> ( <var>m</var>; <var>V</var> )  = <span class="dvc"><var>m</var><span class="dvl"></span><var>V</var></span></span></p>
 <p class="line"><span class="eq"><var>ρ</var><sub>test</sub> = <var>density</var>  ( 7850 <i>kg</i>; 1 <i>m</i><sup class="unit">3</sup> )  = 7850 <i>kg</i><i class="unit"> ∕ </i><i>m</i><sup class="unit">3</sup></span></p>
 <p class="line"><span class="eq"><var>ρ</var><sub>test</sub> = 7850 <i>kg</i><i class="unit"> ∕ </i><i>m</i><sup class="unit">3</sup></span></p>
 <p class="line">&nbsp;</p>
 <h3>8. Comparacion con #if usando unidades </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>L</var><sub>test</sub> = 2.5 <i>m</i></span></p>
 <p class="line"><span class="eq"><var>L</var><sub>lim</sub> = 3000 <i>mm</i></span></p>
 <p class="line">L_test es menor que el limite (ambos en longitud, comparables) </p>
 <p class="line">&nbsp;</p>
 <h3>9. Vectores y matrices con unidades </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>F</var><sub>vec</sub> = <var>[10; 20; 30] kN</var></span></p>
 <p class="line">Vector de fuerzas: </p>
 <p class="line"><span class="eq"><var>F</var><sub>vec</sub></span></p>
@@ -8896,7 +8886,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">norm(F_vec)</p>
 <p class="line">&nbsp;</p>
 <h3>10. Resumen de paridad UnitsParser </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Si todos los valores muestran las unidades correctas y las conversiones </p>
 <p class="line">salen bien, el UnitsParser tiene paridad operacional con upstream Calcpad. </p>
  </body></html>

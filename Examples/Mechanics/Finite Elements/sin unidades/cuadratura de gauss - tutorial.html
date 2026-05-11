@@ -8834,12 +8834,10 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">area real vs la aproximada en cada caso. </p>
 <p class="line">&nbsp;</p>
 <h3>0. PRIMERO_LO_PRIMERO - por que probamos con f(x) = 1, x, x^2, x^3, x^4? </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Probablemente te preguntas: que tienen que ver esas funciones bobas </p>
 <p class="line">con Gauss? Te lo explico antes de empezar a hacer cuentas. </p>
 <p class="line">&nbsp;</p>
 <h3>0.1 Los polinomios son piezas de LEGO </h3>
-<p class="line">========================================================================== </p>
 <p class="line">CUALQUIER polinomio se construye sumando "piezas" que son potencias de x: </p>
 <p class="line">&nbsp;</p>
 <!-- FORMEQ CALLED: len=59 --><p class="line"><span class="eq"><var>f</var>(<var>x</var>) = <var>a</var><sub>0</sub> + <var>a</var><sub>1</sub> · <var>x</var> + <var>a</var><sub>2</sub> · <var>x</var><sup>2</sup> + <var>a</var><sub>3</sub> · <var>x</var><sup>3</sup> + <var>a</var><sub>4</sub> · <var>x</var><sup>4</sup> + <var>...</var></span></p>
@@ -8851,7 +8849,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <div><svg viewBox="0 0 700 240" width="700" height="240" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><text x="350" y="18" text-anchor="middle" fill="navy" font-size="12" font-weight="bold">Cualquier polinomio = suma de piezas de LEGO (potencias de x)</text><rect x="50" y="50" width="620" height="170" fill="white" fill-opacity="0" stroke="black" stroke-width="1"/><text x="360" y="80" text-anchor="middle" fill="black" font-size="13" font-weight="bold">f(x) = 3 &#183; (1) + (-2) &#183; (x) + 5 &#183; (x^2) + (-1) &#183; (x^3)</text><text x="360" y="105" text-anchor="middle" fill="gray" font-size="11" font-weight="normal">------ ------ ------ ------ ------ ------ ------------</text><text x="130" y="130" text-anchor="middle" fill="darkgreen" font-size="11" font-weight="bold">pieza: 1</text><text x="130" y="150" text-anchor="middle" fill="black" font-size="11" font-weight="normal">coef: 3</text><text x="260" y="130" text-anchor="middle" fill="blue" font-size="11" font-weight="bold">pieza: x</text><text x="260" y="150" text-anchor="middle" fill="black" font-size="11" font-weight="normal">coef: -2</text><text x="400" y="130" text-anchor="middle" fill="darkred" font-size="11" font-weight="bold">pieza: x^2</text><text x="400" y="150" text-anchor="middle" fill="black" font-size="11" font-weight="normal">coef: 5</text><text x="540" y="130" text-anchor="middle" fill="darkviolet" font-size="11" font-weight="bold">pieza: x^3</text><text x="540" y="150" text-anchor="middle" fill="black" font-size="11" font-weight="normal">coef: -1</text><text x="350" y="195" text-anchor="middle" fill="black" font-size="11" font-weight="bold">Las piezas (1, x, x^2, x^3, ...) son siempre las mismas.</text><text x="350" y="215" text-anchor="middle" fill="black" font-size="11" font-weight="bold">Lo que cambia son los coeficientes (3, -2, 5, -1).</text></svg></div>
 <p class="line">&nbsp;</p>
 <h3>0.2 La propiedad clave de la integral - es LINEAL </h3>
-<p class="line">========================================================================== </p>
 <p class="line">La integral de UNA suma es la suma de las integrales de cada parte: </p>
 <p class="line">&nbsp;</p>
 <!-- FORMEQ CALLED: len=52 --><p class="line"><span class="eq"><var>∫(a*f(x) + b*g(x)) dx</var> = <var>a</var> · <var>∫f</var> · <var>(x) dx</var> + <var>b</var> · <var>∫g</var> · <var>(x) dx</var></span></p>
@@ -8881,7 +8878,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">la parte par que no se anula. </p>
 <p class="line">&nbsp;</p>
 <h3>0.3 ENTONCES, por que probamos con esas funciones? </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Por la razon mas simple posible: </p>
 <p class="line">   PROBAMOS LAS PIEZAS, NO LOS POLINOMIOS COMPLETOS. </p>
 <p class="line"></p>
@@ -8897,7 +8893,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">cualquier polinomio que tenga termino x^4 o superior. </p>
 <p class="line">&nbsp;</p>
 <h3>0.4 Verificacion con un polinomio completo </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Tomemos: </p>
 <p class="line">&nbsp;</p>
 <!-- FORMEQ CALLED: len=33 --><p class="line"><span class="eq"><var>f</var>(<var>x</var>) = 3 &minus; 2 · <var>x</var> + 5 · <var>x</var><sup>2</sup> &minus; <var>x</var><sup>3</sup></span></p>
@@ -8942,7 +8937,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">tambien integra exacto la SUMA 3 - 2x + 5x^2 - x^3. </p>
 <p class="line">&nbsp;</p>
 <h3>0.5 La conexion con FEM (la razon por la que esto te importa) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">En FEM, cuando calculas la matriz de rigidez del elemento Q4 membrana </p>
 <p class="line">tienes que integrar: </p>
 <p class="line">&nbsp;</p>
@@ -8967,7 +8961,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">2N - 1 >= 2, es decir N >= 1.5, asi que N = 2 es el menor que alcanza. </p>
 <p class="line">&nbsp;</p>
 <h3>0.5b Como se ve realmente el K_e por dentro (descomposicion en piezas) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Tu intuicion en chat fue: "es como que tiene no solo una funcion sino </p>
 <p class="line">varias y hay que mezclar algo asi". EXACTO. El integrando de K_e no </p>
 <p class="line">es un solo bicho, es una SUMA de polinomios mezclados. </p>
@@ -9095,7 +9088,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">el Q4 bilineal, por eso 2x2 Gauss es lo justo. </p>
 <p class="line">&nbsp;</p>
 <h3>0.5c Analogia: la balanza </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Pensalo asi: </p>
 <p class="line">   - Los objetos a pesar = las piezas del polinomio (1, eta, eta^2, ...) </p>
 <p class="line">   - La balanza = la regla de Gauss </p>
@@ -9110,7 +9102,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">   -> N=2 -> aguanta grado 3 -> sobra para el grado 2 del Q4. PERFECTO. </p>
 <p class="line">&nbsp;</p>
 <h3>0.6 Vista con #chart - el polinomio del 0.4 dibujado </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Veamos el polinomio f(x) = 3 - 2x + 5x^2 - x^3 que probamos arriba, </p>
 <p class="line">dibujado con Chart.js (usando puntos calculados): </p>
 <p class="line">&nbsp;</p>
@@ -9159,7 +9150,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <h3>======================================================================== </h3>
 <p class="line">&nbsp;</p>
 <h3>1. El problema - integrar el area bajo una curva </h3>
-<p class="line">========================================================================== </p>
 <p class="line">&nbsp;</p>
 <div><svg viewBox="0 0 700 260" width="700" height="260" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><text x="350" y="18" text-anchor="middle" fill="navy" font-size="13" font-weight="bold">PROBLEMA: calcular el area entre la curva f(x) y el eje x</text><text x="350" y="38" text-anchor="middle" fill="gray" font-size="11" font-weight="normal">(entre x = -1 y x = +1)</text><rect x="60" y="50" width="580" height="160" fill="white" fill-opacity="0" stroke="black" stroke-width="1.5"/><line x1="60" y1="210" x2="640" y2="210" stroke="black" stroke-width="1.5"/><text x="60" y="232" text-anchor="middle" fill="black" font-size="12" font-weight="bold">-1</text><text x="350" y="232" text-anchor="middle" fill="black" font-size="12" font-weight="bold">0</text><text x="640" y="232" text-anchor="middle" fill="black" font-size="12" font-weight="bold">+1</text><text x="40" y="210" text-anchor="middle" fill="black" font-size="12" font-weight="bold">0</text><polygon points="60,150 100,120 160,95 220,75 290,60 350,55 410,60 480,75 540,95 600,120 640,150 640,210 60,210" fill="lightblue" fill-opacity="0.55" stroke="lightblue" stroke-width="1"/><polyline points="60,150 100,120 160,95 220,75 290,60 350,55 410,60 480,75 540,95 600,120 640,150" fill="none" stroke="blue" stroke-width="2.5"/><text x="645" y="150" text-anchor="start" fill="blue" font-size="14" font-weight="bold">f(x)</text><text x="350" y="252" text-anchor="middle" fill="navy" font-size="12" font-weight="bold">Esta AREA AZUL = la integral que queremos aproximar</text></svg></div>
 <p class="line">&nbsp;</p>
@@ -9167,13 +9157,11 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">horrible (como B^T*D*B*det(J) del FEM), necesitamos un TRUCO numerico. </p>
 <p class="line">&nbsp;</p>
 <h3>1. Idea ingenua - poner 1 rectangulo en el medio </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Lo mas simple posible: un solo rectangulo de ancho 2 y altura f(0): </p>
 <p class="line">&nbsp;</p>
 <div><svg viewBox="0 0 700 260" width="700" height="260" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><text x="350" y="18" text-anchor="middle" fill="red" font-size="13" font-weight="bold">REGLA DE 1 PUNTO: I ~ 2 * f(0)</text><rect x="60" y="50" width="580" height="160" fill="white" fill-opacity="0" stroke="black" stroke-width="1.5"/><line x1="60" y1="210" x2="640" y2="210" stroke="black" stroke-width="1.5"/><text x="60" y="232" text-anchor="middle" fill="black" font-size="12" font-weight="bold">-1</text><text x="350" y="232" text-anchor="middle" fill="black" font-size="12" font-weight="bold">0</text><text x="640" y="232" text-anchor="middle" fill="black" font-size="12" font-weight="bold">+1</text><polyline points="60,150 100,120 160,95 220,75 290,60 350,55 410,60 480,75 540,95 600,120 640,150" fill="none" stroke="blue" stroke-width="2"/><line x1="350" y1="210" x2="350" y2="55" stroke="red" stroke-width="2"/><circle cx="350" cy="55" r="7" fill="red" fill-opacity="1" stroke="none" stroke-width="1"/><text x="350" y="45" text-anchor="middle" fill="red" font-size="13" font-weight="bold">f(0)</text><rect x="60" y="55" width="580" height="155" fill="lightgreen" fill-opacity="0.45" stroke="black" stroke-width="1"/><text x="350" y="130" text-anchor="middle" fill="darkgreen" font-size="13" font-weight="bold">Rectangulo = 2 * f(0)</text><text x="350" y="252" text-anchor="middle" fill="navy" font-size="11" font-weight="bold">Funciona o falla? Veamos 4 ejemplos concretos</text></svg></div>
 <p class="line">&nbsp;</p>
 <h3>1.1 Prueba con f(x) = 1 (linea horizontal constante) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">La funcion es una linea recta plana a altura y = 1. </p>
 <p class="line">AREA REAL = ancho * alto = 2 * 1 = 2. </p>
 <p class="line">&nbsp;</p>
@@ -9235,7 +9223,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 </div>
 <p class="line">&nbsp;</p>
 <h3>1.2 Prueba con f(x) = x (linea diagonal) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">La funcion sube linealmente de (-1, -1) a (+1, +1). </p>
 <p class="line">AREA REAL = 0 (el triangulo positivo a la derecha cancela el negativo </p>
 <p class="line">a la izquierda — son simetricos). </p>
@@ -9298,7 +9285,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 </div>
 <p class="line">&nbsp;</p>
 <h3>1.3 Prueba con f(x) = x^2 (parabola — la primera que FALLA) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">AREA REAL = integral de x^2 de -1 a +1 = (x^3/3) de -1 a +1 = 2/3 &nbsp; 0.667 </p>
 <p class="line">AHORA atencion: la regla de 1 punto solo mira f(0) = 0 -> "estima" area = 0 </p>
 <p class="line">cuando la real es 0.667. </p>
@@ -9365,12 +9351,10 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">fuera del medio se ignora. </p>
 <p class="line">&nbsp;</p>
 <h3>1.4 Resumen visual de la regla de 1 punto </h3>
-<p class="line">========================================================================== </p>
 <p class="line">&nbsp;</p>
 <div><svg viewBox="0 0 700 230" width="700" height="230" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><text x="350" y="18" text-anchor="middle" fill="navy" font-size="13" font-weight="bold">REGLA DE 1 PUNTO - resumen de los 3 casos</text><text x="350" y="38" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">(1 punto es exacta hasta grado 2*1-1 = grado 1, falla a partir de grado 2)</text><rect x="30" y="60" width="200" height="130" fill="white" fill-opacity="0" stroke="black" stroke-width="1"/><text x="130" y="80" text-anchor="middle" fill="navy" font-size="12" font-weight="bold">f(x) = 1</text><text x="130" y="100" text-anchor="middle" fill="darkgreen" font-size="11" font-weight="normal">real = 2, aprox = 2</text><text x="130" y="130" text-anchor="middle" fill="darkgreen" font-size="14" font-weight="bold">EXACTO</text><text x="130" y="165" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">(grado 0)</text><rect x="250" y="60" width="200" height="130" fill="white" fill-opacity="0" stroke="black" stroke-width="1"/><text x="350" y="80" text-anchor="middle" fill="navy" font-size="12" font-weight="bold">f(x) = x</text><text x="350" y="100" text-anchor="middle" fill="darkgreen" font-size="11" font-weight="normal">real = 0, aprox = 0</text><text x="350" y="130" text-anchor="middle" fill="darkgreen" font-size="14" font-weight="bold">EXACTO</text><text x="350" y="165" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">(grado 1)</text><rect x="470" y="60" width="200" height="130" fill="white" fill-opacity="0" stroke="black" stroke-width="1"/><text x="570" y="80" text-anchor="middle" fill="navy" font-size="12" font-weight="bold">f(x) = x^2</text><text x="570" y="100" text-anchor="middle" fill="darkred" font-size="11" font-weight="normal">real = 0.667, aprox = 0</text><text x="570" y="130" text-anchor="middle" fill="darkred" font-size="14" font-weight="bold">FALLA</text><text x="570" y="165" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">(grado 2)</text></svg></div>
 <p class="line">&nbsp;</p>
 <h3>2. El truco de Gauss - 2 puntos en posiciones MAGICAS </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Idea: en vez de poner 1 punto en el centro, pongo 2 puntos simetricos </p>
 <p class="line">en x_1 = -d y x_2 = +d, con pesos w_1 y w_2. Eligiendo bien d, w_1, w_2 </p>
 <p class="line">se consigue que la formula sea exacta tambien para x^2 y x^3. </p>
@@ -9385,7 +9369,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <div><svg viewBox="0 0 700 280" width="700" height="280" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><text x="350" y="18" text-anchor="middle" fill="navy" font-size="12" font-weight="bold">REGLA DE 2 PUNTOS: I ~ 1*f(-1/sqrt(3)) + 1*f(+1/sqrt(3))</text><rect x="60" y="50" width="580" height="170" fill="white" fill-opacity="0" stroke="black" stroke-width="1.5"/><line x1="60" y1="220" x2="640" y2="220" stroke="black" stroke-width="1.5"/><text x="60" y="242" text-anchor="middle" fill="black" font-size="12" font-weight="bold">-1</text><text x="350" y="242" text-anchor="middle" fill="black" font-size="12" font-weight="bold">0</text><text x="640" y="242" text-anchor="middle" fill="black" font-size="12" font-weight="bold">+1</text><line x1="183" y1="220" x2="183" y2="70" stroke="red" stroke-width="2"/><line x1="517" y1="220" x2="517" y2="70" stroke="red" stroke-width="2"/><circle cx="183" cy="70" r="6" fill="red" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="517" cy="70" r="6" fill="red" fill-opacity="1" stroke="none" stroke-width="1"/><text x="183" y="265" text-anchor="middle" fill="red" font-size="12" font-weight="bold">x 1 = -1/sqrt(3)</text><text x="517" y="265" text-anchor="middle" fill="red" font-size="12" font-weight="bold">x 2 = +1/sqrt(3)</text><rect x="100" y="70" width="180" height="150" fill="lightgreen" fill-opacity="0.4" stroke="black" stroke-width="1"/><rect x="420" y="70" width="180" height="150" fill="lightgreen" fill-opacity="0.4" stroke="black" stroke-width="1"/><text x="190" y="65" text-anchor="middle" fill="darkgreen" font-size="12" font-weight="bold">w 1 = 1</text><text x="510" y="65" text-anchor="middle" fill="darkgreen" font-size="12" font-weight="bold">w 2 = 1</text><polyline points="60,180 100,165 160,140 220,120 290,105 350,100 410,105 480,120 540,140 600,165 640,180" fill="none" stroke="blue" stroke-width="2.5"/><text x="645" y="180" text-anchor="start" fill="blue" font-size="13" font-weight="bold">f(x)</text></svg></div>
 <p class="line">&nbsp;</p>
 <h3>2.1 Verificacion con f(x) = x^2 (donde 1 punto fallaba) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">La regla de 1 punto daba 0 cuando la real es 0.667. </p>
 <p class="line">Ahora la regla de 2 puntos: </p>
 <p class="line">   I &nbsp; 1*(-1/sqrt(3))^2 + 1*(+1/sqrt(3))^2 = 1/3 + 1/3 = 2/3 </p>
@@ -9449,7 +9432,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 </div>
 <p class="line">&nbsp;</p>
 <h3>2.2 Verificacion con f(x) = x^3 (funcion impar) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">&nbsp;</p>
 <div>
 <div style="width:700px;height:340px;margin:auto"><canvas id="chart_7"></canvas></div>
@@ -9503,7 +9485,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 </div>
 <p class="line">&nbsp;</p>
 <h3>2.3 Donde FALLA la regla de 2 puntos? Probamos con x^4 (grado 4) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">&nbsp;</p>
 <div>
 <div style="width:700px;height:340px;margin:auto"><canvas id="chart_8"></canvas></div>
@@ -9563,30 +9544,25 @@ uniform ${Mr} ${Ar} u_${Qr};
 </div>
 <p class="line">&nbsp;</p>
 <h3>2.4 Resumen visual de la regla de 2 puntos </h3>
-<p class="line">========================================================================== </p>
 <p class="line">&nbsp;</p>
 <div><svg viewBox="0 0 700 240" width="700" height="240" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><text x="350" y="18" text-anchor="middle" fill="navy" font-size="13" font-weight="bold">REGLA DE 2 PUNTOS - resumen</text><text x="350" y="38" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">(2 puntos es exacta hasta grado 2*2-1 = grado 3)</text><rect x="30" y="60" width="160" height="140" fill="white" fill-opacity="0" stroke="black" stroke-width="1"/><text x="110" y="80" text-anchor="middle" fill="navy" font-size="12" font-weight="bold">f(x) = x^2</text><text x="110" y="100" text-anchor="middle" fill="darkgreen" font-size="11" font-weight="normal">0.667 ~ 0.667</text><text x="110" y="130" text-anchor="middle" fill="darkgreen" font-size="13" font-weight="bold">EXACTO</text><text x="110" y="165" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">grado 2</text><rect x="210" y="60" width="160" height="140" fill="white" fill-opacity="0" stroke="black" stroke-width="1"/><text x="290" y="80" text-anchor="middle" fill="navy" font-size="12" font-weight="bold">f(x) = x^3</text><text x="290" y="100" text-anchor="middle" fill="darkgreen" font-size="11" font-weight="normal">0 ~ 0</text><text x="290" y="130" text-anchor="middle" fill="darkgreen" font-size="13" font-weight="bold">EXACTO</text><text x="290" y="165" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">grado 3</text><rect x="390" y="60" width="160" height="140" fill="white" fill-opacity="0" stroke="black" stroke-width="1"/><text x="470" y="80" text-anchor="middle" fill="navy" font-size="12" font-weight="bold">f(x) = x^4</text><text x="470" y="100" text-anchor="middle" fill="darkred" font-size="11" font-weight="normal">0.400 ~ 0.222</text><text x="470" y="130" text-anchor="middle" fill="darkred" font-size="13" font-weight="bold">FALLA</text><text x="470" y="165" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">grado 4</text><rect x="570" y="60" width="100" height="140" fill="white" fill-opacity="0" stroke="black" stroke-width="1"/><text x="620" y="80" text-anchor="middle" fill="navy" font-size="14" font-weight="bold">...</text><text x="620" y="100" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">necesita</text><text x="620" y="115" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">3 puntos</text><text x="620" y="165" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">grado 5+</text></svg></div>
 <p class="line">&nbsp;</p>
 <h3>3. La regla general (memorizar esto) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">&nbsp;</p>
 <div><svg viewBox="0 0 700 270" width="700" height="270" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><text x="350" y="18" text-anchor="middle" fill="navy" font-size="13" font-weight="bold">Regla general de Gauss-Legendre</text><rect x="100" y="50" width="500" height="200" fill="white" fill-opacity="0.9500000000000001" stroke="black" stroke-width="1"/><line x1="100" y1="80" x2="600" y2="80" stroke="black" stroke-width="1"/><line x1="100" y1="130" x2="600" y2="130" stroke="lightgray" stroke-width="0.5"/><line x1="100" y1="180" x2="600" y2="180" stroke="lightgray" stroke-width="0.5"/><line x1="100" y1="230" x2="600" y2="230" stroke="lightgray" stroke-width="0.5"/><line x1="250" y1="50" x2="250" y2="250" stroke="black" stroke-width="1"/><line x1="450" y1="50" x2="450" y2="250" stroke="black" stroke-width="1"/><text x="175" y="70" text-anchor="middle" fill="black" font-size="12" font-weight="bold">N puntos</text><text x="350" y="70" text-anchor="middle" fill="black" font-size="12" font-weight="bold">Posiciones x i</text><text x="525" y="70" text-anchor="middle" fill="black" font-size="12" font-weight="bold">Grado max exacto</text><text x="175" y="110" text-anchor="middle" fill="red" font-size="13" font-weight="bold">1</text><text x="350" y="110" text-anchor="middle" fill="black" font-size="12" font-weight="normal">0</text><text x="525" y="110" text-anchor="middle" fill="darkred" font-size="12" font-weight="bold">2N-1 = 1</text><text x="175" y="160" text-anchor="middle" fill="blue" font-size="13" font-weight="bold">2</text><text x="350" y="155" text-anchor="middle" fill="black" font-size="11" font-weight="normal">-1/sqrt(3), +1/sqrt(3)</text><text x="350" y="173" text-anchor="middle" fill="gray" font-size="9" font-weight="normal">(aprox +-0.577)</text><text x="525" y="160" text-anchor="middle" fill="blue" font-size="12" font-weight="bold">2N-1 = 3</text><text x="175" y="210" text-anchor="middle" fill="darkgreen" font-size="13" font-weight="bold">3</text><text x="350" y="200" text-anchor="middle" fill="black" font-size="11" font-weight="normal">-sqrt(3/5), 0, +sqrt(3/5)</text><text x="350" y="218" text-anchor="middle" fill="gray" font-size="9" font-weight="normal">(aprox +-0.775)</text><text x="525" y="210" text-anchor="middle" fill="darkgreen" font-size="12" font-weight="bold">2N-1 = 5</text><text x="350" y="260" text-anchor="middle" fill="navy" font-size="11" font-weight="bold">Con N puntos -&gt; la aproximacion es EXACTA si el polinomio es de grado &lt;= 2N-1</text></svg></div>
 <p class="line">&nbsp;</p>
 <h3>4. Aplicacion al Q4 (porque te importa esto) </h3>
-<p class="line">========================================================================== </p>
 <p class="line">&nbsp;</p>
 <div><svg viewBox="0 0 700 320" width="700" height="320" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><text x="350" y="20" text-anchor="middle" fill="navy" font-size="13" font-weight="bold">POR QUE EN Q4 MEMBRANA LA REGLA CORRECTA ES 2x2</text><rect x="60" y="50" width="580" height="250" fill="white" fill-opacity="0" stroke="black" stroke-width="1.5"/><text x="80" y="80" text-anchor="start" fill="black" font-size="12" font-weight="bold">1) Funciones de forma N a(xi,eta) son BILINEALES (grado 1):</text><text x="110" y="100" text-anchor="start" fill="navy" font-size="11" font-weight="normal">N 1 = (1-xi)*(1-eta)/4 -&gt; grado 1 en cada variable</text><text x="80" y="130" text-anchor="start" fill="black" font-size="12" font-weight="bold">2) Sus derivadas dN a/dxi, dN a/deta son LINEALES (grado 1):</text><text x="110" y="150" text-anchor="start" fill="navy" font-size="11" font-weight="normal">dN 1/dxi = -(1-eta)/4 -&gt; grado 1 en eta</text><text x="80" y="180" text-anchor="start" fill="black" font-size="12" font-weight="bold">3) El producto B^T*D*B es LINEAL*LINEAL = CUADRATICO (grado 2):</text><text x="110" y="200" text-anchor="start" fill="navy" font-size="11" font-weight="normal">termino tipico: (1-eta)^2/16 -&gt; grado 2 en eta</text><text x="80" y="230" text-anchor="start" fill="black" font-size="12" font-weight="bold">4) Para integrar EXACTO grado 2 necesitamos 2N-1 &gt;= 2:</text><text x="110" y="250" text-anchor="start" fill="darkred" font-size="11" font-weight="normal">N = 1 (2N-1=1): NO alcanza -&gt; REDUCIDA (blanda, hourglass)</text><text x="110" y="268" text-anchor="start" fill="darkgreen" font-size="11" font-weight="bold">N = 2 (2N-1=3): SI alcanza -&gt; COMPLETA (lo correcto)</text><text x="110" y="286" text-anchor="start" fill="gray" font-size="11" font-weight="normal">N = 3 (2N-1=5): sobra -&gt; SOBRE-integracion (igual a 2x2 pero lenta)</text></svg></div>
 <p class="line">&nbsp;</p>
 <div><svg viewBox="0 0 700 280" width="700" height="280" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><text x="350" y="20" text-anchor="middle" fill="navy" font-size="13" font-weight="bold">Puntos de Gauss 2D - los tres casos en el elemento Q4</text><rect x="30" y="60" width="160" height="160" fill="lightyellow" fill-opacity="0.4" stroke="black" stroke-width="1.5"/><text x="110" y="240" text-anchor="middle" fill="red" font-size="13" font-weight="bold">1x1 (1 punto)</text><text x="110" y="260" text-anchor="middle" fill="red" font-size="12" font-weight="bold">REDUCIDA</text><circle cx="110" cy="140" r="9" fill="red" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/><rect x="270" y="60" width="160" height="160" fill="lightyellow" fill-opacity="0.4" stroke="black" stroke-width="1.5"/><text x="350" y="240" text-anchor="middle" fill="blue" font-size="13" font-weight="bold">2x2 (4 puntos)</text><text x="350" y="260" text-anchor="middle" fill="blue" font-size="12" font-weight="bold">COMPLETA</text><circle cx="304" cy="94" r="7" fill="blue" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/><circle cx="396" cy="94" r="7" fill="blue" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/><circle cx="304" cy="186" r="7" fill="blue" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/><circle cx="396" cy="186" r="7" fill="blue" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/><rect x="510" y="60" width="160" height="160" fill="lightyellow" fill-opacity="0.4" stroke="black" stroke-width="1.5"/><text x="590" y="240" text-anchor="middle" fill="darkgreen" font-size="13" font-weight="bold">3x3 (9 puntos)</text><text x="590" y="260" text-anchor="middle" fill="darkgreen" font-size="12" font-weight="bold">SOBRE</text><circle cx="528" cy="78" r="6" fill="darkgreen" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/><circle cx="590" cy="78" r="6" fill="darkgreen" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/><circle cx="652" cy="78" r="6" fill="darkgreen" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/><circle cx="528" cy="140" r="6" fill="darkgreen" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/><circle cx="590" cy="140" r="6" fill="darkgreen" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/><circle cx="652" cy="140" r="6" fill="darkgreen" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/><circle cx="528" cy="202" r="6" fill="darkgreen" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/><circle cx="590" cy="202" r="6" fill="darkgreen" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/><circle cx="652" cy="202" r="6" fill="darkgreen" fill-opacity="0.9500000000000001" stroke="none" stroke-width="1"/></svg></div>
 <p class="line">&nbsp;</p>
 <h3>5. Cuando aplicas cada caso? Guia practica </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Esta es la pregunta clave: si para Q4 lineal "lo correcto" es 2x2, </p>
 <p class="line">cuando me conviene usar 1x1 (reducida) o 3x3 (sobre)? </p>
 <p class="line">Te lo explico con casos reales y luego un cuadro de decision. </p>
 <p class="line">&nbsp;</p>
 <h3>5.1 La regla de 1x1 (reducida) - cuando se usa </h3>
-<p class="line">========================================================================== </p>
 <p class="line">**Caso 1 - Mindlin plate / shell con SHEAR LOCKING:** </p>
 <p class="line">Cuando una placa Mindlin es DELGADA (t/L pequeno), la energia de </p>
 <p class="line">flexion deberia dominar pero la formulacion sobreestima la rigidez </p>
@@ -9614,7 +9590,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <div><svg viewBox="0 0 700 280" width="700" height="280" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><text x="350" y="20" text-anchor="middle" fill="darkred" font-size="13" font-weight="bold">CASOS REALES donde se usa 1x1 (REDUCIDA)</text><rect x="30" y="50" width="200" height="200" fill="lightyellow" fill-opacity="0.30000000000000004" stroke="darkred" stroke-width="1.5"/><text x="130" y="75" text-anchor="middle" fill="darkred" font-size="12" font-weight="bold">MINDLIN DELGADA</text><text x="130" y="100" text-anchor="middle" fill="black" font-size="11" font-weight="normal">t/L &lt; 0.05</text><text x="130" y="130" text-anchor="middle" fill="navy" font-size="11" font-weight="bold">Shear locking</text><text x="130" y="150" text-anchor="middle" fill="black" font-size="10" font-weight="normal">se arregla con</text><text x="130" y="170" text-anchor="middle" fill="black" font-size="11" font-weight="bold">selectiva:</text><text x="130" y="195" text-anchor="middle" fill="blue" font-size="11" font-weight="bold">2x2 flexion</text><text x="130" y="215" text-anchor="middle" fill="darkred" font-size="11" font-weight="bold">+ 1x1 corte</text><rect x="250" y="50" width="200" height="200" fill="lightyellow" fill-opacity="0.30000000000000004" stroke="darkred" stroke-width="1.5"/><text x="350" y="75" text-anchor="middle" fill="darkred" font-size="12" font-weight="bold">RUBBER/SUELOS</text><text x="350" y="100" text-anchor="middle" fill="black" font-size="11" font-weight="normal">nu ~ 0.5</text><text x="350" y="130" text-anchor="middle" fill="navy" font-size="11" font-weight="bold">Volumetric</text><text x="350" y="145" text-anchor="middle" fill="navy" font-size="11" font-weight="bold">locking</text><text x="350" y="175" text-anchor="middle" fill="black" font-size="10" font-weight="normal">se arregla con</text><text x="350" y="195" text-anchor="middle" fill="blue" font-size="11" font-weight="bold">2x2 desviador</text><text x="350" y="215" text-anchor="middle" fill="darkred" font-size="11" font-weight="bold">+ 1x1 volumetrico</text><rect x="470" y="50" width="200" height="200" fill="lightyellow" fill-opacity="0.30000000000000004" stroke="darkred" stroke-width="1.5"/><text x="570" y="75" text-anchor="middle" fill="darkred" font-size="12" font-weight="bold">SOFTWARE COMERCIAL</text><text x="570" y="100" text-anchor="middle" fill="black" font-size="11" font-weight="normal">ABAQUS S4R/C3D8R</text><text x="570" y="130" text-anchor="middle" fill="navy" font-size="11" font-weight="bold">1 punto para</text><text x="570" y="145" text-anchor="middle" fill="navy" font-size="11" font-weight="bold">ahorrar 8x CPU</text><text x="570" y="175" text-anchor="middle" fill="black" font-size="10" font-weight="normal">+ control de</text><text x="570" y="195" text-anchor="middle" fill="darkred" font-size="11" font-weight="bold">hourglass</text><text x="570" y="215" text-anchor="middle" fill="darkred" font-size="10" font-weight="normal">(estabilizacion)</text></svg></div>
 <p class="line">&nbsp;</p>
 <h3>5.2 La regla de 2x2 (completa) - el DEFAULT correcto </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Para la mayoria de los casos COTIDIANOS de FEM es lo que se usa por defecto: </p>
 <p class="line"></p>
 <p class="line">   - Q4 membrana (plane stress, plane strain): SIEMPRE 2x2. </p>
@@ -9629,7 +9604,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">   - Material casi incompresible -> mejor B-bar o reducida. </p>
 <p class="line">&nbsp;</p>
 <h3>5.3 La regla de 3x3 (sobre-integracion) - cuando es necesaria </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Para Q4 lineal NO aporta nada (da identico al 2x2). PERO si la </p>
 <p class="line">geometria o la fisica complican el integrando, hace falta: </p>
 <p class="line"></p>
@@ -9658,7 +9632,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <div><svg viewBox="0 0 700 300" width="700" height="300" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><text x="350" y="20" text-anchor="middle" fill="darkgreen" font-size="13" font-weight="bold">CASOS REALES donde se usa 3x3 (SOBRE-INTEGRACION)</text><rect x="30" y="50" width="200" height="220" fill="lightyellow" fill-opacity="0.30000000000000004" stroke="darkgreen" stroke-width="1.5"/><text x="130" y="75" text-anchor="middle" fill="darkgreen" font-size="12" font-weight="bold">Q4 DISTORSIONADO</text><text x="130" y="95" text-anchor="middle" fill="black" font-size="10" font-weight="normal">(lados no rectos)</text><polygon points="65,125 195,115 200,195 70,205" fill="lightgray" fill-opacity="0.5" stroke="lightgray" stroke-width="1"/><text x="130" y="175" text-anchor="middle" fill="navy" font-size="10" font-weight="normal">det(J) no constante</text><text x="130" y="195" text-anchor="middle" fill="navy" font-size="10" font-weight="normal">-&gt; grado efectivo</text><text x="130" y="215" text-anchor="middle" fill="navy" font-size="10" font-weight="normal">puede ser &gt; 2</text><text x="130" y="245" text-anchor="middle" fill="darkgreen" font-size="11" font-weight="bold">3x3 lo captura</text><rect x="250" y="50" width="200" height="220" fill="lightyellow" fill-opacity="0.30000000000000004" stroke="darkgreen" stroke-width="1.5"/><text x="350" y="75" text-anchor="middle" fill="darkgreen" font-size="12" font-weight="bold">Q9 CUADRATICO</text><text x="350" y="95" text-anchor="middle" fill="black" font-size="10" font-weight="normal">(9 nodos)</text><rect x="285" y="115" width="130" height="90" fill="lightgray" fill-opacity="0.5" stroke="black" stroke-width="1"/><circle cx="285" cy="115" r="4" fill="navy" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="350" cy="115" r="4" fill="navy" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="415" cy="115" r="4" fill="navy" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="285" cy="160" r="4" fill="navy" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="350" cy="160" r="4" fill="navy" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="415" cy="160" r="4" fill="navy" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="285" cy="205" r="4" fill="navy" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="350" cy="205" r="4" fill="navy" fill-opacity="1" stroke="none" stroke-width="1"/><circle cx="415" cy="205" r="4" fill="navy" fill-opacity="1" stroke="none" stroke-width="1"/><text x="350" y="225" text-anchor="middle" fill="navy" font-size="10" font-weight="normal">N a = grado 2</text><text x="350" y="245" text-anchor="middle" fill="navy" font-size="10" font-weight="normal">-&gt; B^T*D*B grado 4</text><text x="350" y="260" text-anchor="middle" fill="darkgreen" font-size="11" font-weight="bold">-&gt; 3x3 OBLIGATORIO</text><rect x="470" y="50" width="200" height="220" fill="lightyellow" fill-opacity="0.30000000000000004" stroke="darkgreen" stroke-width="1.5"/><text x="570" y="75" text-anchor="middle" fill="darkgreen" font-size="12" font-weight="bold">PLASTICIDAD</text><text x="570" y="95" text-anchor="middle" fill="black" font-size="10" font-weight="normal">no lineal</text><text x="570" y="130" text-anchor="middle" fill="navy" font-size="11" font-weight="normal">Mas puntos =</text><text x="570" y="150" text-anchor="middle" fill="navy" font-size="10" font-weight="normal">mejor evaluacion</text><text x="570" y="165" text-anchor="middle" fill="navy" font-size="10" font-weight="normal">de leyes constitutivas</text><text x="570" y="200" text-anchor="middle" fill="black" font-size="11" font-weight="normal">(usa 3x3 o mas</text><text x="570" y="220" text-anchor="middle" fill="black" font-size="11" font-weight="normal">segun la dureza</text><text x="570" y="235" text-anchor="middle" fill="black" font-size="11" font-weight="normal">del problema)</text></svg></div>
 <p class="line">&nbsp;</p>
 <h3>5.4 Integracion SELECTIVA - la mas usada en Mindlin </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Caso especial muy importante: el Q4 Mindlin (placa gruesa) tiene una </p>
 <p class="line">matriz K_e con DOS partes — flexion y corte: </p>
 <p class="line">&nbsp;</p>
@@ -9681,12 +9654,10 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">   - Es la formulacion estandar de Hughes/Bathe para Mindlin. </p>
 <p class="line">&nbsp;</p>
 <h3>5.5 Cuadro de decision final </h3>
-<p class="line">========================================================================== </p>
 <p class="line">&nbsp;</p>
 <div><svg viewBox="0 0 700 360" width="700" height="360" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px"><text x="350" y="20" text-anchor="middle" fill="navy" font-size="13" font-weight="bold">GUIA PRACTICA: que cuadratura uso para mi problema?</text><rect x="30" y="50" width="640" height="290" fill="white" fill-opacity="0" stroke="black" stroke-width="1"/><line x1="30" y1="80" x2="670" y2="80" stroke="black" stroke-width="1"/><line x1="30" y1="130" x2="670" y2="130" stroke="lightgray" stroke-width="0.5"/><line x1="30" y1="180" x2="670" y2="180" stroke="lightgray" stroke-width="0.5"/><line x1="30" y1="230" x2="670" y2="230" stroke="lightgray" stroke-width="0.5"/><line x1="30" y1="280" x2="670" y2="280" stroke="lightgray" stroke-width="0.5"/><line x1="220" y1="50" x2="220" y2="340" stroke="black" stroke-width="1"/><line x1="440" y1="50" x2="440" y2="340" stroke="black" stroke-width="1"/><text x="125" y="70" text-anchor="middle" fill="black" font-size="12" font-weight="bold">Tipo de problema</text><text x="330" y="70" text-anchor="middle" fill="black" font-size="12" font-weight="bold">Cuadratura</text><text x="555" y="70" text-anchor="middle" fill="black" font-size="12" font-weight="bold">Razon</text><text x="125" y="105" text-anchor="middle" fill="navy" font-size="11" font-weight="normal">Q4 membrana (plane stress)</text><text x="330" y="105" text-anchor="middle" fill="blue" font-size="11" font-weight="bold">2x2 (completa)</text><text x="555" y="105" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">Integrando grado 2</text><text x="125" y="155" text-anchor="middle" fill="navy" font-size="11" font-weight="normal">Mindlin gruesa (t/L &gt; 0.1)</text><text x="330" y="155" text-anchor="middle" fill="blue" font-size="11" font-weight="bold">2x2 (completa)</text><text x="555" y="155" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">No hay shear locking</text><text x="125" y="205" text-anchor="middle" fill="navy" font-size="11" font-weight="normal">Mindlin delgada (t/L &lt; 0.05)</text><text x="330" y="200" text-anchor="middle" fill="darkred" font-size="11" font-weight="bold">SELECTIVA</text><text x="330" y="218" text-anchor="middle" fill="darkred" font-size="10" font-weight="normal">2x2 flex + 1x1 corte</text><text x="555" y="205" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">Evita shear locking</text><text x="125" y="255" text-anchor="middle" fill="navy" font-size="11" font-weight="normal">Q4 muy distorsionado</text><text x="330" y="255" text-anchor="middle" fill="darkgreen" font-size="11" font-weight="bold">3x3 (sobre)</text><text x="555" y="255" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">det(J) no constante</text><text x="125" y="305" text-anchor="middle" fill="navy" font-size="11" font-weight="normal">Q9 / Q8 (8-9 nodos)</text><text x="330" y="305" text-anchor="middle" fill="darkgreen" font-size="11" font-weight="bold">3x3 OBLIGATORIO</text><text x="555" y="305" text-anchor="middle" fill="gray" font-size="10" font-weight="normal">B^T*D*B grado 4</text></svg></div>
 <p class="line">&nbsp;</p>
 <h3>5.6 Y tu en Hekatan/Calcpad? </h3>
-<p class="line">========================================================================== </p>
 <p class="line">En todos los archivos de ejemplo del FEM de Calcpad-Symbolic: </p>
 <p class="line">   - Cantilever Wall Q4 Membrane.cpd          -> 2x2 (correcto) </p>
 <p class="line">   - Plate Theory - Mindlin.cpd               -> 2x2 (correcto, placa gruesa) </p>
@@ -9701,7 +9672,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line">   "#for ig = 1 : 4"            -> el loop sobre los 4 puntos </p>
 <p class="line">&nbsp;</p>
 <h3>6. Una linea para llevarte </h3>
-<p class="line">========================================================================== </p>
 <p class="line">N puntos de Gauss integran EXACTO un polinomio hasta grado (2N-1). </p>
 <p class="line">El Q4 membrana tiene integrando de grado 2 -> 2x2 puntos es lo justo. </p>
 <p class="line">1x1 sub-integra (modos hourglass, salvo que sea selectiva contra locking). </p>

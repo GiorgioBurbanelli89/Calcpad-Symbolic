@@ -8831,21 +8831,17 @@ uniform ${Mr} ${Ar} u_${Qr};
     </script><h3>Test 03 - Control flow - #if / #while / #for + Symbolic-only #trace </h3>
 <p class="line">Verifica que los keywords de control mantienen semantica de upstream </p>
 <p class="line">y que el #trace de Symbolic NO rompe el comportamiento default. </p>
-<p class="line">========================================================================== </p>
 <p class="line">&nbsp;</p>
 <h3>1. #if / #else_if / #else / #end_if (basico) </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>x</var> = 7</span></p>
 <p class="line">x esta entre 5 y 10 (-> esta rama) </p>
 <p class="line">&nbsp;</p>
 <h3>2. #if anidados </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>a</var> = 3</span></p>
 <p class="line"><span class="eq"><var>b</var> = 4</span></p>
 <p class="line">a < b Y a + b > 5 </p>
 <p class="line">&nbsp;</p>
 <h3>3. #while loop </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>n</var> = 1</span></p>
 <p class="line"><span class="eq"><var>suma</var><sub>w</sub> = 0</span></p>
 <p class="line"><span class="eq"><var>suma</var><sub>w</sub> = <var>suma</var><sub>w</sub> + <var>n</var> = 0 + 1 = 1</span></p>
@@ -8862,20 +8858,17 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line"><span class="eq"><var>suma</var><sub>w</sub> = 15</span></p>
 <p class="line">&nbsp;</p>
 <h3>4. #for loop con #break </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>encontrado</var> = -1</span></p>
 <p class="line">encontrado debe ser 8 (8^2 = 64 > 50, 7^2 = 49 <= 50) </p>
 <p class="line"><span class="eq"><var>encontrado</var> = 8</span></p>
 <p class="line">&nbsp;</p>
 <h3>5. #for loop con #continue </h3>
-<p class="line">========================================================================== </p>
 <p class="line"><span class="eq"><var>suma</var><sub>pares</sub> = 0</span></p>
 <p class="line"><span class="eq"><var>suma</var><sub>pares</sub> = <var>suma</var><sub>pares</sub> + <var>k</var> = 20 + 10 = 30</span></p>
 <p class="line">suma de pares entre 1 y 10 = 2+4+6+8+10 = 30 </p>
 <p class="line"><span class="eq"><var>suma</var><sub>pares</sub> = 30</span></p>
 <p class="line">&nbsp;</p>
 <h3>6. #for con unidades en los limites </h3>
-<p class="line">========================================================================== </p>
 <p class="line">(esto es un fix de Symbolic — verificar que no rompe) </p>
 <p class="line"><span class="eq"><var>suma</var><sub>loop</sub> = 0</span></p>
 <p class="line"><span class="eq"><var>suma</var><sub>loop</sub> = <var>suma</var><sub>loop</sub> + <var>ix</var> = 10 + 5 = 15</span></p>
@@ -8883,7 +8876,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line"><span class="eq"><var>suma</var><sub>loop</sub> = 15</span></p>
 <p class="line">&nbsp;</p>
 <h3>7. #trace (SOLO Symbolic) - muestra todas las iteraciones </h3>
-<p class="line">========================================================================== </p>
 <p class="line">En Symbolic, sin #trace, los #for loops muestran solo la ultima iteracion. </p>
 <p class="line">Con #trace dentro del loop, muestra TODAS las iteraciones. </p>
 <p class="line">(este es una mejora de Symbolic — NO existe en upstream). </p>
@@ -8898,7 +8890,6 @@ uniform ${Mr} ${Ar} u_${Qr};
 <p class="line"><span class="eq"><var>contador</var> = 30</span></p>
 <p class="line">&nbsp;</p>
 <h3>8. Resumen de paridad control flow </h3>
-<p class="line">========================================================================== </p>
 <p class="line">Si los valores arriba son: 15 (suma), 8 (encontrado), 30 (pares), 15 </p>
 <p class="line">(loop unidades), entonces #if/#while/#for/#break/#continue tienen </p>
 <p class="line">paridad operacional con upstream. </p>

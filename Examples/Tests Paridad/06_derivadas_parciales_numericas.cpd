@@ -1,10 +1,8 @@
 "Test 06 - Derivadas parciales NUMERICAS
 'Calcpad calcula derivadas parciales numericamente con $Slope (diferencias
 'centrales). Para multi-variable se fija el "otro" valor y se deriva.
-'==========================================================================
 
 "1. Funcion de una variable - derivada simple
-'==========================================================================
 f1(x) = x^2 + 3*x + 1
 'f'(x) = 2x + 3 analitico
 'f'(2) = 7 (esperado)
@@ -16,7 +14,6 @@ df1_dx_expected ; 'derivada analitica: 2x + 3 en x=2 = 7
 #end blk
 
 "2. Funcion de DOS variables - derivadas parciales
-'==========================================================================
 'f(x; y) = x^2 + 3*x*y + y^2
 'Analitico:
 '   df/dx = 2x + 3y
@@ -47,14 +44,12 @@ df_dy_expected ; 'df/dy analitica 3x+2y = 8
 #end blk
 
 "3. Gradiente numerico en (2, 1)
-'==========================================================================
 'El gradiente es el vector [df/dx; df/dy] en el punto.
 grad_f = [df_dx; df_dy]
 grad_f
 'Esperado: [7; 8]
 
 "4. Derivada de orden superior (segunda derivada)
-'==========================================================================
 'd²f/dx² en x=2 (para f1(x) = x^2 + 3x + 1, deberia ser 2)
 'Calcpad: derivada de la derivada via $Slope anidado.
 'Definimos g(x) = $Slope{f1(t) @ t = x} y luego derivamos g(x).
@@ -67,7 +62,6 @@ d2f1_dx2_expected ; 'segunda derivada analitica = 2
 #end blk
 
 "5. Derivada parcial cruzada d²f/(dx dy)
-'==========================================================================
 'Para f(x;y) = x^2 + 3xy + y^2:
 '   df/dx = 2x + 3y  ->  d/dy(df/dx) = 3
 'Calculamos df/dx(x=2; y) como funcion de y, luego derivamos en y=1
@@ -80,7 +74,6 @@ d2f_dxdy_expected ; 'esperado 3 (analitico)
 #end blk
 
 "6. Aplicacion FEM - gradiente de una funcion de forma
-'==========================================================================
 'Tomemos la funcion de forma N_1(xi; eta) = (1-xi)*(1-eta)/4 del Q4.
 'Analiticamente:
 '   dN_1/dxi  = -(1-eta)/4
@@ -99,7 +92,6 @@ dN1_deta ; 'dN_1/deta en (0,0) -> esperado -0.25
 #end blk
 
 "7. Resumen
-'==========================================================================
 '$Slope hace diferencias centrales: f'(x) ~ (f(x+h) - f(x-h))/(2h).
 'Para derivadas parciales: fijamos las otras variables a una constante
 'y derivamos respecto a la que nos interesa.
