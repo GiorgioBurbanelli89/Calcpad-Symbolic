@@ -1113,6 +1113,34 @@ namespace Calcpad.Wpf
 
                     if (_state.MacroArgs > 0)
                         ParseMacroArgs(c);
+                    // Inside #blk / #inl / #cen, a `;` at top level closes
+                    // the current text region (cell boundary) instead of
+                    // staying as a literal char inside the open comment.
+                    // Without this, the second `'cell2` was interpreted as
+                    // a comment CLOSER (not OPENER), and the words after it
+                    // were tokenised as expression — appearing as Variable
+                    // / Units / Error colours instead of plain text.
+                    else if (c == ';' && _state.TextComment != '\0' &&
+                             (_isInBlkBlock || _isInCenBlock ||
+                              _state.Text != null && (
+                                  _state.Text.AsSpan().TrimStart().StartsWith("#inl", StringComparison.OrdinalIgnoreCase) ||
+                                  _state.Text.AsSpan().TrimStart().StartsWith("#blk", StringComparison.OrdinalIgnoreCase))))
+                    {
+                        // Close the active text region, emit the `;` as a
+                        // column separator, then reset so the next `'` opens
+                        // a fresh region.
+                        Append(_state.CurrentType);
+                        _state.TextComment = '\0';
+                        _builder.Append(c);
+                        Append(Types.Operator);
+                        if (_state.LastInline is Run rSepBlk
+                            && rSepBlk.Text.TrimEnd().EndsWith(';'))
+                        {
+                            rSepBlk.Foreground = ColumnSeparatorBrush;
+                            rSepBlk.FontWeight = FontWeights.Bold;
+                        }
+                        _state.CurrentType = Types.None;
+                    }
                     else if (_state.TextComment != '\0')
                         ParseTagInComment(c);
                     else if (_state.CurrentType == Types.Include)

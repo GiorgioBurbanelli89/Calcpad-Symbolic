@@ -1343,24 +1343,64 @@ namespace Calcpad.Core
             if (spaceIdx < 0) return;
             var content = s[(spaceIdx + 1)..].ToString();
 
-            // Split by ';' at top level (outside parentheses/brackets).
-            // `;` ALWAYS acts as a column separator at top level — predictable
-            // behaviour even when the cell uses `'` quotes. If the user wants
-            // a literal `;` inside the cell text, the cell must close the
-            // text region with `'` first, e.g.
-            //   `'una frase con ; interno' ; 'otra celda`
-            // produces two cells: "una frase con ; interno" | "otra celda".
+            // Split by ';' at top level. `;` is a column separator when:
+            //   1) Outside parentheses/brackets, AND
+            //   2) EITHER outside an open text region (i.e. an odd-count of
+            //      `'` has NOT been seen yet on this line), OR
+            //   3) followed by `'` (after optional whitespace), which signals
+            //      the LEGACY `'cell1 ; 'cell2` shorthand — the next `'`
+            //      is the OPENER of the next cell.
+            //
+            // If `;` is inside an open text region AND there is no `'` after,
+            // the `;` stays as a LITERAL character — so
+            //   `'una frase con ; punto y coma`  is ONE cell (the user's
+            //   intuition: text region keeps semicolons as part of text).
+            // To get two text cells while still using semicolons in text,
+            // close each text region:
+            //   `'frase 1'; 'frase 2'`           → 2 cells (both pure text).
             var parts = new List<string>();
             int depth = 0, last = 0;
+            bool inText = false;
             for (int i = 0; i < content.Length; i++)
             {
                 var c = content[i];
-                if (c == '(' || c == '[') depth++;
-                else if (c == ')' || c == ']') depth--;
+                if (c == '\'')
+                {
+                    inText = !inText;
+                }
+                else if (c == '(' || c == '[')
+                {
+                    if (!inText) depth++;
+                }
+                else if (c == ')' || c == ']')
+                {
+                    if (!inText) depth--;
+                }
                 else if (c == ';' && depth == 0)
                 {
-                    parts.Add(content[last..i].Trim());
-                    last = i + 1;
+                    bool shouldSplit = !inText;
+                    if (!shouldSplit)
+                    {
+                        // Inside an open text region. Look ahead: if a `'`
+                        // appears (after optional whitespace), this is the
+                        // legacy `'a ; 'b` shorthand → split, and reset
+                        // the inText flag so the rest of the line tracks
+                        // correctly.
+                        int j = i + 1;
+                        while (j < content.Length && (content[j] == ' ' || content[j] == '\t'))
+                            j++;
+                        if (j < content.Length && content[j] == '\'')
+                        {
+                            shouldSplit = true;
+                            inText = false;
+                        }
+                    }
+                    if (shouldSplit)
+                    {
+                        parts.Add(content[last..i].Trim());
+                        last = i + 1;
+                    }
+                    // else: `;` stays inside the cell text as a literal char.
                 }
             }
             parts.Add(content[last..].Trim());

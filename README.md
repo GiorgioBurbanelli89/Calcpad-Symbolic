@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.15.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.16.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,34 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.16 (May 2026) — Re-apply text-aware `;` split + highlighter cell-boundary
+
+User feedback after v1.8.15: `'a + b ; a + b` should be ONE pure-text
+cell, not two — anything inside an open `'` region (including `;`) is
+text. v1.8.15's "always split" was too aggressive.
+
+Re-applied the text-aware split with lookahead (originally v1.8.13):
+  - `;` outside an open text region → split (predictable).
+  - `;` inside an open text region:
+      * followed by `'` → split (legacy `'cell1 ; 'cell2` form).
+      * NOT followed by `'` → literal char, no split.
+
+Plus: when the WPF highlighter is inside `#blk`/`#inl`/`#cen` and hits
+a `;` while a text region is open, the region is closed at the `;` so
+the next `'` opens a FRESH region for cell 2 (otherwise the editor
+treated the second `'` as a closer and tokenised cell 2's words as
+expressions, painting them blue/red).
+
+Combined effect (recommended forms):
+
+```cpd
+'a + b ; a + b              → ONE cell, pure text (with literal ;)
+'frase con ; punto y coma   → ONE cell, pure text
+'1 DOF (barra) ; '2DOF      → TWO cells (legacy lookahead)
+'cell1'; 'cell2'             → TWO cells (closed quotes)
+a + b ; c + d                → TWO cells (both expressions)
+```
 
 ### v1.8.15 (May 2026) — Revert text-aware `;` split (predictability)
 
