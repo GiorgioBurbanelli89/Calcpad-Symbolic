@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.14.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.15.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,26 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.15 (May 2026) — Revert text-aware `;` split (predictability)
+
+v1.8.13 made `;` literal inside an open text region (`'`-opener with no
+closer). It was too clever: cases like `'a + b ; c + d` or
+`'a = a + 1 ; a` collapsed into one cell because `;` was treated as
+text. Users expect `;` to ALWAYS split at top level.
+
+Reverted to "split-always-at-top-level" (predictable). To get a literal
+`;` inside the text of a cell, close the text region with `'` first:
+
+```cpd
+'frase con ; punto y coma'                  ← one cell, ; is literal
+'frase con ; punto y coma                    ← TWO cells now
+'a + b ; c + d                               ← TWO cells (text | expr)
+a + b ; c + d                                ← TWO cells (both expr)
+```
+
+The pure-text fast path `'<text>'` and the expr-first path for cells
+without `'` opener are preserved from v1.8.14.
 
 ### v1.8.14 (May 2026) — Inversion only for DEFINED variables + expr-first cells
 
