@@ -1381,15 +1381,21 @@ namespace Calcpad.Core
                     bool shouldSplit = !inText;
                     if (!shouldSplit)
                     {
-                        // Inside an open text region. Look ahead: if a `'`
-                        // appears (after optional whitespace), this is the
-                        // legacy `'a ; 'b` shorthand → split, and reset
-                        // the inText flag so the rest of the line tracks
-                        // correctly.
+                        // Inside an open text region. Look ahead for the
+                        // legacy `'cell1 ; 'cell2` shorthand: the `;` is a
+                        // separator only when followed by AT LEAST ONE space
+                        // and THEN `'`. Without the space, `'cell;'` is one
+                        // closed text region (the `'` after `;` is the
+                        // CLOSER of the current region, not the opener of
+                        // a new cell).
                         int j = i + 1;
+                        bool sawSpace = false;
                         while (j < content.Length && (content[j] == ' ' || content[j] == '\t'))
+                        {
+                            sawSpace = true;
                             j++;
-                        if (j < content.Length && content[j] == '\'')
+                        }
+                        if (sawSpace && j < content.Length && content[j] == '\'')
                         {
                             shouldSplit = true;
                             inText = false;

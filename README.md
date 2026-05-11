@@ -652,7 +652,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.8.16.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.17.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -1141,6 +1141,26 @@ Calcpad-Symbolic/
 ---
 
 ## Changelog
+
+### v1.8.17 (May 2026) — Legacy `;` split requires whitespace before next `'`
+
+User found: `'texto;'; 'otro'` was producing THREE cells instead of two
+because the inside-text legacy lookahead saw `;` followed by `'` and
+treated it as the start of a new cell — but that `'` was actually the
+CLOSING quote of the current text region (`'texto;'`).
+
+Tightened the rule: the legacy `'a ; 'b` shorthand requires AT LEAST
+ONE SPACE between `;` and the next `'`. Without the space, the `'`
+after `;` is treated as a region CLOSER and the `;` stays as literal
+text inside the cell.
+
+```cpd
+'texto;'; 'otro'            → TWO cells: "texto;" | "otro"  (was 3 cells before)
+'texto'; 'otro'              → TWO cells: "texto" | "otro"
+'texto; '; 'otro'            → TWO cells: "texto;" | "otro"   (space after ; still ok)
+'a + b ; a + b               → ONE cell (no `'` after ;)
+'1 DOF (barra) ; '2DOF        → TWO cells (legacy lookahead: space + `'`)
+```
 
 ### v1.8.16 (May 2026) — Re-apply text-aware `;` split + highlighter cell-boundary
 
