@@ -314,8 +314,19 @@ namespace Calcpad.Core
             sb.Append("<script>(function(){\n");
             sb.Append("  function init(){\n");
             sb.Append("    if (typeof JXG === 'undefined'){setTimeout(init,200);return;}\n");
-            sb.Append($"    const board = JXG.JSXGraph.initBoard('{id}', {{boundingbox:[-5,5,5,-5], axis:true, showCopyright:false, showNavigation:true}});\n");
-            sb.Append(content).Append('\n');
+
+            // The user content may use `JSXBOARD` as a placeholder for the DOM id.
+            // We substitute it with the actual id string. If the user also declares
+            // their own `const board = ...`, we do NOT auto-declare to avoid
+            // "Identifier 'board' has already been declared" collisions when there
+            // are multiple #jsx blocks on the page.
+            var userCreatesBoard = content.Contains("initBoard(") || content.Contains("JSXBOARD");
+            var processedContent = content.Replace("JSXBOARD", $"'{id}'");
+
+            if (!userCreatesBoard)
+                sb.Append($"    const board = JXG.JSXGraph.initBoard('{id}', {{boundingbox:[-5,5,5,-5], axis:true, showCopyright:false, showNavigation:true}});\n");
+
+            sb.Append(processedContent).Append('\n');
             sb.Append("  } init();\n})();</script>\n</div>\n");
             return sb.ToString();
         }

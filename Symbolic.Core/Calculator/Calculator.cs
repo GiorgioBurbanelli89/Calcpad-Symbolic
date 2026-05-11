@@ -395,7 +395,10 @@ namespace Calcpad.Core
             for (int i = 1, len = values.Length; i < len; ++i)
             {
                 value = ref values[i];
-                var b = value.Re * Unit.Convert(u, value.Units, ',');
+                // Lenient: if cells across the array have inconsistent units
+                // (typical in FEM matrices), compare raw numerical magnitudes
+                // rather than throwing. Preserves LHS units in the result.
+                var b = value.Re * Unit.ConvertLenient(u, value.Units);
                 if (b < result)
                     result = b;
             }
@@ -410,7 +413,7 @@ namespace Calcpad.Core
             for (int i = 1, len = values.Length; i < len; ++i)
             {
                 value = ref values[i];
-                var b = value.Re * Unit.Convert(u, value.Units, ',');
+                var b = value.Re * Unit.ConvertLenient(u, value.Units);
                 if (b > result)
                     result = b;
             }
@@ -473,7 +476,9 @@ namespace Calcpad.Core
             var u = v.Units;
             var y0 = v.Re;
             v = y[i + 1];
-            var y1 = v.Re * Unit.Convert(u, v.Units, ',');
+            // Lenient: spline interpolates over matrix cells that may have
+            // inconsistent units. Use raw magnitudes when units mismatch.
+            var y1 = v.Re * Unit.ConvertLenient(u, v.Units);
             var dy = y1 - y0;
             if (double.IsNaN(dy))
                 return RealValue.NaN;
@@ -483,13 +488,13 @@ namespace Calcpad.Core
             if (i > 0)
             {
                 v = y[i - 1];
-                var y2 = v.Re * Unit.Convert(u, v.Units, ',');
+                var y2 = v.Re * Unit.ConvertLenient(u, v.Units);
                 a = (y1 - y2) * (Math.Sign(y0 - y2) == dy ? 0.5 : 0.25);
             }
             if (i < y.Length - 2)
             {
                 v = y[i + 2];
-                var y2 = v.Re * Unit.Convert(u, v.Units, ',');
+                var y2 = v.Re * Unit.ConvertLenient(u, v.Units);
                 b = (y2 - y0) * (Math.Sign(y2 - y1) == dy ? 0.5 : 0.25);
             }
             if (i == 0)

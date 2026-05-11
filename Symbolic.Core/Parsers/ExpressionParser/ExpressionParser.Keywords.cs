@@ -37,6 +37,10 @@ namespace Calcpad.Core
             For,
             Repeat,
             Loop,
+            // `#trace` (alias: `#dependencia`, `#detalle`): inside a loop body it
+            // overrides the default "hide iterations" behaviour so the user can see
+            // every iteration. Placed here near the loop keywords for grouping.
+            Trace,
             Break,
             Continue,
             Local,
@@ -133,6 +137,12 @@ namespace Calcpad.Core
         private bool _insideBlk = false;
         private bool _insideDeqBlock = false;
         private bool _insideCenBlock = false;
+        // Stack used by `#for` to save the caller's `_isVisible` before forcing
+        // it to false for the loop body, and restore it at `#loop`. This makes
+        // loops silent by default; the user re-enables verbose output with
+        // `#trace` inside the loop body. Outer `#hide`/`#show` is preserved
+        // because we save before clobbering and restore on exit.
+        private readonly System.Collections.Generic.Stack<bool> _loopVisibilityStack = new();
         private static string[] KeywordNames;
         private static Keyword[] KeywordValues;
         private static List<int>[] KeywordIndex;
@@ -230,6 +240,13 @@ namespace Calcpad.Core
                     _isVisible = false;
                     break;
                 case Keyword.Show:
+                    _isVisible = true;
+                    break;
+                case Keyword.Trace:
+                    // Inside a `#for` body, by default we hide each iteration's
+                    // computed output. Use `#trace` to override and reveal the
+                    // iteration values (useful for debugging or for didactic
+                    // step-by-step display).
                     _isVisible = true;
                     break;
                 case Keyword.Pre:
@@ -695,16 +712,46 @@ namespace Calcpad.Core
                                 _parser.Calculate();
                                 var r2 = _parser.Result;
                                 var u2 = _parser.Units;
+
+                                // Auto-detect loop "kind" based on units of the bounds:
+                                //   - both endpoints unitless  →  integer counter (FEM index).
+                                //   - both endpoints with consistent units  →  iterate with units
+                                //     preserved on `i` (physical coordinate iteration).
+                                //   - one endpoint unitless 0 + other with units  →  adopt the
+                                //     unit'd side ($Map-style "0 : a_z" pattern).
+                                //   - mixed inconsistent units (leak / bug)  →  strip both
+                                //     to integer to avoid cascading unit failures downstream.
+                                Unit loopUnits = null;
+                                if (u1 is not null && u2 is not null)
+                                {
+                                    if (u1.IsConsistent(u2))
+                                    {
+                                        loopUnits = u1;
+                                        // Convert r2 into u1 system so increment of 1 has consistent meaning.
+                                        r2 = new Complex(r2.Re * u2.ConvertTo(u1), r2.Im);
+                                    }
+                                    // else: inconsistent → fall through, both stripped to null
+                                }
+                                else if (u1 is null && u2 is not null && r1.Re == 0d)
+                                {
+                                    loopUnits = u2;   // `0 : valor_con_unit`
+                                }
+                                else if (u1 is not null && u2 is null && r2.Re == 0d)
+                                {
+                                    loopUnits = u1;   // `valor_con_unit : 0`
+                                }
+                                // (any other combination → integer index, loopUnits stays null)
+
                                 IScalarValue start, end;
                                 if (r1.IsReal && r2.IsReal)
                                 {
-                                    start = new RealValue(r1.Re, u1);
-                                    end = new RealValue(r2.Re, u2);
+                                    start = new RealValue(r1.Re, loopUnits);
+                                    end = new RealValue(r2.Re, loopUnits);
                                 }
                                 else
                                 {
-                                    start = new ComplexValue(r1, u1);
-                                    end = new ComplexValue(r2, u2);
+                                    start = new ComplexValue(r1, loopUnits);
+                                    end = new ComplexValue(r2, loopUnits);
                                 }
                                 var count = Math.Abs((end - start).Re) + 1;
                                 if (count > Loop.MaxCount)
@@ -715,6 +762,12 @@ namespace Calcpad.Core
                                 var counter = _parser.GetVariableRef(varName);
                                 _loops.Push(new ForLoop(_currentLine, start, end, counter, _condition.Id));
                                 _parser.SetVariable(varName, start);
+                                // Save current visibility and force loop body to be
+                                // hidden by default. The user enables iteration-level
+                                // output with `#trace` inside the loop. Restored at
+                                // `#loop`.
+                                _loopVisibilityStack.Push(_isVisible);
+                                _isVisible = false;
                             }
                             catch (MathParserException ex)
                             {
@@ -805,7 +858,14 @@ namespace Calcpad.Core
                         if (next.Id != _condition.Id)
                             AppendError(s.ToString(), Messages.Entangled_if__end_if__and_repeat__loop_blocks, _currentLine);
                         else if (!Iterate(next, true))
+                        {
+                            // Loop exited (no more iterations). If this was a #for
+                            // that pushed onto _loopVisibilityStack, restore the
+                            // saved visibility now.
+                            if (next is ForLoop && _loopVisibilityStack.Count > 0)
+                                _isVisible = _loopVisibilityStack.Pop();
                             _loops.Pop();
+                        }
                     }
                 }
                 else if (_condition.IsLoop)
@@ -846,6 +906,18 @@ namespace Calcpad.Core
             if (loop.Iterate(ref _currentLine))
             {
                 _parser.ResetStack();
+                // When the very next body pass is the LAST iteration of a `#for`
+                // loop, re-enable visibility so the user sees the final iteration's
+                // values. Earlier iterations stay hidden (suppressing the spam).
+                // This is the "show last iteration only" default behaviour the user
+                // asked for. `#trace` already overrides via _isVisible=true inside
+                // the body so this doesn't fight with it.
+                if (loop is ForLoop && loop.Iteration == 1 && _loopVisibilityStack.Count > 0)
+                {
+                    // Restore the OUTER visibility for this final iteration. Don't
+                    // pop yet — `#loop` end will pop when iteration finishes.
+                    _isVisible = _loopVisibilityStack.Peek();
+                }
                 return true;
             }
             return false;

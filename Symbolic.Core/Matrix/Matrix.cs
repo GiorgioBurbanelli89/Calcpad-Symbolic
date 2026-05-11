@@ -2231,7 +2231,7 @@ namespace Calcpad.Core
                 rowMins[0] = min;
                 Parallel.For(1, len, i => {
                     var v = _rows[i].Min();
-                    rowMins[i] = v.D * Unit.Convert(u, v.Units, ','); ;
+                    rowMins[i] = v.D * Unit.ConvertLenient(u, v.Units); ;
                 });
                 min = rowMins.Min();
             }
@@ -2239,7 +2239,7 @@ namespace Calcpad.Core
                 for (int i = 1; i < len; ++i)
                 {
                     v = _rows[i].Min();
-                    var rowMin = v.D * Unit.Convert(u, v.Units, ',');
+                    var rowMin = v.D * Unit.ConvertLenient(u, v.Units);
                     if (rowMin < min)
                         min = rowMin;
                 }
@@ -2264,7 +2264,7 @@ namespace Calcpad.Core
                 rowMaxes[0] = max;
                 Parallel.For(1, len, i => {
                     var v = _rows[i].Max();
-                    rowMaxes[i] = v.D * Unit.Convert(u, v.Units, ','); ;
+                    rowMaxes[i] = v.D * Unit.ConvertLenient(u, v.Units); ;
                 });
                 max = rowMaxes.Max();
             }
@@ -2272,7 +2272,7 @@ namespace Calcpad.Core
                 for (int i = 1; i < len; ++i)
             {
                 v = _rows[i].Max();
-                var rowMax = v.D * Unit.Convert(u, v.Units, ',');
+                var rowMax = v.D * Unit.ConvertLenient(u, v.Units);
                 if (rowMax > max)
                     max = rowMax;
             }
@@ -2297,7 +2297,7 @@ namespace Calcpad.Core
                 rowSums[0] = sum;
                 Parallel.For(1, len, i => {
                     var v = _rows[i].Sum();
-                    rowSums[i] = v.D * Unit.Convert(u, v.Units, ','); ;
+                    rowSums[i] = v.D * Unit.ConvertLenient(u, v.Units); ;
                 });
                 sum = rowSums.Sum();
             }
@@ -2305,7 +2305,7 @@ namespace Calcpad.Core
                 for (int i = 1; i < len; ++i)
                 {
                     v = _rows[i].Sum();
-                    sum += v.D * Unit.Convert(u, v.Units, ',');
+                    sum += v.D * Unit.ConvertLenient(u, v.Units);
                 }
 
             return new(sum, u);
@@ -2326,7 +2326,7 @@ namespace Calcpad.Core
                 rowSums[0] = sumsq;
                 Parallel.For(1, len, i => {
                     var v = _rows[i].SumSq();
-                    rowSums[i] = v.D * Unit.Convert(u, v.Units, ','); ;
+                    rowSums[i] = v.D * Unit.ConvertLenient(u, v.Units); ;
                 });
                 sumsq = rowSums.Sum();
             }
@@ -2334,7 +2334,7 @@ namespace Calcpad.Core
                 for (int i = 1; i < len; ++i)
                 {
                     v = _rows[i].SumSq();
-                    sumsq += v.D * Unit.Convert(u, v.Units, ',');
+                    sumsq += v.D * Unit.ConvertLenient(u, v.Units);
                 }
 
             return new(sumsq, u);
@@ -2440,7 +2440,7 @@ namespace Calcpad.Core
             for (int i = 1, len = _rows.Length; i < len; ++i)
             {
                 v = _rows[i].Gcd();
-                var b = Calculator.AsLong(v.D * Unit.Convert(u, v.Units, ','));
+                var b = Calculator.AsLong(v.D * Unit.ConvertLenient(u, v.Units));
                 a = Calculator.Gcd(a, b);
             }
             return new(a);
@@ -2454,7 +2454,7 @@ namespace Calcpad.Core
             for (int i = 1, len = _rows.Length; i < len; ++i)
             {
                 v = _rows[i].Lcm();
-                var b = Calculator.AsLong(v.D * Unit.Convert(u, v.Units, ','));
+                var b = Calculator.AsLong(v.D * Unit.ConvertLenient(u, v.Units));
                 a = a * b / Calculator.Gcd(a, b);
             }
             return new(a);
@@ -2519,7 +2519,7 @@ namespace Calcpad.Core
             var u = v.Units;
             var z0 = v.D;
             v = SplineRow(i + 1, j, dx);
-            var z1 = v.D * Unit.Convert(u, v.Units, ',');
+            var z1 = v.D * Unit.ConvertLenient(u, v.Units);
             var dz = z1 - z0;
             var a = dz;
             var b = dz;
@@ -2527,13 +2527,13 @@ namespace Calcpad.Core
             if (i > 0)
             {
                 v = SplineRow(i - 1, j, dx);
-                var z2 = v.D * Unit.Convert(u, v.Units, ',');
+                var z2 = v.D * Unit.ConvertLenient(u, v.Units);
                 a = (z1 - z2) * (Math.Sign(z0 - z2) == dz ? 0.5 : 0.25);
             }
             if (i < _rowCount - 2)
             {
                 v = SplineRow(i + 2, j, dx);
-                var z2 = v.D * Unit.Convert(u, v.Units, ',');
+                var z2 = v.D * Unit.ConvertLenient(u, v.Units);
                 b = (z2 - z0) * (Math.Sign(z2 - z1) == dz ? 0.5 : 0.25);
             }
             if (i == 0)
@@ -2556,7 +2556,7 @@ namespace Calcpad.Core
             var u = v.Units;
             var y0 = v.D;
             v = this[i, j + 1];
-            var y1 = v.D * Unit.Convert(u, v.Units, ',');
+            var y1 = v.D * Unit.ConvertLenient(u, v.Units);
             var dy = y1 - y0;
             var a = dy;
             var b = dy;
@@ -2564,13 +2564,13 @@ namespace Calcpad.Core
             if (j > 0)
             {
                 v = this[i, j - 1];
-                var y2 = v.D * Unit.Convert(u, v.Units, ',');
+                var y2 = v.D * Unit.ConvertLenient(u, v.Units);
                 a = (y1 - y2) * (Math.Sign(y0 - y2) == dy ? 0.5 : 0.25);
             }
             if (j < _colCount - 2)
             {
                 v = this[i, j + 2];
-                var y2 = v.D * Unit.Convert(u, v.Units, ',');
+                var y2 = v.D * Unit.ConvertLenient(u, v.Units);
                 b = (y2 - y0) * (Math.Sign(y2 - y1) == dy ? 0.5 : 0.25);
             }
             if (j == 0)

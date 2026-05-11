@@ -442,10 +442,31 @@ namespace Calcpad.Core
                 {
                     x2 = IValue.AsReal((_b?.Invoke() ?? _vb), Exceptions.Items.Limit);
                     var ux2 = x2.Units;
+                    // Lenient unit policy (matches $Map / #for): if only one side
+                    // has units, adopt them for the other side. For $Repeat this
+                    // lets the user write `@ i = 1 : n_h+1` where the upper bound
+                    // accidentally inherits units (eg from a `round(L/dx)` where
+                    // dx was unitless), and `1` is a bare integer. Same for the
+                    // physical-iteration pattern `@ x = 0 : 5 m`.
+                    if (ux1 is null && ux2 is not null)
+                        ux1 = ux2;
+                    else if (ux1 is not null && ux2 is null)
+                        ux2 = ux1;
+                    // For $Repeat specifically, units on the loop counter are
+                    // dropped (counter is conceptually an integer index). This
+                    // matches the #for default behaviour and avoids cascading
+                    // unit failures in matrix-cell assignments inside the body.
+                    if (_type == SolverTypes.Repeat)
+                    {
+                        x1 = new RealValue(x1.D, null);
+                        x2 = new RealValue(x2.D, null);
+                        ux1 = null;
+                        ux2 = null;
+                    }
                     if (!Unit.IsConsistent(ux1, ux2))
                         throw Exceptions.InconsistentUnits2(_items[0].Input, Unit.GetText(ux1), Unit.GetText(ux2));
 
-                    if (ux2 is not null)
+                    if (ux2 is not null && ux1 is not null)
                         x2 *= ux2.ConvertTo(ux1);
                 }
                 _var.SetValue(x1);

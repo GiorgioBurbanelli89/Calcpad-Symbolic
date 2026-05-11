@@ -1,0 +1,152 @@
+"Test 07 - Derivadas parciales SIMBOLICAS (AngouriMath via #sym)
+'Symbolic-only feature. AngouriMath calcula derivadas ALGEBRAICAMENTE.
+'No es una aproximacion numerica — es manipulacion de expresiones reales.
+'==========================================================================
+
+"1. Derivada simple de una funcion de UNA variable
+'==========================================================================
+'d/dx(x^3 + 3*x + 1) = 3*x^2 + 3
+'(Calcpad devuelve la EXPRESION, no un numero)
+#sym diff(x^3 + 3*x + 1; x)
+
+'Si quiero evaluar la derivada en un punto especifico:
+'d/dx(x^3 + 3x + 1) en x=2 = 3*4 + 3 = 15
+#sym subs(diff(x^3 + 3*x + 1; x); x; 2)
+
+"2. Derivadas de orden superior
+'==========================================================================
+'d^2/dx^2(x^3 + 3x + 1) = 6x
+#sym diff(x^3 + 3*x + 1; x; 2)
+
+'d^3/dx^3(x^4) = 24x
+#sym diff(x^4; x; 3)
+
+"3. Derivadas parciales con pdiff
+'==========================================================================
+'f(x; y) = x^2 + 3*x*y + y^2
+'df/dx = 2x + 3y
+'df/dy = 3x + 2y
+'(El & en el sym le dice a AngouriMath: deriva respecto a esta variable)
+
+'Parcial respecto a x:
+#sym pdiff(x^2 + 3*x*y + y^2; x)
+
+'Parcial respecto a y:
+#sym pdiff(x^2 + 3*x*y + y^2; y)
+
+"4. Evaluacion simbolica de las parciales en un punto
+'==========================================================================
+'En (x=2, y=1):
+'   df/dx = 2*2 + 3*1 = 7
+'   df/dy = 3*2 + 2*1 = 8
+
+#sym subs(pdiff(x^2 + 3*x*y + y^2; x); x; 2)
+'(devolvera 4 + 3y porque solo sustituimos x)
+
+#sym subs(subs(pdiff(x^2 + 3*x*y + y^2; x); x; 2); y; 1)
+'(ahora sustituimos x y luego y -> da 7)
+
+#sym subs(subs(pdiff(x^2 + 3*x*y + y^2; y); x; 2); y; 1)
+'(df/dy en (2,1) = 8)
+
+"5. Gradiente simbolico (vector con todas las parciales)
+'==========================================================================
+'gradient(f; x; y) -> [df/dx; df/dy]
+#sym gradient(x^2 + 3*x*y + y^2; x; y)
+
+'Gradiente para una funcion con 3 variables:
+#sym gradient(x^2 + y^2 + z^2; x; y; z)
+'Esperado: [2x; 2y; 2z]
+
+"6. Matriz Hessiana (segundas derivadas)
+'==========================================================================
+'H[i;j] = d^2 f / (d x_i d x_j)
+'Para f(x; y) = x^3 + x*y^2:
+'   d^2f/dx^2     = 6x
+'   d^2f/(dx dy)  = 2y
+'   d^2f/dy^2     = 2x
+'   H = [6x; 2y | 2y; 2x]
+#sym hessian(x^3 + x*y^2; x; y)
+
+"7. Matriz Jacobiana (sistema de funciones)
+'==========================================================================
+'Para F = [f1; f2] = [x^2; y^2]:
+'   J = [df1/dx; df1/dy | df2/dx; df2/dy] = [2x; 0 | 0; 2y]
+#sym jacobian(x^2; y^2; x; y)
+
+'Jacobiano de transformacion polar -> cartesiana:
+'   x = r*cos(θ),  y = r*sin(θ)
+'   J = [dx/dr; dx/dθ | dy/dr; dy/dθ] = [cos(θ); -r*sin(θ) | sin(θ); r*cos(θ)]
+#sym jacobian(r*cos(θ); r*sin(θ); r; θ)
+
+"8. Divergencia y rotacional (calculo vectorial)
+'==========================================================================
+'Para campo vectorial F = (x^2; y^2; z^2):
+'   div F = 2x + 2y + 2z
+#sym divergence(x^2; y^2; z^2; x; y; z)
+
+'Rotacional (curl) de F = (y*z; x*z; x*y):
+#sym curl(y*z; x*z; x*y; x; y; z)
+
+"9. Laplaciano
+'==========================================================================
+'Laplaciano = div(grad f) = d^2f/dx^2 + d^2f/dy^2 + d^2f/dz^2
+'Para f = x^2 + y^2 + z^2:
+'   laplaciano = 2 + 2 + 2 = 6
+#sym laplacian(x^2 + y^2 + z^2; x; y; z)
+
+"10. Aplicacion FEM - derivadas de funciones de forma Q4
+'==========================================================================
+'Funciones de forma Q4 en coordenadas naturales:
+'   N_1(ξ; η) = (1-ξ)*(1-η)/4
+'   N_2(ξ; η) = (1+ξ)*(1-η)/4
+'   N_3(ξ; η) = (1+ξ)*(1+η)/4
+'   N_4(ξ; η) = (1-ξ)*(1+η)/4
+
+'Derivadas parciales SIMBOLICAS:
+#sym pdiff((1 - ξ)*(1 - η)/4; ξ)
+#sym pdiff((1 - ξ)*(1 - η)/4; η)
+
+#sym pdiff((1 + ξ)*(1 - η)/4; ξ)
+#sym pdiff((1 + ξ)*(1 - η)/4; η)
+
+#sym pdiff((1 + ξ)*(1 + η)/4; ξ)
+#sym pdiff((1 + ξ)*(1 + η)/4; η)
+
+#sym pdiff((1 - ξ)*(1 + η)/4; ξ)
+#sym pdiff((1 - ξ)*(1 + η)/4; η)
+
+'Esperado:
+'   dN_1/dξ = -(1-η)/4    dN_1/dη = -(1-ξ)/4
+'   dN_2/dξ = +(1-η)/4    dN_2/dη = -(1+ξ)/4
+'   dN_3/dξ = +(1+η)/4    dN_3/dη = +(1+ξ)/4
+'   dN_4/dξ = -(1+η)/4    dN_4/dη = +(1-ξ)/4
+
+"11. Verificacion: simbolico vs numerico deben coincidir
+'==========================================================================
+'Numero: derivada de N_1 respecto a xi en (xi=0, eta=0) = -1/4
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_1_eta0(ξ) = N_1(ξ; 0)
+dN1_dxi_num = $Slope{N_1_eta0(ξ) @ ξ = 0}
+
+'Simbolico: deriva y sustituye eta=0, xi=0:
+#sym subs(subs(pdiff((1 - ξ)*(1 - η)/4; ξ); ξ; 0); η; 0)
+
+#blk
+dN1_dxi_num ; 'derivada numerica (esperado -0.25)
+#end blk
+
+"12. Resumen — simbolico vs numerico
+'==========================================================================
+'Numerico ($Slope):
+'   - Diferencias centrales con paso pequeno.
+'   - Da un NUMERO.
+'   - Funciona con cualquier funcion (analitica o procedural).
+'   - Tiene error de truncacion + error de redondeo.
+'
+'Simbolico (#sym pdiff / diff / gradient / hessian / jacobian):
+'   - Manipulacion ALGEBRAICA exacta (AngouriMath).
+'   - Da una EXPRESION (la formula de la derivada).
+'   - Solo funciona con funciones "simbolizables" (no procedurales).
+'   - Exacto — sin error numerico.
+'   - Util para verificar el numerico.

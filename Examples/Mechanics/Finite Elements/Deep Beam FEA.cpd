@@ -142,8 +142,8 @@ K_e'MN/m
 K_s,j(e) = l_1/2*$Area{N_j(ξ; -1)*s(x_c.e + ξ*l_1/2) @ ξ = -1 : 1}', 'j = 1', '3
 #equ
 'Results for element 1
-K_s,1(e) = l_1/2*$Area{N_1(ξ; -1)*s(x_c.e + ξ*l_1/2) @ ξ = -1 : 1}','K_s,1(1)'MN/m
-K_s,3(e) = l_1/2*$Area{N_3(ξ; -1)*s(x_c.e + ξ*l_1/2) @ ξ = -1 : 1}','K_s,3(1)'MN/m
+K_s_1(e) = l_1/2*$Area{N_1(ξ; -1)*s(x_c.e + ξ*l_1/2) @ ξ = -1 : 1}','K_s_1(1)'MN/m
+K_s_3(e) = l_1/2*$Area{N_3(ξ; -1)*s(x_c.e + ξ*l_1/2) @ ξ = -1 : 1}','K_s_3(1)'MN/m
 'Number of elements along the loaded edge -'n_L = len(e_L)
 'Element load vector
 #noc
@@ -177,12 +177,12 @@ K = symmetric(n)
 'Addition of supports
 #for i = 1 : n_S
 	e = e_S.i
-	K_se,1 = K_s,1(e)
-	K_se,3 = K_s,3(e)
+	K_se_1 = K_s_1(e)
+	K_se_3 = K_s_3(e)
 	j_1 = e_j.(e; 1)', 'i_1 = k_1*(j_1 - 1) + 2
 	j_3 = e_j.(e; 3)', 'i_3 = k_1*(j_3 - 1) + 2
-	K.(i_1; i_1) = K.(i_1; i_1) + K_se,1
-	K.(i_3; i_3) = K.(i_3; i_3) + K_se,3
+	K.(i_1; i_1) = K.(i_1; i_1) + K_se_1
+	K.(i_3; i_3) = K.(i_3; i_3) + K_se_3
 #loop
 j_M = find(x_j; l/2; 1)
 n_M = len(j_M)
@@ -197,12 +197,12 @@ K
 F = vector(n)
 #for i = 1 : n_L
 	e = e_L.i
-	F_e,2 = F_2(e)
-	F_e,4 = F_4(e)
+	F_e_2 = F_2(e)
+	F_e_4 = F_4(e)
 	j_2 = e_j.(e; 2)', 'i_2 = k_1*(j_2 - 1) + 2
 	j_4 = e_j.(e; 4)', 'i_4 = k_1*(j_4 - 1) + 2
-	F.i_2 = F.i_2 + F_e,2
-	F.i_4 = F.i_4 + F_e,4
+	F.i_2 = F.i_2 + F_e_2
+	F.i_4 = F.i_4 + F_e_4
 #loop
 #show
 F
@@ -210,16 +210,23 @@ sum(F)'kN
 'Solution of the system of equations
 Z = clsolve(K; F)'mm
 '<h3>Results</h3>
+'DEBUG verifications
+'Z type:'Z
+'Z(1):'Z.(1)
+'k_1 value:'k_1
+'n_l value:'n_l
+'n_h value:'n_h
 #hide
-'Joint displacements
-u = matrix(n_l + 1; n_h + 1)
-u(j) = Z.(k_1*(j - 1) + 1)
-$Repeat{$Repeat{u.(i; j) = round(u((i - 1)*(n_h + 1) + j)*1000000)/1000 @ j = 1 : n_h + 1} @ i = 1 : n_l + 1}
-u(x; y) = spline(1 + x/l_1; 1 + y/h_1; u)
-v = matrix(n_l + 1; n_h + 1)
-v(j) = Z.(k_1*(j - 1) + 2)
-$Repeat{$Repeat{v.(i; j) = round(v((i - 1)*(n_h + 1) + j)*1000000)/1000 @ j = 1 : n_h + 1} @ i = 1 : n_l + 1}
-v(x; y) = spline(1 + x/l_1; 1 + y/h_1; v)
+'Joint displacements - patrón original con $Repeat anidado, vars renombradas
+'para no colisionar: u_mat es la matriz, u_func la función auxiliar.
+u_mat = matrix(n_l + 1; n_h + 1)
+u_func(j) = Z.(k_1*(j - 1) + 1)
+$Repeat{$Repeat{u_mat.(i; j) = round(u_func((i - 1)*(n_h + 1) + j)*1000000)/1000 @ j = 1 : n_h + 1} @ i = 1 : n_l + 1}
+u(x; y) = spline(1 + x/l_1; 1 + y/h_1; u_mat)
+v_mat = matrix(n_l + 1; n_h + 1)
+v_func(j) = Z.(k_1*(j - 1) + 2)
+$Repeat{$Repeat{v_mat.(i; j) = round(v_func((i - 1)*(n_h + 1) + j)*1000000)/1000 @ j = 1 : n_h + 1} @ i = 1 : n_l + 1}
+v(x; y) = spline(1 + x/l_1; 1 + y/h_1; v_mat)
 PlotWidth = 100*l
 PlotHeight = 100*h
 PlotStep = 10

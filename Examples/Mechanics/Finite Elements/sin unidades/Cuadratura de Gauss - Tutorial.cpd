@@ -1,0 +1,1097 @@
+"Cuadratura de Gauss - Tutorial 100% visual
+'Este archivo tiene un SVG (dibujo) y un calculo numerico para CADA paso.
+'Nada se queda solo en palabras: vas a ver con tus ojos como cambia el
+'area real vs la aproximada en cada caso.
+
+"0. PRIMERO_LO_PRIMERO - por que probamos con f(x) = 1, x, x^2, x^3, x^4?
+'==========================================================================
+'Probablemente te preguntas: que tienen que ver esas funciones bobas
+'con Gauss? Te lo explico antes de empezar a hacer cuentas.
+
+"0.1 Los polinomios son piezas de LEGO
+'==========================================================================
+'CUALQUIER polinomio se construye sumando "piezas" que son potencias de x:
+
+#deq f(x) = a_0 + a_1*x + a_2*x^2 + a_3*x^3 + a_4*x^4 + ...
+
+'Las piezas son las MISMAS para cualquier polinomio. Lo unico que cambia
+'son los coeficientes (a_0, a_1, a_2, ...).
+'Mira un ejemplo: la funcion f(x) = 3 - 2x + 5x^2 - x^3 se "arma" asi:
+
+#svg 700 240
+.text 350 18 "Cualquier_polinomio_=_suma_de_piezas_de_LEGO_(potencias_de_x)" 12 navy middle bold
+.rect 50 50 620 170 white 0 black 1
+.text 360 80 "f(x)_=_3_·_(1)_+_(-2)_·_(x)_+_5_·_(x^2)_+_(-1)_·_(x^3)" 13 black middle bold
+.text 360 105 "------_------_------_------_------_------_------------" 11 gray middle
+.text 130 130 "pieza:_1" 11 darkgreen middle bold
+.text 130 150 "coef:_3" 11 black middle
+.text 260 130 "pieza:_x" 11 blue middle bold
+.text 260 150 "coef:_-2" 11 black middle
+.text 400 130 "pieza:_x^2" 11 darkred middle bold
+.text 400 150 "coef:_5" 11 black middle
+.text 540 130 "pieza:_x^3" 11 darkviolet middle bold
+.text 540 150 "coef:_-1" 11 black middle
+.text 350 195 "Las_piezas_(1,_x,_x^2,_x^3,_...)_son_siempre_las_mismas." 11 black middle bold
+.text 350 215 "Lo_que_cambia_son_los_coeficientes_(3,_-2,_5,_-1)." 11 black middle bold
+#end svg
+
+"0.2 La propiedad clave de la integral - es LINEAL
+'==========================================================================
+'La integral de UNA suma es la suma de las integrales de cada parte:
+
+#deq ∫(a*f(x) + b*g(x)) dx = a*∫f(x) dx + b*∫g(x) dx
+
+'Esto significa: si yo se integrar EXACTAMENTE cada PIEZA (1, x, x^2, x^3),
+'entonces se integrar EXACTAMENTE cualquier polinomio armado con esas
+'piezas. Por ejemplo, para f(x) = 3 - 2x + 5x^2 - x^3:
+
+#deq ∫f(x) dx = 3*∫1 dx + (-2)*∫x dx + 5*∫x^2 dx + (-1)*∫x^3 dx
+
+'Y cada una de esas integrales chiquitas Calcpad las puede resolver
+'SIMBOLICAMENTE (no numericamente — con algebra de verdad). Mira:
+
+'Integral simbolica de cada pieza entre -1 y +1:
+#sym integrate(1; x; -1; 1)
+#sym integrate(x; x; -1; 1)
+#sym integrate(x^2; x; -1; 1)
+#sym integrate(x^3; x; -1; 1)
+#sym integrate(x^4; x; -1; 1)
+#sym integrate(x^5; x; -1; 1)
+#sym integrate(x^6; x; -1; 1)
+
+'Notas las dos cosas que pasan?
+'   - Las piezas IMPARES (x, x^3, x^5) -> integral = 0 automaticamente.
+'   - Las piezas PARES (1, x^2, x^4, x^6) -> integran a 2, 2/3, 2/5, 2/7.
+'Cuadratura de Gauss tiene que CAPTURAR estas dos partes, especialmente
+'la parte par que no se anula.
+
+"0.3 ENTONCES, por que probamos con esas funciones?
+'==========================================================================
+'Por la razon mas simple posible:
+'   PROBAMOS LAS PIEZAS, NO LOS POLINOMIOS COMPLETOS.
+'
+'Si la formula de Gauss da el resultado correcto para:
+'      f(x) = 1   (pieza grado 0)
+'      f(x) = x   (pieza grado 1)
+'      f(x) = x^2 (pieza grado 2)
+'      f(x) = x^3 (pieza grado 3)
+'... entonces TAMBIEN da el resultado correcto para CUALQUIER combinacion
+'de esas piezas, es decir, para cualquier polinomio de grado <= 3.
+'
+'Cuando empieza a FALLAR (en x^4) entonces tambien va a fallar para
+'cualquier polinomio que tenga termino x^4 o superior.
+
+"0.4 Verificacion con un polinomio completo
+'==========================================================================
+'Tomemos:
+
+#deq f(x) = 3 - 2*x + 5*x^2 - x^3
+
+'Su integral exacta entre -1 y +1 la calcula Calcpad simbolicamente:
+
+#sym integrate(3 - 2*x + 5*x^2 - x^3; x; -1; 1)
+
+'Ese resultado SIMBOLICO es nuestra "verdad". Lo guardamos en una
+'variable para comparar:
+'   ∫(3) dx        = 3*(2) = 6
+'   ∫(-2x) dx      = 0      (impar)
+'   ∫(5x^2) dx     = 5*(2/3) = 10/3 ~ 3.333
+'   ∫(-x^3) dx     = 0      (impar)
+'   TOTAL          = 6 + 0 + 3.333 + 0 = 9.333
+I_real_poly = 6 + 0 + 10/3 + 0
+
+'Aproximacion con 1 punto (formula 2*f(0)):
+'   f(0) = 3 - 0 + 0 - 0 = 3
+'   I_1pt = 2*3 = 6   <-  ESTIMA MAL (falta el 3.333 del termino x^2)
+I_1pt_poly = 2*(3 - 2*0 + 5*0^2 - 0^3)
+
+'Aproximacion con 2 puntos:
+'   f(-0.577) = 3 - 2*(-0.577) + 5*(-0.577)^2 - (-0.577)^3 = 3 + 1.155 + 1.667 + 0.192 = 6.013
+'   f(+0.577) = 3 - 2*(+0.577) + 5*(+0.577)^2 - (+0.577)^3 = 3 - 1.155 + 1.667 - 0.192 = 3.320
+'   I_2pt = 1*6.013 + 1*3.320 = 9.333  <-  ACIERTA EXACTO
+x_a = -1/sqr(3)
+x_b = 1/sqr(3)
+f_xa = 3 - 2*x_a + 5*x_a^2 - x_a^3
+f_xb = 3 - 2*x_b + 5*x_b^2 - x_b^3
+I_2pt_poly = 1*f_xa + 1*f_xb
+
+#blk
+I_real_poly  ; 'integral exacta del polinomio 3 - 2x + 5x^2 - x^3
+I_1pt_poly   ; 'aproximacion 1 punto (FALLA porque hay un x^2)
+I_2pt_poly   ; 'aproximacion 2 puntos (ACIERTA porque grado max = 3)
+#end blk
+
+'Lo importante: cuando probamos x^2 individualmente y vimos que 2 puntos
+'lo integra exacto, ya quedo garantizado que TAMBIEN integra exacto
+'cualquier x^2 multiplicado por una constante. Y como integral es lineal,
+'tambien integra exacto la SUMA 3 - 2x + 5x^2 - x^3.
+
+"0.5 La conexion con FEM (la razon por la que esto te importa)
+'==========================================================================
+'En FEM, cuando calculas la matriz de rigidez del elemento Q4 membrana
+'tienes que integrar:
+
+#deq K_e_ij = ∫_(-1)^(1) ∫_(-1)^(1) (B^T*D*B)_ij*det(J) dξ dη
+
+'Pregunta clave: que TIPO de funcion es el integrando?
+'   - B tiene derivadas de funciones de forma -> LINEAL en (xi, eta)
+'   - B^T * D * B -> producto LINEAL * LINEAL = CUADRATICO
+'   - det(J) para elementos rectangulares es CONSTANTE
+'   - Conclusion: el integrando es un POLINOMIO de grado 2 en (xi, eta)
+'
+'Como un cuadratico es solo una suma de las piezas {1, xi, eta, xi^2,
+'xi*eta, eta^2}, basta con que la cuadratura sea exacta hasta grado 2
+'para integrar EXACTO la K_e.
+'
+'   N = 1 punto  -> exacto hasta grado 1  -> NO ALCANZA (falla en xi^2)
+'   N = 2 puntos -> exacto hasta grado 3  -> ALCANZA (incluso sobra)
+'   N = 3 puntos -> exacto hasta grado 5  -> sobra mucho mas
+'
+'Por eso para Q4 membrana SE USA 2x2 puntos de Gauss. No es por gusto,
+'no es magia. Es porque tu integrando es grado 2 y necesitas N tal que
+'2N - 1 >= 2, es decir N >= 1.5, asi que N = 2 es el menor que alcanza.
+
+"0.5b Como se ve realmente el K_e por dentro (descomposicion en piezas)
+'==========================================================================
+'Tu intuicion en chat fue: "es como que tiene no solo una funcion sino
+'varias y hay que mezclar algo asi". EXACTO. El integrando de K_e no
+'es un solo bicho, es una SUMA de polinomios mezclados.
+'
+'Tomemos el primer termino (B^T*D*B)[1,1] para un Q4. La derivada
+'dN_1/dxi = -(1 - eta)/4 no depende de xi y es LINEAL en eta. Al
+'multiplicar por si misma sale (1 - eta)^2.
+'
+'No me creas — pidamosle a Calcpad que LO EXPANDA SIMBOLICAMENTE:
+
+#sym expand((1 - η)^2)
+
+'Lo que sale arriba lo escribimos como SUMA de piezas:
+
+#deq (1 - η)^2 = 1 - 2*η + η^2
+
+'Es decir: UN SOLO TERMINO del K_e ya tiene 3 piezas de distintos grados
+'sumadas:
+'   pieza 1: la constante  1     (grado 0, par,    NO se anula)
+'   pieza 2: la diagonal  -2η    (grado 1, impar,  se anula sola)
+'   pieza 3: la parabola   η^2   (grado 2, par,    NO se anula)
+'
+'Veamos cada pieza por separado, y verifiquemos sus integrales:
+
+'Integrales simbolicas de las 3 piezas entre -1 y +1:
+#sym integrate(1; x; -1; 1)
+#sym integrate(-2*x; x; -1; 1)
+#sym integrate(x^2; x; -1; 1)
+
+'   Pieza 1: integra a 2
+'   Pieza 2: integra a 0    <- IMPAR, se cancela
+'   Pieza 3: integra a 2/3
+'   SUMA TOTAL = 2 + 0 + 2/3 = 8/3
+'Y la integral del integrando completo (1 - eta)^2 entre -1 y +1:
+
+#sym integrate((1 - x)^2; x; -1; 1)
+
+'Te da el mismo 8/3 directamente (Calcpad calcula sin pasar por las
+'piezas). La sintesis: poderlo descomponer en piezas no cambia el
+'resultado, pero NOS DICE que pieza es la de grado mas alto (eta^2 -
+'grado 2). De ahi sale el "Gauss necesita N tal que 2N-1 >= 2 -> N=2".
+
+'Aqui las 3 piezas y la suma dibujadas:
+
+#chart 700 380
+{
+  type: 'line',
+  data: {
+    datasets: [
+      {
+        label: 'pieza 1: y = 1 (grado 0, constante)',
+        data: [{x:-1,y:1},{x:-0.8,y:1},{x:-0.6,y:1},{x:-0.4,y:1},{x:-0.2,y:1},{x:0,y:1},{x:0.2,y:1},{x:0.4,y:1},{x:0.6,y:1},{x:0.8,y:1},{x:1,y:1}],
+        borderColor: 'green',
+        backgroundColor: 'rgba(0,255,0,0)',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0
+      },
+      {
+        label: 'pieza 2: y = -2*eta (grado 1, impar)',
+        data: [{x:-1,y:2},{x:-0.8,y:1.6},{x:-0.6,y:1.2},{x:-0.4,y:0.8},{x:-0.2,y:0.4},{x:0,y:0},{x:0.2,y:-0.4},{x:0.4,y:-0.8},{x:0.6,y:-1.2},{x:0.8,y:-1.6},{x:1,y:-2}],
+        borderColor: 'orange',
+        backgroundColor: 'rgba(255,165,0,0)',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0
+      },
+      {
+        label: 'pieza 3: y = eta^2 (grado 2, parabola)',
+        data: [{x:-1,y:1},{x:-0.8,y:0.64},{x:-0.6,y:0.36},{x:-0.4,y:0.16},{x:-0.2,y:0.04},{x:0,y:0},{x:0.2,y:0.04},{x:0.4,y:0.16},{x:0.6,y:0.36},{x:0.8,y:0.64},{x:1,y:1}],
+        borderColor: 'red',
+        backgroundColor: 'rgba(255,0,0,0)',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.3
+      },
+      {
+        label: 'SUMA: (1 - eta)^2 = 1 - 2*eta + eta^2',
+        data: [{x:-1,y:4},{x:-0.8,y:3.24},{x:-0.6,y:2.56},{x:-0.4,y:1.96},{x:-0.2,y:1.44},{x:0,y:1},{x:0.2,y:0.64},{x:0.4,y:0.36},{x:0.6,y:0.16},{x:0.8,y:0.04},{x:1,y:0}],
+        borderColor: 'navy',
+        backgroundColor: 'rgba(0,0,128,0.18)',
+        borderWidth: 3.5,
+        pointRadius: 0,
+        tension: 0.35,
+        fill: 'origin'
+      }
+    ]
+  },
+  options: {
+    plugins: {
+      title: { display: true, text: '(B^T·D·B)[1,1] del Q4: la SUMA azul = pieza_1 (verde) + pieza_2 (naranja) + pieza_3 (rojo)', font: { size: 12 } },
+      legend: { display: true, position: 'top' }
+    },
+    scales: {
+      x: { type: 'linear', position: 'bottom', min: -1, max: 1, title: { display: true, text: 'eta' } },
+      y: { title: { display: true, text: 'valor' } }
+    }
+  }
+}
+#end chart
+
+'Lo que ves arriba:
+'   - VERDE (constante 1): el "techo plano" — esa pieza nunca cambia.
+'   - NARANJA (-2*eta): la recta diagonal que pasa por 0. Su integral
+'     entre -1 y +1 es 0 porque es IMPAR (cancela arriba con abajo).
+'   - ROJO (eta^2): la parabola. Su integral es 2/3 = 0.667.
+'   - AZUL (la suma = el integrando real): la curva que tenes que
+'     integrar de verdad. Es la sombra azul rellena.
+'
+'Para integrar EXACTO la curva azul te alcanza con una regla que
+'integre EXACTO cada pieza por separado, y como la pieza de grado mas
+'alto es eta^2 (grado 2), necesitas N tal que 2N-1 >= 2 -> N >= 2.
+'
+'Otros terminos de la matriz K_e (como (B^T·D·B)[1,3]) tienen productos
+'cruzados como (1-eta)*(1+eta) = 1 - eta^2 -> mismas piezas
+'(1, eta^2), otros coeficientes. NINGUNA pieza pasa de grado 2 en
+'el Q4 bilineal, por eso 2x2 Gauss es lo justo.
+
+"0.5c Analogia: la balanza
+'==========================================================================
+'Pensalo asi:
+'   - Los objetos a pesar = las piezas del polinomio (1, eta, eta^2, ...)
+'   - La balanza = la regla de Gauss
+'
+'Si tu balanza aguanta el objeto MAS PESADO (la pieza de grado mas alto),
+'aguanta cualquier combinacion de todos los otros (porque la integral
+'es LINEAL — la suma se descompone en partes que ya sabes integrar).
+'
+'   Q4: pieza mas pesada = grado 2.
+'   Balanza correcta = la que aguanta grado 2 o mas.
+'   Gauss N puntos aguanta hasta grado (2N-1).
+'   -> N=2 -> aguanta grado 3 -> sobra para el grado 2 del Q4. PERFECTO.
+
+"0.6 Vista con #chart - el polinomio del 0.4 dibujado
+'==========================================================================
+'Veamos el polinomio f(x) = 3 - 2x + 5x^2 - x^3 que probamos arriba,
+'dibujado con Chart.js (usando puntos calculados):
+
+#chart 700 350
+{
+  type: 'line',
+  data: {
+    labels: ['-1.0','-0.8','-0.6','-0.4','-0.2','0.0','0.2','0.4','0.6','0.8','1.0'],
+    datasets: [{
+      label: 'f(x) = 3 - 2x + 5x^2 - x^3',
+      data: [11.0, 8.712, 6.816, 5.264, 4.008, 3.0, 2.192, 1.536, 0.984, 0.488, 0.0],
+      borderColor: 'blue',
+      backgroundColor: 'rgba(173,216,230,0.4)',
+      borderWidth: 2.5,
+      fill: 'origin',
+      tension: 0.35
+    }]
+  },
+  options: {
+    plugins: {
+      title: { display: true, text: 'Polinomio armado con piezas LEGO: 3*1 + (-2)*x + 5*x^2 + (-1)*x^3', font: { size: 13 } },
+      legend: { display: true }
+    },
+    scales: {
+      x: { title: { display: true, text: 'x' } },
+      y: { title: { display: true, text: 'f(x)' } }
+    }
+  }
+}
+#end chart
+
+'El AREA debajo de esa curva (entre x = -1 y x = +1) es la integral
+'que queremos calcular. Con 2 puntos de Gauss la calculamos EXACTA
+'porque el polinomio es de grado 3.
+
+"========================================================================
+"AHORA SI, vamos a las pruebas paso a paso para ver donde funciona
+"y donde falla cada regla:
+"========================================================================
+
+"1. El problema - integrar el area bajo una curva
+'==========================================================================
+
+#svg 700 260
+.text 350 18 "PROBLEMA:_calcular_el_area_entre_la_curva_f(x)_y_el_eje_x" 13 navy middle bold
+.text 350 38 "(entre_x_=_-1_y_x_=_+1)" 11 gray middle
+.rect 60 50 580 160 white 0 black 1.5
+.line 60 210 640 210 black 1.5
+'Marcas de eje x
+.text 60 232 "-1" 12 black middle bold
+.text 350 232 "0" 12 black middle bold
+.text 640 232 "+1" 12 black middle bold
+.text 40 210 "0" 12 black middle bold
+'Curva tipo arco hacia arriba y area sombreada
+.polygon 60 150 100 120 160 95 220 75 290 60 350 55 410 60 480 75 540 95 600 120 640 150 640 210 60 210 lightblue 0.55
+.polyline 60 150 100 120 160 95 220 75 290 60 350 55 410 60 480 75 540 95 600 120 640 150 blue 2.5
+.text 645 150 "f(x)" 14 blue start bold
+.text 350 252 "Esta_AREA_AZUL_=_la_integral_que_queremos_aproximar" 12 navy middle bold
+#end svg
+
+'Si f(x) es algo simple (como x^2) integramos a mano. Si f(x) es algo
+'horrible (como B^T*D*B*det(J) del FEM), necesitamos un TRUCO numerico.
+
+"1. Idea ingenua - poner 1 rectangulo en el medio
+'==========================================================================
+'Lo mas simple posible: un solo rectangulo de ancho 2 y altura f(0):
+
+#svg 700 260
+.text 350 18 "REGLA_DE_1_PUNTO:_I_~_2_*_f(0)" 13 red middle bold
+.rect 60 50 580 160 white 0 black 1.5
+.line 60 210 640 210 black 1.5
+.text 60 232 "-1" 12 black middle bold
+.text 350 232 "0" 12 black middle bold
+.text 640 232 "+1" 12 black middle bold
+'Curva azul de referencia
+.polyline 60 150 100 120 160 95 220 75 290 60 350 55 410 60 480 75 540 95 600 120 640 150 blue 2
+'Linea vertical en x = 0 mostrando el punto de Gauss
+.line 350 210 350 55 red 2
+.circle 350 55 7 red 1
+.text 350 45 "f(0)" 13 red middle bold
+'Rectangulo verde de ancho 2 y altura f(0)
+.rect 60 55 580 155 lightgreen 0.45
+.text 350 130 "Rectangulo_=_2_*_f(0)" 13 darkgreen middle bold
+.text 350 252 "Funciona_o_falla?_Veamos_4_ejemplos_concretos" 11 navy middle bold
+#end svg
+
+"1.1 Prueba con f(x) = 1 (linea horizontal constante)
+'==========================================================================
+'La funcion es una linea recta plana a altura y = 1.
+'AREA REAL = ancho * alto = 2 * 1 = 2.
+
+#chart 700 340
+{
+  type: 'line',
+  data: {
+    datasets: [
+      {
+        label: 'f(x) = 1 (area azul = integral real = 2)',
+        data: [{x:-1,y:1},{x:-0.5,y:1},{x:0,y:1},{x:0.5,y:1},{x:1,y:1}],
+        borderColor: 'blue',
+        backgroundColor: 'rgba(100,150,255,0.45)',
+        borderWidth: 3,
+        pointRadius: 0,
+        fill: 'origin',
+        tension: 0
+      },
+      {
+        label: 'Punto Gauss x=0, f(0)=1',
+        data: [{x:0,y:1}],
+        borderColor: 'red',
+        backgroundColor: 'red',
+        pointRadius: 9,
+        showLine: false
+      }
+    ]
+  },
+  options: {
+    plugins: {
+      title: { display: true, text: 'f(x)=1: la regla 1-pt acierta porque f(0)=1 captura todo el rectangulo', font: { size: 13 } }
+    },
+    scales: {
+      x: { type: 'linear', position: 'bottom', min: -1, max: 1, title: { display: true, text: 'x' } },
+      y: { min: 0, max: 1.4, title: { display: true, text: 'f(x)' } }
+    }
+  }
+}
+#end chart
+
+'Calculo SIMBOLICO de la integral real con #sym:
+#sym integrate(1; x; -1; 1)
+
+'Aproximacion numerica con la regla de 1 punto y comparacion:
+I_real_const = 2
+I_1pt_const = 2*1
+err_const = abs(I_real_const - I_1pt_const)
+#blk
+I_real_const ; 'area exacta debajo de f(x) = 1
+I_1pt_const  ; 'aproximacion 1-punto: 2*f(0) = 2*1
+err_const    ; 'error = 0  ->  EXACTO
+#end blk
+
+"1.2 Prueba con f(x) = x (linea diagonal)
+'==========================================================================
+'La funcion sube linealmente de (-1, -1) a (+1, +1).
+'AREA REAL = 0 (el triangulo positivo a la derecha cancela el negativo
+'a la izquierda — son simetricos).
+
+#chart 700 340
+{
+  type: 'line',
+  data: {
+    datasets: [
+      {
+        label: 'f(x) = x (impar -> integral = 0 por cancelacion)',
+        data: [{x:-1,y:-1},{x:-0.5,y:-0.5},{x:0,y:0},{x:0.5,y:0.5},{x:1,y:1}],
+        borderColor: 'blue',
+        backgroundColor: 'rgba(100,150,255,0.4)',
+        borderWidth: 3,
+        pointRadius: 0,
+        fill: 'origin',
+        tension: 0
+      },
+      {
+        label: 'Punto Gauss x=0, f(0)=0',
+        data: [{x:0,y:0}],
+        borderColor: 'red',
+        backgroundColor: 'red',
+        pointRadius: 9,
+        showLine: false
+      }
+    ]
+  },
+  options: {
+    plugins: {
+      title: { display: true, text: 'f(x)=x: las dos mitades del area se cancelan -> integral = 0', font: { size: 13 } }
+    },
+    scales: {
+      x: { type: 'linear', position: 'bottom', min: -1, max: 1, title: { display: true, text: 'x' } },
+      y: { min: -1.2, max: 1.2, title: { display: true, text: 'f(x)' } }
+    }
+  }
+}
+#end chart
+
+'Calculo SIMBOLICO:
+#sym integrate(x; x; -1; 1)
+
+'Aproximacion numerica:
+I_real_lin = 0
+I_1pt_lin = 2*0
+err_lin = abs(I_real_lin - I_1pt_lin)
+#blk
+I_real_lin ; 'area exacta debajo de f(x) = x
+I_1pt_lin  ; 'aproximacion: 2*f(0) = 0
+err_lin    ; 'error = 0  ->  EXACTO
+#end blk
+
+"1.3 Prueba con f(x) = x^2 (parabola — la primera que FALLA)
+'==========================================================================
+'AREA REAL = integral de x^2 de -1 a +1 = (x^3/3) de -1 a +1 = 2/3 ~ 0.667
+'AHORA atencion: la regla de 1 punto solo mira f(0) = 0 -> "estima" area = 0
+'cuando la real es 0.667.
+
+#chart 700 340
+{
+  type: 'line',
+  data: {
+    datasets: [
+      {
+        label: 'f(x) = x^2 (area real azul = 0.667)',
+        data: [{x:-1,y:1},{x:-0.8,y:0.64},{x:-0.6,y:0.36},{x:-0.4,y:0.16},{x:-0.2,y:0.04},{x:0,y:0},{x:0.2,y:0.04},{x:0.4,y:0.16},{x:0.6,y:0.36},{x:0.8,y:0.64},{x:1,y:1}],
+        borderColor: 'blue',
+        backgroundColor: 'rgba(100,150,255,0.45)',
+        borderWidth: 3,
+        pointRadius: 0,
+        fill: 'origin',
+        tension: 0.35
+      },
+      {
+        label: 'Punto Gauss x=0, f(0)=0 (MAL: falta toda el area)',
+        data: [{x:0,y:0}],
+        borderColor: 'red',
+        backgroundColor: 'red',
+        pointRadius: 10,
+        showLine: false
+      }
+    ]
+  },
+  options: {
+    plugins: {
+      title: { display: true, text: 'f(x)=x^2: la regla 1-pt da 0 pero la integral real = 0.667 -> FALLA', font: { size: 13 } }
+    },
+    scales: {
+      x: { type: 'linear', position: 'bottom', min: -1, max: 1, title: { display: true, text: 'x' } },
+      y: { min: 0, max: 1.2, title: { display: true, text: 'f(x)' } }
+    }
+  }
+}
+#end chart
+
+'Calculo SIMBOLICO de la integral real:
+#sym integrate(x^2; x; -1; 1)
+
+'Aproximacion numerica con 1 punto:
+I_real_x2 = 2/3
+I_1pt_x2 = 2*0^2
+err_x2 = abs(I_real_x2 - I_1pt_x2)
+#blk
+I_real_x2 ; 'integral exacta de f(x) = x^2 = 2/3
+I_1pt_x2  ; 'aproximacion 1 punto: 2*f(0) = 0
+err_x2    ; 'error 0.667  ->  FALLA totalmente
+#end blk
+
+'PORQUE FALLA: la formula 2*f(0) solo "mide" la altura en el centro.
+'Pero la parabola CRECE alejandote del centro, asi que toda esa area
+'fuera del medio se ignora.
+
+"1.4 Resumen visual de la regla de 1 punto
+'==========================================================================
+
+#svg 700 230
+.text 350 18 "REGLA_DE_1_PUNTO_-_resumen_de_los_3_casos" 13 navy middle bold
+.text 350 38 "(1_punto_es_exacta_hasta_grado_2*1-1_=_grado_1,_falla_a_partir_de_grado_2)" 10 gray middle
+'3 mini-paneles
+.rect 30 60 200 130 white 0 black 1
+.text 130 80 "f(x)_=_1" 12 navy middle bold
+.text 130 100 "real_=_2,_aprox_=_2" 11 darkgreen middle
+.text 130 130 "EXACTO" 14 darkgreen middle bold
+.text 130 165 "(grado_0)" 10 gray middle
+.rect 250 60 200 130 white 0 black 1
+.text 350 80 "f(x)_=_x" 12 navy middle bold
+.text 350 100 "real_=_0,_aprox_=_0" 11 darkgreen middle
+.text 350 130 "EXACTO" 14 darkgreen middle bold
+.text 350 165 "(grado_1)" 10 gray middle
+.rect 470 60 200 130 white 0 black 1
+.text 570 80 "f(x)_=_x^2" 12 navy middle bold
+.text 570 100 "real_=_0.667,_aprox_=_0" 11 darkred middle
+.text 570 130 "FALLA" 14 darkred middle bold
+.text 570 165 "(grado_2)" 10 gray middle
+#end svg
+
+"2. El truco de Gauss - 2 puntos en posiciones MAGICAS
+'==========================================================================
+'Idea: en vez de poner 1 punto en el centro, pongo 2 puntos simetricos
+'en x_1 = -d y x_2 = +d, con pesos w_1 y w_2. Eligiendo bien d, w_1, w_2
+'se consigue que la formula sea exacta tambien para x^2 y x^3.
+'
+'Resolviendo el sistema (cuatro condiciones — exacto para f = 1, x, x^2, x^3 —
+'cuatro incognitas) se obtienen las posiciones MAGICAS:
+'
+'   x_1 = -1/sqrt(3) ~ -0.5774
+'   x_2 = +1/sqrt(3) ~ +0.5774
+'   w_1 = w_2 = 1
+
+#svg 700 280
+.text 350 18 "REGLA_DE_2_PUNTOS:_I_~_1*f(-1/sqrt(3))_+_1*f(+1/sqrt(3))" 12 navy middle bold
+.rect 60 50 580 170 white 0 black 1.5
+.line 60 220 640 220 black 1.5
+.text 60 242 "-1" 12 black middle bold
+.text 350 242 "0" 12 black middle bold
+.text 640 242 "+1" 12 black middle bold
+'2 puntos: -0.577 -> pixel 350 - 167 = 183; +0.577 -> 517
+.line 183 220 183 70 red 2
+.line 517 220 517 70 red 2
+.circle 183 70 6 red 1
+.circle 517 70 6 red 1
+.text 183 265 "x_1_=_-1/sqrt(3)" 12 red middle bold
+.text 517 265 "x_2_=_+1/sqrt(3)" 12 red middle bold
+'Cajitas verdes representando el peso w_i = 1
+.rect 100 70 180 150 lightgreen 0.4
+.rect 420 70 180 150 lightgreen 0.4
+.text 190 65 "w_1_=_1" 12 darkgreen middle bold
+.text 510 65 "w_2_=_1" 12 darkgreen middle bold
+'Curva por encima para referencia
+.polyline 60 180 100 165 160 140 220 120 290 105 350 100 410 105 480 120 540 140 600 165 640 180 blue 2.5
+.text 645 180 "f(x)" 13 blue start bold
+#end svg
+
+"2.1 Verificacion con f(x) = x^2 (donde 1 punto fallaba)
+'==========================================================================
+'La regla de 1 punto daba 0 cuando la real es 0.667.
+'Ahora la regla de 2 puntos:
+'   I ~ 1*(-1/sqrt(3))^2 + 1*(+1/sqrt(3))^2 = 1/3 + 1/3 = 2/3
+'CASO RESUELTO — la aproximacion de 2 puntos sale IDENTICA al real.
+
+#chart 700 340
+{
+  type: 'line',
+  data: {
+    datasets: [
+      {
+        label: 'f(x) = x^2 (area real azul = 0.667)',
+        data: [{x:-1,y:1},{x:-0.8,y:0.64},{x:-0.6,y:0.36},{x:-0.4,y:0.16},{x:-0.2,y:0.04},{x:0,y:0},{x:0.2,y:0.04},{x:0.4,y:0.16},{x:0.6,y:0.36},{x:0.8,y:0.64},{x:1,y:1}],
+        borderColor: 'blue',
+        backgroundColor: 'rgba(100,150,255,0.45)',
+        borderWidth: 3,
+        pointRadius: 0,
+        fill: 'origin',
+        tension: 0.35
+      },
+      {
+        label: '2 puntos de Gauss en x = ±0.577, f = 0.333 -> suma EXACTA 0.667',
+        data: [{x:-0.5773503,y:0.333},{x:0.5773503,y:0.333}],
+        borderColor: 'red',
+        backgroundColor: 'red',
+        pointRadius: 10,
+        showLine: false
+      }
+    ]
+  },
+  options: {
+    plugins: {
+      title: { display: true, text: 'f(x)=x^2 con 2 puntos: cada punto captura 0.333 -> suma = 0.667 EXACTO', font: { size: 13 } }
+    },
+    scales: {
+      x: { type: 'linear', position: 'bottom', min: -1, max: 1, title: { display: true, text: 'x' } },
+      y: { min: 0, max: 1.2, title: { display: true, text: 'f(x)' } }
+    }
+  }
+}
+#end chart
+
+'Integral REAL simbolica:
+#sym integrate(x^2; x; -1; 1)
+
+'Aproximacion numerica con 2 puntos:
+I_real_x2_g2 = 2/3
+I_g2_x2 = 1*(-1/sqr(3))^2 + 1*(1/sqr(3))^2
+err_g2_x2 = abs(I_real_x2_g2 - I_g2_x2)
+#blk
+I_real_x2_g2 ; 'integral exacta de x^2 (simbolicamente = 2/3)
+I_g2_x2      ; 'Gauss 2 puntos: 1/3 + 1/3 = 2/3
+err_g2_x2    ; 'error ~ 0  ->  EXACTO
+#end blk
+
+"2.2 Verificacion con f(x) = x^3 (funcion impar)
+'==========================================================================
+
+#chart 700 340
+{
+  type: 'line',
+  data: {
+    datasets: [
+      {
+        label: 'f(x) = x^3 (impar: mitades + y - se cancelan -> integral = 0)',
+        data: [{x:-1,y:-1},{x:-0.8,y:-0.512},{x:-0.6,y:-0.216},{x:-0.4,y:-0.064},{x:-0.2,y:-0.008},{x:0,y:0},{x:0.2,y:0.008},{x:0.4,y:0.064},{x:0.6,y:0.216},{x:0.8,y:0.512},{x:1,y:1}],
+        borderColor: 'blue',
+        backgroundColor: 'rgba(100,150,255,0.4)',
+        borderWidth: 3,
+        pointRadius: 0,
+        fill: 'origin',
+        tension: 0.35
+      },
+      {
+        label: '2 puntos de Gauss en x=±0.577: f(-0.577) + f(+0.577) = 0 EXACTO',
+        data: [{x:-0.5773503,y:-0.192},{x:0.5773503,y:0.192}],
+        borderColor: 'red',
+        backgroundColor: 'red',
+        pointRadius: 10,
+        showLine: false
+      }
+    ]
+  },
+  options: {
+    plugins: {
+      title: { display: true, text: 'f(x)=x^3 con 2 puntos: -0.192 + 0.192 = 0 EXACTO (por simetria impar)', font: { size: 13 } }
+    },
+    scales: {
+      x: { type: 'linear', position: 'bottom', min: -1, max: 1, title: { display: true, text: 'x' } },
+      y: { min: -1.2, max: 1.2, title: { display: true, text: 'f(x)' } }
+    }
+  }
+}
+#end chart
+
+I_real_x3 = 0
+I_g2_x3 = 1*(-1/sqr(3))^3 + 1*(1/sqr(3))^3
+#blk
+I_real_x3 ; 'integral exacta (impar -> 0)
+I_g2_x3   ; 'Gauss 2 puntos: -0.192 + 0.192 = 0
+#end blk
+
+"2.3 Donde FALLA la regla de 2 puntos? Probamos con x^4 (grado 4)
+'==========================================================================
+
+#chart 700 340
+{
+  type: 'line',
+  data: {
+    datasets: [
+      {
+        label: 'f(x) = x^4 (area real azul = 0.400)',
+        data: [{x:-1,y:1},{x:-0.8,y:0.4096},{x:-0.6,y:0.1296},{x:-0.4,y:0.0256},{x:-0.2,y:0.0016},{x:0,y:0},{x:0.2,y:0.0016},{x:0.4,y:0.0256},{x:0.6,y:0.1296},{x:0.8,y:0.4096},{x:1,y:1}],
+        borderColor: 'blue',
+        backgroundColor: 'rgba(100,150,255,0.45)',
+        borderWidth: 3,
+        pointRadius: 0,
+        fill: 'origin',
+        tension: 0.35
+      },
+      {
+        label: '2 puntos de Gauss en x=±0.577 -> da 0.222 (subestima)',
+        data: [{x:-0.5773503,y:0.111},{x:0.5773503,y:0.111}],
+        borderColor: 'red',
+        backgroundColor: 'red',
+        pointRadius: 10,
+        showLine: false
+      }
+    ]
+  },
+  options: {
+    plugins: {
+      title: { display: true, text: 'f(x)=x^4: real=0.400 vs 2-pt=0.222 -> FALLA (puntos rojos quedan abajo)', font: { size: 13 } }
+    },
+    scales: {
+      x: { type: 'linear', position: 'bottom', min: -1, max: 1, title: { display: true, text: 'x' } },
+      y: { min: 0, max: 1.2, title: { display: true, text: 'f(x)' } }
+    }
+  }
+}
+#end chart
+
+'Integral REAL simbolica:
+#sym integrate(x^4; x; -1; 1)
+
+'Aproximacion numerica con 2 puntos:
+I_real_x4 = 2/5
+I_g2_x4 = 1*(-1/sqr(3))^4 + 1*(1/sqr(3))^4
+err_g2_x4 = abs(I_real_x4 - I_g2_x4)
+#blk
+I_real_x4 ; 'integral exacta de x^4 (simbolicamente = 2/5 = 0.4)
+I_g2_x4   ; 'Gauss 2 puntos: 2/9 = 0.222
+err_g2_x4 ; 'error: 0.178  ->  FALLA en grado 4
+#end blk
+
+"2.4 Resumen visual de la regla de 2 puntos
+'==========================================================================
+
+#svg 700 240
+.text 350 18 "REGLA_DE_2_PUNTOS_-_resumen" 13 navy middle bold
+.text 350 38 "(2_puntos_es_exacta_hasta_grado_2*2-1_=_grado_3)" 10 gray middle
+.rect 30 60 160 140 white 0 black 1
+.text 110 80 "f(x)_=_x^2" 12 navy middle bold
+.text 110 100 "0.667_~_0.667" 11 darkgreen middle
+.text 110 130 "EXACTO" 13 darkgreen middle bold
+.text 110 165 "grado_2" 10 gray middle
+.rect 210 60 160 140 white 0 black 1
+.text 290 80 "f(x)_=_x^3" 12 navy middle bold
+.text 290 100 "0_~_0" 11 darkgreen middle
+.text 290 130 "EXACTO" 13 darkgreen middle bold
+.text 290 165 "grado_3" 10 gray middle
+.rect 390 60 160 140 white 0 black 1
+.text 470 80 "f(x)_=_x^4" 12 navy middle bold
+.text 470 100 "0.400_~_0.222" 11 darkred middle
+.text 470 130 "FALLA" 13 darkred middle bold
+.text 470 165 "grado_4" 10 gray middle
+.rect 570 60 100 140 white 0 black 1
+.text 620 80 "..." 14 navy middle bold
+.text 620 100 "necesita" 10 gray middle
+.text 620 115 "3_puntos" 10 gray middle
+.text 620 165 "grado_5+" 10 gray middle
+#end svg
+
+"3. La regla general (memorizar esto)
+'==========================================================================
+
+#svg 700 270
+.text 350 18 "Regla_general_de_Gauss-Legendre" 13 navy middle bold
+'Tabla
+.rect 100 50 500 200 white 0.95 black 1
+.line 100 80 600 80 black 1
+.line 100 130 600 130 lightgray 0.5
+.line 100 180 600 180 lightgray 0.5
+.line 100 230 600 230 lightgray 0.5
+.line 250 50 250 250 black 1
+.line 450 50 450 250 black 1
+.text 175 70 "N_puntos" 12 black middle bold
+.text 350 70 "Posiciones_x_i" 12 black middle bold
+.text 525 70 "Grado_max_exacto" 12 black middle bold
+.text 175 110 "1" 13 red middle bold
+.text 350 110 "0" 12 black middle
+.text 525 110 "2N-1_=_1" 12 darkred middle bold
+.text 175 160 "2" 13 blue middle bold
+.text 350 155 "-1/sqrt(3),_+1/sqrt(3)" 11 black middle
+.text 350 173 "(aprox_+-0.577)" 9 gray middle
+.text 525 160 "2N-1_=_3" 12 blue middle bold
+.text 175 210 "3" 13 darkgreen middle bold
+.text 350 200 "-sqrt(3/5),_0,_+sqrt(3/5)" 11 black middle
+.text 350 218 "(aprox_+-0.775)" 9 gray middle
+.text 525 210 "2N-1_=_5" 12 darkgreen middle bold
+.text 350 260 "Con_N_puntos_->_la_aproximacion_es_EXACTA_si_el_polinomio_es_de_grado_<=_2N-1" 11 navy middle bold
+#end svg
+
+"4. Aplicacion al Q4 (porque te importa esto)
+'==========================================================================
+
+#svg 700 320
+.text 350 20 "POR_QUE_EN_Q4_MEMBRANA_LA_REGLA_CORRECTA_ES_2x2" 13 navy middle bold
+.rect 60 50 580 250 white 0 black 1.5
+'Cadena de razonamiento
+.text 80 80 "1)_Funciones_de_forma_N_a(xi,eta)_son_BILINEALES_(grado_1):" 12 black start bold
+.text 110 100 "N_1_=_(1-xi)*(1-eta)/4_->_grado_1_en_cada_variable" 11 navy start
+.text 80 130 "2)_Sus_derivadas_dN_a/dxi,_dN_a/deta_son_LINEALES_(grado_1):" 12 black start bold
+.text 110 150 "dN_1/dxi_=_-(1-eta)/4_->_grado_1_en_eta" 11 navy start
+.text 80 180 "3)_El_producto_B^T*D*B_es_LINEAL*LINEAL_=_CUADRATICO_(grado_2):" 12 black start bold
+.text 110 200 "termino_tipico:_(1-eta)^2/16_->_grado_2_en_eta" 11 navy start
+.text 80 230 "4)_Para_integrar_EXACTO_grado_2_necesitamos_2N-1_>=_2:" 12 black start bold
+.text 110 250 "N_=_1_(2N-1=1):_NO_alcanza_->_REDUCIDA_(blanda,_hourglass)" 11 darkred start
+.text 110 268 "N_=_2_(2N-1=3):_SI_alcanza_->_COMPLETA_(lo_correcto)" 11 darkgreen start bold
+.text 110 286 "N_=_3_(2N-1=5):_sobra_->_SOBRE-integracion_(igual_a_2x2_pero_lenta)" 11 gray start
+#end svg
+
+#svg 700 280
+.text 350 20 "Puntos_de_Gauss_2D_-_los_tres_casos_en_el_elemento_Q4" 13 navy middle bold
+'1x1
+.rect 30 60 160 160 lightyellow 0.4 black 1.5
+.text 110 240 "1x1_(1_punto)" 13 red middle bold
+.text 110 260 "REDUCIDA" 12 red middle bold
+.circle 110 140 9 red 0.95
+'2x2
+.rect 270 60 160 160 lightyellow 0.4 black 1.5
+.text 350 240 "2x2_(4_puntos)" 13 blue middle bold
+.text 350 260 "COMPLETA" 12 blue middle bold
+.circle 304 94 7 blue 0.95
+.circle 396 94 7 blue 0.95
+.circle 304 186 7 blue 0.95
+.circle 396 186 7 blue 0.95
+'3x3
+.rect 510 60 160 160 lightyellow 0.4 black 1.5
+.text 590 240 "3x3_(9_puntos)" 13 darkgreen middle bold
+.text 590 260 "SOBRE" 12 darkgreen middle bold
+.circle 528 78 6 darkgreen 0.95
+.circle 590 78 6 darkgreen 0.95
+.circle 652 78 6 darkgreen 0.95
+.circle 528 140 6 darkgreen 0.95
+.circle 590 140 6 darkgreen 0.95
+.circle 652 140 6 darkgreen 0.95
+.circle 528 202 6 darkgreen 0.95
+.circle 590 202 6 darkgreen 0.95
+.circle 652 202 6 darkgreen 0.95
+#end svg
+
+"5. Cuando aplicas cada caso? Guia practica
+'==========================================================================
+'Esta es la pregunta clave: si para Q4 lineal "lo correcto" es 2x2,
+'cuando me conviene usar 1x1 (reducida) o 3x3 (sobre)?
+'Te lo explico con casos reales y luego un cuadro de decision.
+
+"5.1 La regla de 1x1 (reducida) - cuando se usa
+'==========================================================================
+'**Caso 1 - Mindlin plate / shell con SHEAR LOCKING:**
+'Cuando una placa Mindlin es DELGADA (t/L pequeno), la energia de
+'flexion deberia dominar pero la formulacion sobreestima la rigidez
+'al corte transversal -> la placa queda artificialmente RIGIDA y no
+'flexa lo que deberia. Esto se llama "shear locking".
+'
+'Solucion: integrar SELECTIVAMENTE:
+'   - Termino de flexion (D_b)    -> 2x2 (full)
+'   - Termino de corte    (D_s)   -> 1x1 (reduced)
+'Esto debilita el corte transversal a proposito para que la placa
+'pueda flexar. Resultado: comportamiento correcto en placas delgadas.
+'
+'**Caso 2 - Solidos casi incompresibles (rubber, suelos):**
+'Para nu cercano a 0.5, el termino volumetrico de la rigidez explota
+'(volumetric locking). Solucion: integrar el volumetrico con menos
+'puntos (1x1) que el desviador.
+'
+'**Caso 3 - Elementos hourglass-controlados de software comercial:**
+'   - ABAQUS S4R (shell) y C3D8R (brick reducido): usan 1 punto Gauss
+'     + estabilizacion de hourglass agregada artificialmente.
+'   - Razon: 8x mas rapido que C3D8 (que usa 2x2x2 = 8 puntos).
+'   - Riesgo: si la malla es muy fina y el material es lineal, los
+'     modos hourglass pueden propagarse sin que el solver se entere.
+
+#svg 700 280
+.text 350 20 "CASOS_REALES_donde_se_usa_1x1_(REDUCIDA)" 13 darkred middle bold
+.rect 30 50 200 200 lightyellow 0.3 darkred 1.5
+.text 130 75 "MINDLIN_DELGADA" 12 darkred middle bold
+.text 130 100 "t/L_<_0.05" 11 black middle
+.text 130 130 "Shear_locking" 11 navy middle bold
+.text 130 150 "se_arregla_con" 10 black middle
+.text 130 170 "selectiva:" 11 black middle bold
+.text 130 195 "2x2_flexion" 11 blue middle bold
+.text 130 215 "+_1x1_corte" 11 darkred middle bold
+.rect 250 50 200 200 lightyellow 0.3 darkred 1.5
+.text 350 75 "RUBBER/SUELOS" 12 darkred middle bold
+.text 350 100 "nu_~_0.5" 11 black middle
+.text 350 130 "Volumetric" 11 navy middle bold
+.text 350 145 "locking" 11 navy middle bold
+.text 350 175 "se_arregla_con" 10 black middle
+.text 350 195 "2x2_desviador" 11 blue middle bold
+.text 350 215 "+_1x1_volumetrico" 11 darkred middle bold
+.rect 470 50 200 200 lightyellow 0.3 darkred 1.5
+.text 570 75 "SOFTWARE_COMERCIAL" 12 darkred middle bold
+.text 570 100 "ABAQUS_S4R/C3D8R" 11 black middle
+.text 570 130 "1_punto_para" 11 navy middle bold
+.text 570 145 "ahorrar_8x_CPU" 11 navy middle bold
+.text 570 175 "+_control_de" 10 black middle
+.text 570 195 "hourglass" 11 darkred middle bold
+.text 570 215 "(estabilizacion)" 10 darkred middle
+#end svg
+
+"5.2 La regla de 2x2 (completa) - el DEFAULT correcto
+'==========================================================================
+'Para la mayoria de los casos COTIDIANOS de FEM es lo que se usa por defecto:
+'
+'   - Q4 membrana (plane stress, plane strain): SIEMPRE 2x2.
+'   - Q4 placa Kirchhoff (delgada con DKQ, DKT): 2x2.
+'   - Q4 axisimetrica: 2x2.
+'   - Hexaedro H8 (3D lineal): 2x2x2 = 8 puntos.
+'   - Wedge / prisma: equivalente al 2x2 en cada cara.
+'
+'CUANDO NO usar 2x2:
+'   - Placa Mindlin DELGADA -> mejor selectiva (2x2 + 1x1).
+'   - Elementos muy DISTORSIONADOS -> mejor 3x3.
+'   - Material casi incompresible -> mejor B-bar o reducida.
+
+"5.3 La regla de 3x3 (sobre-integracion) - cuando es necesaria
+'==========================================================================
+'Para Q4 lineal NO aporta nada (da identico al 2x2). PERO si la
+'geometria o la fisica complican el integrando, hace falta:
+'
+'**Caso 1 - Elementos DISTORSIONADOS (no rectangulares):**
+'Cuando el Q4 esta muy deformado (lados curvos, esquinas no a 90 grados),
+'el det(J) deja de ser constante y se convierte en una funcion NO
+'polinomial de (xi, eta). El integrando B^T*D*B*det(J) entonces puede
+'tener grado efectivo mayor a 2. Sub-integrar con 2x2 puede dar errores
+'significativos. Solucion: 3x3 captura mejor el integrando real.
+'
+'**Caso 2 - Elementos cuadraticos Q9 (9 nodos):**
+'Q9 tiene funciones de forma cuadraticas -> derivadas LINEALES no, son
+'CUADRATICAS. Entonces B^T*D*B tiene grado 4 en cada direccion.
+'   Necesitas N tal que 2N - 1 >= 4 -> N >= 2.5 -> N = 3.
+'   Por eso Q9 usa OBLIGATORIAMENTE 3x3 Gauss (no es opcional, es lo
+'   minimo correcto).
+'
+'**Caso 3 - Elementos serendipitos Q8 (8 nodos):**
+'Similar a Q9 pero sin nodo central. Tambien usa 3x3.
+'
+'**Caso 4 - Plasticidad con endurecimiento no lineal:**
+'Cuando la relacion sigma-epsilon es muy no lineal, los puntos de Gauss
+'sirven tambien para EVALUAR las leyes constitutivas. Mas puntos =
+'mejor resolucion espacial de la plastificacion.
+
+#svg 700 300
+.text 350 20 "CASOS_REALES_donde_se_usa_3x3_(SOBRE-INTEGRACION)" 13 darkgreen middle bold
+.rect 30 50 200 220 lightyellow 0.3 darkgreen 1.5
+.text 130 75 "Q4_DISTORSIONADO" 12 darkgreen middle bold
+.text 130 95 "(lados_no_rectos)" 10 black middle
+'Dibujo de Q4 distorsionado
+.polygon 65 125 195 115 200 195 70 205 lightgray 0.5
+.text 130 175 "det(J)_no_constante" 10 navy middle
+.text 130 195 "->_grado_efectivo" 10 navy middle
+.text 130 215 "puede_ser_>_2" 10 navy middle
+.text 130 245 "3x3_lo_captura" 11 darkgreen middle bold
+.rect 250 50 200 220 lightyellow 0.3 darkgreen 1.5
+.text 350 75 "Q9_CUADRATICO" 12 darkgreen middle bold
+.text 350 95 "(9_nodos)" 10 black middle
+'Dibujo de Q9 con 9 nodos
+.rect 285 115 130 90 lightgray 0.5
+.circle 285 115 4 navy 1
+.circle 350 115 4 navy 1
+.circle 415 115 4 navy 1
+.circle 285 160 4 navy 1
+.circle 350 160 4 navy 1
+.circle 415 160 4 navy 1
+.circle 285 205 4 navy 1
+.circle 350 205 4 navy 1
+.circle 415 205 4 navy 1
+.text 350 225 "N_a_=_grado_2" 10 navy middle
+.text 350 245 "->_B^T*D*B_grado_4" 10 navy middle
+.text 350 260 "->_3x3_OBLIGATORIO" 11 darkgreen middle bold
+.rect 470 50 200 220 lightyellow 0.3 darkgreen 1.5
+.text 570 75 "PLASTICIDAD" 12 darkgreen middle bold
+.text 570 95 "no_lineal" 10 black middle
+.text 570 130 "Mas_puntos_=" 11 navy middle
+.text 570 150 "mejor_evaluacion" 10 navy middle
+.text 570 165 "de_leyes_constitutivas" 10 navy middle
+.text 570 200 "(usa_3x3_o_mas" 11 black middle
+.text 570 220 "segun_la_dureza" 11 black middle
+.text 570 235 "del_problema)" 11 black middle
+#end svg
+
+"5.4 Integracion SELECTIVA - la mas usada en Mindlin
+'==========================================================================
+'Caso especial muy importante: el Q4 Mindlin (placa gruesa) tiene una
+'matriz K_e con DOS partes — flexion y corte:
+
+#deq K_e = K_flexion + K_corte
+
+'Cada parte tiene un integrando de distinto grado y se integra con
+'distinto N. Esto se llama integracion SELECTIVA:
+
+#blk
+'K_flexion ; 'derivadas de θ_x, θ_y    ; 'grado 2  ; 'usar 2x2 (full)
+'K_corte   ; 'derivadas de w           ; 'grado 0-1; 'usar 1x1 (reduced)
+#end blk
+
+'Por que reduced en corte?
+'   - Si integras corte con 2x2, en placas delgadas (t/L < 0.05) la
+'     rigidez al corte queda artificialmente alta -> shear locking
+'     -> la placa no flexa lo que deberia.
+'   - Con 1x1 en corte, la rigidez se "afloja" lo justo para que la
+'     placa Mindlin funcione bien tambien cuando es delgada.
+'   - Es la formulacion estandar de Hughes/Bathe para Mindlin.
+
+"5.5 Cuadro de decision final
+'==========================================================================
+
+#svg 700 360
+.text 350 20 "GUIA_PRACTICA:_que_cuadratura_uso_para_mi_problema?" 13 navy middle bold
+'Tabla
+.rect 30 50 640 290 white 0 black 1
+.line 30 80 670 80 black 1
+.line 30 130 670 130 lightgray 0.5
+.line 30 180 670 180 lightgray 0.5
+.line 30 230 670 230 lightgray 0.5
+.line 30 280 670 280 lightgray 0.5
+.line 220 50 220 340 black 1
+.line 440 50 440 340 black 1
+.text 125 70 "Tipo_de_problema" 12 black middle bold
+.text 330 70 "Cuadratura" 12 black middle bold
+.text 555 70 "Razon" 12 black middle bold
+'Fila 1: Q4 membrana
+.text 125 105 "Q4_membrana_(plane_stress)" 11 navy middle
+.text 330 105 "2x2_(completa)" 11 blue middle bold
+.text 555 105 "Integrando_grado_2" 10 gray middle
+'Fila 2: Mindlin gruesa
+.text 125 155 "Mindlin_gruesa_(t/L_>_0.1)" 11 navy middle
+.text 330 155 "2x2_(completa)" 11 blue middle bold
+.text 555 155 "No_hay_shear_locking" 10 gray middle
+'Fila 3: Mindlin delgada
+.text 125 205 "Mindlin_delgada_(t/L_<_0.05)" 11 navy middle
+.text 330 200 "SELECTIVA" 11 darkred middle bold
+.text 330 218 "2x2_flex_+_1x1_corte" 10 darkred middle
+.text 555 205 "Evita_shear_locking" 10 gray middle
+'Fila 4: Q4 distorsionado
+.text 125 255 "Q4_muy_distorsionado" 11 navy middle
+.text 330 255 "3x3_(sobre)" 11 darkgreen middle bold
+.text 555 255 "det(J)_no_constante" 10 gray middle
+'Fila 5: Q9 / Q8 cuadratico
+.text 125 305 "Q9_/_Q8_(8-9_nodos)" 11 navy middle
+.text 330 305 "3x3_OBLIGATORIO" 11 darkgreen middle bold
+.text 555 305 "B^T*D*B_grado_4" 10 gray middle
+#end svg
+
+"5.6 Y tu en Hekatan/Calcpad?
+'==========================================================================
+'En todos los archivos de ejemplo del FEM de Calcpad-Symbolic:
+'   - Cantilever Wall Q4 Membrane.cpd          -> 2x2 (correcto)
+'   - Plate Theory - Mindlin.cpd               -> 2x2 (correcto, placa gruesa)
+'   - Plate Theory - Membrane Q4.cpd           -> 2x2 (correcto)
+'   - Plate Theory - Shell Q4.cpd              -> SELECTIVA (2x2 flex + 1x1 corte)
+'   - Awatif Plate - MITC4.cpd                 -> MITC (Mixed Interpolation
+'                                                   of Tensor Components — un
+'                                                   metodo aun mas robusto)
+'
+'Si abris uno de esos archivos vas a ver lineas como:
+'   "g = 1/sqr(3)" o "ξ_g = ±g"  -> son los puntos de Gauss 2x2
+'   "#for ig = 1 : 4"            -> el loop sobre los 4 puntos
+
+"6. Una linea para llevarte
+'==========================================================================
+'N puntos de Gauss integran EXACTO un polinomio hasta grado (2N-1).
+'El Q4 membrana tiene integrando de grado 2 -> 2x2 puntos es lo justo.
+'1x1 sub-integra (modos hourglass, salvo que sea selectiva contra locking).
+'3x3 da identico a 2x2 para Q4 lineal, pero es OBLIGATORIA en Q9 cuadratico.

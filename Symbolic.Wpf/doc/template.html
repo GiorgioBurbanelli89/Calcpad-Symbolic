@@ -1092,13 +1092,20 @@
                     }
                 });
 
-                $("a").click(function () {
-                    chrome.webview.postMessage('clicked');
-                });
+                // Guard chrome.webview: only exists when the HTML is hosted inside
+                // the WPF WebView2 viewer. When opened standalone in a browser,
+                // `chrome.webview` is undefined and the original unconditional calls
+                // would throw `Cannot read properties of undefined`. The guard makes
+                // the click/focus hooks silently no-op outside WPF.
+                if (typeof chrome !== 'undefined' && chrome.webview && chrome.webview.postMessage) {
+                    $("a").click(function () {
+                        chrome.webview.postMessage('clicked');
+                    });
 
-                window.addEventListener('click', () => {
-                    chrome.webview.postMessage('focused');
-                });
+                    window.addEventListener('click', () => {
+                        chrome.webview.postMessage('focused');
+                    });
+                }
             });
         }
         document.oncontextmenu = function () { contextMenu = true; };

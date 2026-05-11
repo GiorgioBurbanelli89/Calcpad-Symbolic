@@ -458,17 +458,20 @@ namespace Calcpad.Core
         private static RealValue UnitRoot(in RealValue value, in RealValue root) =>
             Root(value, root, value.IsUnit);
 
+        // Integer-rounding functions discard units: they signal "I'm using this
+        // value as a count/index". If the user really wants `round(5.3 mm) = 5 mm`
+        // they can write `round(x/u)*u` to preserve units.
         private static RealValue Round(in RealValue value) =>
-            new(Math.Round(value.D, MidpointRounding.AwayFromZero), value.Units);
+            new(Math.Round(value.D, MidpointRounding.AwayFromZero), null);
 
         private static RealValue Floor(in RealValue value) =>
-            new(Math.Floor(value.D), value.Units);
+            new(Math.Floor(value.D), null);
 
         private static RealValue Ceiling(in RealValue value) =>
-            new(Math.Ceiling(value.D), value.Units);
+            new(Math.Ceiling(value.D), null);
 
         private static RealValue Truncate(in RealValue value) =>
-            new(Math.Truncate(value.D), value.Units);
+            new(Math.Truncate(value.D), null);
 
         private static RealValue Random(in RealValue value) =>
             new(Complex.RealRandom(value.D), value.Units);

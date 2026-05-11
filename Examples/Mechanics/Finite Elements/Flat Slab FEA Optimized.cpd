@@ -136,15 +136,15 @@ r = 0.04*k
 	Φ_3l$(x$) = x$^2*(3 - 2*x$)
 	Φ_4l$(x$) = x$^2*l$_1*(-1 + x$)
 	'</td><td>First derivatives
-	Φ′_1l$(x$) = -6*(x$/l$_1)*(1 - x$)
-	Φ′_2l$(x$) = 1 - x$*(4 - 3*x$)
-	Φ′_3l$(x$) = 6*(x$/l$_1)*(1 - x$)
-	Φ′_4l$(x$) = -x$*(2 - 3*x$)
+	Φp_1l$(x$) = -6*(x$/l$_1)*(1 - x$)
+	Φp_2l$(x$) = 1 - x$*(4 - 3*x$)
+	Φp_3l$(x$) = 6*(x$/l$_1)*(1 - x$)
+	Φp_4l$(x$) = -x$*(2 - 3*x$)
 	'</td><td>Second derivatives
-	Φ″_1l$(x$) = -(6/l$_1^2)*(1 - 2*x$)
-	Φ″_2l$(x$) = -(2/l$_1)*(2 - 3*x$)
-	Φ″_3l$(x$) = 6/l$_1^2*(1 - 2*x$)
-	Φ″_4l$(x$) = -(2/l$_1)*(1 - 3*x$)
+	Φpp_1l$(x$) = -(6/l$_1^2)*(1 - 2*x$)
+	Φpp_2l$(x$) = -(2/l$_1)*(2 - 3*x$)
+	Φpp_3l$(x$) = 6/l$_1^2*(1 - 2*x$)
+	Φpp_4l$(x$) = -(2/l$_1)*(1 - 3*x$)
 	'</td></tr></table>
 #end def
 'Along dimension <var>a</var>
@@ -189,25 +189,25 @@ $Plot{N_1,w(ξ; 0) @ ξ = 0 : 1}
 $Plot{N_1,θₓ(ξ; 0) @ ξ = 0 : 1}
 '</td></tr></table>
 '<p><b>Constitutive matrix</b> (stress - strain relationship)</p>
-D_1,1 = E*t^3/(12*(1 - ν^2))'kNm
-D = D_1,1*hp([1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2])'kNm
+D_1_1 = E*t^3/(12*(1 - ν^2))'kNm
+D = D_1_1*hp([1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2])'kNm
 #hide
 '<p><b>Strain-displacement matrix</b></p>
 B_1(j; ξ; η) = take(j; _
-Φ″_1a(ξ)*Φ_1b(η); Φ″_2a(ξ)*Φ_1b(η); Φ″_1a(ξ)*Φ_2b(η); Φ″_2a(ξ)*Φ_2b(η); _
-Φ″_3a(ξ)*Φ_1b(η); Φ″_4a(ξ)*Φ_1b(η); Φ″_3a(ξ)*Φ_2b(η); Φ″_4a(ξ)*Φ_2b(η); _
-Φ″_3a(ξ)*Φ_3b(η); Φ″_4a(ξ)*Φ_3b(η); Φ″_3a(ξ)*Φ_4b(η); Φ″_4a(ξ)*Φ_4b(η); _
-Φ″_1a(ξ)*Φ_3b(η); Φ″_2a(ξ)*Φ_3b(η); Φ″_1a(ξ)*Φ_4b(η); Φ″_2a(ξ)*Φ_4b(η))
+Φpp_1a(ξ)*Φ_1b(η); Φpp_2a(ξ)*Φ_1b(η); Φpp_1a(ξ)*Φ_2b(η); Φpp_2a(ξ)*Φ_2b(η); _
+Φpp_3a(ξ)*Φ_1b(η); Φpp_4a(ξ)*Φ_1b(η); Φpp_3a(ξ)*Φ_2b(η); Φpp_4a(ξ)*Φ_2b(η); _
+Φpp_3a(ξ)*Φ_3b(η); Φpp_4a(ξ)*Φ_3b(η); Φpp_3a(ξ)*Φ_4b(η); Φpp_4a(ξ)*Φ_4b(η); _
+Φpp_1a(ξ)*Φ_3b(η); Φpp_2a(ξ)*Φ_3b(η); Φpp_1a(ξ)*Φ_4b(η); Φpp_2a(ξ)*Φ_4b(η))
 B_2(j; ξ; η) = take(j; _
-Φ_1a(ξ)*Φ″_1b(η); Φ_2a(ξ)*Φ″_1b(η); Φ_1a(ξ)*Φ″_2b(η); Φ_2a(ξ)*Φ″_2b(η); _
-Φ_3a(ξ)*Φ″_1b(η); Φ_4a(ξ)*Φ″_1b(η); Φ_3a(ξ)*Φ″_2b(η); Φ_4a(ξ)*Φ″_2b(η); _
-Φ_3a(ξ)*Φ″_3b(η); Φ_4a(ξ)*Φ″_3b(η); Φ_3a(ξ)*Φ″_4b(η); Φ_4a(ξ)*Φ″_4b(η); _
-Φ_1a(ξ)*Φ″_3b(η); Φ_2a(ξ)*Φ″_3b(η); Φ_1a(ξ)*Φ″_4b(η); Φ_2a(ξ)*Φ″_4b(η))
+Φ_1a(ξ)*Φpp_1b(η); Φ_2a(ξ)*Φpp_1b(η); Φ_1a(ξ)*Φpp_2b(η); Φ_2a(ξ)*Φpp_2b(η); _
+Φ_3a(ξ)*Φpp_1b(η); Φ_4a(ξ)*Φpp_1b(η); Φ_3a(ξ)*Φpp_2b(η); Φ_4a(ξ)*Φpp_2b(η); _
+Φ_3a(ξ)*Φpp_3b(η); Φ_4a(ξ)*Φpp_3b(η); Φ_3a(ξ)*Φpp_4b(η); Φ_4a(ξ)*Φpp_4b(η); _
+Φ_1a(ξ)*Φpp_3b(η); Φ_2a(ξ)*Φpp_3b(η); Φ_1a(ξ)*Φpp_4b(η); Φ_2a(ξ)*Φpp_4b(η))
 B_3(j; ξ; η) = 2*take(j; _
-Φ′_1a(ξ)*Φ′_1b(η); Φ′_2a(ξ)*Φ′_1b(η); Φ′_1a(ξ)*Φ′_2b(η); Φ′_2a(ξ)*Φ′_2b(η); _
-Φ′_3a(ξ)*Φ′_1b(η); Φ′_4a(ξ)*Φ′_1b(η); Φ′_3a(ξ)*Φ′_2b(η); Φ′_4a(ξ)*Φ′_2b(η); _
-Φ′_3a(ξ)*Φ′_3b(η); Φ′_4a(ξ)*Φ′_3b(η); Φ′_3a(ξ)*Φ′_4b(η); Φ′_4a(ξ)*Φ′_4b(η); _
-Φ′_1a(ξ)*Φ′_3b(η); Φ′_2a(ξ)*Φ′_3b(η); Φ′_1a(ξ)*Φ′_4b(η); Φ′_2a(ξ)*Φ′_4b(η))
+Φp_1a(ξ)*Φp_1b(η); Φp_2a(ξ)*Φp_1b(η); Φp_1a(ξ)*Φp_2b(η); Φp_2a(ξ)*Φp_2b(η); _
+Φp_3a(ξ)*Φp_1b(η); Φp_4a(ξ)*Φp_1b(η); Φp_3a(ξ)*Φp_2b(η); Φp_4a(ξ)*Φp_2b(η); _
+Φp_3a(ξ)*Φp_3b(η); Φp_4a(ξ)*Φp_3b(η); Φp_3a(ξ)*Φp_4b(η); Φp_4a(ξ)*Φp_4b(η); _
+Φp_1a(ξ)*Φp_3b(η); Φp_2a(ξ)*Φp_3b(η); Φp_1a(ξ)*Φp_4b(η); Φp_2a(ξ)*Φp_4b(η))
 n = n_DOFs
 K_e = utriang_hp(n)
 #show
@@ -356,23 +356,23 @@ K_e.(3; 15) = 1/35*(26/α - 3*α^3) - 2*α/25
 K_e.(7; 11) = K_e.(3; 15)
 '</div>
 'Element stiffness matrix coefficients (above the main diagonal only)
-K_e = D_1,1*K_e
+K_e = D_1_1*K_e
 '<p><strong>Element load vector</strong></p>
 F_e = q*A_1/24*hp([6; a_1; b_1; A_1/6; 6; -a_1; b_1; -A_1/6; 6; -a_1; -b_1; A_1/6; 6; a_1; -b_1; -A_1/6])'kN
 '<h4>Solution</h4>
 'Global stiffness matrix
 #hide
 k_1 = n/4
-k_1,1 = submatrix(K_e; 1; 4; 1; 4)
-k_1,2 = submatrix(K_e; 1; 4; 5; 8)
-k_1,3 = submatrix(K_e; 1; 4; 9; 12)
-k_1,4 = submatrix(K_e; 1; 4; 13; 16)
-k_2,2 = submatrix(K_e; 5; 8; 5; 8)
-k_2,3 = submatrix(K_e; 5; 8; 9; 12)
-k_2,4 = submatrix(K_e; 5; 8; 13; 16)
-k_3,3 = submatrix(K_e; 9; 12; 9; 12)
-k_3,4 = submatrix(K_e; 9; 12; 13; 16)
-k_4,4 = submatrix(K_e; 13; 16; 13; 16)
+k_1_1 = submatrix(K_e; 1; 4; 1; 4)
+k_1_2 = submatrix(K_e; 1; 4; 5; 8)
+k_1_3 = submatrix(K_e; 1; 4; 9; 12)
+k_1_4 = submatrix(K_e; 1; 4; 13; 16)
+k_2_2 = submatrix(K_e; 5; 8; 5; 8)
+k_2_3 = submatrix(K_e; 5; 8; 9; 12)
+k_2_4 = submatrix(K_e; 5; 8; 13; 16)
+k_3_3 = submatrix(K_e; 9; 12; 9; 12)
+k_3_4 = submatrix(K_e; 9; 12; 13; 16)
+k_4_4 = submatrix(K_e; 13; 16; 13; 16)
 n = k_1*n_j
 K = symmetric_hp(n)
 'Addition of element stiffness matrix coefficients
@@ -385,30 +385,30 @@ K = symmetric_hp(n)
 			i_2 = k_1*(j_2 - 1) + 1
 			#if i ≡ 1
 				#if j ≡ 1
-					k_ij = k_1,1
+					k_ij = k_1_1
 				#else if j ≡ 2
-					k_ij = k_1,2
+					k_ij = k_1_2
 				#else if j ≡ 3
-					k_ij = k_1,3
+					k_ij = k_1_3
 				#else
-					k_ij = k_1,4
+					k_ij = k_1_4
 				#end if
 			#else if i ≡ 2
 				#if j ≡ 2
-					k_ij = k_2,2
+					k_ij = k_2_2
 				#else if j ≡ 3
-					k_ij = k_2,3
+					k_ij = k_2_3
 				#else
-					k_ij = k_2,4
+					k_ij = k_2_4
 				#end if
 			#else if i ≡ 3
 				#if j ≡ 3
-					k_ij = k_3,3
+					k_ij = k_3_3
 				#else
-					k_ij = k_3,4
+					k_ij = k_3_4
 				#end if
 			#else
-				k_ij = k_4,4
+				k_ij = k_4_4
 			#end if
 			#if j_1 > j_2
 				add(transp(k_ij); K; i_2; i_1)
@@ -459,23 +459,23 @@ $Map{-w(x; y) @ x = 0 : l_a & y = 0 : l_b}
 Z_j(j) = slice(Z; k_1*(j - 1) + 1; k_1*j)
 Z_e(e) = hp([Z_j(e_j.(e; 1)); Z_j(e_j.(e; 2)); Z_j(e_j.(e; 3)); Z_j(e_j.(e; 4))])
 #hide
-B_0,0 = matrix_hp(3; n_DOFs)
-B_1,0 = matrix_hp(3; n_DOFs)
-B_1,1 = matrix_hp(3; n_DOFs)
-B_0,1 = matrix_hp(3; n_DOFs)
+B_0_0 = matrix_hp(3; n_DOFs)
+B_1_0 = matrix_hp(3; n_DOFs)
+B_1_1 = matrix_hp(3; n_DOFs)
+B_0_1 = matrix_hp(3; n_DOFs)
 #for j = 1 : n_DOFs
-	B_0,0.(1; j) = B_1(j; 0; 0)
-	B_0,0.(2; j) = B_2(j; 0; 0)
-	B_0,0.(3; j) = B_3(j; 0; 0)
-	B_1,0.(1; j) = B_1(j; 1; 0)
-	B_1,0.(2; j) = B_2(j; 1; 0)
-	B_1,0.(3; j) = B_3(j; 1; 0)
-	B_1,1.(1; j) = B_1(j; 1; 1)
-	B_1,1.(2; j) = B_2(j; 1; 1)
-	B_1,1.(3; j) = B_3(j; 1; 1)
-	B_0,1.(1; j) = B_1(j; 0; 1)
-	B_0,1.(2; j) = B_2(j; 0; 1)
-	B_0,1.(3; j) = B_3(j; 0; 1)
+	B_0_0.(1; j) = B_1(j; 0; 0)
+	B_0_0.(2; j) = B_2(j; 0; 0)
+	B_0_0.(3; j) = B_3(j; 0; 0)
+	B_1_0.(1; j) = B_1(j; 1; 0)
+	B_1_0.(2; j) = B_2(j; 1; 0)
+	B_1_0.(3; j) = B_3(j; 1; 0)
+	B_1_1.(1; j) = B_1(j; 1; 1)
+	B_1_1.(2; j) = B_2(j; 1; 1)
+	B_1_1.(3; j) = B_3(j; 1; 1)
+	B_0_1.(1; j) = B_1(j; 0; 1)
+	B_0_1.(2; j) = B_2(j; 0; 1)
+	B_0_1.(3; j) = B_3(j; 0; 1)
 #loop
 M_j = matrix_hp(3; n_j)
 c_j = vector_hp(n_j)
@@ -485,11 +485,11 @@ j = vector_hp(4)
 		j.i = e_j.(e; i)
 		c_j.j.i = c_j.j.i + 1
 	#loop
-	Z_е = Z_e(e)
-	add(-D*B_0,0*Z_е; M_j; 1; j.1)
-	add(-D*B_1,0*Z_е; M_j; 1; j.2)
-	add(-D*B_1,1*Z_е; M_j; 1; j.3)
-	add(-D*B_0,1*Z_е; M_j; 1; j.4)
+	Z_v = Z_e(e)
+	add(-D*B_0_0*Z_v; M_j; 1; j.1)
+	add(-D*B_1_0*Z_v; M_j; 1; j.2)
+	add(-D*B_1_1*Z_v; M_j; 1; j.3)
+	add(-D*B_0_1*Z_v; M_j; 1; j.4)
 #loop
 #for j = 1 : n_j
 	 M_j.(1; j) = M_j.(1; j)/c_j.j

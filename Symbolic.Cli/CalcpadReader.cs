@@ -39,12 +39,63 @@ namespace Calcpad.Cli
                 else
                 {
                     var trimmed = line.TrimStart('\t').TrimStart();
-                    // Track #python/#maxima blocks — don't replace operators inside them
+                    // Track raw-code blocks — don't replace operators inside them.
+                    // These blocks contain foreign syntax (JavaScript, GraphViz,
+                    // Mermaid, JSON for Plotly, etc.) where `<=` must stay as ASCII
+                    // `<=`, NOT be converted to `≤` (which is invalid JS / DOT / JSON).
                     if (trimmed.StartsWith("#python", StringComparison.OrdinalIgnoreCase) ||
-                        trimmed.StartsWith("#maxima", StringComparison.OrdinalIgnoreCase))
+                        trimmed.StartsWith("#maxima", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#three", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#jsx", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#canvas", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#mermaid", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#dot", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#plotly", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#math", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#mathbox", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#d3", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#echarts", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#vega", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#visnet", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#p5", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#matter", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#cannon", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#geogebra", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#chart", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#anime", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#manim", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#cyto", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("#map", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Match BEFORE the `#end ...` checks so we don't accidentally
+                        // toggle insideCodeBlock OFF when we see "#mathbox" because
+                        // "#math" is a prefix of "#mathbox". The longer names are
+                        // listed first only conceptually — StartsWith is exact.
                         insideCodeBlock = true;
+                    }
                     else if (trimmed.StartsWith("#end python", StringComparison.OrdinalIgnoreCase) ||
-                             trimmed.StartsWith("#end maxima", StringComparison.OrdinalIgnoreCase))
+                             trimmed.StartsWith("#end maxima", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end three", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end jsx", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end canvas", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end mermaid", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end dot", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end plotly", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end math", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end mathbox", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end d3", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end echarts", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end vega", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end visnet", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end p5", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end matter", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end cannon", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end geogebra", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end chart", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end anime", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end manim", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end cyto", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("#end map", StringComparison.OrdinalIgnoreCase))
                         insideCodeBlock = false;
 
                     if (insideCodeBlock ||

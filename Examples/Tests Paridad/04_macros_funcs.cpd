@@ -1,0 +1,69 @@
+"Test 04 - MacroParser + #function + Local/Global scoping
+'Verifica que macros estilo upstream y functions multi-linea (Symbolic-only)
+'no rompen las pruebas de scoping.
+'==========================================================================
+
+"1. Funcion inline (compatible upstream)
+'==========================================================================
+f(x) = x^2 + 2*x + 1
+'f(3) deberia dar 16
+f(3)
+
+"2. Funcion con varios argumentos
+'==========================================================================
+g(x; y) = x^2 + y^2
+'g(3; 4) = 9 + 16 = 25
+g(3; 4)
+
+"3. Macro con ? (parametros)
+'==========================================================================
+'Macros usan ? para parametros que se sustituyen textualmente.
+suma_cuadrados?a?b? = ?a?^2 + ?b?^2
+'Llamada con valores literales:
+suma_cuadrados!3!4!
+
+"4. #function multi-linea (SOLO Symbolic)
+'==========================================================================
+#function calc_volumen(largo; ancho; alto)
+	area = largo*ancho
+	vol = area*alto
+	calc_volumen = vol
+#end function
+'Volumen de 2x3x4:
+calc_volumen(2; 3; 4)
+
+"5. Scoping Local
+'==========================================================================
+'Una variable Local existe solo dentro del bloque.
+y_global = 100
+#function test_local(z)
+	#local temp_var
+	temp_var = z*2
+	test_local = temp_var + y_global
+#end function
+'test_local(5) deberia dar 5*2 + 100 = 110
+test_local(5)
+
+"6. Funciones que llaman otras funciones
+'==========================================================================
+square(x) = x^2
+cube(x) = x*square(x)
+'cube(3) = 3 * 9 = 27
+cube(3)
+
+"7. Factorial via $Product (no usar recursion - upstream Calcpad no la soporta
+'   en function definitions; uno arma un bloque dedicado).
+'==========================================================================
+'5! = 1*2*3*4*5 = 120
+n_fact = 5
+$Product{i @ i = 1 : n_fact}
+
+"8. Resumen de paridad MacroParser
+'==========================================================================
+'Si las funciones inline f(3)=16, g(3;4)=25, suma_cuadrados!3!4!=25,
+'cube(3)=27, $Product = 120 funcionan correctamente, el MacroParser
+'tiene paridad operacional con upstream.
+'Las funciones multi-linea #function son extension de Symbolic.
+'Nota: la recursion en function-definitions no esta soportada (ni
+'siquiera en upstream); para esos casos uno usa $Product, $Sum, $While,
+'$Repeat, o un bloque #for con acumulador.
