@@ -81,10 +81,13 @@ You can find your unsaved data in
         <value>Stop! Inline Html elements must not cross text lines.</value>
     </data>
   <data name="Command_Open_Text_File" xml:space="preserve">
-        <value>Text File (*.txt)|*.txt|Calcpad Worksheet (*.cpd)|*.cpd|Calcpad Compiled (*.cpdz)|*.cpdz</value>
+        <value>Text File (*.txt)|*.txt|Calcpad Worksheet (*.cpd; *.cpds)|*.cpd;*.cpds|Calcpad Compiled (*.cpdz)|*.cpdz</value>
     </data>
   <data name="Command_Open_Calcpad_Worksheet" xml:space="preserve">
-        <value>Calcpad Worksheet (*.cpd)|*.cpd|Calcpad Compiled (*.cpdz)|*.cpdz|Text File (*.txt)|*.txt</value>
+        <value>Calcpad Worksheet (*.cpd; *.cpds)|*.cpd;*.cpds|Calcpad Compiled (*.cpdz)|*.cpdz|Text File (*.txt)|*.txt</value>
+    </data>
+  <data name="FileSaveAs_Calcpad_Symbolic_Worksheet" xml:space="preserve">
+        <value>Calcpad Symbolic Worksheet (*.cpds)|*.cpds|Calcpad Worksheet (*.cpd)|*.cpd|Calcpad Compiled (*.cpdz)|*.cpdz</value>
     </data>
   <data name="FileSaveAs_Calcpad_Compiled" xml:space="preserve">
         <value>Calcpad Compiled (*.cpdz)|*.cpdz</value>

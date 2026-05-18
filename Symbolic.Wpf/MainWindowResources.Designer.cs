@@ -1203,7 +1203,16 @@ namespace Calcpad.Wpf {
                 return ResourceManager.GetString("FileSaveAs_Calcpad_Compiled", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to Calcpad Symbolic Worksheet (*.cpds)|*.cpds|Calcpad Worksheet (*.cpd)|*.cpd|Calcpad Compiled (*.cpdz)|*.cpdz.
+        /// </summary>
+        public static string FileSaveAs_Calcpad_Symbolic_Worksheet {
+            get {
+                return ResourceManager.GetString("FileSaveAs_Calcpad_Symbolic_Worksheet", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Fills matrix M with value x.
         /// </summary>

@@ -41,6 +41,56 @@ namespace Calcpad.Wpf
         private static readonly Regex HtmlImgCurRegex = new(@"src\s*=\s*""\s*\.", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex HtmlImgAnyRegex = new(@"src\s*=\s*""\s*\.\.?(.+?)""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+        // Keywords that exist ONLY in Calcpad Symbolic (not in the original Calcpad
+        // parser). If any of these appear in the file content, saving as `.cpd`
+        // would produce a file that fails to parse in vanilla Calcpad — so we
+        // silently switch the target extension to `.cpds`.
+        private static readonly HashSet<string> SymbolicOnlyKeywords = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "deq", "inl", "blk", "cen", "pgb", "margen",
+            "sym", "python", "maxima", "pip",
+            "svg", "plotly", "three", "mermaid", "canvas",
+            "cyto", "dot", "jsx", "map", "mathbox",
+            "math", "chart", "d3", "echarts", "vega",
+            "visnet", "p5", "matter", "cannon", "geogebra",
+            "anime", "manim",
+            "trace", "dependencia", "detalle",
+            "function", "local", "global"
+        };
+
+        // Returns true when the document uses any Symbolic-only directive
+        // and therefore must be saved as `.cpds` (not `.cpd`).
+        private static bool ContentRequiresCpds(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return false;
+            foreach (var line in text.AsSpan().EnumerateLines())
+            {
+                var trimmed = line.TrimStart();
+                if (trimmed.Length < 2 || trimmed[0] != '#') continue;
+                // Identifier chars after '#'
+                int end = 1;
+                while (end < trimmed.Length && (char.IsLetter(trimmed[end]) || trimmed[end] == '_')) end++;
+                if (end == 1) continue;
+                var kw = trimmed.Slice(1, end - 1).ToString();
+                // `#end <kw>` — check the second token too
+                if (kw.Equals("end", StringComparison.OrdinalIgnoreCase))
+                {
+                    int p = end;
+                    while (p < trimmed.Length && trimmed[p] == ' ') p++;
+                    int e2 = p;
+                    while (e2 < trimmed.Length && (char.IsLetter(trimmed[e2]) || trimmed[e2] == '_')) e2++;
+                    if (e2 > p)
+                    {
+                        var second = trimmed.Slice(p, e2 - p).ToString();
+                        if (SymbolicOnlyKeywords.Contains(second)) return true;
+                    }
+                    continue;
+                }
+                if (SymbolicOnlyKeywords.Contains(kw)) return true;
+            }
+            return false;
+        }
+
         internal readonly struct AppInfo
         {
             static AppInfo()
@@ -937,7 +987,7 @@ namespace Calcpad.Wpf
             if (!string.IsNullOrWhiteSpace(CurrentFileName))
                 s = Path.GetExtension(CurrentFileName).ToLowerInvariant();
             else
-                s = ".cpd";
+                s = ContentRequiresCpds(InputText) ? ".cpds" : ".cpd";
 
             var dlg = new SaveFileDialog
             {
@@ -949,6 +999,7 @@ namespace Calcpad.Wpf
                 {
                     ".txt" => MainWindowResources.Command_Open_Text_File,
                     ".cpdz" => MainWindowResources.FileSaveAs_Calcpad_Compiled,
+                    ".cpds" => MainWindowResources.FileSaveAs_Calcpad_Symbolic_Worksheet,
                     _ => MainWindowResources.Command_Open_Calcpad_Worksheet
                 }
             };
@@ -1043,6 +1094,27 @@ namespace Calcpad.Wpf
                 }
                 if (!await GetAndSetInputFieldsAsync())
                     return;
+            }
+            // Auto-promote `.cpd` → `.cpds` if the document uses Symbolic-only
+            // directives (#deq, #blk, #math, …). Saving Symbolic features as
+            // plain `.cpd` would produce a file that breaks when opened in
+            // vanilla Calcpad. `.cpdz` (compiled) is left alone.
+            var ext = Path.GetExtension(fileName);
+            if (string.Equals(ext, ".cpd", StringComparison.OrdinalIgnoreCase)
+                && ContentRequiresCpds(GetInputText()))
+            {
+                var promoted = Path.ChangeExtension(fileName, ".cpds");
+                if (!string.Equals(promoted, fileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Drop the old `.cpd` only if it was the file we just
+                    // opened — avoids leaving a stale duplicate side-by-side.
+                    if (File.Exists(fileName)
+                        && string.Equals(fileName, CurrentFileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        try { File.Delete(fileName); } catch { /* keep the old file if locked */ }
+                    }
+                    fileName = promoted;
+                }
             }
             var isZip = string.Equals(Path.GetExtension(fileName), ".cpdz", StringComparison.OrdinalIgnoreCase);
             if (isZip)
@@ -2360,7 +2432,7 @@ namespace Calcpad.Wpf
                 if (File.Exists(s))
                 {
                     var ex = Path.GetExtension(s).ToLowerInvariant();
-                    if (ex == ".cpd" || ex == ".cpdz")
+                    if (ex == ".cpd" || ex == ".cpds" || ex == ".cpdz")
                     {
                         _parser.ShowWarnings = ex != ".cpdz";
                         CurrentFileName = s;
@@ -4141,7 +4213,7 @@ namespace Calcpad.Wpf
                 {
                     fileName = path;
                     var ext = Path.GetExtension(fileName).ToLowerInvariant();
-                    if (ext == ".cpd" || ext == ".cpdz" || ext == ".txt")
+                    if (ext == ".cpd" || ext == ".cpds" || ext == ".cpdz" || ext == ".txt")
                     {
                         var r = PromptSave();
                         if (r != MessageBoxResult.Cancel)
