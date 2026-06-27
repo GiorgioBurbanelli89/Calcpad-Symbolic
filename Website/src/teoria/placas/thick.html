@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/partials/head.html"></div>
+  <title>Placa gruesa (Mindlin-Reissner / FSDT) — Teoría</title>
+  <style>.theory-frame { width: 100%; height: 80vh; border: 1px solid var(--color-border); border-radius: var(--radius); }</style>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+  <section class="block">
+    <div class="container">
+      <h1>Placa gruesa — Mindlin-Reissner (FSDT)</h1>
+      <h2>Hipótesis</h2>
+      <ol>
+        <li>Normales a la superficie media permanecen <strong>rectas</strong>.</li>
+        <li>Las normales <strong>NO</strong> se mantienen perpendiculares: aparecen giros independientes <em>φ<sub>x</sub>, φ<sub>y</sub></em>.</li>
+        <li>Deformación por corte transversal <strong>no es despreciable</strong>.</li>
+      </ol>
+      <h2>GDL y rango</h2>
+      <p>3 GDL por punto: <em>w, φ<sub>x</sub>, φ<sub>y</sub></em>. Aplica para <em>t/L &gt; 1/10</em>.</p>
+      <h2>Derivación simbólica</h2>
+      <iframe class="theory-frame" src="/teoria/placas/rendered/thick_plate.html" title="Derivación — placa gruesa"></iframe>
+      <h2>Shear locking</h2>
+      <p>Cuando <em>t → 0</em>, FSDT estándar rigidiza. Soluciones: MITC4, DKQ, DKT, reducción integración selectiva.</p>
+      <p><a href="/editor/?script=/teoria/placas/scripts/thick_plate.cpd" target="_blank" rel="noopener">▶ Abrir en editor</a></p>
+    </div>
+  </section>
+  <div data-include="/partials/footer.html"></div>
+  <script src="/js/include.js"></script>
+</body>
+</html>

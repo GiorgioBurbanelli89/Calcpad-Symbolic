@@ -1,0 +1,86 @@
+"Test 03 - Control flow - #if / #while / #for + Symbolic-only #trace
+'Verifica que los keywords de control mantienen semantica de upstream
+'y que el #trace de Symbolic NO rompe el comportamiento default.
+
+"1. #if / #else_if / #else / #end_if (basico)
+x = 7
+#if x > 10
+	'x es mayor que 10
+#else if x > 5
+	'x esta entre 5 y 10 (-> esta rama)
+#else
+	'x es menor o igual a 5
+#end if
+
+"2. #if anidados
+a = 3
+b = 4
+#if a < b
+	#if a + b > 5
+		'a < b Y a + b > 5
+	#else
+		'a < b pero a + b <= 5
+	#end if
+#else
+	'a >= b
+#end if
+
+"3. #while loop
+n = 1
+suma_w = 0
+#while n <= 5
+	suma_w = suma_w + n
+	n = n + 1
+#loop
+'suma de 1 a 5 = 15
+suma_w
+
+"4. #for loop con #break
+encontrado = -1
+#for k = 1 : 20
+	#if k^2 > 50
+		encontrado = k
+		#break
+	#end if
+#loop
+'encontrado debe ser 8 (8^2 = 64 > 50, 7^2 = 49 <= 50)
+encontrado
+
+"5. #for loop con #continue
+suma_pares = 0
+#for k = 1 : 10
+	#if mod(k; 2) ≡ 1
+		#continue
+	#end if
+	suma_pares = suma_pares + k
+#loop
+'suma de pares entre 1 y 10 = 2+4+6+8+10 = 30
+suma_pares
+
+"6. #for con unidades en los limites
+'(esto es un fix de Symbolic — verificar que no rompe)
+suma_loop = 0
+#for ix = 0 : 5
+	suma_loop = suma_loop + ix
+#loop
+'suma 0+1+2+3+4+5 = 15
+suma_loop
+
+"7. #trace (SOLO Symbolic) - muestra todas las iteraciones
+'En Symbolic, sin #trace, los #for loops muestran solo la ultima iteracion.
+'Con #trace dentro del loop, muestra TODAS las iteraciones.
+'(este es una mejora de Symbolic — NO existe en upstream).
+contador = 0
+#for i = 1 : 3
+	contador = contador + 10
+	#trace
+	'iteracion'i
+	contador
+#loop
+
+"8. Resumen de paridad control flow
+'Si los valores arriba son: 15 (suma), 8 (encontrado), 30 (pares), 15
+'(loop unidades), entonces #if/#while/#for/#break/#continue tienen
+'paridad operacional con upstream.
+'#trace es una mejora adicional que NO debe romper el comportamiento
+'default (las iteraciones no marcadas con #trace siguen escondidas).

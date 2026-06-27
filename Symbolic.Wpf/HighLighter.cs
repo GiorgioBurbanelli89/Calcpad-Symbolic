@@ -22,7 +22,18 @@ namespace Calcpad.Wpf
     {
         internal UserDefined Defined = new();
         private bool _isInCodeBlock;
+        private bool _isInSvgBlock;   // #svg ... #end svg — preserve raw spaces (dot primitives)
+        private bool _isInPlotlyBlock; // #plotly ... #end plotly — body is raw JSON, never tokenized
         private bool _isInVizBlock;
+        private bool _isInSymBlock;   // #sym (alone) ... #end sym — body is symbolic (xi/eta valid)
+        // Display-block flags: each marks an open #blk / #cen / #margen / #noc
+        // block whose body lines are rendered for layout, not evaluated as
+        // arithmetic. While one of these is true, identifiers and bracketed
+        // tokens that would normally hit Types.Error are demoted to Comment.
+        private bool _isInBlkBlock;
+        private bool _isInCenBlock;
+        private bool _isInMargenBlock;
+        private bool _isInNocBlock;
         private sealed class TagHelper
         {
             internal enum Tags
@@ -164,6 +175,10 @@ namespace Calcpad.Wpf
         private static readonly SolidColorBrush ToolTipBackground = new(Color.FromArgb(196, 0, 0, 0));
         private static readonly SolidColorBrush TitleBackground = new(Color.FromRgb(245, 255, 240));
         private static readonly SolidColorBrush ErrorBackground = new(Color.FromRgb(255, 225, 225));
+        // Strong accent for `;` when used as a column separator inside
+        // #blk / #inl / #cen — makes the layout visually obvious in the
+        // editor without changing how the parser treats the character.
+        private static readonly SolidColorBrush ColumnSeparatorBrush = new(Color.FromRgb(0, 120, 215)); // DodgerBlue-ish
         private static readonly SolidColorBrush BackgroundBrush = new(Color.FromArgb(160, 240, 248, 255));
         private static readonly SolidColorBrush HtmlCommentBrush = new(Color.FromRgb(160, 160, 160));
 
@@ -586,6 +601,18 @@ namespace Calcpad.Wpf
             "$table",
             "$block",
             "$inline",
+            // Hekatan/CalcpadCE viz directives — VizParser.cs:
+            "$chart",
+            "$frame",
+            "$struct",
+            "$draw",
+            "$fem",
+            "$fem2d",
+            "$fem3d",
+            "$mesh",
+            "$meshr",
+            "$meshresults",
+            "$plotmap",
         }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -666,15 +693,144 @@ namespace Calcpad.Wpf
             return false;
         }
 
+        /// <summary>Names of the 21 web-graphics directives (everything except #svg
+        /// which has its own _isInSvgBlock flag). Centralised so we don't repeat
+        /// 21 OR-chained <c>StartsWith</c> calls in three different places.</summary>
+        private static readonly string[] WebGraphicDirectives =
+        {
+            // Phase 1
+            "#plotly", "#three", "#mermaid", "#canvas", "#cyto", "#dot",
+            "#jsx", "#map", "#math", "#chart",
+            // Phase 3
+            "#mathbox", "#d3", "#echarts", "#vega", "#visnet", "#p5",
+            "#matter", "#cannon", "#geogebra",
+            // Phase 4
+            "#anime", "#manim"
+        };
+
+        private static bool IsWebGraphicOpener(string text)
+        {
+            foreach (var d in WebGraphicDirectives)
+                if (text.StartsWith(d, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            return false;
+        }
+
+        private static bool IsWebGraphicCloser(string text)
+        {
+            if (!text.StartsWith("#end ", StringComparison.OrdinalIgnoreCase)) return false;
+            foreach (var d in WebGraphicDirectives)
+            {
+                // "#end plotly" matches "#plotly"
+                if (text.StartsWith("#end " + d.Substring(1), StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>Walk backwards from <paramref name="start"/> through previous paragraphs
+        /// to determine whether we're currently inside a #svg/#python/#maxima block.
+        /// Sets <see cref="_isInSvgBlock"/> / <see cref="_isInCodeBlock"/> accordingly.</summary>
+        private void DetectBlockContextFromPrevious(Paragraph start)
+        {
+            if (start is null) return;
+            var prev = start.PreviousBlock as Paragraph;
+            while (prev is not null)
+            {
+                var prevText = new TextRange(prev.ContentStart, prev.ContentEnd).Text.TrimStart();
+                // Find FIRST matching directive walking backwards — that's the most recent
+                // block boundary; later #end directives would have been found first if closed.
+                if (prevText.StartsWith("#end svg", StringComparison.OrdinalIgnoreCase))
+                    return; // SVG block already closed before us
+                if (prevText.StartsWith("#svg", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInSvgBlock = true;
+                    return;
+                }
+                if (IsWebGraphicCloser(prevText))
+                    return; // Web-graphics block already closed
+                if (IsWebGraphicOpener(prevText))
+                {
+                    _isInPlotlyBlock = true;
+                    return;
+                }
+                if (prevText.StartsWith("#end python", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end maxima", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end function", StringComparison.OrdinalIgnoreCase))
+                    return;
+                if (prevText.StartsWith("#end sym", StringComparison.OrdinalIgnoreCase))
+                    return; // sym block already closed
+                if (prevText.StartsWith("#python", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#maxima", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#function ", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInCodeBlock = true;
+                    return;
+                }
+                // #sym ALONE (no inline expression after) opens a multi-line symbolic block.
+                // Inside the block, names like xi, eta, theta, alpha, etc. are valid
+                // symbols (not undeclared variables) — body must be passthrough-coloured.
+                if (prevText.Trim().Equals("#sym", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInSymBlock = true;
+                    return;
+                }
+                // Display-layout block openers — closed by their #end variant.
+                if (prevText.StartsWith("#end blk", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end cen", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end margen", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#end noc", StringComparison.OrdinalIgnoreCase) ||
+                    prevText.StartsWith("#equ", StringComparison.OrdinalIgnoreCase))
+                    return; // already-closed display block
+                if (prevText.StartsWith("#blk", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInBlkBlock = true;
+                    return;
+                }
+                if (prevText.StartsWith("#cen", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInCenBlock = true;
+                    return;
+                }
+                if (prevText.StartsWith("#margen", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInMargenBlock = true;
+                    return;
+                }
+                if (prevText.StartsWith("#noc", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInNocBlock = true;
+                    return;
+                }
+                prev = prev.PreviousBlock as Paragraph;
+            }
+        }
+
         internal void Parse(Paragraph p, bool isComplex, int lineNumber, bool single, string textOverride = null, Paragraph skipParagraph = null)
         {
             var newline = true;
             var startParagraph = p;
-            if (!single)
-            {
-                _isInCodeBlock = false;
-                _isInVizBlock = false;
-            }
+            // Always reset and re-detect block context so the per-paragraph
+            // re-tokenisation triggered by TextChanged (single=true) sees the
+            // correct surrounding state. Without this, editing a body line of
+            // an open #blk left the highlighter with stale flags and marked
+            // valid display-cell identifiers as red Errors.
+            _isInCodeBlock = false;
+            _isInVizBlock = false;
+            _isInSvgBlock = false;
+            _isInPlotlyBlock = false;
+            _isInSymBlock = false;
+            _isInBlkBlock = false;
+            _isInCenBlock = false;
+            _isInMargenBlock = false;
+            _isInNocBlock = false;
+            // HighLightAll calls Parse(p, single:false) for EACH paragraph in a loop.
+            // Each call must know if the starting paragraph is already INSIDE a code/svg
+            // block — otherwise the second call (starting in the middle of #svg)
+            // resets _isInSvgBlock=false and re-tokenizes the body lines, stripping
+            // spaces from "rect 10 10" → "rect101010". Walk backwards from p to find
+            // the most recent #svg/#end svg, #python/#end python, #plotly/#end plotly directive.
+            DetectBlockContextFromPrevious(p);
             if (single)
                 p = FindStartingLine(p, ref lineNumber);
             else
@@ -704,10 +860,32 @@ namespace Calcpad.Wpf
                 var isInCodeBlock = _isInCodeBlock;
                 if (trimmedText.StartsWith("#python", StringComparison.OrdinalIgnoreCase) ||
                     trimmedText.StartsWith("#maxima", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#function ", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#svg", StringComparison.OrdinalIgnoreCase))
+                    trimmedText.StartsWith("#function ", StringComparison.OrdinalIgnoreCase))
                 {
                     _isInCodeBlock = true;
+                    p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                if (trimmedText.StartsWith("#svg", StringComparison.OrdinalIgnoreCase))
+                {
+                    // #svg ... #end svg — body is SVG primitives (.line .rect .text …) where
+                    // spaces between args are SIGNIFICANT (the parser splits args by space).
+                    // Treat as raw passthrough — DO NOT tokenize via ParseExternalLanguageLine
+                    // because that strips/reorders whitespace and breaks the parser.
+                    _isInSvgBlock = true;
+                    p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                // Web-graphics block opener directives (Phase 1 — 10 libs incl. #plotly).
+                // Body is raw JS / JSON / DSL — tokenising would strip whitespace, colons,
+                // braces and quotes that the libraries need.
+                if (IsWebGraphicOpener(trimmedText))
+                {
+                    _isInPlotlyBlock = true;   // reuse the same passthrough flag
                     p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
                     p = single ? null : p.NextBlock as Paragraph;
                     ++lineNumber;
@@ -716,11 +894,44 @@ namespace Calcpad.Wpf
                 if (trimmedText.StartsWith("#end python", StringComparison.OrdinalIgnoreCase) ||
                     trimmedText.StartsWith("#end maxima", StringComparison.OrdinalIgnoreCase) ||
                     trimmedText.StartsWith("#end function", StringComparison.OrdinalIgnoreCase) ||
-                    trimmedText.StartsWith("#end svg", StringComparison.OrdinalIgnoreCase) ||
                     trimmedText.Equals("#end sym", StringComparison.OrdinalIgnoreCase))
                 {
                     _isInCodeBlock = false;
+                    _isInSymBlock = false;
                     p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                if (trimmedText.StartsWith("#end svg", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isInSvgBlock = false;
+                    p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                if (IsWebGraphicCloser(trimmedText))
+                {
+                    _isInPlotlyBlock = false;
+                    p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                // Inside #svg block: emit each line as a SINGLE Run preserving every char
+                // (dot primitive args separated by spaces — must NOT be tokenized).
+                if (_isInSvgBlock)
+                {
+                    p.Inlines.Add(new Run(text) { Foreground = Brushes.Black });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                // Inside #plotly block: same passthrough — body is raw JSON.
+                if (_isInPlotlyBlock)
+                {
+                    p.Inlines.Add(new Run(text) { Foreground = Brushes.DarkSlateGray });
                     p = single ? null : p.NextBlock as Paragraph;
                     ++lineNumber;
                     continue;
@@ -728,7 +939,45 @@ namespace Calcpad.Wpf
                 if (trimmedText.StartsWith("#pip ", StringComparison.OrdinalIgnoreCase) ||
                     trimmedText.Equals("#sym", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (trimmedText.Equals("#sym", StringComparison.OrdinalIgnoreCase))
+                        _isInSymBlock = true; // multi-line block opener (no inline expr)
                     p.Inlines.Add(new Run(text) { Foreground = Colors[(int)Types.Keyword] });
+                    p = single ? null : p.NextBlock as Paragraph;
+                    ++lineNumber;
+                    continue;
+                }
+                // Display-layout block flag tracking. We DO want these lines to
+                // tokenize normally (so `'a ; 'b` gets the proper green-comment
+                // colours per cell), but we also need to know when we're INSIDE
+                // such a block so that any token that would otherwise hit
+                // Types.Error gets demoted to Comment in Append().
+                if (trimmedText.StartsWith("#blk", StringComparison.OrdinalIgnoreCase) &&
+                    !trimmedText.StartsWith("#end blk", StringComparison.OrdinalIgnoreCase))
+                    _isInBlkBlock = true;
+                else if (trimmedText.StartsWith("#end blk", StringComparison.OrdinalIgnoreCase))
+                    _isInBlkBlock = false;
+                if (trimmedText.StartsWith("#cen", StringComparison.OrdinalIgnoreCase) &&
+                    !trimmedText.StartsWith("#end cen", StringComparison.OrdinalIgnoreCase))
+                    _isInCenBlock = true;
+                else if (trimmedText.StartsWith("#end cen", StringComparison.OrdinalIgnoreCase))
+                    _isInCenBlock = false;
+                if (trimmedText.StartsWith("#margen", StringComparison.OrdinalIgnoreCase) &&
+                    !trimmedText.StartsWith("#end margen", StringComparison.OrdinalIgnoreCase))
+                    _isInMargenBlock = true;
+                else if (trimmedText.StartsWith("#end margen", StringComparison.OrdinalIgnoreCase))
+                    _isInMargenBlock = false;
+                if (trimmedText.StartsWith("#noc", StringComparison.OrdinalIgnoreCase) &&
+                    !trimmedText.StartsWith("#end noc", StringComparison.OrdinalIgnoreCase))
+                    _isInNocBlock = true;
+                else if (trimmedText.StartsWith("#end noc", StringComparison.OrdinalIgnoreCase) ||
+                         trimmedText.StartsWith("#equ", StringComparison.OrdinalIgnoreCase))
+                    _isInNocBlock = false;
+                // Inside #sym ... #end sym block: body is symbolic CAS code (xi, eta,
+                // theta, etc. are valid symbol names — must NOT be flagged as undeclared
+                // variables / shown in red). Render as plain dark text.
+                if (_isInSymBlock)
+                {
+                    p.Inlines.Add(new Run(text) { Foreground = Brushes.DarkBlue });
                     p = single ? null : p.NextBlock as Paragraph;
                     ++lineNumber;
                     continue;
@@ -815,10 +1064,83 @@ namespace Calcpad.Wpf
                         _state.IsUnits = true;
 
                     if (_state.MacroArgs == 0)
+                    {
+                        // Detect '' / "" escape pair. Two semantics depending on
+                        // current region (matches parser GetTokens):
+                        //   • INSIDE a text region of same quote type → literal
+                        //     escaped quote. Append both chars; stay in text mode.
+                        //   • OUTSIDE any region (default expression mode) → user
+                        //     typo for "close expression + re-enter text". Both
+                        //     chars are RENDERED as part of the new text region
+                        //     (so the editor still shows them — just without the
+                        //     red Variable error on whatever follows).
+                        var nextChar = (i + 1 < text.Length) ? text[i + 1] : '\0';
+                        if ((c == '\'' || c == '"') && nextChar == c)
+                        {
+                            if (_state.TextComment == c)
+                            {
+                                // Inside-text escape → emit both chars as part of
+                                // the active comment region.
+                                _builder.Append(c);
+                                _builder.Append(c);
+                            }
+                            else if (_state.TextComment == '\0')
+                            {
+                                // Outside any text region. Flush the pending Run
+                                // (e.g. "#deqξ"), then start a NEW comment region
+                                // and put both '' chars at its start so the user
+                                // sees them in the editor as the visual delimiter
+                                // they typed.
+                                Append(_state.CurrentType);
+                                _state.TextComment = c;
+                                _state.TagComment = c == '\'' ? '"' : '\'';
+                                _state.IsUnits = false;
+                                _state.CurrentType = Types.Comment;
+                                _builder.Append(c);
+                                _builder.Append(c);
+                            }
+                            else
+                            {
+                                // Inside a different-quote region. Treat as literal.
+                                _builder.Append(c);
+                                _builder.Append(c);
+                            }
+                            ++i;
+                            continue;
+                        }
                         ParseComment(c);
+                    }
 
                     if (_state.MacroArgs > 0)
                         ParseMacroArgs(c);
+                    // Inside #blk / #inl / #cen, a `;` at top level closes
+                    // the current text region (cell boundary) instead of
+                    // staying as a literal char inside the open comment.
+                    // Without this, the second `'cell2` was interpreted as
+                    // a comment CLOSER (not OPENER), and the words after it
+                    // were tokenised as expression — appearing as Variable
+                    // / Units / Error colours instead of plain text.
+                    else if (c == ';' && _state.TextComment != '\0' &&
+                             (_isInBlkBlock || _isInCenBlock ||
+                              _state.Text != null && (
+                                  _state.Text.AsSpan().TrimStart().StartsWith("#inl", StringComparison.OrdinalIgnoreCase) ||
+                                  _state.Text.AsSpan().TrimStart().StartsWith("#blk", StringComparison.OrdinalIgnoreCase))))
+                    {
+                        // Close the active text region, emit the `;` as a
+                        // column separator, then reset so the next `'` opens
+                        // a fresh region.
+                        Append(_state.CurrentType);
+                        _state.TextComment = '\0';
+                        _builder.Append(c);
+                        Append(Types.Operator);
+                        if (_state.LastInline is Run rSepBlk
+                            && rSepBlk.Text.TrimEnd().EndsWith(';'))
+                        {
+                            rSepBlk.Foreground = ColumnSeparatorBrush;
+                            rSepBlk.FontWeight = FontWeights.Bold;
+                        }
+                        _state.CurrentType = Types.None;
+                    }
                     else if (_state.TextComment != '\0')
                         ParseTagInComment(c);
                     else if (_state.CurrentType == Types.Include)
@@ -1075,6 +1397,10 @@ namespace Calcpad.Wpf
             }
             else if (c == '\'' || c == '"')
             {
+                // The escape-pair detection ('' / "") is handled by the caller in
+                // the main loop BEFORE we get here — see Parse around the
+                // ParseComment(c) call site, which advances i and skips the
+                // ParseComment call entirely on a quote-escape.
                 if (_state.TextComment == '\0')
                 {
                     _state.IsUnits = false;
@@ -1425,7 +1751,31 @@ namespace Calcpad.Wpf
             Append(_state.CurrentTypeOrPreviousIfCurrentIsNone);
             _builder.Append(c);
             if (_state.CommandCount > 0 || c == ';')
+            {
                 Append(Types.Operator);
+                // Special highlight for `;` when it's acting as a column
+                // separator inside #blk, #inl, or #cen (display layout
+                // directives). Repaint the just-emitted Run in a strong
+                // accent colour so the user visually distinguishes
+                // "column break" from "regular operator".
+                if (c == ';')
+                {
+                    bool isLayoutSeparator = _isInBlkBlock || _isInCenBlock;
+                    if (!isLayoutSeparator && _state.Text != null)
+                    {
+                        var ts = _state.Text.AsSpan().TrimStart();
+                        isLayoutSeparator =
+                            ts.StartsWith("#inl", StringComparison.OrdinalIgnoreCase) ||
+                            ts.StartsWith("#blk", StringComparison.OrdinalIgnoreCase);
+                    }
+                    if (isLayoutSeparator && _state.LastInline is Run rSep
+                        && rSep.Text.Length > 0 && rSep.Text.TrimEnd().EndsWith(';'))
+                    {
+                        rSep.Foreground = ColumnSeparatorBrush;
+                        rSep.FontWeight = FontWeights.Bold;
+                    }
+                }
+            }
             else if (c == '|' && (_state.IsUnits || _state.MatrixCount > 0))
                 Append(Types.Bracket);
             else if (c == ':')
@@ -1536,6 +1886,41 @@ namespace Calcpad.Wpf
                 return;
             }
             _builder.Clear();
+            // Demote Error → Comment for tokens inside display/symbolic directives
+            // (#deq, #sym, #inl, #blk, #cen, #noc). These accept arbitrary
+            // identifiers, @@-labels, ξ/η, xi/eta, etc. as display payload — they
+            // must NOT show as crimson "undeclared" errors.
+            //
+            // Two trigger paths:
+            //   1) The CURRENT line itself starts with one of these keywords
+            //      (handles inline forms like `#deqξ` and the keyword line
+            //      itself).
+            //   2) We are INSIDE an open multi-line display block (the
+            //      _isIn*Block flags), e.g. body lines of `#blk ... #end blk`.
+            if (t == Types.Error)
+            {
+                bool inDisplayBlock =
+                    _isInBlkBlock || _isInCenBlock ||
+                    _isInMargenBlock || _isInNocBlock ||
+                    _isInSymBlock;
+                bool lineStartsWithDisplay = false;
+                if (_state.Text != null)
+                {
+                    var ts = _state.Text.AsSpan().TrimStart();
+                    lineStartsWithDisplay =
+                        ts.StartsWith("#deq", StringComparison.OrdinalIgnoreCase) ||
+                        ts.StartsWith("#sym", StringComparison.OrdinalIgnoreCase) ||
+                        ts.StartsWith("#inl", StringComparison.OrdinalIgnoreCase) ||
+                        ts.StartsWith("#blk", StringComparison.OrdinalIgnoreCase) ||
+                        ts.StartsWith("#cen", StringComparison.OrdinalIgnoreCase) ||
+                        ts.StartsWith("#noc", StringComparison.OrdinalIgnoreCase);
+                }
+                if (lineStartsWithDisplay || inDisplayBlock)
+                {
+                    t = Types.Comment;
+                    _state.Message = null;
+                }
+            }
             if (AppendOperatorShortcut(s))
             {
                 _state.CurrentType = Types.Operator;
@@ -1655,15 +2040,38 @@ namespace Calcpad.Wpf
 
         private Types CheckError(Types t, ref string s)
         {
-            // Skip error checking for #deq and #sym lines (display-only / symbolic)
+            // Skip error checking for display-only / symbolic directives. Three
+            // trigger paths so that tokens inside multi-line display blocks
+            // also escape error promotion:
+            //   1) _state.Keyword is set to a display directive
+            //   2) The current LINE TEXT starts with a display directive
+            //   3) We are INSIDE an open multi-line display block (_isIn*Block)
             var kw = _state.Keyword;
-            if (kw != null && (kw.Equals("#deq", StringComparison.OrdinalIgnoreCase) ||
-                               kw.Equals("#sym", StringComparison.OrdinalIgnoreCase) ||
-                               kw.Equals("#inl", StringComparison.OrdinalIgnoreCase) ||
-                               kw.Equals("#blk", StringComparison.OrdinalIgnoreCase) ||
-                               kw.Equals("#cen", StringComparison.OrdinalIgnoreCase) ||
-                               kw.Equals("#margen", StringComparison.OrdinalIgnoreCase) ||
-                               kw.Equals("#pgb", StringComparison.OrdinalIgnoreCase)))
+            bool isDisplayDirective = kw != null && (
+                kw.Equals("#deq", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#sym", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#inl", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#blk", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#cen", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#margen", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#pgb", StringComparison.OrdinalIgnoreCase) ||
+                kw.Equals("#noc", StringComparison.OrdinalIgnoreCase));
+            if (!isDisplayDirective && _state.Text != null)
+            {
+                var ts = _state.Text.AsSpan().TrimStart();
+                isDisplayDirective =
+                    ts.StartsWith("#deq", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#sym", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#inl", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#blk", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#cen", StringComparison.OrdinalIgnoreCase) ||
+                    ts.StartsWith("#noc", StringComparison.OrdinalIgnoreCase);
+            }
+            if (!isDisplayDirective)
+                isDisplayDirective =
+                    _isInBlkBlock || _isInCenBlock ||
+                    _isInMargenBlock || _isInNocBlock || _isInSymBlock;
+            if (isDisplayDirective)
                 return t;
 
             if (t == Types.Function)
@@ -1812,6 +2220,32 @@ namespace Calcpad.Wpf
 
         private void AppendRun(Types t, string s)
         {
+            // WPF FlowDocument collapses runs of consecutive spaces when
+            // rendering Text content from a Run, so `'    pico    pato`
+            // displayed as `' pico pato`. For COMMENT/text runs we want the
+            // user-typed spaces preserved visually. Replace every space that
+            // follows another space with a NO-BREAK SPACE ( ). The
+            // first space of each gap stays as a normal space so word-wrap
+            // still works at gap boundaries. GetInputText() converts
+            //   back to regular space before save / evaluation.
+            if (t == Types.Comment && s.Length > 1 && s.Contains("  "))
+            {
+                // U+00A0 NO-BREAK SPACE — WPF renders same width as space but
+                // does NOT collapse consecutive instances. Replace every space
+                // that follows another space with nbsp so leading and inner
+                // multi-space gaps survive the editor's whitespace folding.
+                var sb = new System.Text.StringBuilder(s.Length);
+                char prev = ' ';
+                foreach (var ch in s)
+                {
+                    if (ch == ' ' && prev == ' ')
+                        sb.Append(' ');
+                    else
+                        sb.Append(ch);
+                    prev = ch;
+                }
+                s = sb.ToString();
+            }
             var run = new Run(s)
             {
                 Foreground = Colors[(int)t]
@@ -1876,10 +2310,43 @@ namespace Calcpad.Wpf
             var isDataExchangeKeyword = false;
             var i = 0;
             p = FindStartingLine(p, ref lineNumber);
+            // CheckHighlight runs as a SECOND pass after Parse(); the
+            // _isIn*Block flags hold the END-OF-DOCUMENT state, not the
+            // per-paragraph state we need here. Track block scope locally
+            // by walking paragraphs in order.
+            bool inBlk = false, inCen = false, inMargen = false, inNoc = false, inSym = false;
             while (p is not null)
             {
                 var inlines = p.Inlines;
                 var inlineCount = inlines.Count;
+                // Detect display/symbolic-only lines whose identifiers must NOT be
+                // re-evaluated as undeclared variables (greek letters, xi/eta,
+                // (1D,nodo1) labels, etc.). These directives accept arbitrary
+                // identifiers as display labels or symbolic placeholders.
+                var firstRunText = (inlines.FirstInline as Run)?.Text?.TrimStart()?.ToLower() ?? "";
+                // Update local block scope BEFORE evaluating tokens of THIS
+                // paragraph. Closing keywords disable the block for the
+                // current line too (the line itself is just a directive).
+                bool isOpenerOrCloser = false;
+                if (firstRunText.StartsWith("#end blk")) { inBlk = false; isOpenerOrCloser = true; }
+                else if (firstRunText.StartsWith("#blk")) { inBlk = true;  isOpenerOrCloser = true; }
+                if (firstRunText.StartsWith("#end cen")) { inCen = false; isOpenerOrCloser = true; }
+                else if (firstRunText.StartsWith("#cen")) { inCen = true;  isOpenerOrCloser = true; }
+                if (firstRunText.StartsWith("#end margen")) { inMargen = false; isOpenerOrCloser = true; }
+                else if (firstRunText.StartsWith("#margen"))  { inMargen = true;  isOpenerOrCloser = true; }
+                if (firstRunText.StartsWith("#end noc") || firstRunText.StartsWith("#equ")) { inNoc = false; isOpenerOrCloser = true; }
+                else if (firstRunText.StartsWith("#noc")) { inNoc = true; isOpenerOrCloser = true; }
+                if (firstRunText.StartsWith("#end sym")) { inSym = false; isOpenerOrCloser = true; }
+                else if (firstRunText.Equals("#sym")) { inSym = true; isOpenerOrCloser = true; }
+
+                var isDisplayOrSymbolicLine =
+                    firstRunText.StartsWith("#deq") ||
+                    firstRunText.StartsWith("#sym") ||
+                    firstRunText.StartsWith("#inl") ||
+                    firstRunText.StartsWith("#blk") ||
+                    firstRunText.StartsWith("#cen") ||
+                    firstRunText.StartsWith("#noc") ||
+                    inBlk || inCen || inMargen || inNoc || inSym;
                 foreach (var inline in inlines)
                 {
                     if (inline is not Run r)
@@ -1895,6 +2362,13 @@ namespace Calcpad.Wpf
                             isDataExchangeKeyword = true;
                     }
                     ++i;
+                    if (isDisplayOrSymbolicLine)
+                    {
+                        // Skip Error re-evaluation for body of display/symbolic
+                        // directives — preserve original Variable / Function types
+                        // so xi, eta, ξ, η, etc. don't get a red error background.
+                        continue;
+                    }
                     var t1 = r.Foreground == Colors[(int)Types.Function] &&
                              r.FontWeight == FontWeights.Bold ?
                              Types.Function :

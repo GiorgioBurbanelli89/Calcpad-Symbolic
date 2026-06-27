@@ -1,0 +1,460 @@
+"Zapata Lindero — Forma 1: Frame Beam + Joint Spring
+'Shell Thick (Mindlin MITC4) + Frame Beam + Winkler Joint Spring
+'<hr/>
+'Zapata de lindero + zapata aislada conectadas por viga de amarre como ELEMENTO FRAME (1D).
+'La viga NO es shell — es un beam que conecta nodos de borde de cada zapata.
+'Modelo mixto: shell (zapatas) + frame (viga). Caso tipico para viviendas.
+
+"1. Datos — <b>SOLO MODIFICA ESTA SECCION</b>
+'<b>Zapata de lindero (izquierda):</b>
+'Dimensiones -'Lz1 = 1 m','Bz1 = 1.5 m
+'(Lz1 en la direccion de la viga)
+'Columna -'Lc1 = 300 mm
+'Posicion columna (borde izquierdo, centro Y):
+xCol1 = 150 mm','yCol1 = 750 mm
+'<b>Viga de amarre (frame):</b>
+'Longitud -'Lv = 2 m
+'Seccion -'bv = 300 mm','hv = 400 mm
+'<b>Zapata aislada (derecha):</b>
+'Dimensiones -'Lz2 = 1.5 m','Bz2 = 1.5 m
+'Columna -'Lc2 = 300 mm
+'<b>Propiedades comunes:</b>
+'Espesor zapatas -'tz = 400 mm
+'Concreto fc = 210 kg/cm2:
+'Modulo elasticidad -'Ec = 22000 MPa','νc = 0.2
+'Modulo de corte -
+Gc = Ec/(2*(1 + νc))
+'Factor corte -'κc = 5/6
+'Subgrade modulus (suelo medio) -'ks = 0.000003 tf/mm/mm
+'<b>Cargas:</b>
+'Columna lindero:
+'Pu -'P1 = 20 tf','Mx1 = 0.2 tf*m','My1 = 0.15 tf*m
+'Columna aislada:
+'Pu -'P2 = 20 tf','Mx2 = 0.2 tf*m','My2 = 0.15 tf*m
+
+"2. Unidades N-mm
+#hide
+Ew = Ec & MPa','tw = tz & mm
+Lz1w = Lz1 & m','Lz1w = Lz1w*1000
+Bz1w = Bz1 & m','Bz1w = Bz1w*1000
+Lvw = Lv & m','Lvw = Lvw*1000
+bvw = bv & mm','hvw = hv & mm
+Lz2w = Lz2 & m','Lz2w = Lz2w*1000
+Bz2w = Bz2 & m','Bz2w = Bz2w*1000
+Lc1w = Lc1 & mm','Lc2w = Lc2 & mm
+xC1w = xCol1 & mm','yC1w = yCol1 & mm
+Ltotal = Lz1w + Lvw + Lz2w
+xC2w = Lz1w + Lvw + Lz2w/2','yC2w = Bz2w/2
+Bmax = max(Bz1w; Bz2w)
+yviga = (yC1w + yC2w)/2
+Gw = Ew/(2*(1 + νc))
+P1N = P1 & tf','P1N = P1N*9806.65
+P2N = P2 & tf','P2N = P2N*9806.65
+kwN = ks & tf/mm/mm','kwN = kwN*9806.65
+nd = 3
+'Rigidez de la viga frame
+Iv = bvw*hvw^3/12
+'I_viga ='Iv'mm^4
+
+"3. Malla (solo zapatas, viga es 1D)
+dex = 250','dey = 250
+ne1x1 = round(Lz1w/dex)','ne1x2 = round(Lz2w/dex)
+ne1y = round(Bmax/dey)
+nj1x1 = ne1x1 + 1','nj1x2 = ne1x2 + 1','nj1y = ne1y + 1
+'Zapata 1: nodos 1 a nj1
+nj1 = nj1x1*nj1y
+'Zapata 2: nodos nj1+1 a nj1+nj2
+nj2 = nj1x2*nj1y
+nj = nj1 + nj2','nt = nd*nj
+ne_z1 = ne1x1*ne1y','ne_z2 = ne1x2*ne1y','ne = ne_z1 + ne_z2
+#hide
+xj = vector(nj)','yj = vector(nj)
+'Zapata 1
+#for j = 0 : ne1y
+	#for i = 0 : ne1x1
+		k = j*nj1x1 + i + 1
+		xj.k = i*dex','yj.k = j*dey
+	#loop
+#loop
+'Zapata 2
+#for j = 0 : ne1y
+	#for i = 0 : ne1x2
+		k = nj1 + j*nj1x2 + i + 1
+		xj.k = Lz1w + Lvw + i*dex','yj.k = j*dey
+	#loop
+#loop
+'Conectividad zapata 1
+ej = matrix(ne; 4)
+#for j = 0 : ne1y - 1
+	#for i = 0 : ne1x1 - 1
+		e = j*ne1x1 + i + 1
+		bl = j*nj1x1 + i + 1
+		ej.(e; 1) = bl','ej.(e; 2) = bl + 1
+		ej.(e; 3) = bl + nj1x1 + 1','ej.(e; 4) = bl + nj1x1
+	#loop
+#loop
+'Conectividad zapata 2
+#for j = 0 : ne1y - 1
+	#for i = 0 : ne1x2 - 1
+		e = ne_z1 + j*ne1x2 + i + 1
+		bl = nj1 + j*nj1x2 + i + 1
+		ej.(e; 1) = bl','ej.(e; 2) = bl + 1
+		ej.(e; 3) = bl + nj1x2 + 1','ej.(e; 4) = bl + nj1x2
+	#loop
+#loop
+#show
+'Zapata 1: 'nj1' nodos, 'ne_z1' elementos
+'Zapata 2: 'nj2' nodos, 'ne_z2' elementos
+'Total: 'nj' nodos, 'ne' elementos
+
+"4. SVG
+#hide
+ws = 350','ksc = ws/Ltotal','ds = 25','hs = Bmax*ksc
+#show
+#svg ws+2*ds hs+2*ds+20
+.text ds+ws/2 ds-8 "Zapata_Med_+_Viga_Linea_+_Zapata_Cen" 8 navy middle bold
+'Zapata 1
+#hide
+#for e = 1 : ne_z1
+	i1 = ej.(e; 1)','i3 = ej.(e; 3)
+	ex = xj.i1*ksc+ds','ey = hs-yj.i3*ksc+ds
+	ew = (xj.i3 - xj.i1)*ksc','eh = (yj.i3 - yj.i1)*ksc
+	#show
+	.rect ex ey ew eh lightcyan 0.15 steelBlue 0.3
+	#hide
+#loop
+'Zapata 2
+#for e = ne_z1 + 1 : ne
+	i1 = ej.(e; 1)','i3 = ej.(e; 3)
+	ex = xj.i1*ksc+ds','ey = hs-yj.i3*ksc+ds
+	ew = (xj.i3 - xj.i1)*ksc','eh = (yj.i3 - yj.i1)*ksc
+	#show
+	.rect ex ey ew eh honeydew 0.15 seaGreen 0.3
+	#hide
+#loop
+'Viga (linea)
+'Linea de la viga: de centro de Col1 a centro de Col2
+vx1 = xC1w*ksc+ds','vy1 = hs-yviga*ksc+ds
+vx2 = xC2w*ksc+ds','vy2 = vy1
+#show
+.line vx1 vy1 vx2 vy2 orange 3
+.text (vx1+vx2)/2 vy1-10 "Viga_(frame)" 7 orange middle bold
+'Columnas
+#hide
+cc1x = xC1w*ksc+ds','cc1y = hs-yC1w*ksc+ds','cl1 = Lc1w*ksc
+cc2x = xC2w*ksc+ds','cc2y = hs-yC2w*ksc+ds','cl2 = Lc2w*ksc
+#show
+.rect cc1x-cl1/2 cc1y-cl1/2 cl1 cl1 salmon 0.5 red 2
+.text cc1x cc1y-cl1 "Col1" 6 darkred middle bold
+.rect cc2x-cl2/2 cc2y-cl2/2 cl2 cl2 salmon 0.5 red 2
+.text cc2x cc2y-cl2 "Col2" 6 darkred middle bold
+.text ds+Lz1w/2*ksc ds+hs+15 "Zapata_1" 7 steelBlue middle
+.text ds+(Lz1w+Lvw/2)*ksc ds+hs+15 "Viga" 7 orange middle
+.text ds+(Lz1w+Lvw+Lz2w/2)*ksc ds+hs+15 "Zapata_2" 7 seaGreen middle
+#end svg
+#equ
+
+"5. Ensamblaje MITC4 (zapatas) + Viga Frame (1D)
+#hide
+Dbm = Ew*tw^3/(12*(1 - νc^2))*[1; νc; 0|νc; 1; 0|0; 0; (1 - νc)/2]
+Dsm = κc*Gw*tw*[1; 0|0; 1]
+gp = 1/sqr(3)','nk = 12
+dN1x(η) = -(1 - η)/4','dN2x(η) = (1 - η)/4
+dN3x(η) = (1 + η)/4','dN4x(η) = -(1 + η)/4
+dN1y(ξ) = -(1 - ξ)/4','dN2y(ξ) = -(1 + ξ)/4
+dN3y(ξ) = (1 + ξ)/4','dN4y(ξ) = (1 - ξ)/4
+
+K = symmetric(nt)
+'Shell elements (zapatas)
+#for e = 1 : ne
+	i1 = ej.(e; 1)','i3 = ej.(e; 3)
+	dx = xj.i3 - xj.i1','dy = yj.i3 - yj.i1
+	J11 = dx/2','J22 = dy/2','detJ = J11*J22
+	Ke = symmetric(nk)
+	'Flexion 2x2
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		dx1 = dN1x(ηg)/J11','dy1 = dN1y(ξg)/J22
+		dx2 = dN2x(ηg)/J11','dy2 = dN2y(ξg)/J22
+		dx3 = dN3x(ηg)/J11','dy3 = dN3y(ξg)/J22
+		dx4 = dN4x(ηg)/J11','dy4 = dN4y(ξg)/J22
+		Bb = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+		      0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+		      0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+		BtDB = transp(Bb)*Dbm*Bb*detJ
+		#for i = 1 : nk
+			#for j = i : nk
+				Ke.(i; j) = Ke.(i; j) + BtDB.(i; j)
+			#loop
+		#loop
+	#loop
+	'Corte MITC4 2x2
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		Bs = matrix(2; nk)
+		#for it = 1 : 2
+			#if it ≡ 1
+				ηt = -1
+			#else
+				ηt = 1
+			#end if
+			wt = (1 + ηt*ηg)/2
+			dt1 = dN1x(ηt)/J11','dt2 = dN2x(ηt)/J11
+			dt3 = dN3x(ηt)/J11','dt4 = dN4x(ηt)/J11
+			Nt1 = (1 - ξg)*(1 - ηt)/4','Nt2 = (1 + ξg)*(1 - ηt)/4
+			Nt3 = (1 + ξg)*(1 + ηt)/4','Nt4 = (1 - ξg)*(1 + ηt)/4
+			Bs.(1; 1) = Bs.(1; 1) + wt*dt1','Bs.(1; 3) = Bs.(1; 3) - wt*Nt1
+			Bs.(1; 4) = Bs.(1; 4) + wt*dt2','Bs.(1; 6) = Bs.(1; 6) - wt*Nt2
+			Bs.(1; 7) = Bs.(1; 7) + wt*dt3','Bs.(1; 9) = Bs.(1; 9) - wt*Nt3
+			Bs.(1; 10) = Bs.(1; 10) + wt*dt4','Bs.(1; 12) = Bs.(1; 12) - wt*Nt4
+		#loop
+		#for it = 1 : 2
+			#if it ≡ 1
+				ξt = -1
+			#else
+				ξt = 1
+			#end if
+			wt = (1 + ξt*ξg)/2
+			dt1 = dN1y(ξt)/J22','dt2 = dN2y(ξt)/J22
+			dt3 = dN3y(ξt)/J22','dt4 = dN4y(ξt)/J22
+			Nt1 = (1 - ξt)*(1 - ηg)/4','Nt2 = (1 + ξt)*(1 - ηg)/4
+			Nt3 = (1 + ξt)*(1 + ηg)/4','Nt4 = (1 - ξt)*(1 + ηg)/4
+			Bs.(2; 1) = Bs.(2; 1) + wt*dt1','Bs.(2; 2) = Bs.(2; 2) + wt*Nt1
+			Bs.(2; 4) = Bs.(2; 4) + wt*dt2','Bs.(2; 5) = Bs.(2; 5) + wt*Nt2
+			Bs.(2; 7) = Bs.(2; 7) + wt*dt3','Bs.(2; 8) = Bs.(2; 8) + wt*Nt3
+			Bs.(2; 10) = Bs.(2; 10) + wt*dt4','Bs.(2; 11) = Bs.(2; 11) + wt*Nt4
+		#loop
+		BtDBs = transp(Bs)*Dsm*Bs*detJ
+		#for i = 1 : nk
+			#for j = i : nk
+				Ke.(i; j) = Ke.(i; j) + BtDBs.(i; j)
+			#loop
+		#loop
+	#loop
+	'Ensamblar
+	#for i = 1 : 4
+		#for j = i : 4
+			j1 = ej.(e; i)','j2 = ej.(e; j)
+			i1 = nd*(j1 - 1) + 1','i2 = nd*(j2 - 1) + 1
+			kij = submatrix(Ke; nd*(i - 1) + 1; nd*i; nd*(j - 1) + 1; nd*j)
+			#if j1 > j2
+				add(transp(kij); K; i2; i1)
+			#else
+				add(kij; K; i1; i2)
+			#end if
+		#loop
+	#loop
+#loop
+
+"5b. Viga Frame (beam elements 1D)
+'Conectar nodos del borde derecho de zapata 1 con borde izquierdo de zapata 2
+'usando elementos beam Euler-Bernoulli.
+'Rigidez viga: Ke_beam = EI/L^3 * [12, 6L, -12, 6L; 6L, 4L^2, -6L, 2L^2; ...]
+'DOFs beam: w y θy (rotacion alrededor de Y = flexion en plano XZ)
+#hide
+'Nodo de Col1 (centro columna medianera) en zapata 1
+jvig1 = round(yC1w/dey)*nj1x1 + round(xC1w/dex) + 1
+'Nodo de Col2 (centro columna centrada) en zapata 2
+jvig2 = nj1 + round(yC2w/dey)*nj1x2 + round((xC2w - Lz1w - Lvw)/dex) + 1
+'Rigidez beam 2D (solo w y θy):
+'DOFs: w1, θy1, w2, θy2
+Lb = xC2w - xC1w
+EIL3 = Ew*Iv/Lb^3
+Kvb = EIL3*[12; 6*Lb; -12; 6*Lb | _
+            6*Lb; 4*Lb^2; -6*Lb; 2*Lb^2 | _
+            -12; -6*Lb; 12; -6*Lb | _
+            6*Lb; 2*Lb^2; -6*Lb; 4*Lb^2]
+'Mapear DOFs beam a DOFs globales:
+'w1 -> nodo jvig1, DOF w (indice nd*(jvig1-1)+1)
+'θy1 -> nodo jvig1, DOF θy (indice nd*(jvig1-1)+3)
+'w2 -> nodo jvig2, DOF w
+'θy2 -> nodo jvig2, DOF θy
+dv1w = nd*(jvig1 - 1) + 1','dv1t = nd*(jvig1 - 1) + 3
+dv2w = nd*(jvig2 - 1) + 1','dv2t = nd*(jvig2 - 1) + 3
+'Ensamblar beam
+K.(dv1w; dv1w) = K.(dv1w; dv1w) + Kvb.(1; 1)
+K.(dv1w; dv1t) = K.(dv1w; dv1t) + Kvb.(1; 2)
+K.(dv1w; dv2w) = K.(dv1w; dv2w) + Kvb.(1; 3)
+K.(dv1w; dv2t) = K.(dv1w; dv2t) + Kvb.(1; 4)
+K.(dv1t; dv1t) = K.(dv1t; dv1t) + Kvb.(2; 2)
+K.(dv1t; dv2w) = K.(dv1t; dv2w) + Kvb.(2; 3)
+K.(dv1t; dv2t) = K.(dv1t; dv2t) + Kvb.(2; 4)
+K.(dv2w; dv2w) = K.(dv2w; dv2w) + Kvb.(3; 3)
+K.(dv2w; dv2t) = K.(dv2w; dv2t) + Kvb.(3; 4)
+K.(dv2t; dv2t) = K.(dv2t; dv2t) + Kvb.(4; 4)
+
+"6. Winkler + Cargas
+'Winkler en zapatas
+#for j = 0 : ne1y
+	#for i = 0 : ne1x1
+		k = j*nj1x1 + i + 1
+		#if i ≡ 0 ∨ i ≡ ne1x1
+			txk = dex/2
+		#else
+			txk = dex
+		#end if
+		#if j ≡ 0 ∨ j ≡ ne1y
+			tyk = dey/2
+		#else
+			tyk = dey
+		#end if
+		K.(nd*(k - 1) + 1; nd*(k - 1) + 1) = K.(nd*(k - 1) + 1; nd*(k - 1) + 1) + kwN*txk*tyk
+	#loop
+#loop
+#for j = 0 : ne1y
+	#for i = 0 : ne1x2
+		k = nj1 + j*nj1x2 + i + 1
+		#if i ≡ 0 ∨ i ≡ ne1x2
+			txk = dex/2
+		#else
+			txk = dex
+		#end if
+		#if j ≡ 0 ∨ j ≡ ne1y
+			tyk = dey/2
+		#else
+			tyk = dey
+		#end if
+		K.(nd*(k - 1) + 1; nd*(k - 1) + 1) = K.(nd*(k - 1) + 1; nd*(k - 1) + 1) + kwN*txk*tyk
+	#loop
+#loop
+'Cargas
+F = vector(nt)
+qc1 = P1N/(Lc1w^2)
+#for j = 0 : ne1y
+	#for i = 0 : ne1x1
+		k = j*nj1x1 + i + 1
+		#if abs(xj.k - xC1w) ≤ Lc1w/2 + 1 ∧ abs(yj.k - yC1w) ≤ Lc1w/2 + 1
+			txk = dex','tyk = dey
+			#if i ≡ 0 ∨ i ≡ ne1x1
+				txk = dex/2
+			#end if
+			#if j ≡ 0 ∨ j ≡ ne1y
+				tyk = dey/2
+			#end if
+			F.(nd*(k - 1) + 1) = F.(nd*(k - 1) + 1) - qc1*txk*tyk
+		#end if
+	#loop
+#loop
+qc2 = P2N/(Lc2w^2)
+#for j = 0 : ne1y
+	#for i = 0 : ne1x2
+		k = nj1 + j*nj1x2 + i + 1
+		#if abs(xj.k - xC2w) ≤ Lc2w/2 + 1 ∧ abs(yj.k - yC2w) ≤ Lc2w/2 + 1
+			txk = dex','tyk = dey
+			#if i ≡ 0 ∨ i ≡ ne1x2
+				txk = dex/2
+			#end if
+			#if j ≡ 0 ∨ j ≡ ne1y
+				tyk = dey/2
+			#end if
+			F.(nd*(k - 1) + 1) = F.(nd*(k - 1) + 1) - qc2*txk*tyk
+		#end if
+	#loop
+#loop
+
+"7. Solucion
+#show
+Z = clsolve(K; F)
+
+"8. Deflexion (mm) — Vista unificada
+#hide
+'Extraer w de cada nudo:
+wn = vector(nj)
+#for k = 1 : nj
+    wn.k = Z.(nd*(k - 1) + 1)
+#loop
+'Deflexion en columnas:
+kc1 = round(yC1w/dey)*nj1x1 + round(xC1w/dex) + 1
+wc1 = Z.(nd*(kc1 - 1) + 1)
+kc2 = nj1 + round(yC2w/dey)*nj1x2 + round((xC2w - Lz1w - Lvw)/dex) + 1
+wc2 = Z.(nd*(kc2 - 1) + 1)
+'La viga es FRAME (1D), no se muestra en el color map.
+PlotWidth = 700
+#show
+'w Col1 (lindero) = 'round(wc1*10000)/10000' mm~~~w Col2 (aislada) = 'round(wc2*10000)/10000' mm
+'<b>Deflexion w (mm) — Viga es frame 1D:</b>
+$PlotMap{xj; yj; wn; ej}
+
+"9. Momentos + Von Mises + Presion
+#hide
+cf = 10.19716','ftm = 10^6/9806.65
+Mxn = vector(nj)','Myn = vector(nj)','Mxyn = vector(nj)','cnt = vector(nj)
+#for e = 1 : ne
+	i1 = ej.(e; 1)','i3 = ej.(e; 3)
+	dx = xj.i3 - xj.i1','dy = yj.i3 - yj.i1
+	J11 = dx/2','J22 = dy/2','detJ = J11*J22
+	Ze = vector(nk)
+	#for i = 1 : 4
+		nn = ej.(e; i)
+		Ze.(3*(i - 1) + 1) = Z.(nd*(nn - 1) + 1)
+		Ze.(3*(i - 1) + 2) = Z.(nd*(nn - 1) + 2)
+		Ze.(3*(i - 1) + 3) = Z.(nd*(nn - 1) + 3)
+	#loop
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		dx1 = dN1x(ηg)/J11','dy1 = dN1y(ξg)/J22
+		dx2 = dN2x(ηg)/J11','dy2 = dN2y(ξg)/J22
+		dx3 = dN3x(ηg)/J11','dy3 = dN3y(ξg)/J22
+		dx4 = dN4x(ηg)/J11','dy4 = dN4y(ξg)/J22
+		Bb = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+		      0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+		      0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+		Mv = Dbm*(Bb*Ze)
+		#for i = 1 : 4
+			nn = ej.(e; i)
+			Mxn.nn = Mxn.nn + Mv.1','Myn.nn = Myn.nn + Mv.2','Mxyn.nn = Mxyn.nn + Mv.3
+			cnt.nn = cnt.nn + 1
+		#loop
+	#loop
+#loop
+#for k = 1 : nj
+	#if cnt.k > 0
+		Mxn.k = Mxn.k/cnt.k','Myn.k = Myn.k/cnt.k','Mxyn.k = Mxyn.k/cnt.k
+	#end if
+#loop
+'Momento, Von Mises y Presion como vectores nodales para PlotMap:
+Mxn_tf = vector(nj)','VMn = vector(nj)','qn = vector(nj)','vmmax = 0
+#for k = 1 : nj
+    #if cnt.k > 0
+        Mxn_tf.k = Mxn.k/9806.65
+        sx = 6*Mxn.k/tw^2','sy = 6*Myn.k/tw^2','txy = 6*Mxyn.k/tw^2
+        vk = sqr(sx^2 - sx*sy + sy^2 + 3*txy^2)
+        VMn.k = vk*cf
+        qn.k = kwN*Z.(nd*(k - 1) + 1)/9806.65*10^6
+        #if vk > vmmax
+            vmmax = vk
+        #end if
+    #end if
+#loop
+#show
+'<b>Momento Mx (tonf*m/m):</b>
+$PlotMap{xj; yj; Mxn_tf; ej}
+'<b>Von Mises (kgf/cm2):</b>
+$PlotMap{xj; yj; VMn; ej}
+'σ_VM max = 'round(vmmax*10)/10' MPa = 'round(vmmax*cf*10)/10' kgf/cm2
+'<b>Presion de contacto (tonf/m2):</b>
+$PlotMap{xj; yj; qn; ej}

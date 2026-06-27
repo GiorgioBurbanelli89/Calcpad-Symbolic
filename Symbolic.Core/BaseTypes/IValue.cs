@@ -804,7 +804,9 @@ namespace Calcpad.Core
         internal static int AsInt(IValue ivalue, Exceptions.Items item = Exceptions.Items.Argument)
         {
             var value = AsValue(ivalue, item);
-            if (value.IsReal && value.Units is null)
+            // Counts/indices are dimensionless by convention; strip any spurious units
+            // (see IScalarValue.AsInt for rationale).
+            if (value.IsReal)
             {
                 var d = value.Re;
                 if (d > 0 && d <= int.MaxValue && d.AlmostEquals(Math.Truncate(d)))

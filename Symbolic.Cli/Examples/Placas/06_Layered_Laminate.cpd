@@ -1,0 +1,96 @@
+"Laminado — Classical Laminate Theory (matrices A, B, D)
+'Material compuesto: varias láminas ortotropas apiladas.
+
+'<b>Paso 1 — Hipótesis</b>
+'  Capa Única Equivalente (ESL):
+'  (1) Láminas perfectamente unidas
+'  (2) Deformación lineal en espesor
+'  (3) Pegamento entre láminas no se deforma
+
+'<b>Paso 2 — Estado de un punto: membrana + flexión</b>
+#deq ε = ε_m + z*κ
+
+'<b>Paso 3 — Constitutiva de lámina (ejes locales)</b>
+'Para lámina ortotropa k:
+#deq σ_k = Q_k*ε_k
+
+'<b>Paso 4 — Resultantes del laminado</b>
+#deq N = integral(σ*dz) = A*ε_m + B*κ
+#deq M = integral(σ*z*dz) = B*ε_m + D*κ
+
+'<b>Paso 5 — Matrices A, B, D (Moita §5.3.4)</b>
+#deq A_ij = Σ Q_ij_k*(h_k - h_k_minus_1)
+#deq B_ij = Σ Q_ij_k*(h_k^2 - h_k_minus_1^2)/2
+#deq D_ij = Σ Q_ij_k*(h_k^3 - h_k_minus_1^3)/3
+
+'<b>Paso 6 — Ejemplo: laminado simétrico [0°/90°/0°]</b>
+'Fibra de carbono / epoxy:
+E1 = 140000
+E2 = 10000
+G12 = 5000
+ν12 = 0.3
+ν21 = ν12*E2/E1
+'Espesor cada lámina:
+t_k = 0.125
+'Laminado total:
+t_tot = 3*t_k
+
+'<b>Paso 7 — Q_local para lámina 0° (ejes material = ejes placa)</b>
+denom = 1 - ν12*ν21
+Q11 = E1/denom
+Q22 = E2/denom
+Q12 = ν12*E2/denom
+Q66 = G12
+Q_0 = [Q11; Q12; 0 | Q12; Q22; 0 | 0; 0; Q66]
+Q_0
+
+'<b>Paso 8 — Q_global para lámina 90° (transformación)</b>
+'Con θ=90°: Q11 y Q22 intercambiados
+Q_90 = [Q22; Q12; 0 | Q12; Q11; 0 | 0; 0; Q66]
+Q_90
+
+'<b>Paso 9 — Coordenadas z de cada lámina</b>
+z_0 = -1.5*t_k
+z_1 = -0.5*t_k
+z_2 = 0.5*t_k
+z_3 = 1.5*t_k
+
+'<b>Paso 10 — Matriz A (membrana) — suma Q·(h_k - h_{k-1})</b>
+A_11 = Q11*(z_1 - z_0) + Q22*(z_2 - z_1) + Q11*(z_3 - z_2)
+A_11
+A_22 = Q22*(z_1 - z_0) + Q11*(z_2 - z_1) + Q22*(z_3 - z_2)
+A_22
+A_12 = Q12*(t_tot)
+A_12
+
+'<b>Paso 11 — Matriz B (acoplamiento) — cero por simetría</b>
+B_11 = Q11*(z_1^2 - z_0^2)/2 + Q22*(z_2^2 - z_1^2)/2 + Q11*(z_3^2 - z_2^2)/2
+B_11
+'Debe ser ≈ 0 porque [0/90/0] es simétrico.
+
+'<b>Paso 12 — Matriz D (flexión) — suma Q·(h_k^3 - h_{k-1}^3)/3</b>
+D_11 = Q11*(z_1^3 - z_0^3)/3 + Q22*(z_2^3 - z_1^3)/3 + Q11*(z_3^3 - z_2^3)/3
+D_11
+D_22 = Q22*(z_1^3 - z_0^3)/3 + Q11*(z_2^3 - z_1^3)/3 + Q22*(z_3^3 - z_2^3)/3
+D_22
+
+'<b>Paso 13 — Laminado simétrico → NO hay acoplamiento</b>
+'Ecuación constitutiva final:
+'  [N; M] = [[A; 0]; [0; D]] * [ε_m; κ]
+'→ Análisis separado de membrana y flexión (como isótropo).
+
+'<b>Paso 14 — Verificación con fórmula isótropa equivalente</b>
+'Para un laminado homogéneo equivalente (mismo material todas las láminas):
+A_iso = E1*t_tot/(1 - ν12^2)
+A_iso
+D_iso = E1*t_tot^3/(12*(1 - ν12^2))
+D_iso
+'Compare con A_11 y D_11 del laminado real:
+A_11
+D_11
+'Diferencia → efecto de la lámina 90°.
+
+'<b>Paso 15 — Aplicaciones</b>
+'  Fuselajes, alas, cascos (aeronáutica)
+'  Paneles sándwich (construcción)
+'  Shear walls compuestos (CFRP/GFRP)

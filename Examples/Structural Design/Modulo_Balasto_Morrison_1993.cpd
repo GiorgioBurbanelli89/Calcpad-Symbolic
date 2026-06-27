@@ -1,0 +1,128 @@
+"Modulo de Balasto - Tabla de Morrison 1993
+"=================================================================
+"Derivacion matematica completa de la tabla K_s vs q_adm.
+"Aplicacion al informe Tecnisuelos TSN-ES-2025-206 (Portoviejo).
+
+"1. Origen historico
+'Tesis Morrison, N. (1993): "Interaccion Suelo-Estructura - Semi-Espacio de Winkler"
+'Universidad Politecnica de Madrid / referenciado en Latinoamerica.
+
+"2. Formula fundamental Winkler 1867
+'K_s = p / delta = F / (delta * A)
+'unidades: K_s en tonf/m^3 si p en tonf/m^2 y delta en m.
+
+"3. Hipotesis de Morrison
+"Morrison ASUME que el asentamiento admisible bajo q_adm es:
+"   suelo blando:  delta_a = 3.85 mm
+"   suelo rigido:  delta_a = 5.00 mm
+
+'Asentamiento admisible suelos rigidos (5 mm en metros) -
+delta_rigido = 0.005'm
+
+'Asentamiento admisible suelos blandos (3.85 mm en metros) -
+delta_blando = 0.00385'm
+
+"4. Aplicacion para suelos rigidos (q_adm >= 20 t/m2)
+'Capacidad admisible -
+q_adm_rigido = 20'tonf/m^2
+
+'K_s_rigido = q_adm_rigido / delta_rigido
+K_s_rigido = q_adm_rigido / delta_rigido
+
+'Resultado Morrison q=20 (tonf/m^3):'K_s_rigido
+'Valor de tabla Morrison (libro Guerra MDI): 4000 tonf/m^3
+
+"5. Aplicacion para suelos blandos (q_adm = 2.5 t/m2)
+'Capacidad admisible suelo blando -
+q_adm_blando = 2.5'tonf/m^2
+
+'K_s_blando = q_adm_blando / delta_blando
+K_s_blando = q_adm_blando / delta_blando
+
+'Resultado Morrison q=2.5 (tonf/m^3):'K_s_blando
+'Valor de tabla Morrison (libro Guerra MDI): 650 tonf/m^3
+
+"6. Reverse-engineering de la tabla Morrison
+"Para cada par (q_adm, K_tabla) calculo delta_implicito = q/K
+"y verifico que coincida con 3.85-5.00 mm.
+
+'Caso 1 - q=2.5 tonf/m^2
+q_a1 = 2.5'tonf/m^2
+K_t1 = 650'tonf/m^3
+delta_imp_1 = q_a1 / K_t1
+'delta implicito (m) = 'delta_imp_1
+'delta implicito (mm) = 'delta_imp_1*1000
+
+'Caso 2 - q=10 tonf/m^2
+q_a2 = 10'tonf/m^2
+K_t2 = 2200'tonf/m^3
+delta_imp_2 = q_a2 / K_t2
+'delta implicito (m) = 'delta_imp_2
+'delta implicito (mm) = 'delta_imp_2*1000
+
+'Caso 3 - q=20 tonf/m^2
+q_a3 = 20'tonf/m^2
+K_t3 = 4000'tonf/m^3
+delta_imp_3 = q_a3 / K_t3
+'delta implicito (m) = 'delta_imp_3
+'delta implicito (mm) = 'delta_imp_3*1000
+
+'Caso 4 - q=40 tonf/m^2
+q_a4 = 40'tonf/m^2
+K_t4 = 8000'tonf/m^3
+delta_imp_4 = q_a4 / K_t4
+'delta implicito (m) = 'delta_imp_4
+'delta implicito (mm) = 'delta_imp_4*1000
+
+"CONFIRMADO: La tabla Morrison usa K = q / delta con
+"   delta = 3.85 mm para q < 5 tonf/m2
+"   delta = 5.00 mm para q > 20 tonf/m2
+"   transicion suave entre ambos.
+
+"7. Comparacion con otros metodos (mismo q_adm)
+"Para q_adm = 21.9 tonf/m2 (informe Tecnisuelos Portoviejo)
+
+'Capacidad admisible del informe -
+q_adm_caso = 21.9'tonf/m^2
+
+"Metodo A - Morrison 1993 (factor 200 via delta=5mm)
+K_Morrison = q_adm_caso / delta_rigido
+'K_s Morrison (tonf/m^3) = 'K_Morrison
+
+"Metodo B - Bowles 1996 (factor 40*SF, SF=3)
+SF_bowles = 3
+factor_Bowles = 40 * SF_bowles
+K_Bowles = factor_Bowles * q_adm_caso
+'K_s Bowles (tonf/m^3) = 'K_Bowles
+
+"Metodo C - asentamiento admisible 25mm (USA estandar)
+delta_25 = 0.025'm
+K_Bowles_estandar = q_adm_caso / delta_25
+'K_s con delta=25mm (tonf/m^3) = 'K_Bowles_estandar
+
+"8. Diferencia entre los metodos
+'Diferencia Morrison vs Bowles =
+diff_pct = (K_Morrison - K_Bowles) / K_Bowles * 100
+'Morrison es ' diff_pct ' % mayor que Bowles.
+
+"Es decir:
+"   Morrison es 67% mas optimista (menos conservador) que Bowles.
+"   Es la razon por la que Bowles se usa en USA y Morrison en LATAM.
+
+"9. Valor recomendado para SAFE (informe Tecnisuelos)
+'Confirmacion: el informe usa Morrison directamente.
+'K_s informe = 4380 tonf/m3 = 4.38 kg/cm3
+'K_s Morrison calculado = ' K_Morrison
+
+"10. Conclusion
+"La formula Morrison es:
+"
+"   K_s = q_adm / delta_admisible
+"
+"con delta_admisible = 5 mm asumido para suelos rigidos.
+"
+"Es la aplicacion DIRECTA de la hipotesis Winkler con un
+"delta_admisible especifico elegido por Morrison.
+"
+"NO hay teoria de fondo - es una ELECCION DE INGENIERIA
+"calibrada para vivienda pequena.

@@ -1,0 +1,59 @@
+"Cáscara Delgada — Kirchhoff-Love (DKT + CST)
+'Combina membrana (CST) + flexión Kirchhoff (DKT). 5 GDL/nodo dependientes de w.
+
+'<b>Paso 1 — Hipótesis</b>
+'  (1) Espesor t << radio R (t/R < 1/20)
+'  (2) Normales rectas Y perpendiculares (sin corte transversal)
+'  (3) Giros dependientes: θ_α = -∂w/∂x_α
+
+'<b>Paso 2 — Campo de desplazamientos</b>
+#deq u_α = u_α0 + z*θ_α
+'donde θ_α = -dw/dx_α
+
+'<b>Paso 3 — Deformaciones — membrana + flexión</b>
+'Membrana (constante en z):
+#deq ε_αβ_mem = (1/2)*(du_α0/dx_β + du_β0/dx_α)
+
+'Flexión (lineal en z):
+#deq κ_αβ = -d2w/dx_α_dx_β
+
+'Deformación total:
+#deq ε = ε_mem + z*κ
+
+'<b>Paso 4 — Datos material (acero)</b>
+E_mod = 200000
+ν = 0.3
+t = 5
+'(t = 5 mm → cáscara delgada)
+
+'<b>Paso 5 — Matriz constitutiva de membrana [D_m]</b>
+C_m = E_mod*t/(1 - ν^2)
+D_m = [C_m; ν*C_m; 0 | ν*C_m; C_m; 0 | 0; 0; (1-ν)*C_m/2]
+D_m
+
+'<b>Paso 6 — Matriz constitutiva de flexión [D_b]</b>
+D_f = E_mod*t^3/(12*(1 - ν^2))
+D_b = [D_f; ν*D_f; 0 | ν*D_f; D_f; 0 | 0; 0; (1-ν)*D_f/2]
+D_b
+
+'<b>Paso 7 — Acoplamiento membrana-flexión</b>
+'Material isótropo:     [B] = 0 (desacoplada)
+'Laminado asimétrico:   [B] ≠ 0 (ver Layered)
+
+'<b>Paso 8 — Energía de deformación</b>
+#deq U = (1/2)*integral(ε_mem^T*D_m*ε_mem + κ^T*D_b*κ)*dA
+
+'<b>Paso 9 — Elementos FEM comunes</b>
+'  DKT + CST (triangular 3 nodos, 18 GDL)
+'  DKQ + Q4  (cuadrilátero 4 nodos, 24 GDL)
+'  Ambos evitan shear locking (no corte transversal)
+
+'<b>Paso 10 — Ejemplo numérico — radio cilindro</b>
+'Rigidez extensional:
+C_m
+'Rigidez a flexión:
+D_f
+'Ratio flexión/membrana (longitud característica):
+L_c = sqrt(D_f/C_m)
+L_c
+'L_c ~ t/√12 para material isótropo.

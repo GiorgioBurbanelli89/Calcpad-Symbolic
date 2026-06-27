@@ -339,9 +339,17 @@ namespace Calcpad.Cli
             var ext = Path.GetExtension(outFile);
             try
             {
-                var path = Path.GetDirectoryName(fileName);
+                // Resolve to absolute paths BEFORE changing cwd; otherwise a
+                // relative fileName like "Examples/x.cpd" gets re-prefixed
+                // when the cwd changes to its containing folder, producing
+                // "Examples/Examples/x.cpd" and failing.
+                var absFileName = Path.GetFullPath(fileName);
+                var absOutFile = Path.GetFullPath(outFile);
+                var path = Path.GetDirectoryName(absFileName);
                 if (!string.IsNullOrWhiteSpace(path))
                     Directory.SetCurrentDirectory(path);
+                fileName = absFileName;
+                outFile = absOutFile;
 
                 var code = CalcpadReader.Read(fileName);
                 var macroParser = new MacroParser
@@ -372,6 +380,15 @@ namespace Calcpad.Cli
                 else
                     WriteErrorAndWait(Messages.InvalidOutputExtensionMustBeHtmlDocxOrPdf);
 
+                // ── Calcpad Symbolic CLI: abrir el reporte en el navegador ──
+                // Si el usuario pasó `-s` (silencioso) no abrimos navegador.
+                // Si no, lanzamos el HTML/PDF en el handler default del SO.
+                if (!isSilent && File.Exists(outFile))
+                {
+                    Console.WriteLine($"✓ Reporte generado: {outFile}");
+                    OpenInBrowser(outFile);
+                }
+
                 return true;
             }
             catch (Exception ex) 
@@ -381,12 +398,40 @@ namespace Calcpad.Cli
             }
         }
 
+        /// <summary>
+        /// Abre el archivo generado (HTML / PDF) en el navegador o aplicación
+        /// default del sistema operativo. Usa <c>UseShellExecute = true</c>
+        /// que invoca al handler asociado en Windows/macOS/Linux.
+        /// </summary>
+        private static void OpenInBrowser(string filePath)
+        {
+            try
+            {
+                var absPath = Path.GetFullPath(filePath);
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = absPath,
+                    UseShellExecute = true,
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠  No se pudo abrir el navegador: {ex.Message}");
+                Console.WriteLine($"   Abrir manualmente: {filePath}");
+            }
+        }
+
         private static ConsoleKeyInfo WriteErrorAndWait(string message, string prompt = null)
         {
             WriteError(message, true);
             prompt ??= Messages.PressAnyKeyToContinue;
             Console.WriteLine(prompt);
-            return Console.ReadKey();
+            // Skip ReadKey when stdin is redirected (batch / piped invocation)
+            // — otherwise InvalidOperationException kills batch runs.
+            if (Console.IsInputRedirected)
+                return default;
+            try { return Console.ReadKey(); }
+            catch (InvalidOperationException) { return default; }
         }
 
         static string TryOpenOnStartup(List<Line> Lines)

@@ -6,7 +6,7 @@
 'Thickness -'t = 0.2'm
 'Lateral load -'P = 100'kN
 'Modulus of elasticity -'E = 25000'MPa = 25000000'kN/m²
-'Poisson's ratio -'ν = 0.2
+'Poisson ratio -'ν = 0.2
 '</td><td>
 '<img src="https://calcpad.eu/media/mechanics/elastic/slab.png" style="height:100pt; margin-left:30pt;">
 '</td></tr></table>

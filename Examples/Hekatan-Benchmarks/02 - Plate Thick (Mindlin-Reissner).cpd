@@ -1,0 +1,360 @@
+"02 — Plate Thick (Mindlin-Reissner) — Rectangular Slab FEA
+'<hr/>
+'<p><i>Teoría de placa gruesa (Mindlin-Reissner): incluye <b>deformación por corte transversal</b>
+'(despreciada en Kirchhoff). Elemento Q4 bilineal con 3 GDL/nodo
+'(<var>w</var>, θₓ, θᵧ) → 12 DOF/elem.<br/>
+'Indicada para placas donde <var>t/a</var> &gt; 1/10.</i></p>
+'<h4>Input data</h4>
+'<table><tr><td>
+'Plate dimensions -'a = 6'm, 'b = 4'm
+'Thickness -'t = 0.2'm
+'Load -'q = 10'kN/m²
+'Modulus of elasticity -'E = 35000'MPa
+'Poisson`s ratio -'ν = 0.15
+'Shear correction factor -'κ = 5/6
+'</td><td>
+'<img src="https://calcpad.eu/media/mechanics/elastic/slab.png" style="height:110pt; margin-left:40pt;">
+'</td></tr></table>
+'<h4>Derived quantities</h4>
+'Flexural rigidity -'D_b = E*t^3/(12*(1 - ν^2))
+'Shear modulus -'G = E/(2*(1 + ν))
+'Shear rigidity -'D_s = κ*G*t
+
+'<h4>Finite element mesh</h4>
+'Q4 bilineal, 'n_dof = 3' DOFs/nodo (w, θₓ, θᵧ)
+'Elementos a lo largo de <var>a</var> y <var>b</var> -'n_a = 6', 'n_b = 4
+'Total elementos -'n_e = n_a*n_b
+'Total nodos -'n_j = (n_a + 1)*(n_b + 1)
+'Dimensiones de elemento -'a_1 = a/n_a', 'b_1 = b/n_b
+'DOFs totales -'n_total = n_dof*n_j
+'Nodos apoyados (4 bordes simply-supported) -'n_s = 2*(n_a + n_b)
+
+#hide
+x_j = vector(n_j)','y_j = vector(n_j)
+x = 0', 'y = 0
+#for j = 1 : n_j
+	x_j.j = x
+	y_j.j = y
+	y = y + b_1
+	#if y > b
+		y = 0
+		x = x + a_1
+	#end if
+#loop
+e_j = matrix(n_e; 4)
+#for i_a = 1 : n_a
+	#for i_b = 1 : n_b
+		e = i_b + n_b*(i_a - 1)
+		j = e + i_a - 1
+		e_j.(e; 1) = j
+		e_j.(e; 2) = j + n_b + 1
+		e_j.(e; 3) = j + n_b + 2
+		e_j.(e; 4) = j + 1
+	#loop
+#loop
+s_j = vector(n_s)
+i_s = 0
+#for i = 1 : n_a + 1
+	j = (n_b + 1)*i - n_b
+	i_s = i_s + 1
+	s_j.i_s = j
+#loop
+#for i = 1 : n_a + 1
+	j = (n_b + 1)*i
+	i_s = i_s + 1
+	s_j.i_s = j
+#loop
+#for i = 2 : n_b
+	j = i
+	i_s = i_s + 1
+	s_j.i_s = j
+#loop
+#for i = 2 : n_b
+	j = n_a*(n_b + 1) + i
+	i_s = i_s + 1
+	s_j.i_s = j
+#loop
+#show
+j_e(e) = row(e_j; e)
+x_c(e) = sum(extract(x_j; j_e(e)))/4', ' _
+y_c(e) = sum(extract(y_j; j_e(e)))/4
+
+'<h4>Visualización de la malla (SVG con #def)</h4>
+#hide
+w = 400
+k = w/a
+d = 25
+h = b/a*w
+r = 0.04*k
+W = w + 2*d
+H = h + 2*d
+#show
+
+#val
+#hide
+' ─── #def INLINE: primitivas SVG ──────────
+#def line$(x1$; y1$; x2$; y2$; col$; sw$) = '<line x1="'x1$'" y1="'y1$'" x2="'x2$'" y2="'y2$'" stroke="col$" stroke-width="'sw$'"/>
+#def rectS$(x$; y$; ww$; hh$; fill$; op$; stk$) = '<rect x="'x$'" y="'y$'" width="'ww$'" height="'hh$'" fill="fill$" fill-opacity="'op$'" stroke="stk$" stroke-width="1"/>
+#def circle$(cx$; cy$; rr$; fill$; stk$) = '<circle cx="'cx$'" cy="'cy$'" r="'rr$'" fill="fill$" stroke="stk$" stroke-width="0.8"/>
+#def text$(x$; y$; s$; sz$; col$; anch$) = '<text x="'x$'" y="'y$'" font-size="'sz$'" fill="col$" text-anchor="anch$">s$</text>
+
+' ─── #def BLOCK: apoyo simple (círculo rosado borde rojo) ──────────
+#def support$(cx$; cy$; rr$)
+   circle$(cx$; cy$; rr$; lightpink; red)
+#end def
+#show
+
+'<svg viewBox="0 0 'W' 'H'" width="'W'pt" height="'H'pt" xmlns="http://www.w3.org/2000/svg" style="background:white">
+
+'Marco de la placa
+rectS$(d; d; w; h; lightblue; 0.2; steelblue)
+
+#hide
+'Cada elemento (skyblue — colores distintos a Kirchhoff)
+#for e = 1 : n_e
+   #hide
+   x_e = x_c(e)*k + d - a_1/2*k
+   y_e = h - y_c(e)*k + d - b_1/2*k
+   #show
+   rectS$(x_e; y_e; a_1*k; b_1*k; skyblue; 0.15; steelblue)
+#loop
+'Número del elemento
+#for e = 1 : n_e
+   #hide
+   x_t = x_c(e)*k + d
+   y_t = h - y_c(e)*k + d + 3
+   #show
+   text$(x_t; y_t; e; 10; black; middle)
+#loop
+'Marcas de apoyo (tick rojo perpendicular al borde)
+#for i = 1 : n_s
+   #hide
+   j = s_j.i
+   x_s = x_j.j*k + d
+   y_s = h - y_j.j*k + d
+   #show
+   #if y_j.j ≡ 0 ∨ y_j.j ≡ b
+      line$(x_s - 4*r; y_s; x_s + 4*r; y_s; red; 1)
+   #end if
+   #if x_j.j ≡ 0 ∨ x_j.j ≡ a
+      line$(x_s; y_s - 4*r; x_s; y_s + 4*r; red; 1)
+   #end if
+   support$(x_s; y_s; 2*r)
+#loop
+'Nodos numerados (3 DOF: w, θx, θy)
+#for j = 1 : n_j
+   #hide
+   x_n = x_j.j*k + d
+   y_n = h - y_j.j*k + d
+   #show
+   circle$(x_n; y_n; r; mediumblue; mediumblue)
+   text$(x_n + 2*r; y_n - r; j; 9; navy; start)
+#loop
+#show
+
+'</svg>
+#equ
+
+'<h4>Joint coordinates</h4>
+x_j'm
+y_j'm
+'Element connectivity (Q4, 4 joints per element)
+transp(e_j)
+'Supported joints
+s_j
+
+'<h4>Shape functions (bilinear Q4)</h4>
+'<p>Coordenadas naturales (ξ, η ∈ [-1, 1]):</p>
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+
+'<p><b>Derivadas en coordenadas naturales</b></p>
+'<table><tr><td>∂N/∂ξ
+dN1_dξ(η) = -(1 - η)/4
+dN2_dξ(η) = (1 - η)/4
+dN3_dξ(η) = (1 + η)/4
+dN4_dξ(η) = -(1 + η)/4
+'</td><td>∂N/∂η
+dN1_dη(ξ) = -(1 - ξ)/4
+dN2_dη(ξ) = -(1 + ξ)/4
+dN3_dη(ξ) = (1 + ξ)/4
+dN4_dη(ξ) = (1 - ξ)/4
+'</td></tr></table>
+
+'<h4>Constitutive matrices</h4>
+'<p><b>Bending</b> (plane-stress analogy):</p>
+D_bend = D_b*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+'<p><b>Shear</b>:</p>
+D_shear = D_s*[1; 0|0; 1]
+
+'<h4>Jacobian (rectángulo → constante)</h4>
+J_11 = a_1/2
+J_22 = b_1/2
+det_J = J_11*J_22
+'∂N/∂x = (1/J₁₁)·∂N/∂ξ
+dN_dx(i; η) = take(i; dN1_dξ(η); dN2_dξ(η); dN3_dξ(η); dN4_dξ(η))/J_11
+'∂N/∂y = (1/J₂₂)·∂N/∂η
+dN_dy(i; ξ) = take(i; dN1_dη(ξ); dN2_dη(ξ); dN3_dη(ξ); dN4_dη(ξ))/J_22
+'Valor de N
+N_val(i; ξ; η) = take(i; N_1(ξ; η); N_2(ξ; η); N_3(ξ; η); N_4(ξ; η))
+
+'<h4>Element stiffness matrix K_e = K_b + K_s</h4>
+'<p>Ambas partes con 2×2 Gauss (sin reduced integration → sin hourglass modes pero shear locking suave; aceptable para t/a = 't/a').</p>
+g = 1/sqr(3)
+
+#hide
+n_k = n_dof*4
+K_e = symmetric(n_k)
+
+' --- Bending + Shear: 2×2 Gauss en ambas partes ---
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g','η_g = -g
+	#else if ig ≡ 2
+		ξ_g = g','η_g = -g
+	#else if ig ≡ 3
+		ξ_g = g','η_g = g
+	#else
+		ξ_g = -g','η_g = g
+	#end if
+	#for i = 1 : 4
+		dNdx_i = dN_dx(i; η_g)
+		dNdy_i = dN_dy(i; ξ_g)
+		Ni = N_val(i; ξ_g; η_g)
+		col = n_dof*(i - 1)
+		#for j = i : 4
+			dNdx_j = dN_dx(j; η_g)
+			dNdy_j = dN_dy(j; ξ_g)
+			Nj = N_val(j; ξ_g; η_g)
+			col_j = n_dof*(j - 1)
+			' --- Bending contributions (rotations only) ---
+			k_22b = (D_bend.(1; 1)*dNdx_i*dNdx_j + D_bend.(3; 3)*dNdy_i*dNdy_j)*det_J
+			k_23b = (D_bend.(1; 2)*dNdx_i*dNdy_j + D_bend.(3; 3)*dNdy_i*dNdx_j)*det_J
+			k_32b = (D_bend.(2; 1)*dNdy_i*dNdx_j + D_bend.(3; 3)*dNdx_i*dNdy_j)*det_J
+			k_33b = (D_bend.(2; 2)*dNdy_i*dNdy_j + D_bend.(3; 3)*dNdx_i*dNdx_j)*det_J
+			' --- Shear contributions ---
+			k_11s = D_s*(dNdx_i*dNdx_j + dNdy_i*dNdy_j)*det_J
+			k_12s = -D_s*dNdx_i*Nj*det_J
+			k_13s = -D_s*dNdy_i*Nj*det_J
+			k_21s = -D_s*Ni*dNdx_j*det_J
+			k_22s = D_s*Ni*Nj*det_J
+			k_33s = D_s*Ni*Nj*det_J
+			' --- Assembly into K_e (upper triangle only) ---
+			' (1,1): shear only
+			r1 = col + 1','c1 = col_j + 1
+			K_e.(r1; c1) = K_e.(r1; c1) + k_11s
+			' (1,2): shear coupling
+			r1 = col + 1','c1 = col_j + 2
+			#if c1 > r1
+				K_e.(r1; c1) = K_e.(r1; c1) + k_12s
+			#end if
+			' (1,3): shear coupling
+			r1 = col + 1','c1 = col_j + 3
+			#if c1 > r1
+				K_e.(r1; c1) = K_e.(r1; c1) + k_13s
+			#end if
+			' (2,1): shear coupling (symmetric)
+			r1 = col + 2','c1 = col_j + 1
+			#if c1 > r1
+				K_e.(r1; c1) = K_e.(r1; c1) + k_21s
+			#end if
+			' (2,2): bending + shear
+			r1 = col + 2','c1 = col_j + 2
+			K_e.(r1; c1) = K_e.(r1; c1) + k_22b + k_22s
+			' (2,3): bending only
+			r1 = col + 2','c1 = col_j + 3
+			#if c1 > r1
+				K_e.(r1; c1) = K_e.(r1; c1) + k_23b
+			#end if
+			' (3,2): bending only (symmetric)
+			r1 = col + 3','c1 = col_j + 2
+			#if c1 > r1
+				K_e.(r1; c1) = K_e.(r1; c1) + k_32b
+			#end if
+			' (3,3): bending + shear
+			r1 = col + 3','c1 = col_j + 3
+			K_e.(r1; c1) = K_e.(r1; c1) + k_33b + k_33s
+		#loop
+	#loop
+#loop
+#show
+Precision = 10^-2
+K_e
+
+'<p><b>Element load vector</b></p>
+#hide
+F_e = vector(n_k)
+#for i = 1 : 4
+	F_e.(n_dof*(i - 1) + 1) = q*a_1*b_1/4
+#loop
+#show
+F_e'kN
+
+'<h4>Global assembly</h4>
+#hide
+n_g = n_dof*n_j
+K = symmetric(n_g)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		#for j = i : 4
+			j_1 = e_j.(e; i)
+			j_2 = e_j.(e; j)
+			i_1 = n_dof*(j_1 - 1) + 1
+			i_2 = n_dof*(j_2 - 1) + 1
+			k_ij = submatrix(K_e; n_dof*(i - 1) + 1; n_dof*i; n_dof*(j - 1) + 1; n_dof*j)
+			#if j_1 > j_2
+				add(transp(k_ij); K; i_2; i_1)
+			#else
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+' Supports: penalty method (w=0 at supported nodes)
+k_s = 10^20
+#for i = 1 : n_s
+	j = n_dof*(s_j.i - 1) + 1
+	K.(j; j) = K.(j; j) + k_s
+#loop
+' Global load vector
+F = vector(n_g)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		j = e_j.(e; i)
+		#for k = 1 : n_dof
+			l = n_dof*(j - 1) + k
+			F.l = F.l + F_e.(n_dof*(i - 1) + k)
+		#loop
+	#loop
+#loop
+#show
+'Tamaño del sistema -'n_g' × 'n_g
+'Resolviendo K·Z = F...
+Z = clsolve(K; F)
+
+'<h4>Results</h4>
+'<p><b>Vertical displacements</b> (mm)</p>
+#hide
+W_z = matrix(n_a + 1; n_b + 1)
+w(j) = Z.(n_dof*j - n_dof + 1)
+$Repeat{$Repeat{W_z.(i; j) = round(w((i - 1)*(n_b + 1) + j)*1000)/1000 @ j = 1 : n_b + 1} @ i = 1 : n_a + 1}
+#show
+transp(W_z)'mm
+'<p><b>Maximum displacement</b> (nodo central)</p>
+w_max = w(n_j/2 + 1)
+w_max'mm
+
+'<h4>Comparación con solución analítica (Kirchhoff)</h4>
+'<p>Navier para placa simply-supported:</p>
+'<center>w_max = α · q · a⁴ / D_b   (Timoshenko, Tabla 35)</center>
+'Para a/b = 'a/b':
+α_Kirchhoff = 0.01013
+w_Kirchhoff = α_Kirchhoff*q*a^4/D_b
+w_Kirchhoff'mm
+'<p>Mindlin-Reissner incluye corte transversal:</p>
+'<center>w_MR = w_Kirchhoff + corrección por corte</center>
+'Ratio FEM / Kirchhoff -'w_max/w_Kirchhoff
+'<p><i>El resultado Mindlin-Reissner es ligeramente mayor que Kirchhoff
+'por la deformación de corte transversal (esperado para placas gruesas con t/a = 't/a').</i></p>

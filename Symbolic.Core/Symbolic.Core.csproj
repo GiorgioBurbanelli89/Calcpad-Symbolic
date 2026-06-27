@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AnalysisLevel>latest</AnalysisLevel>
     <RootNamespace>Calcpad.Core</RootNamespace>
     <AssemblyName>Calcpad.Core</AssemblyName>
@@ -31,6 +32,23 @@
     <PackageReference Include="Markdig.Signed" Version="0.43.0" />
     <PackageReference Include="SkiaSharp" Version="3.119.1" />
     <PackageReference Include="System.IO.Packaging" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- DLL nativa C++ (P/Invoke) del solver Eigen (autovalores/sparse) → se copia
+         AL LADO del .exe. REQUERIDA: sin ella el analisis modal/sparse no carga
+         (no tiene fallback como el mkl). Va al repo (13 MB). -->
+    <None Include="Native\eigen_solver.dll" Condition="Exists('Native\eigen_solver.dll')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>eigen_solver.dll</Link>
+    </None>
+    <!-- Runtime Intel oneMKL (redistribuible ISSL, ~388 MB) → se copia a {app}\mkl\.
+         NO va a git (gitignored); BlasInterop.cs lo carga desde {app}\mkl en otras
+         maquinas (la de Jorge usa el de FreeCAD como fallback). Mismo patron que Calcpad-Lab. -->
+    <None Include="Native\mkl\*.dll" Condition="Exists('Native\mkl')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>mkl\%(Filename)%(Extension)</Link>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

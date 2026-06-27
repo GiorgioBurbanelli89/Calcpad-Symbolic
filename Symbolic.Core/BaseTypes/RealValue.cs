@@ -83,6 +83,10 @@ namespace Calcpad.Core
 
         public int CompareTo(RealValue other)
         {
+            // Zero is the additive identity — comparing against 0 is well-defined
+            // regardless of units (e.g., "5 m > 0" or "0 < 3 kN/m²").
+            if (D == 0d || other.D == 0d)
+                return D.CompareTo(other.D);
             var d = Unit.Convert(Units, other.Units, ',');
             return D.CompareTo(other.D * d);
         }
@@ -139,20 +143,38 @@ namespace Calcpad.Core
             // Zero is compatible with any unit (0 + X = X, X + 0 = X)
             if (b.D == 0d) return a;
             if (a.D == 0d) return new(b.D, b.Units);
-            return new(
-                a.D + b.D * Unit.Convert(a.Units, b.Units, '+'),
-                a.Units
-            );
+            // Dimensionless promotion: non-zero unitless added to value with units
+            // inherits those units (penalty constants, k_p = 10^20). We DO NOT
+            // short-circuit the both-null case here — Unit.Convert(null,null,'+')
+            // correctly returns 1 and the standard path below produces a unitless
+            // sum. Adding an explicit both-null branch (returning null Units) was
+            // observed to cause downstream regressions where some matrix/cell APIs
+            // distinguish "computed and tagged as dimensionless" from "fell through
+            // arithmetic with null Units" — the standard Convert path preserves the
+            // legacy semantics other code depends on.
+            if (a.Units is null && b.Units is not null) return new(a.D + b.D, b.Units);
+            if (a.Units is not null && b.Units is null) return new(a.D + b.D, a.Units);
+            // Same / consistent units: standard conversion path. This also handles
+            // the both-null case via Unit.Convert(null, null, '+') returning 1.
+            if (a.Units is null || a.Units.IsConsistent(b.Units))
+                return new(a.D + b.D * Unit.Convert(a.Units, b.Units, '+'), a.Units);
+            // Mismatched non-null units (e.g. mixed-units stiffness matrix where K(1,1)
+            // is kN/m and K(1,4) is kNm). Add the raw numerical values and keep the
+            // LHS units.
+            return new(a.D + b.D, a.Units);
         }
 
         public static RealValue operator -(RealValue a, RealValue b)
         {
             if (b.D == 0d) return a;
             if (a.D == 0d) return new(-b.D, b.Units);
-            return new(
-                a.D - b.D * Unit.Convert(a.Units, b.Units, '-'),
-                a.Units
-            );
+            // Dimensionless promotion (mirrors operator+).
+            if (a.Units is null && b.Units is not null) return new(a.D - b.D, b.Units);
+            if (a.Units is not null && b.Units is null) return new(a.D - b.D, a.Units);
+            if (a.Units is null || a.Units.IsConsistent(b.Units))
+                return new(a.D - b.D * Unit.Convert(a.Units, b.Units, '-'), a.Units);
+            // Mismatched non-null units: keep LHS unit, subtract raw values.
+            return new(a.D - b.D, a.Units);
         }
 
         public static RealValue operator *(RealValue a, RealValue b)
@@ -216,37 +238,59 @@ namespace Calcpad.Core
             return new(c, uc, isUnit);
         }
 
+        // Zero is compatible with any unit for comparisons — "5 m > 0" makes sense
+        // regardless of what 0 is (additive identity has no inherent unit).
         public static RealValue operator ==(RealValue a, RealValue b) =>
-            a.D.AlmostEquals(b.D * Unit.Convert(a.Units, b.Units, '≡')) ? One : Zero;
+            (a.D == 0d || b.D == 0d
+                ? a.D.AlmostEquals(b.D)
+                : a.D.AlmostEquals(b.D * Unit.Convert(a.Units, b.Units, '≡')))
+            ? One : Zero;
 
         public static RealValue operator !=(RealValue a, RealValue b) =>
-            a.D.AlmostEquals(b.D * Unit.Convert(a.Units, b.Units, '≠')) ? Zero : One;
+            (a.D == 0d || b.D == 0d
+                ? a.D.AlmostEquals(b.D)
+                : a.D.AlmostEquals(b.D * Unit.Convert(a.Units, b.Units, '≠')))
+            ? Zero : One;
+
+        // Compare numerically, applying the same "lenient mismatched units"
+        // policy as operator + / -: if any side is zero, units are ignored; if
+        // units are consistent, normal conversion; otherwise compare the raw
+        // numerical magnitudes (LHS units win). This is the relaxation needed
+        // for things like `#if vk > vmmax` inside FEM loops where the matrix
+        // cells can end up with subtly different units across iterations.
+        private static double ConvertForCompare(RealValue a, RealValue b, char op)
+        {
+            if (a.D == 0d || b.D == 0d) return b.D;
+            if (a.Units is null || b.Units is null) return b.D;
+            if (a.Units.IsConsistent(b.Units)) return b.D * Unit.Convert(a.Units, b.Units, op);
+            return b.D;   // mismatched units: compare raw numerical magnitudes
+        }
 
         public static RealValue operator <(RealValue a, RealValue b)
         {
             var c = a.D;
-            var d = b.D * Unit.Convert(a.Units, b.Units, '<');
+            var d = ConvertForCompare(a, b, '<');
             return c < d && !c.AlmostEquals(d) ? One : Zero;
         }
 
         public static RealValue operator >(RealValue a, RealValue b)
         {
             var c = a.D;
-            var d = b.D * Unit.Convert(a.Units, b.Units, '>');
+            var d = ConvertForCompare(a, b, '>');
             return c > d && !c.AlmostEquals(d) ? One : Zero;
         }
 
         public static RealValue operator <=(RealValue a, RealValue b)
         {
             var c = a.D;
-            var d = b.D * Unit.Convert(a.Units, b.Units, '≤');
+            var d = ConvertForCompare(a, b, '≤');
             return c <= d || c.AlmostEquals(d) ? One : Zero;
         }
 
         public static RealValue operator >=(RealValue a, RealValue b)
         {
             var c = a.D;
-            var d = b.D * Unit.Convert(a.Units, b.Units, '≥');
+            var d = ConvertForCompare(a, b, '≥');
             return c >= d || c.AlmostEquals(d) ? One : Zero;
         }
 

@@ -22,7 +22,9 @@ namespace Calcpad.Core
         protected readonly string formatString = null;
         protected readonly bool formatEquations;
         protected readonly bool zeroSmallElements;
-        protected readonly int maxCount = 20;
+        // Fallback cuando settings es null (tests, contextos sin Settings).
+        // Mantiene el mismo default que MathSettings.MaxOutputCount = 5.
+        protected readonly int maxCount = 5;
         protected readonly bool phasor = false;
         protected readonly int degrees = 0;
         protected static readonly int PowerOrder = Calculator.OperatorOrder[Calculator.OperatorIndex['^']];

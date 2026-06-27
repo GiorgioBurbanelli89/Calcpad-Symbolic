@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/partials/head.html"></div>
+  <title>HSDT — Teoría de Corte de 3° Orden de Reddy</title>
+  <style>
+    .theory-frame { width: 100%; height: 80vh; border: 1px solid var(--color-border); border-radius: var(--radius); }
+    .figure { margin: 1rem 0; text-align: center; }
+    .figure img { max-width: 100%; border: 1px solid var(--color-border); border-radius: 6px; }
+    .figure figcaption { font-size: 0.9rem; color: var(--color-text-muted); margin-top: 0.3rem; }
+    .eq-display { background: var(--color-bg-shaded); padding: 0.8rem 1rem; border-left: 3px solid var(--color-accent); margin: 1rem 0; font-family: 'Georgia Pro', 'Century Schoolbook', serif; overflow-x: auto; }
+    .cite { background: #fffbea; border-left: 3px solid #f59e0b; padding: 0.6rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+  <section class="block">
+    <div class="container">
+      <h1>HSDT — Teoría de Corte de 3° Orden de Reddy</h1>
+
+      <div class="cite">
+        <strong>Fuente:</strong> Moita, J. S. — <em>Método dos Elementos Finitos</em>, Cap. 5.2.3, p. 81.
+        Edición portuguesa. Traducción y adaptación propia.
+      </div>
+
+      <h2>Campo de desplazamientos (Reddy 3° orden)</h2>
+
+      <figure class="figure">
+        <img src="/teoria/placas/img/fig40-reddy.png" alt="Figura 40 — Campo de desplazamientos de Reddy" onerror="this.style.display='none'; this.nextElementSibling.textContent='[Figura 40 — imagen pendiente]'">
+        <figcaption>Figura 40 (Moita p. 81) — representación de los giros <em>φ<sub>x</sub></em> y desplazamientos <em>(u, w)</em> a través del espesor.</figcaption>
+      </figure>
+
+      <div class="eq-display">
+        u(x,y,z,t) = u<sub>0</sub>(x,y,t) − z·θ<sub>y</sub>(x,y,t) + z³·c<sub>1</sub>·[θ<sub>y</sub>(x,y,t) − ∂w<sub>0</sub>/∂x]<br>
+        v(x,y,z,t) = v<sub>0</sub>(x,y,t) + z·θ<sub>x</sub>(x,y,t) + z³·c<sub>1</sub>·[−θ<sub>x</sub>(x,y,t) − ∂w<sub>0</sub>/∂y]<br>
+        w(x,y,z,t) = w<sub>0</sub>(x,y,t)
+      </div>
+
+      <h2>Interpretación</h2>
+      <ul>
+        <li><em>u, v</em> son <strong>cúbicas</strong> en <em>z</em>; <em>w</em> es constante.</li>
+        <li>Las líneas rectas y normales a la superficie media <strong>dejan de serlo</strong> tras la deformación.</li>
+        <li>Las deformaciones de corte transversal tienen variación <strong>cuadrática</strong> en <em>z</em>.</li>
+        <li>Las tensiones cortantes <strong>se anulan</strong> en las caras superior e inferior (<em>z = ±h/2</em>) — sin necesidad de factor de corrección por cortante <em>k</em>.</li>
+      </ul>
+
+      <h2>Constante c<sub>1</sub></h2>
+      <p><em>c<sub>1</sub> = 4 / (3·h²)</em> calibrada para que γ<sub>αz</sub> = 0 en <em>z = ±h/2</em>.</p>
+
+      <h2>Derivación simbólica en Calcpad-Symbolic</h2>
+      <iframe class="theory-frame" src="/teoria/placas/rendered/hsdt_reddy.html" title="Derivación HSDT — Reddy"></iframe>
+
+      <h2>Comparación de teorías de placas</h2>
+      <table class="specs">
+        <tr><th>Teoría</th><th>u,v en z</th><th>γ cortante</th><th>Rango</th></tr>
+        <tr><td>CPT (Kirchhoff)</td><td>Lineal</td><td>0</td><td>t/L &lt; 1/20</td></tr>
+        <tr><td>FSDT (Mindlin)</td><td>Lineal</td><td>Constante (k = 5/6)</td><td>t/L ~ 1/10</td></tr>
+        <tr><td>HSDT (Reddy 3°)</td><td>Cúbica</td><td>Parabólica (natural)</td><td>t/L ~ 1/10</td></tr>
+        <tr><td>3D Elasticidad</td><td>Arbitraria</td><td>Arbitraria</td><td>Sin límite</td></tr>
+      </table>
+
+      <h2>Referencias</h2>
+      <ol>
+        <li>Moita, J. S. — <em>Método dos Elementos Finitos aplicado à Mecânica dos Sólidos</em>. Cap. 5 (Placas), p. 79–81.</li>
+        <li>Reddy, J. N. — <em>A simple higher-order theory for laminated composite plates</em>, J. Applied Mechanics, 1984.</li>
+        <li>Reddy, J. N. — <em>Mechanics of Laminated Composite Plates and Shells: Theory and Analysis</em>, 2nd ed., CRC Press, 2004.</li>
+      </ol>
+
+      <p><a href="/editor/?script=/teoria/placas/scripts/hsdt_reddy.cpd" target="_blank" rel="noopener">▶ Abrir en editor</a></p>
+    </div>
+  </section>
+  <div data-include="/partials/footer.html"></div>
+  <script src="/js/include.js"></script>
+</body>
+</html>

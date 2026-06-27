@@ -1,0 +1,314 @@
+"01 — Plate Thin (Kirchhoff) — Rectangular Slab FEA
+'<hr/>
+'<p><i>Teoría de placa delgada (Kirchhoff–Love): se desprecia el corte transversal.
+'Elemento rectangular de 4 nodos con 4 GDL/nodo (<var>w</var>, θₓ, θᵧ, ψ) → 16 DOF/elem.</i></p>
+'<h4>Input data</h4>
+'<table><tr><td>
+'Slab dimensions -'a = 6'm, 'b = 4'm
+'Thickness -'t = 0.1'm
+'Load -'q = 10'kN/m²
+'Modulus of elasticity -'E = 35000'MPa
+'Poisson`s ratio -'ν = 0.15
+'</td><td><img src="https://calcpad.eu/media/mechanics/elastic/slab.png" style="height:110pt; margin-left:40pt;"></td></tr></table>
+'<h4>Finite element mesh</h4>
+'Rectangular FE with 'n = 16' DOFs
+'Elements along <var>a</var> and <var>b</var> -'n_a = 6', 'n_b = 4
+'Total elements -'n_e = n_a*n_b
+'Total joints -'n_j = (n_a + 1)*(n_b + 1)
+'Element size -'a_1 = a/n_a', 'b_1 = b/n_b
+'Supported joints (simply supported on 4 edges) -'n_s = 2*(n_a + n_b)
+#hide
+x_j = vector(n_j)','y_j = vector(n_j)
+x = 0', 'y = 0
+#for j = 1 : n_j
+	x_j.j = x
+	y_j.j = y
+	y = y + b_1
+	#if y > b
+		y = 0
+		x = x + a_1
+	#end if
+#loop
+e_j = matrix(n_e; 4)
+#for i_a = 1 : n_a
+	#for i_b = 1 : n_b
+		e = i_b + n_b*(i_a - 1)
+		j = e + i_a - 1
+		e_j.(e; 1) = j
+		e_j.(e; 2) = j + n_b + 1
+		e_j.(e; 3) = j + n_b + 2
+		e_j.(e; 4) = j + 1
+	#loop
+#loop
+s_j = vector(n_s)
+i_s = 0
+#for i = 1 : n_a + 1
+	j = (n_b + 1)*i - n_b
+	i_s = i_s + 1
+	s_j.i_s = j
+#loop
+#for i = 1 : n_a + 1
+	j = (n_b + 1)*i
+	i_s = i_s + 1
+	s_j.i_s = j
+#loop
+#for i = 2 : n_b
+	j = i
+	i_s = i_s + 1
+	s_j.i_s = j
+#loop
+#for i = 2 : n_b
+	j = n_a*(n_b + 1) + i
+	i_s = i_s + 1
+	s_j.i_s = j
+#loop
+#show
+'Coordinates of element centers (helpers)
+j_e(e) = row(e_j; e)
+x_c(e) = sum(extract(x_j; j_e(e)))/4', ' _
+y_c(e) = sum(extract(y_j; j_e(e)))/4
+
+'<h4>Visualización de la malla (SVG con #def)</h4>
+#hide
+w = 400
+k = w/a
+d = 25
+h = b/a*w
+r = 0.04*k
+W = w + 2*d
+H = h + 2*d
+#show
+
+#val
+#hide
+' ─── #def INLINE: primitivas SVG ──────────
+#def line$(x1$; y1$; x2$; y2$; col$; sw$) = '<line x1="'x1$'" y1="'y1$'" x2="'x2$'" y2="'y2$'" stroke="col$" stroke-width="'sw$'"/>
+#def rectS$(x$; y$; ww$; hh$; fill$; op$; stk$) = '<rect x="'x$'" y="'y$'" width="'ww$'" height="'hh$'" fill="fill$" fill-opacity="'op$'" stroke="stk$" stroke-width="1"/>
+#def circle$(cx$; cy$; rr$; fill$; stk$) = '<circle cx="'cx$'" cy="'cy$'" r="'rr$'" fill="fill$" stroke="stk$" stroke-width="0.8"/>
+#def text$(x$; y$; s$; sz$; col$; anch$) = '<text x="'x$'" y="'y$'" font-size="'sz$'" fill="col$" text-anchor="anch$">s$</text>
+
+' ─── #def BLOCK: apoyo simple (triángulo rojo en borde) ──────────
+#def support$(cx$; cy$; rr$)
+   circle$(cx$; cy$; rr$; lightpink; red)
+#end def
+#show
+
+'<svg viewBox="0 0 'W' 'H'" width="'W'pt" height="'H'pt" xmlns="http://www.w3.org/2000/svg" style="background:white">
+
+'Marco de la placa
+rectS$(d; d; w; h; yellow; 0.2; goldenrod)
+
+#hide
+'Cada elemento (lime)
+#for e = 1 : n_e
+   #hide
+   x_e = x_c(e)*k + d - a_1/2*k
+   y_e = h - y_c(e)*k + d - b_1/2*k
+   #show
+   rectS$(x_e; y_e; a_1*k; b_1*k; lime; 0.1; seagreen)
+#loop
+'Numero del elemento
+#for e = 1 : n_e
+   #hide
+   x_t = x_c(e)*k + d
+   y_t = h - y_c(e)*k + d + 3
+   #show
+   text$(x_t; y_t; e; 10; black; middle)
+#loop
+'Marcas de apoyo (tick rojo perpendicular al borde)
+#for i = 1 : n_s
+   #hide
+   j = s_j.i
+   x_s = x_j.j*k + d
+   y_s = h - y_j.j*k + d
+   #show
+   #if y_j.j ≡ 0 ∨ y_j.j ≡ b
+      line$(x_s - 4*r; y_s; x_s + 4*r; y_s; red; 1)
+   #end if
+   #if x_j.j ≡ 0 ∨ x_j.j ≡ a
+      line$(x_s; y_s - 4*r; x_s; y_s + 4*r; red; 1)
+   #end if
+   support$(x_s; y_s; 2*r)
+#loop
+'Nodos numerados
+#for j = 1 : n_j
+   #hide
+   x_n = x_j.j*k + d
+   y_n = h - y_j.j*k + d
+   #show
+   circle$(x_n; y_n; r; orangered; orangered)
+   text$(x_n + 2*r; y_n - r; j; 9; navy; start)
+#loop
+#show
+
+'</svg>
+#equ
+
+'<h4>Joint coordinates</h4>
+x_j'm
+y_j'm
+'Element connectivity (4 joints per element)
+transp(e_j)
+'Supported joints
+s_j
+
+'<h4>Finite element formulation</h4>
+'<p><b>Shape functions</b></p>
+#def FI$(x$; l$)
+	'<table><tr><td>Base functions
+	Φ_1l$(x$) = 1 - x$^2*(3 - 2*x$)
+	Φ_2l$(x$) = x$*l$_1*(1 - x$*(2 - x$))
+	Φ_3l$(x$) = x$^2*(3 - 2*x$)
+	Φ_4l$(x$) = x$^2*l$_1*(-1 + x$)
+	'</td><td>First derivatives
+	Φ′_1l$(x$) = -6*(x$/l$_1)*(1 - x$)
+	Φ′_2l$(x$) = 1 - x$*(4 - 3*x$)
+	Φ′_3l$(x$) = 6*(x$/l$_1)*(1 - x$)
+	Φ′_4l$(x$) = -x$*(2 - 3*x$)
+	'</td><td>Second derivatives
+	Φ″_1l$(x$) = -(6/l$_1^2)*(1 - 2*x$)
+	Φ″_2l$(x$) = -(2/l$_1)*(2 - 3*x$)
+	Φ″_3l$(x$) = 6/l$_1^2*(1 - 2*x$)
+	Φ″_4l$(x$) = -(2/l$_1)*(1 - 3*x$)
+	'</td></tr></table>
+#end def
+'Along dimension <var>a</var>
+FI$(ξ; a)
+'Along dimension <var>b</var>
+FI$(η; b)
+'<table><tr><td>For vertical displacements <var>w</var>
+N_1,w(ξ; η) = Φ_1a(ξ)*Φ_1b(η)
+N_2,w(ξ; η) = Φ_3a(ξ)*Φ_1b(η)
+N_3,w(ξ; η) = Φ_3a(ξ)*Φ_3b(η)
+N_4,w(ξ; η) = Φ_1a(ξ)*Φ_3b(η)
+'</td><td>For rotations <var>θ</var>ₓ
+N_1,θₓ(ξ; η) = Φ_2a(ξ)*Φ_1b(η)
+N_2,θₓ(ξ; η) = Φ_4a(ξ)*Φ_1b(η)
+N_3,θₓ(ξ; η) = Φ_4a(ξ)*Φ_3b(η)
+N_4,θₓ(ξ; η) = Φ_2a(ξ)*Φ_3b(η)
+'</td><td>For rotations <var>θ</var>ᵧ
+N_1,θᵧ(ξ; η) = Φ_1a(ξ)*Φ_2b(η)
+N_2,θᵧ(ξ; η) = Φ_3a(ξ)*Φ_2b(η)
+N_3,θᵧ(ξ; η) = Φ_3a(ξ)*Φ_4b(η)
+N_4,θᵧ(ξ; η) = Φ_1a(ξ)*Φ_4b(η)
+'</td></tr></table>
+'For twist ψ
+N_1,ψ(ξ; η) = Φ_2a(ξ)*Φ_2b(η)
+N_2,ψ(ξ; η) = Φ_4a(ξ)*Φ_2b(η)
+N_3,ψ(ξ; η) = Φ_4a(ξ)*Φ_4b(η)
+N_4,ψ(ξ; η) = Φ_2a(ξ)*Φ_4b(η)
+'Shape functions vector
+N(i; ξ; η) = take(i; _
+N_1,w(ξ; η); N_1,θₓ(ξ; η); N_1,θᵧ(ξ; η); N_1,ψ(ξ; η); _
+N_2,w(ξ; η); N_2,θₓ(ξ; η); N_2,θᵧ(ξ; η); N_2,ψ(ξ; η); _
+N_3,w(ξ; η); N_3,θₓ(ξ; η); N_3,θᵧ(ξ; η); N_3,ψ(ξ; η); _
+N_4,w(ξ; η); N_4,θₓ(ξ; η); N_4,θᵧ(ξ; η); N_4,ψ(ξ; η))
+'<p><b>Constitutive matrix</b> (Kirchhoff bending only)</p>
+D = E*t^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+'<p><b>Strain-displacement matrix</b></p>
+B_1(j; ξ; η) = take(j; _
+Φ″_1a(ξ)*Φ_1b(η); Φ″_2a(ξ)*Φ_1b(η); Φ″_1a(ξ)*Φ_2b(η); Φ″_2a(ξ)*Φ_2b(η); _
+Φ″_3a(ξ)*Φ_1b(η); Φ″_4a(ξ)*Φ_1b(η); Φ″_3a(ξ)*Φ_2b(η); Φ″_4a(ξ)*Φ_2b(η); _
+Φ″_3a(ξ)*Φ_3b(η); Φ″_4a(ξ)*Φ_3b(η); Φ″_3a(ξ)*Φ_4b(η); Φ″_4a(ξ)*Φ_4b(η); _
+Φ″_1a(ξ)*Φ_3b(η); Φ″_2a(ξ)*Φ_3b(η); Φ″_1a(ξ)*Φ_4b(η); Φ″_2a(ξ)*Φ_4b(η))
+B_2(j; ξ; η) = take(j; _
+Φ_1a(ξ)*Φ″_1b(η); Φ_2a(ξ)*Φ″_1b(η); Φ_1a(ξ)*Φ″_2b(η); Φ_2a(ξ)*Φ″_2b(η); _
+Φ_3a(ξ)*Φ″_1b(η); Φ_4a(ξ)*Φ″_1b(η); Φ_3a(ξ)*Φ″_2b(η); Φ_4a(ξ)*Φ″_2b(η); _
+Φ_3a(ξ)*Φ″_3b(η); Φ_4a(ξ)*Φ″_3b(η); Φ_3a(ξ)*Φ″_4b(η); Φ_4a(ξ)*Φ″_4b(η); _
+Φ_1a(ξ)*Φ″_3b(η); Φ_2a(ξ)*Φ″_3b(η); Φ_1a(ξ)*Φ″_4b(η); Φ_2a(ξ)*Φ″_4b(η))
+B_3(j; ξ; η) = 2*take(j; _
+Φ′_1a(ξ)*Φ′_1b(η); Φ′_2a(ξ)*Φ′_1b(η); Φ′_1a(ξ)*Φ′_2b(η); Φ′_2a(ξ)*Φ′_2b(η); _
+Φ′_3a(ξ)*Φ′_1b(η); Φ′_4a(ξ)*Φ′_1b(η); Φ′_3a(ξ)*Φ′_2b(η); Φ′_4a(ξ)*Φ′_2b(η); _
+Φ′_3a(ξ)*Φ′_3b(η); Φ′_4a(ξ)*Φ′_3b(η); Φ′_3a(ξ)*Φ′_4b(η); Φ′_4a(ξ)*Φ′_4b(η); _
+Φ′_1a(ξ)*Φ′_3b(η); Φ′_2a(ξ)*Φ′_3b(η); Φ′_1a(ξ)*Φ′_4b(η); Φ′_2a(ξ)*Φ′_4b(η))
+B(j; ξ; η) = [B_1(j; ξ; η); B_2(j; ξ; η); B_3(j; ξ; η)]
+x_1(e) = x_j.e_j.(e; 1)','y_1(e) = y_j.e_j.(e; 1)
+'Element stiffness matrix
+#noc
+K_e,ij = a_1*b_1*$Area{$Area{B_i(ξ; η)^T*D*B_j(ξ; η) @ ξ = 0 : 1} @ η = 0 : 1}
+#equ
+#hide
+K_e = utriang(n)
+Precision = 10^-4
+e = 1
+#show
+BTDB_e(i; j; ξ; η) = transp(B(i; ξ; η))*D*B(j; ξ; η)
+K_e(i; j) = a_1*b_1*$Area{$Area{BTDB_e(i; j; ξ; η) @ η = 0 : 1} @ ξ = 0 : 1}
+$Repeat{$Repeat{K_e.(i; j) = K_e(i; j) @ j = i : n} @ i = 1 : n}
+K_e
+'Element load vector
+#noc
+F_e,i = a_1*b_1*$Area{$Area{N_i(ξ; η)^T*q @ ξ = 0 : 1} @ η = 0 : 1}
+#equ
+#hide
+F_e = vector(n)
+#for i = 1 : n
+	F_e.i = a_1*b_1*$Area{$Area{N(i; ξ; η)*q @ ξ = 0 : 1} @ η = 0 : 1}
+#loop
+#show
+F_e'kN
+'<h4>Solution</h4>
+'Global stiffness matrix
+#hide
+k_1 = n/4
+n = k_1*n_j
+K = symmetric(n)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		#for j = i : 4
+			j_1 = e_j.(e; i)
+			j_2 = e_j.(e; j)
+			i_1 = k_1*(j_1 - 1) + 1
+			i_2 = k_1*(j_2 - 1) + 1
+			k_ij = submatrix(K_e; k_1*(i - 1) + 1; k_1*i; k_1*(j - 1) + 1; k_1*j)
+			#if j_1 > j_2
+				add(transp(k_ij); K; i_2; i_1)
+			#else
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+k_s = 10^20
+#for i = 1 : n_s
+	j = k_1*(s_j.i - 1) + 1
+	K.(j; j) = K.(j; j) + k_s
+	j = j + 1
+	#if y_j.s_j.i ≡ 0 ∨ y_j.s_j.i ≡ b
+		K.(j; j) = K.(j; j) + k_s
+	#end if
+	j = j + 1
+	#if x_j.s_j.i ≡ 0 ∨ x_j.s_j.i ≡ a
+		K.(j; j) = K.(j; j) + k_s
+	#end if
+#loop
+#show
+'Global load vector
+#hide
+F = vector(n)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		j = e_j.(e; i)
+		#for k = 1 : 4
+			l = k_1*(j - 1) + k
+			F.l = F.l + F_e.(k_1*(i - 1) + k)
+		#loop
+	#loop
+#loop
+#show
+'Solve K·Z = F
+Z = clsolve(K; F)'mm
+'<h4>Results</h4>
+'Joint displacements (vertical)
+#hide
+W_z = matrix(n_a + 1; n_b + 1)
+w(j) = Z.(4*j - 3)
+$Repeat{$Repeat{W_z.(i; j) = round(w((i - 1)*(n_b + 1) + j)*1000)/1000 @ j = 1 : n_b + 1} @ i = 1 : n_a + 1}
+w(x; y) = spline(1 + x/a_1; 1 + y/b_1; W_z)
+PlotWidth = 50*a
+PlotHeight = 50*b
+PlotStep = 10
+#show
+transp(W_z)'mm
+$Map{-w(x; y) @ x = 0 : a & y = 0 : b}
+'Maximum deflection (center) -'w(a/2; b/2)'mm

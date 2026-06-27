@@ -1,0 +1,72 @@
+"Test 05 - PlotParser / MapParser / ChartParser + extras Symbolic
+'Verifica que los plots de upstream funcionan + las extensiones Symbolic.
+
+"1. $Plot - PlotParser estandar
+'Linea 1D de funcion (compatible upstream)
+f(x) = sin(x)
+$Plot{f(x) @ x = 0 : 6.28}
+
+"2. $Plot con varias funciones (multi-line)
+g(x) = cos(x)
+$Plot{f(x) & g(x) @ x = 0 : 6.28}
+
+"3. $Map - MapParser (superficie 2D)
+'Mapa de calor (compatible upstream)
+h(x; y) = x^2 + y^2
+$Map{h(x; y) @ x = -2 : 2 & y = -2 : 2}
+
+"4. $PlotMap - SOLO Symbolic (combinacion plot + map con sombras)
+$PlotMap{h(x; y) @ x = -2 : 2 & y = -2 : 2}
+
+"5. #svg - SVG inline (Symbolic - una mejora)
+#svg 400 200
+.text 200 25 "Test_SVG_dibuja_un_circulo" 12 navy middle bold
+.circle 200 110 50 lightblue 0.5
+.text 200 115 "circle" 11 navy middle
+#end svg
+
+"6. #chart - Chart.js (SOLO Symbolic)
+#chart 600 300
+{
+  type: 'line',
+  data: {
+    datasets: [{
+      label: 'f(x) = x^2',
+      data: [{x:-2,y:4},{x:-1,y:1},{x:0,y:0},{x:1,y:1},{x:2,y:4}],
+      borderColor: 'blue',
+      backgroundColor: 'rgba(173,216,230,0.4)',
+      borderWidth: 2,
+      pointRadius: 4,
+      fill: 'origin'
+    }]
+  },
+  options: {
+    scales: {
+      x: { type: 'linear', position: 'bottom' },
+      y: { beginAtZero: true }
+    }
+  }
+}
+#end chart
+
+"7. #math - LaTeX/KaTeX rendering (SOLO Symbolic)
+#math 600 80
+\int_{-1}^{1} x^2 \, dx = \frac{2}{3}
+#end math
+
+"8. #mermaid - flowchart (SOLO Symbolic)
+#mermaid 500 200
+flowchart LR
+  A[Inicio] --> B{Decision}
+  B -->|si| C[Camino_A]
+  B -->|no| D[Camino_B]
+  C --> E[Fin]
+  D --> E
+#end mermaid
+
+"9. Resumen de paridad
+'Upstream paridad: $Plot, $Map funcionan -> OK.
+'Symbolic extensiones: $PlotMap, #svg, #chart, #math, #mermaid agregan
+'capacidades de visualizacion no presentes en upstream.
+'Si todos los graficos se ven, no hay regresion en lo upstream y las
+'mejoras Symbolic funcionan.

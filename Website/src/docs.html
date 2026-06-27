@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/partials/head.html"></div>
+  <title>Docs — Calcpad-Symbolic</title>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+
+  <section class="block">
+    <div class="container">
+      <h1>Documentación</h1>
+      <p class="muted">Referencia rápida del lenguaje y directivas.</p>
+
+      <h2>Primer ejemplo</h2>
+      <pre class="code">"Ejemplo — Viga simplemente apoyada
+E = 200000  'MPa
+I = 833.33  'cm^4
+L = 6       'm
+q = 10      'kN/m
+
+'Flecha maxima al centro:
+#deq δ_max = 5*q*L^4/(384*E*I)
+δ_max = 5*q*L^4/(384*E*I)
+
+$Draw{line, 0, 0, L, 0, #27ae60, 2
+  : arrow, 1, 1, 1, 0.2, #e74c3c, 2
+  @ w=600 : h=200 : title=Viga simple}</pre>
+
+      <h2>Directivas principales</h2>
+      <ul>
+        <li><code>"Titulo"</code> — título de sección</li>
+        <li><code>'comentario</code> — texto en párrafo</li>
+        <li><code>#deq expr @@(N)</code> — ecuación displayed, con numeración</li>
+        <li><code>#sym … #end sym</code> — bloque simbólico</li>
+        <li><code>#function f(x;y) … #end function</code> — función usuario</li>
+        <li><code>#hide</code> / <code>#show</code> — ocultar/mostrar definiciones</li>
+        <li><code>#for i = 1 : n … #loop</code> — ciclo</li>
+      </ul>
+
+      <h2>Más</h2>
+      <ul>
+        <li><a href="https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/blob/main/README.md" target="_blank" rel="noopener">README completo</a></li>
+        <li><a href="https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/blob/main/Symbolic.Cli/doc/HELP.TXT" target="_blank" rel="noopener">HELP.TXT del CLI</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <div data-include="/partials/footer.html"></div>
+  <script src="/js/include.js"></script>
+</body>
+</html>

@@ -81,6 +81,17 @@
             line-height: 150%;
         }
 
+        /* Preserve leading and consecutive spaces inside line-tracked text
+           paragraphs (`'   x` should render as "   x", not collapsed to " x"). */
+        p.line {
+            white-space: pre-wrap;
+        }
+        /* But col-cell spans inside a #blk row should NOT inherit pre-wrap
+           — they have their own flex layout. */
+        .col-cell, .col-cell span {
+            white-space: normal;
+        }
+
         .col-cell {
             flex: 1;
         }
@@ -1081,13 +1092,20 @@
                     }
                 });
 
-                $("a").click(function () {
-                    chrome.webview.postMessage('clicked');
-                });
+                // Guard chrome.webview: only exists when the HTML is hosted inside
+                // the WPF WebView2 viewer. When opened standalone in a browser,
+                // `chrome.webview` is undefined and the original unconditional calls
+                // would throw `Cannot read properties of undefined`. The guard makes
+                // the click/focus hooks silently no-op outside WPF.
+                if (typeof chrome !== 'undefined' && chrome.webview && chrome.webview.postMessage) {
+                    $("a").click(function () {
+                        chrome.webview.postMessage('clicked');
+                    });
 
-                window.addEventListener('click', () => {
-                    chrome.webview.postMessage('focused');
-                });
+                    window.addEventListener('click', () => {
+                        chrome.webview.postMessage('focused');
+                    });
+                }
             });
         }
         document.oncontextmenu = function () { contextMenu = true; };

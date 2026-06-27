@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/partials/head.html"></div>
+  <title>Galería de ejemplos — Calcpad-Symbolic</title>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+
+  <section class="block">
+    <div class="container">
+      <h1>Galería FEM</h1>
+      <p>Cada ejemplo es un <code>.cpd</code> procesado por el parser de Calcpad-Symbolic,
+        rendereado a HTML con todas sus capas: <strong>simbólica</strong>
+        (#sym, #deq, derivadas e integrales), <strong>numérica</strong> (matrices con
+        unidades, solve, ensamble) y <strong>gráfica</strong> ($Draw, $Chart, $Map,
+        $Fem2D/3D con paleta jet).</p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>Cap 15 Paz — CST Triangular</h3>
+          <p>Plane stress. Matriz B y D simbólicas, K<sub>e</sub> numérica, campo σ<sub>VM</sub> con $Fem2D jet.</p>
+          <a class="btn btn-primary" href="/examples/tesis/cap15_paz_triangulo_planestress.html">Abrir</a>
+        </div>
+        <div class="feature-card">
+          <h3>Derivación Axial</h3>
+          <p>Elemento barra 1D: funciones de forma, #sym diff, rigidez simbólica.</p>
+          <a class="btn btn-primary" href="/examples/tesis/derivacion_axial.html">Abrir</a>
+        </div>
+        <div class="feature-card">
+          <h3>Derivación Flexión (Euler-Bernoulli)</h3>
+          <p>Hermite cubicas, curvatura, ensamble K<sub>viga</sub> paso a paso.</p>
+          <a class="btn btn-primary" href="/examples/tesis/derivacion_flexion.html">Abrir</a>
+        </div>
+        <div class="feature-card">
+          <h3>Paz Cap 10 — K/M simbólica</h3>
+          <p>Construcción simbólica de matrices de rigidez y masa consistente.</p>
+          <a class="btn btn-primary" href="/examples/paz_cap10_km.html">Abrir</a>
+        </div>
+        <div class="feature-card">
+          <h3>Tutorial FEM paso a paso</h3>
+          <p>De pórticos a placas con $Draw animado y $Chart de convergencia.</p>
+          <a class="btn btn-primary" href="/examples/tutorial_fem.html">Abrir</a>
+        </div>
+        <div class="feature-card">
+          <h3>Más en GitHub</h3>
+          <p>~150 ejemplos: zapatas, shells, C3D8, MITC4, pushover, análisis modal.</p>
+          <a class="btn btn-ghost" href="https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/tree/main/Examples" target="_blank" rel="noopener">Ver repo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div data-include="/partials/footer.html"></div>
+  <script src="/js/include.js"></script>
+</body>
+</html>

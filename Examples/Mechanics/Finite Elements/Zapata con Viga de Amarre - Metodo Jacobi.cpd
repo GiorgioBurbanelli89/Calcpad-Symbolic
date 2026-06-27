@@ -1,0 +1,189 @@
+"Zapata Aislada con Viga de Amarre — Método de Jacobi paso a paso
+'Ref: método analítico para zapatas combinadas cuando una columna está
+'en el lindero (medianera) y otra interior. La viga de amarre (strap beam)
+'transfiere el momento excéntrico entre zapatas.
+
+"Paso 1 — Planteo del problema
+'Columna 1 (medianera, en lindero): P_1 = carga vertical
+'Columna 2 (interior): P_2 = carga vertical
+'Distancia entre ejes de columnas: L_col
+'Excentricidad del centro de zapata 1 respecto al eje de columna 1:
+'  e = Lz1/2 - a_lindero, donde a_lindero es la distancia al lindero.
+
+'<b>Datos:</b>
+P_1 = 800'kN
+P_2 = 1200'kN
+L_col = 5.0'm
+'Lindero: borde lateral de zapata 1 coincide con el eje de la medianería.
+'Columna 1 está a a_lindero = 0.2 m del lindero.
+a_lindero = 0.2'm
+'Presión admisible del suelo:
+σ_adm = 200'kN/m²
+
+"Paso 2 — Hipótesis del método de Jacobi
+'  1. La viga de amarre es INFINITAMENTE RÍGIDA: une zapatas rígidamente.
+'  2. La presión del suelo bajo cada zapata es UNIFORME.
+'  3. El sistema se trata como VIGA RÍGIDA soportada por dos reacciones
+'     R_1 y R_2 que son las presiones totales bajo cada zapata.
+'  4. Las reacciones se calculan por equilibrio considerando que el centroide
+'     de las cargas aplicadas debe coincidir con el centroide de las reacciones.
+
+"Paso 3 — Predimensionamiento de la zapata medianera
+'Como la columna 1 es excéntrica respecto al centro ideal de zapata 1,
+'aparece un momento M = P_1 * e. Para que la zapata se comporte como
+'rectangular cargada centralmente, agrandamos la zapata hacia el interior.
+
+'Excentricidad inicial (con zapata simétrica):
+'  La idea es: elegir Lz1 y Bz1 tales que el CENTRO DE PRESIONES (bajo
+'  zapata 1) coincida con el punto donde se aplica la reacción R_1.
+
+'Primer tanteo: Lz1 = 1/3 de L_col (regla empírica):
+Lz1 = 2.0'm
+Bz1 = 2.0'm
+'Excentricidad del centro de la zapata respecto a la columna 1:
+e_1 = Lz1/2 - a_lindero
+
+"Paso 4 — Equilibrio de momentos y cálculo de reacciones
+'Tomando momentos respecto al eje de la columna 2 (interior), para que
+'el sistema esté en equilibrio:
+'  R_1 * (L_col - e_1) = P_1 * L_col - 0   (despreciando peso propio)
+'Pero R_1 se aplica en el centro de la zapata 1, que está a (L_col - e_1)
+'del eje de columna 2.
+
+'Reacción bajo zapata 1:
+R_1 = P_1*L_col/(L_col - e_1)
+'Reacción bajo zapata 2 por equilibrio vertical:
+R_2 = P_1 + P_2 - R_1
+
+"Paso 5 — Comprobación de presiones
+'Presión bajo zapata 1:
+q_1 = R_1/(Lz1*Bz1)
+'Presión bajo zapata 2 (probamos Lz2 y Bz2):
+Lz2 = 2.5'm
+Bz2 = 2.0'm
+q_2 = R_2/(Lz2*Bz2)
+
+'Deben cumplir q_i ≤ σ_adm:
+'Si no cumple, aumentar dimensiones y recalcular.
+
+"Paso 6 — Viga de amarre — solicitaciones
+'La viga de amarre recibe flexión positiva entre zapatas.
+'El momento en la viga (en el punto de la columna 1) es:
+'  M_viga = R_1*e_1 - P_1*(e_1 - a_lindero)
+'Simplificado: M_viga ≈ R_1*e_1 (tomando a_lindero=0 conservador)
+M_viga = R_1*e_1
+
+'Cortante en la viga:
+V_viga = R_1 - P_1
+
+'Longitud efectiva de la viga:
+Lv = L_col - Lz1/2 - Lz2/2
+Lv
+
+"Paso 7 — Dimensiones finales y armado
+'Sección viga (rectangular de concreto):
+b_viga = 400'mm
+h_viga = 500'mm
+'Momento en kN·m:
+M_viga
+'Cortante en kN:
+V_viga
+
+'Área de acero requerida (flexión — simplificado con fy=420 MPa, z=0.9d):
+d_viga = h_viga - 50'mm
+f_y = 420'MPa
+A_s_req = M_viga/(0.9*d_viga*f_y)
+
+"Selección de teoría de placa
+'Elige el modelo según la relación t/L:
+'  theoryType = 0  →  Mindlin-Reissner  (Shell thick)    — recomendado t/L > 1/20
+'  theoryType = 1  →  Kirchhoff          (Plate thin)
+'  theoryType = 2  →  Membrana            (sin flexión)
+'  theoryType = 3  →  Shell thin (Kirchhoff + membrana)
+'  theoryType = 4  →  Shell thick (Mindlin + membrana)  — DEFAULT para zapatas
+theoryType = 4
+
+"Paso 8 — Discretización FEM de la placa
+'Ahora modelamos zapata medianera + viga + zapata centrada como una PLACA
+'DELGADA usando elementos MITC4 (Mindlin shell thick) con resortes Winkler.
+
+'Geometría total del modelo:
+L_total = Lz1 + Lv + Lz2
+B_total = max(Bz1; Bz2)
+'Espesor de zapata:
+t_z = 0.5'm
+'Espesor viga (total, en la zona de viga):
+t_v = 0.5'm
+
+'Tamaño de elemento:
+dex = 0.2'm
+n_x = round(L_total/dex)
+n_y = round(B_total/dex)
+n_nodos = (n_x + 1)*(n_y + 1)
+n_elem = n_x*n_y
+
+"Paso 9 — Material y módulo de Winkler
+'Concreto:
+E_c = 25000'MPa
+ν_c = 0.2
+G_c = E_c/(2*(1 + ν_c))
+'Rigidez a flexión de placa:
+D_p = E_c*t_z^3/(12*(1 - ν_c^2))
+
+'Coeficiente de balasto (Winkler):
+k_s = 20000'kN/m³
+
+'Rigidez nodal equivalente (lumped):
+A_trib = dex*dex
+k_nodo = k_s*A_trib
+
+"Paso 10 — Matrices [D] membrana y flexión (material isótropo)
+#deq D_m_11 = E*t/(1-ν^2)
+#deq D_b_11 = E*t^3/(12*(1-ν^2))
+
+'Numéricas (MPa y mm):
+E_MPa = 25000
+t_mm = 500
+D_m_11 = E_MPa*t_mm/(1 - ν_c^2)
+D_b_11 = E_MPa*t_mm^3/(12*(1 - ν_c^2))
+D_m_11
+D_b_11
+
+"Paso 11 — Ensamble conceptual
+'Cada elemento MITC4 aporta una K_e de 20×20 (5 GDL × 4 nodos).
+'Ensamble estándar: K_global (n_nodos*5 × n_nodos*5).
+'Añadir al bloque diagonal en DOF w (índice 2 local) el término k_nodo.
+'Aplicar cargas: P_1 en nodo más cercano a columna 1, P_2 en columna 2.
+'Condiciones de borde: restringir translación en plano (u=v=0) en 4 nodos
+'esquineros para evitar cuerpo rígido.
+
+"Paso 12 — Comparación esperada
+'Resultados típicos (placa 1m × 7m aprox con ks=20 MN/m³, t=0.5m):
+'  w_max bajo columna 1:    5-10 mm
+'  w_max bajo columna 2:    4-8 mm
+'  M_max transversal:       ~60% del M_viga analítico (por redistribución)
+'  Presión máxima suelo:    1.2-1.5 x q_uniforme (concentración bajo columna)
+
+'Método de Jacobi asume presión UNIFORME; el FEM revela la CONCENTRACIÓN
+'bajo las columnas, que puede ser crítica para cortante por punzonamiento.
+
+"Paso 13 — Validación cruzada
+'  1. Calcpad-Symbolic (este script) → w_max, M_max por MITC4
+'  2. SAP2000 (shell thick + area springs) → referencia industrial
+'  3. Hekatan Struct (WASM Q4 + Winkler) → validación open-source
+'  4. Método de Jacobi analítico (este paso 4-7) → primera aproximación
+
+'Diferencias esperadas: ±5% entre FEM; método analítico puede subestimar
+'los momentos locales bajo columnas en 20-30%.
+
+"Resumen final
+'Reacciones:
+R_1
+R_2
+'Presiones:
+q_1
+q_2
+'Viga de amarre:
+M_viga
+V_viga
+A_s_req

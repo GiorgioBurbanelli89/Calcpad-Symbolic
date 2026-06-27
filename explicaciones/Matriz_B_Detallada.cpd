@@ -1,0 +1,365 @@
+"La matriz B (deformacion-desplazamiento) — curso exhaustivo
+'<p>La matriz B es el <b>puente</b> entre dos mundos: los desplazamientos
+'nodales (lo que conocemos despues de resolver) y las deformaciones del
+'continuo (lo que necesitamos para calcular esfuerzos). Sin B, no hay FEM.</p>
+'<hr/>
+
+"Cap 1 — ¿Que es B fisicamente?
+'<p>Imagina un elemento finito sometido a desplazamientos en sus nodos.
+'Conoces u₁, u₂ (en 1D) o (u_i, v_i) en 2D. Pero la <b>fisica</b> requiere
+'la deformacion ε(x), que es la derivada del desplazamiento.</p>
+
+'<p>La matriz B hace ese paso: <b>convierte desplazamientos nodales en
+'deformacion en cualquier punto del elemento</b>:</p>
+
+#deq ε = B*u_e
+
+'<p>donde u_e es el vector columna de los desplazamientos de los nodos del
+'elemento. La notacion B(x) significa "B evaluada en la posicion x" — NO
+'es B multiplicada por x. Para barra lineal B es <b>constante</b> y no
+'depende de x.</p>
+
+"Analisis dimensional — ¿por que B tiene unidades 1/longitud?
+'<p>Veamos las unidades de cada variable para entender que es B:</p>
+
+'<table border="1" cellpadding="6">
+'<tr><th>Variable</th><th>Unidades</th><th>Que representa</th></tr>
+'<tr><td>u_e</td><td>m (metros)</td><td>Desplazamiento de los nodos</td></tr>
+'<tr><td>ε</td><td>adimensional (m/m)</td><td>Deformacion unitaria (cuanto se estira por unidad de longitud)</td></tr>
+'<tr><td>x, L</td><td>m</td><td>Posicion / longitud del elemento</td></tr>
+'<tr><td>B</td><td><b>1/m</b></td><td>"Tasa" geometrica que conecta u con ε</td></tr>
+'</table>
+
+'<p>Para que la ecuacion ε = B·u sea consistente:</p>
+
+#deq [adimensional] = [1/m]*[m]
+
+'<p>Las dos m se cancelan. <b>B no es longitud al cuadrado</b> — es 1/longitud,
+'precisamente para que el producto con u de la deformacion adimensional.</p>
+
+'<p>Esto se ve claramente en B = [-1/L, 1/L] para la barra lineal: cada
+'componente tiene unidades 1/m. Cuando multiplicas por u (en metros),
+'obtienes la deformacion unitaria (adimensional, normalmente expresada
+'como microstrains o porcentaje).</p>
+
+"Diagrama conceptual del rol de B
+'<p>El flujo es:</p>
+'<p>1) Calcpad/FEM resuelve K·u = F → obtiene los desplazamientos nodales u_e</p>
+'<p>2) <b>B convierte u_e en ε(x)</b>: las deformaciones unitarias en cada punto</p>
+'<p>3) D (Hooke) convierte ε en σ: los esfuerzos</p>
+'<p>4) σ comparado con f_y / f_c verifica el diseño</p>
+
+'<hr/>
+
+"Cap 1.5 — ¿De donde viene B matematicamente?
+'<p>B no se "inventa" — sale de aplicar TRES principios fisicos en orden.
+'Cada uno se justifica por separado:</p>
+
+"Principio 1 — Definicion de deformacion unitaria (Cauchy 1828)
+'<p>La deformacion ε en un punto es el <b>cambio de longitud por unidad de
+'longitud original</b>. Matematicamente, es la derivada del desplazamiento:</p>
+
+#deq ε = du/dx
+
+'<p>Si una barra de 1 m se estira 1 mm, ε = 0.001 (1 mm/1000 mm). Es una
+'fraccion adimensional. Esta definicion es <b>geometrica</b>, no del FEM —
+'aplica a cualquier solido elastico.</p>
+
+"Principio 2 — Interpolacion del desplazamiento (Courant 1943)
+'<p>El FEM postula que dentro del elemento, u se construye como suma de
+'contribuciones nodales:</p>
+
+#deq u(x) = N_1(x)*u_1 + N_2(x)*u_2
+
+'<p>Cada N_i es una funcion conocida de x (sale de las condiciones nodales,
+'ver el archivo Funciones_de_Forma_Detalladas.cpd Cap 3). Los u_i son
+'incognitas que el FEM resuelve.</p>
+
+"Principio 3 — Combinar (1) + (2): aparece B
+'<p>Sustituyendo (2) en (1) y aplicando la derivada termino a termino:</p>
+
+#deq ε(x) = du/dx = (dN_1/dx)*u_1 + (dN_2/dx)*u_2
+
+'<p>Esto es una <b>combinacion lineal</b> de los desplazamientos nodales
+'con coeficientes (dN_i/dx). Si la escribimos como producto matricial:</p>
+
+#deq ε = [dN_1/dx, dN_2/dx]*[u_1|u_2]
+
+'<p>Identificamos:</p>
+
+#deq B = [dN_1/dx, dN_2/dx]
+
+'<p>Eso es <b>todo</b>. B es simplemente el vector de derivadas de las
+'funciones de forma. Su nombre viene de la convencion clasica de Zienkiewicz
+'(la primera letra de "B-matrix" o "strain-displacement matrix").</p>
+
+"Las unidades de B salen automaticamente
+'<p>Como dN_i/dx tiene unidades de 1/m (adimensional dividido por m), B
+'hereda esa unidad. No es algo "fabricado" — es la consecuencia natural
+'de derivar una funcion adimensional respecto a una posicion en metros.</p>
+
+'<p>Con B definida, la cadena queda:</p>
+
+#deq u_nodal → ε = B*u → σ = D*ε → K_e = ∫B^T*D*B*dV
+
+'<p>Toda la fisica del FEM lineal se reduce a multiplicaciones de matrices,
+'gracias a que B captura la "geometria diferencial" del elemento en una
+'forma compacta.</p>
+
+'<hr/>
+
+"Cap 2 — Derivacion de B para barra lineal (caso mas simple)
+
+"Paso 2.1 — Recordar la interpolacion del desplazamiento
+'<p>El desplazamiento dentro del elemento barra lineal se interpola entre
+'los nodos:</p>
+
+#deq u(x) = N_1(x)*u_1 + N_2(x)*u_2
+
+'<p>con N₁(x) = 1 - x/L y N₂(x) = x/L.</p>
+
+"Paso 2.2 — Aplicar la definicion de deformacion (ε = du/dx)
+'<p>La deformacion uniaxial es la derivada del desplazamiento respecto a x:</p>
+
+#deq ε(x) = du/dx = (dN_1/dx)*u_1 + (dN_2/dx)*u_2
+
+'<p>Calculamos las derivadas individualmente:</p>
+
+#sym
+diff(1 - x/L; x)
+#end sym
+
+#sym
+diff(x/L; x)
+#end sym
+
+'<p>Las derivadas son <b>constantes</b>: -1/L y +1/L.</p>
+
+"Paso 2.3 — Reescribir ε como producto matricial
+'<p>Reagrupamos:</p>
+
+#deq ε = [-1/L, 1/L]*[u_1|u_2]
+
+'<p>Identificando la matriz B:</p>
+
+#deq B = [-1/L, 1/L]
+
+'<p>B es un <b>vector fila de 2 elementos</b>. Multiplicar por el vector
+'columna [u₁; u₂] da un escalar (la deformacion ε).</p>
+
+"Caso numerico — barra de 2m con desplazamientos
+L_b1 = 2     'm
+B11 = -1/L_b1
+B12 = 1/L_b1
+
+u_1 = 0      'm (nodo 1 fijo)
+u_2 = 0.001  'm (1 mm de elongacion en el nodo 2)
+ε_b1 = B11*u_1 + B12*u_2
+
+'<p>Para L=2m, u₁=0, u₂=1mm: ε = (1/2)·0 + (1/2)·0.001 = 0.0005 (0.05%).
+'Es el alargamiento (1mm) dividido por la longitud (2m) — la definicion
+'clasica de deformacion unitaria.</p>
+
+'<hr/>
+
+"Cap 3 — ¿Como interpretar B fila a fila / columna a columna?
+
+'<p>Cada <b>columna</b> de B contesta una pregunta especifica:</p>
+
+'<p><b>Columna 1 (= -1/L):</b> "Si solo el nodo 1 se mueve 1 unidad y los
+'demas estan fijos, ¿que deformacion produce?" Respuesta: -1/L (signo
+'negativo porque al moverse el nodo 1 hacia +x, el elemento se acorta).</p>
+
+'<p><b>Columna 2 (= +1/L):</b> "Si solo el nodo 2 se mueve 1 unidad,
+'¿que deformacion produce?" Respuesta: +1/L (positivo porque al moverse
+'el nodo 2 hacia +x, el elemento se estira).</p>
+
+"Grafica 3.1 — Las dos contribuciones de B a la deformacion
+#hide
+n_g31 = 50
+xb_g = vector(n_g31)
+B1u1 = vector(n_g31)
+B2u2 = vector(n_g31)
+ε_total = vector(n_g31)
+'Caso: u₁=0.001, u₂=0.003 (ambos se mueven, distinto)
+u1g = 0.001
+u2g = 0.003
+L_g31 = 1
+#for i = 1 : n_g31
+    xb_g.(i) = (i - 1)/(n_g31 - 1)
+    'B11·u₁ es constante = -1/L · u₁
+    B1u1.(i) = (-1/L_g31)*u1g
+    'B12·u₂ es constante = +1/L · u₂
+    B2u2.(i) = (1/L_g31)*u2g
+    ε_total.(i) = B1u1.(i) + B2u2.(i)
+#loop
+#show
+
+$Chart{xb_g; B1u1; xb_g; B2u2; xb_g; ε_total @ title=Las dos contribuciones a ε (verde = total) : xlabel=x/L : ylabel=ε : labels=B₁·u₁ (negativo),B₂·u₂ (positivo),ε total}
+
+"Para que sirve esta grafica
+'<p>Las tres lineas son CONSTANTES porque B no depende de x para barra
+'lineal. La azul aporta -0.001 (acortamiento debido al nodo 1), la roja
+'aporta +0.003 (estiramiento debido al nodo 2). La verde es la suma:
+'+0.002 = elongacion total normalizada.</p>
+
+'<p>Esto te muestra que la <b>deformacion total es la suma algebraica</b>
+'de las contribuciones individuales de cada nodo. La matriz B "factoriza"
+'esta suma en una operacion matricial elegante.</p>
+
+'<hr/>
+
+"Cap 4 — La matriz B para el triangulo CST (2D, primera vez en historia FEM)
+
+'<p>El primer elemento finito de la historia (Turner-Clough-Martin-Topp 1956)
+'fue el triangulo de tres nodos (CST). Cada nodo tiene 2 grados de libertad
+'(u, v), asi que el vector u_e tiene <b>6 componentes</b>.</p>
+
+'<p>El vector de deformaciones en plano tiene 3 componentes (ε_xx, ε_yy, γ_xy).
+'Por lo tanto B sera de <b>3×6</b>:</p>
+
+#deq B = [b_1; 0; b_2; 0; b_3; 0|0; c_1; 0; c_2; 0; c_3|c_1; b_1; c_2; b_2; c_3; b_3]/(2*A)
+
+'<p>donde b_i, c_i son funciones de las coordenadas nodales y A es el area
+'del triangulo. Por ejemplo: b_1 = y₂ - y₃, c_1 = x₃ - x₂.</p>
+
+"Paso 4.1 — Triangulo concreto: nodos (0,0), (4,0), (0,3)
+x1 = 0
+y1 = 0
+x2 = 4
+y2 = 0
+x3 = 0
+y3 = 3
+
+'Coeficientes
+b_n1 = y2 - y3
+b_n2 = y3 - y1
+b_n3 = y1 - y2
+c_n1 = x3 - x2
+c_n2 = x1 - x3
+c_n3 = x2 - x1
+
+'Area:
+A_t = abs((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1))/2
+
+'<p>Para este triangulo: b₁=-3, b₂=3, b₃=0, c₁=-4, c₂=0, c₃=4, A=6 m².</p>
+
+"Paso 4.2 — Matriz B numerica
+B11 = b_n1/(2*A_t)
+B12 = b_n2/(2*A_t)
+B13 = b_n3/(2*A_t)
+B21 = c_n1/(2*A_t)
+B22 = c_n2/(2*A_t)
+B23 = c_n3/(2*A_t)
+
+'<p>Los valores numericos del triangulo concreto: b/2A = ±0.25 y c/2A = ±0.333.
+'B es una matriz CONSTANTE (no depende de x ni y) — por eso el elemento se
+'llama "Constant Strain Triangle".</p>
+
+"Grafica 4 — Visualizacion del triangulo CST
+$Struct{node,0,0,1 : node,4,0,2 : node,0,3,3 : beam,0,0,4,0 : beam,4,0,0,3 : beam,0,3,0,0 : label,1.5,1.0,Triangulo CST @ title=Triangulo CST con nodos (0,0), (4,0), (0,3) — area = 6 m² : w=580 : h=200}
+
+'<hr/>
+
+"Cap 5 — B con Jacobiano (elementos isoparametricos)
+
+'<p>Cuando el elemento esta en coordenadas naturales (ξ, η), las funciones
+'de forma estan en (ξ, η) pero las deformaciones piden derivadas respecto
+'a (x, y). Eso requiere el <b>Jacobiano</b>:</p>
+
+#deq J = [∂x/∂ξ; ∂x/∂η|∂y/∂ξ; ∂y/∂η]
+
+'<p>Y la regla de la cadena:</p>
+
+#deq [∂N/∂x|∂N/∂y] = J^(-1)*[∂N/∂ξ|∂N/∂η]
+
+'<p>Esto introduce la <b>distorsion del mapeo</b> en B. Cuando el elemento
+'es regular (cuadrado padre), J es la identidad escalar y B es simple.
+'Cuando el elemento esta deformado (cuadrilatero general), J^(-1) hace
+'todo el trabajo de re-mapeo.</p>
+
+'<p>Es por esto que la integracion de K_e = ∫B^T·D·B·|J|·dξ·dη requiere
+'cuadratura numerica (Gauss).</p>
+
+'<hr/>
+
+"Cap 6 — De B a K (la formula universal otra vez)
+
+'<p>Una vez que tienes B, la matriz de rigidez del elemento sale de:</p>
+
+#deq K_e = ∫(B^T*D*B)*dV
+
+'<p>Para barra lineal (B constante, D escalar = E, dV = A·dx):</p>
+
+#sym
+integrate(E*A/L^2; x; 0; L)
+#end sym
+
+'<p>Resultado E·A/L. La matriz K_e completa 2×2:</p>
+
+#noc
+K_e = (E*A/L)*[1; -1|-1; 1]
+#equ
+
+'<p>Y para CST (B constante, D matriz 3×3, dV = A·t):</p>
+
+#deq K_e = t*A*B^T*D*B
+
+'<p>donde t es el espesor. La integracion es trivial porque ni B ni D
+'dependen de x, y dentro del elemento. El producto B^T·D·B da una matriz
+'6×6 que es K_e.</p>
+
+'<hr/>
+
+"Cap 7 — Casos especiales — B variable vs B constante
+
+"B constante (CST, barra lineal)
+'<p>La deformacion es uniforme dentro del elemento. La matriz B no depende
+'de la posicion. La integracion de K_e es trivial: K_e = (volumen)·B^T·D·B.</p>
+
+'<p>Limitacion: si la fisica requiere deformacion variable, hay que usar
+'<b>muchos elementos</b> pequenos para aproximar el campo no-uniforme.</p>
+
+"B variable (Q4, T6, H8, etc)
+'<p>En elementos de mayor orden o no-lineales, B(x) varia dentro del
+'elemento. La integracion ya no es trivial: requiere cuadratura de Gauss
+'que evalua B en varios puntos y suma con pesos:</p>
+
+#deq K_e = Σ_g w_g*B(x_g)^T*D*B(x_g)*|J(x_g)|
+
+'<p>donde x_g son los puntos de Gauss y w_g sus pesos. Para Q4 con 2×2
+'puntos de Gauss en ±1/√3, la integracion es exacta para polinomios hasta
+'grado 3.</p>
+
+'<hr/>
+
+"Cap 8 — Resumen — la matriz B en una linea
+'<p>B es una matriz que <b>convierte desplazamientos nodales en
+'deformaciones puntuales</b> mediante derivacion de las funciones de forma.</p>
+
+#deq B = [dN_1/dx, dN_2/dx, dN_n/dx]
+
+'<p>Para 1D: vector fila. Para 2D plano: 3×(2n). Para 3D solido: 6×(3n).
+'Siempre con la misma logica: cada columna captura como un nodo afecta
+'la deformacion del elemento.</p>
+
+"Tabla resumen — dimensiones de B por elemento
+'<table border="1" cellpadding="6">
+'<tr><th>Elemento</th><th>Filas (deformaciones)</th><th>Columnas (DOFs)</th><th>Tamano B</th><th>Constante?</th></tr>
+'<tr><td>Barra lineal</td><td>1 (ε)</td><td>2 (u₁, u₂)</td><td>1×2</td><td>SI</td></tr>
+'<tr><td>Barra cuadratica</td><td>1</td><td>3</td><td>1×3</td><td>NO (lineal en x)</td></tr>
+'<tr><td>Triangulo CST</td><td>3 (ε_xx, ε_yy, γ_xy)</td><td>6</td><td>3×6</td><td>SI</td></tr>
+'<tr><td>Triangulo LST (T6)</td><td>3</td><td>12</td><td>3×12</td><td>NO</td></tr>
+'<tr><td>Q4 cuadrilatero</td><td>3</td><td>8</td><td>3×8</td><td>NO</td></tr>
+'<tr><td>Tetraedro T4</td><td>6</td><td>12</td><td>6×12</td><td>SI</td></tr>
+'<tr><td>Hexaedro H8</td><td>6</td><td>24</td><td>6×24</td><td>NO</td></tr>
+'<tr><td>Viga Bernoulli</td><td>1 (κ)</td><td>4</td><td>1×4</td><td>NO (lineal en x)</td></tr>
+'<tr><td>Placa Kirchhoff</td><td>3 (curvaturas)</td><td>12</td><td>3×12</td><td>NO</td></tr>
+'</table>
+
+'<p>Notar que cuando B es constante, la deformacion es uniforme dentro del
+'elemento → solo modos rigidos + traslacion + deformacion uniforme. Para
+'capturar gradientes finos de deformacion necesitas elementos de mayor
+'orden o mallas mas finas.</p>
+
+"Fin del curso de la matriz B

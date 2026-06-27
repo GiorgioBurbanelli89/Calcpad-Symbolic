@@ -1,0 +1,15 @@
+"Despejar fórmulas + más operaciones de Mathcad
+'Despejar r del área del círculo:
+#sym solve(A = pi*r^2; r)
+'Despejar v de la energía cinética:
+#sym solve(E = m*v^2/2; v)
+'Fórmula cuadrática (despeje general):
+#sym solve(a*x^2 + b*x + c = 0; x)
+'Transformada de Fourier de una gaussiana:
+#sym fourier(exp(-t^2); t; w)
+'Combinar sobre denominador común:
+#sym combine(a/c + b/c)
+'Fracción continua de pi:
+#sym confrac(3.14159265)
+'Supuesto de dominio (x>0) + simplificar:
+#sym assume(x > 0; sqrt(x^2))

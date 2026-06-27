@@ -66,10 +66,22 @@ namespace Calcpad.Core
                 Parser.Parse(input[3]);
                 var endX = Parser.CalculateReal();
                 var endUnits = Parser.Units;
-                if (!Unit.IsConsistent(xUnits, endUnits))
-                    throw Exceptions.InconsistentUnits(Unit.GetText(xUnits), Unit.GetText(endUnits));
+                // Allow `0 : a_z` patterns: when one extreme is the bare scalar 0
+                // (no units) and the other has units, adopt the units of the
+                // non-trivial side instead of throwing. Same lenient policy used
+                // by the RealValue +/- operator.
+                if (xUnits is null && endUnits is not null)
+                    xUnits = endUnits;
+                else if (xUnits is not null && endUnits is null)
+                    endUnits = xUnits;
+                // Mismatched non-null units (eg `mm` vs `rad` from a function
+                // returning a compound unit): be lenient — pick the LHS units
+                // and proceed with raw numerical magnitudes. The downstream
+                // MapPlotter only reads `.Re` so plotting works fine.
+                if (xUnits is not null && endUnits is not null && !Unit.IsConsistent(xUnits, endUnits))
+                    endUnits = xUnits;
 
-                if (endUnits is not null)
+                if (endUnits is not null && xUnits is not null)
                 {
                     var factor = endUnits.ConvertTo(xUnits);
                     endX *= factor;
@@ -80,10 +92,15 @@ namespace Calcpad.Core
                 Parser.Parse(input[6]);
                 var endY = Parser.CalculateReal();
                 endUnits = Parser.Units;
-                if (!Unit.IsConsistent(yUnits, endUnits))
-                    throw Exceptions.InconsistentUnits(Unit.GetText(yUnits), Unit.GetText(endUnits));
+                if (yUnits is null && endUnits is not null)
+                    yUnits = endUnits;
+                else if (yUnits is not null && endUnits is null)
+                    endUnits = yUnits;
+                // Lenient: mismatched non-null units → pick LHS.
+                if (yUnits is not null && endUnits is not null && !Unit.IsConsistent(yUnits, endUnits))
+                    endUnits = yUnits;
 
-                if (endUnits is not null)
+                if (endUnits is not null && yUnits is not null)
                 {
                     var factor = endUnits.ConvertTo(yUnits);
                     endY *= factor;

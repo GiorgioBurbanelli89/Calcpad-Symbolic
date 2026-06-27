@@ -1,0 +1,119 @@
+'PASO 1) DEFINIR UNIDADES BASE
+Fuerza = 1tonf
+Longitud = 1m
+χ = 1/Longitud
+φ = χ^2
+Υ = χ/(φ*Fuerza)
+ψ = Fuerza*s^2/Longitud
+'PASO 2) DEFINIR GEOMETRIA DEL EDIFICIO
+N_pisos = 3
+i = 1 : N_pisos
+f(i; j) = 0
+NGL_glob = N_pisos*3
+'Numero y Coordenadas depórticos:
+Vertice_1 = [1; 2; 3; 4; 5; 6]
+X_1 = [0; 6; 12; 0; 6; 12]m
+Y_1 = [0; 0; 0; 7; 7; 7]m
+Portico = [1; 2; 3; 4; 5]
+inicio_1 = [1; 4; 1; 2; 3]
+fin_1 = [3; 6; 4; 5; 6]
+N_porticos1 = len(inicio_1)
+i' = 1 : N_porticos1
+''X_1c:
+#for j = 1 : N_porticos1
+    X_1c.1; j = X_1.inicio_1.j
+    X_1c.2; j = X_1.fin_1.j
+#loop
+''Y_1c:
+#for j = 1 : N_porticos1
+    Y_1c.1; j = Y_1.inicio_1.j
+    Y_1c.2; j = Y_1.fin_1.j
+#loop
+'Dimensiones en planta del edificio:
+'Coordenadas del centro de gravedad:
+L_x = [12; 12; 6]m
+L_y = [7; 7; 7]m
+X_cg = L_x/2
+Y_cg = L_y/2
+'Rigidez lateral de cada pórtico:
+K_p.1 = [4770.33695; -2974.92336; 228.58972|-2974.92336; 4439.71332; -1777.30898|228.58972; -1777.30898; 1561.28199]
+K_p.2 = K_p.1
+K_p.3 = [3153.2033; -2112.14723; 319.14403|-2112.14723; 3611.11235; -1765.33297|319.14403; -1765.33297; 1469.85267]
+K_p.4 = K_p.3
+K_p.5 = [3055.91255; -1703.15483|-1703.15483; 1467.32245]
+'Análisis Pseudo tridimensional
+'Calculo de las matrices de compatibilidad de los pórticos con respecto al centro de masa:
+''SC:
+SC = matrix(N_porticos1; 3; f)
+#for j = 1 : N_porticos1
+    x_i.j = X_1.inicio_1.j
+    x_f.j = X_1.fin_1.j
+    y_i.j = Y_1.inicio_1.j
+    y_f.j = Y_1.fin_1.j
+    d = ?^(1/(x_f.j - x_i.j)^2 + (y_f.j - y_i.j)^2)
+    SC.j; 1 = y_f.j - y_i.j/d
+    SC.j; 2 = x_f.j - x_i.j/d
+    SC.j; 3 = identity(N_pisos)
+    #for k = 1 : N_pisos
+        (SC.j; 3).k; k = ((0m - y_i.j)*SC.j; 2 - (0m - x_i.j)*SC.j; 1)/Longitud
+    #loop
+#loop
+''SC':
+SC' = matrix(N_porticos1; 3; f)
+#for j = 1 : N_porticos1
+    x_i.j = X_1.inicio_1.j
+    x_f.j = X_1.fin_1.j
+    y_i.j = Y_1.inicio_1.j
+    y_f.j = Y_1.fin_1.j
+    d = ?^(1/(x_f.j - x_i.j)^2 + (y_f.j - y_i.j)^2)
+    SC'.j; 1 = y_f.j - y_i.j/d
+    SC'.j; 2 = x_f.j - x_i.j/d
+    SC'.j; 3 = identity(N_pisos)
+    #for k = 1 : N_pisos
+        (SC'.j; 3).k; k = ((Y_cg.k - y_i.j)*SC.j; 2 - (X_cg.k - x_i.j)*SC.j; 1)/Longitud
+    #loop
+#loop
+COS.i' = identity(N_pisos)*SC.i'; 2
+SEN.i' = identity(N_pisos)*SC.i'; 1
+COS'.i' = identity(N_pisos)*SC'.i'; 2
+SEN'.i' = identity(N_pisos)*SC'.i'; 1
+R_por.i' = SC.i'; 3
+a_port.i' = augment(COS.i'; SEN.i'; R_por.i')
+R'_por.i' = SC'.i'; 3
+a'_port.i' = augment(COS'.i'; SEN'.i'; R'_por.i')
+a'_port.1
+'Matriz de rigidez de la estructura:
+a'_glob.i' = submatrix(a'_port.i'; 1; n_cols(K_p.i'); 1; NGL_glob)
+a'_glob.5
+''K_EDIFICIO:
+#for i = 1 : N_porticos1
+    Kpg.i = transp(a'_glob.i)*K_p.i*a'_glob.i
+#loop
+sum(Kpg.i; 1; N_porticos1)
+Q = [0; 0; 0; 42; 54; 32; 0; 0; 0]
+D = (K_EDIFICIO^(-1))*Q
+Dy = submatrix(D; 4; 6; 1; 1)
+H_ent = [3; 2.5; 2.5]
+k = 1 : 3
+'10.2353
+'8.2605
+'4.8093
+'0
+D'y = stack(0; Dy)
+'0.008111
+'0.013805
+'0.016031
+'0
+Dery.k = D'y.k + 1 - D'y.k/H_ent.k
+H'_ent = [0; 3; 5.5; 8]
+Dery = stack(0; Dery)
+X.1 = Dery
+Y.1 = H'_ent
+'10.8727
+'8.8127
+'5.1534
+'0
+'0.00824
+'0.014637
+'0.017178
+'0

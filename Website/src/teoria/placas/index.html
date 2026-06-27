@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/partials/head.html"></div>
+  <title>Teoría de placas — Calcpad-Symbolic</title>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+
+  <section class="block">
+    <div class="container">
+      <h1>Teoría de placas</h1>
+      <p>
+        El elemento estructural <strong>PLACA</strong> puede estudiarse considerando
+        que está formado por una única lámina o por la yuxtaposición de láminas
+        (laminado). El análisis se realiza con dos grandes enfoques:
+      </p>
+      <ul>
+        <li><strong>Teoría de la Capa Única Equivalente</strong> (<em>Equivalent Single Layer Theory</em>) — el laminado se sustituye por una única capa anisótropa. Reduce un problema 3D a uno 2D mediante hipótesis cinemáticas a través del espesor.</li>
+        <li><strong>Teoría de Elasticidad Tridimensional</strong> — relaciones cinemáticas y constitutivas en 3D; permite continuidad de tensiones cortantes entre láminas adyacentes. Mejor para laminados gruesos.</li>
+      </ul>
+
+      <h2>Aproximaciones dentro de la Capa Única Equivalente</h2>
+      <table class="specs">
+        <tr><th>Teoría</th><th>Sigla</th><th>Espesor</th><th>Deformación por corte</th></tr>
+        <tr><td>Clásica de Placas (Kirchhoff)</td><td>CPT</td><td>Delgadas</td><td>Ignorada</td></tr>
+        <tr><td>Primer Orden (Mindlin-Reissner)</td><td>FSDT</td><td>Gruesas</td><td>Constante a lo largo del espesor</td></tr>
+        <tr><td>Alto Orden</td><td>HSDT</td><td>Muy gruesas / laminadas</td><td>Polinómica (parabólica en corte transversal)</td></tr>
+      </table>
+
+      <h2>Categorías cubiertas</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>Placa delgada</h3>
+          <p>Kirchhoff / CPT — '#deq' Hipótesis normal recta, corte despreciable.</p>
+          <a class="btn btn-primary" href="/teoria/placas/thin.html">Abrir</a>
+        </div>
+        <div class="feature-card">
+          <h3>Placa gruesa</h3>
+          <p>Mindlin-Reissner / FSDT — giros independientes.</p>
+          <a class="btn btn-primary" href="/teoria/placas/thick.html">Abrir</a>
+        </div>
+        <div class="feature-card">
+          <h3>HSDT — Reddy 3° orden</h3>
+          <p>Alto orden — corte parabólico, sin factor k. Moita §5.2.3.</p>
+          <a class="btn btn-primary" href="/teoria/placas/hsdt.html">Abrir</a>
+        </div>
+        <div class="feature-card">
+          <h3>Membrana</h3>
+          <p>Estado plano de tensión — sin flexión.</p>
+          <a class="btn btn-primary" href="/teoria/placas/membrana.html">Abrir</a>
+        </div>
+        <div class="feature-card">
+          <h3>Cáscara delgada</h3>
+          <p>Shell Kirchhoff-Love — membrana + placa delgada.</p>
+          <a class="btn btn-primary" href="/teoria/placas/shell-thin.html">Abrir</a>
+        </div>
+        <div class="feature-card">
+          <h3>Cáscara gruesa</h3>
+          <p>Shell Mindlin / MITC — membrana + placa gruesa.</p>
+          <a class="btn btn-primary" href="/teoria/placas/shell-thick.html">Abrir</a>
+        </div>
+      </div>
+
+      <h2>Formulación MEF y aplicaciones</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>§5.3 Elemento triangular (CST+DKT)</h3>
+          <p>18 GDL, superposición K = K<sub>M</sub> + K<sub>B</sub> + K<sub>θz</sub>.</p>
+          <a class="btn btn-primary" href="/teoria/placas/elemento-triangular.html">Abrir</a>
+        </div>
+        <div class="feature-card">
+          <h3>✓ Ejemplo validado Moita</h3>
+          <p>Placa isótropa — flecha central y 5 modos de vibración. Match > 98%.</p>
+          <a class="btn btn-primary" href="/teoria/placas/ejemplo-moita.html">Abrir</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div data-include="/partials/footer.html"></div>
+  <script src="/js/include.js"></script>
+</body>
+</html>

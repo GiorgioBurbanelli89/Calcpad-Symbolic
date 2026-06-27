@@ -1,0 +1,188 @@
+"Funciones de Forma — Explicacion paso a paso
+'<hr/>
+
+"Que problema queremos resolver?
+'<p>Conocemos el desplazamiento en los EXTREMOS de una barra.</p>
+'<p>Pero queremos saber el desplazamiento en CUALQUIER punto intermedio.</p>
+
+$Struct{fixed,0,0 : bar,0,0,10,0,Barra de acero : node,0,0,Nodo 1 (u1=0) : node,10,0,Nodo 2 (u2=0.5mm) : force,10,0,right,P : label,5,1,Que pasa aqui dentro? @ title=El problema: conocemos los extremos pero no el medio : w=650 : h=180}
+
+'<hr/>
+"La respuesta: INTERPOLACION
+'<p>Si conocemos u1=0 en un extremo y u2=0.5 en el otro,</p>
+'<p>el desplazamiento en cualquier punto x es una mezcla:</p>
+
+#deq u(x) = N_1(x)*u_1 + N_2(x)*u_2
+
+'<p>N1 y N2 son las FUNCIONES DE FORMA. Son "pesos" que dicen</p>
+'<p>cuanto influye cada nodo en el punto x.</p>
+
+'<hr/>
+"Como funcionan N1 y N2?
+
+'<p>Imaginalo asi: estas parado en un punto x de la barra.</p>
+'<p>Si estas CERCA del nodo 1, el desplazamiento se parece a u1.</p>
+'<p>Si estas CERCA del nodo 2, se parece a u2.</p>
+'<p>N1(x) te dice "cuanto pesa el nodo 1" y N2(x) "cuanto pesa el nodo 2".</p>
+
+'<h4>Las formulas son simples:</h4>
+#deq N_1(x) = 1 - x/L
+#deq N_2(x) = x/L
+
+'<p>Veamos que pasa en puntos clave:</p>
+L = 10
+
+'En x=0 (nodo 1): N1=1, N2=0 → u = 1*u1 + 0*u2 = u1 ✓
+N1_en_0 = 1 - 0/L
+N2_en_0 = 0/L
+
+'En x=L (nodo 2): N1=0, N2=1 → u = 0*u1 + 1*u2 = u2 ✓
+N1_en_L = 1 - L/L
+N2_en_L = L/L
+
+'En x=L/2 (mitad): N1=0.5, N2=0.5 → u = 0.5*u1 + 0.5*u2 (promedio!)
+N1_en_mitad = 1 - (L/2)/L
+N2_en_mitad = (L/2)/L
+
+'<h4>Grafica de N1 y N2:</h4>
+#hide
+n_p = 30
+xp = vector(n_p)
+N1 = vector(n_p)
+N2 = vector(n_p)
+#for i = 1 : n_p
+    xp.(i) = (i - 1)*L/(n_p - 1)
+    N1.(i) = 1 - xp.(i)/L
+    N2.(i) = xp.(i)/L
+#loop
+#show
+
+$Chart{xp; N1; xp; N2 @ title=Funciones de Forma N1 y N2 : xlabel=x (posicion en la barra) : ylabel=Peso de cada nodo : labels=N1: peso del nodo 1,N2: peso del nodo 2}
+
+'<p>Observa: cuando N1 sube N2 baja. Siempre suman 1 (N1+N2=1).</p>
+'<p>Esto significa: en cualquier punto el desplazamiento es un promedio ponderado.</p>
+
+'<hr/>
+"Ejemplo numerico completo
+
+'<p>Barra con u1=0 (fijo) y u2=0.5 (se mueve por la fuerza P):</p>
+
+$Struct{fixed,0,0 : bar,0,0,10,0,Barra : node,0,0,u1=0 : node,10,0,u2=0.5 : force,10,0,right,P @ title=Barra con desplazamientos conocidos : w=600 : h=160}
+
+u_1 = 0
+u_2 = 0.5
+
+'El desplazamiento en x=3:
+x_test = 3
+N1_test = 1 - x_test/L
+N2_test = x_test/L
+u_en_3 = N1_test*u_1 + N2_test*u_2
+
+'El desplazamiento en x=7:
+x_test2 = 7
+N1_test2 = 1 - x_test2/L
+N2_test2 = x_test2/L
+u_en_7 = N1_test2*u_1 + N2_test2*u_2
+
+'<h4>Desplazamiento a lo largo de toda la barra:</h4>
+#hide
+up = vector(n_p)
+#for i = 1 : n_p
+    up.(i) = N1.(i)*u_1 + N2.(i)*u_2
+#loop
+#show
+
+$Chart{xp; up @ title=Desplazamiento u(x) = N1*u1 + N2*u2 : xlabel=x : ylabel=u (mm)}
+
+'<p>Es una linea recta! Porque N1 y N2 son lineales (rectas).</p>
+'<p>Para una barra esto es EXACTO. La barra se estira uniformemente.</p>
+
+'<hr/>
+"Y si la barra se DOBLA? Necesitamos curvas!
+'<p>Un resorte o barra solo se estira. Pero una VIGA se dobla.</p>
+'<p>Una linea recta no puede describir una curva de flexion.</p>
+'<p>Necesitamos funciones de forma CUBICAS (polinomios de grado 3).</p>
+
+$Struct{fixed,0,0 : beam,0,0,10,0,Viga : node,0,0,v1 y theta1 : node,10,0,v2 y theta2 : force,10,0,down,P @ title=Viga: cada nodo tiene desplazamiento v Y rotacion theta : w=650 : h=200}
+
+'<p>Cada nodo de la viga tiene DOS valores:</p>
+'<p>- v = desplazamiento vertical (cuanto sube/baja)</p>
+'<p>- theta = rotacion (cuanto gira)</p>
+'<p>Entonces necesitamos 4 funciones de forma (2 nodos x 2 valores):</p>
+
+#deq v(x) = N_1*v_1 + N_2*θ_1 + N_3*v_2 + N_4*θ_2
+
+'<p>N1: efecto de v1 (desplazamiento en nodo 1)</p>
+'<p>N2: efecto de theta1 (rotacion en nodo 1)</p>
+'<p>N3: efecto de v2 (desplazamiento en nodo 2)</p>
+'<p>N4: efecto de theta2 (rotacion en nodo 2)</p>
+
+'<h4>Las 4 funciones de Hermite:</h4>
+#hide
+n_h = 50
+xi = vector(n_h)
+H1 = vector(n_h)
+H2 = vector(n_h)
+H3 = vector(n_h)
+H4 = vector(n_h)
+#for i = 1 : n_h
+    xi.(i) = (i - 1)/(n_h - 1)
+    H1.(i) = 1 - 3*xi.(i)^2 + 2*xi.(i)^3
+    H2.(i) = xi.(i)*(1 - xi.(i))^2
+    H3.(i) = 3*xi.(i)^2 - 2*xi.(i)^3
+    H4.(i) = xi.(i)^2*(xi.(i) - 1)
+#loop
+#show
+
+$Chart{xi; H1; xi; H3 @ title=N1 y N3: efecto del desplazamiento v : xlabel=posicion (0=nodo1  1=nodo2) : ylabel=N : labels=N1: si v1=1 la viga se ve asi,N3: si v2=1 la viga se ve asi}
+
+$Chart{xi; H2; xi; H4 @ title=N2 y N4: efecto de la rotacion theta : xlabel=posicion (0=nodo1  1=nodo2) : ylabel=N : labels=N2: si theta1=1 la viga se ve asi,N4: si theta2=1 la viga se ve asi}
+
+'<p>N1 y N3 son como las funciones lineales pero CURVAS (cubicas).</p>
+'<p>N2 y N4 son nuevas: representan el efecto de la ROTACION.</p>
+'<p>Son mas pequenas porque la rotacion tiene menos efecto que el desplazamiento.</p>
+
+'<hr/>
+"Ejemplo: Voladizo con P=10 kN
+
+$Struct{fixed,0,0 : beam,0,0,10,0,EI : node,0,0,1 (v1=0 theta1=0) : node,10,0,2 (v2=? theta2=?) : force,10,0,down,P=10 : dim,0,0,10,0,L=3m @ title=Voladizo: nodo 1 empotrado nodo 2 libre : w=650 : h=200}
+
+'<p>Nodo 1 empotrado: v1=0 y theta1=0 (no se mueve ni gira)</p>
+'<p>Nodo 2 libre: v2=? y theta2=? (lo que buscamos)</p>
+'<p>Entonces u(x) = N3*v2 + N4*theta2 (porque v1=0 y theta1=0)</p>
+
+E_v = 200000
+I_v = 8.333*10^(-6)
+L_v = 3
+P_v = 10
+
+'Solucion analitica:
+v_2 = -P_v*L_v^3/(3*E_v*I_v)
+θ_2 = P_v*L_v^2/(2*E_v*I_v)
+
+'<h4>Deflexion: v(x) = N3*v2 + N4*theta2*L</h4>
+#hide
+xv = vector(n_h)
+vv = vector(n_h)
+vN3 = vector(n_h)
+vN4 = vector(n_h)
+#for i = 1 : n_h
+    xv.(i) = xi.(i)*L_v
+    vN3.(i) = H3.(i)*v_2
+    vN4.(i) = H4.(i)*θ_2*L_v
+    vv.(i) = vN3.(i) + vN4.(i)
+#loop
+#show
+
+$Chart{xv; vN3; xv; vN4; xv; vv @ title=Contribucion de cada funcion de forma : xlabel=x (m) : ylabel=v (m) : labels=N3*v2 (desplazamiento),N4*theta2 (rotacion),Total v(x)}
+
+'<p>La curva verde es la SUMA de la azul (efecto desplazamiento) + roja (efecto rotacion).</p>
+'<p>Eso es una funcion de forma: interpola la solucion a partir de los valores nodales.</p>
+
+'<hr/>
+"Resumen
+'<p>1. Las funciones de forma son PESOS que dicen cuanto influye cada nodo.</p>
+'<p>2. Para barras son LINEALES (rectas): N1=1-x/L, N2=x/L.</p>
+'<p>3. Para vigas son CUBICAS (curvas): Hermite N1,N2,N3,N4.</p>
+'<p>4. El desplazamiento en cualquier punto = suma de N*valor_nodal.</p>
+'<p>5. De las funciones de forma se obtiene la RIGIDEZ integrando sus derivadas.</p>

@@ -250,7 +250,11 @@ namespace Calcpad.Core
 
         internal static int AsInt(IScalarValue scalar, Exceptions.Items item = Exceptions.Items.Argument)
         {
-            if (scalar.IsReal && scalar.Units is null)
+            // Counts of elements / indices are dimensionless by convention, even if
+            // the user accidentally accumulated units in the index expression (e.g.
+            // ne = round(L/dx) when dx has no units). We strip units silently as
+            // long as the numerical value is a positive integer.
+            if (scalar.IsReal)
             {
                 var d = scalar.Re;
                 if (d > 0 && d <= int.MaxValue && d.AlmostEquals(Math.Truncate(d)))

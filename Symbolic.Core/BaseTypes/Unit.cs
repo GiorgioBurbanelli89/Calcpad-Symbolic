@@ -1695,6 +1695,28 @@ namespace Calcpad.Core
             throw Exceptions.InconsistentUnitsOperation(GetText(ua), op, GetText(ub));
         }
 
+        /// <summary>
+        /// Lenient version of Convert used by interpolators (spline, lookup)
+        /// and aggregations (min/max/sum/mean) operating across vector/matrix
+        /// cells that may have inconsistent units (a common situation when a
+        /// FEM stiffness matrix has stress-resultant cells with different
+        /// physical units per row). Behaviour:
+        ///   - identical / consistent units → standard ratio (lossless)
+        ///   - one side null → unit-respect path (same as Convert)
+        ///   - mismatched non-null units → returns 1.0 (uses raw numerical
+        ///     magnitudes; result inherits LHS units silently)
+        /// </summary>
+        internal static double ConvertLenient(Unit ua, Unit ub)
+        {
+            if (ReferenceEquals(ua, ub))
+                return 1d;
+            if (ua is null || ub is null)
+                return Convert(ua, ub, ',');
+            if (ua.IsConsistent(ub))
+                return ub.ConvertTo(ua);
+            return 1d;   // mismatched: fall through silently
+        }
+
         internal static Unit Multiply(Unit ua, Unit ub, out double d, bool updateText = false)
         {
             if (ub is null)

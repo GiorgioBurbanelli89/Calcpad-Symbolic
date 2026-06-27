@@ -1,0 +1,174 @@
+"Viga sobre Winkler — derivación simbólica + evaluación numérica
+'<hr/>
+'<h1>📐 De la simbólica a lo numérico — viga sobre medio elástico</h1>
+'<p>Este documento muestra el flujo natural en ingeniería:</p>
+'<ol>
+'<li><b>Simbólico</b> — derivar la fórmula con AngouriMath (#sym)</li>
+'<li><b>Numérico</b> — evaluar con valores reales</li>
+'<li><b>Verificación</b> — comparar contra solución alternativa</li>
+'</ol>
+'<hr/>
+
+'<h2>1. Variables simbólicas (con letras griegas y subíndices)</h2>
+'<p>Definimos los parámetros físicos como símbolos:</p>
+'<ul>
+'<li><b>EI</b> — rigidez flexural de la viga (kN·m²)</li>
+'<li><b>k_y</b> — rigidez Winkler distribuida (kN/m²) = k_s · b</li>
+'<li><b>L₀</b> — longitud total de la viga (m)</li>
+'<li><b>q_y(x)</b> — carga distribuida (kN/m)</li>
+'<li><b>λ_y</b> — parámetro característico (1/m), λ_y = ⁴√(k_y/(4·EI))</li>
+'<li><b>ω_n</b> — frecuencia natural modo n (rad/s)</li>
+'<li><b>φ_n(x)</b> — forma modal del modo n</li>
+'<li><b>ζ</b> — fracción de amortiguamiento crítico</li>
+'</ul>
+'<hr/>
+
+'<h2>2. Parte SIMBÓLICA — derivamos con AngouriMath</h2>
+
+'<h3>2.1. Definir la forma modal φ_n(x) = sin(n·π·x/L)</h3>
+'<p>Calculamos analíticamente la 4ª derivada (necesaria para la EDP):</p>
+#sym diff(sin(n*pi*x/L); x; 4)
+'<p>Resultado: <b>(n·π/L)⁴ · sin(n·π·x/L)</b> — el cuarto orden trae el factor (n·π/L)⁴.</p>
+
+'<h3>2.2. Solución armónica w(x, t) = φ_n(x) · sin(ω·t)</h3>
+'<p>Calculamos la 2ª derivada respecto al tiempo:</p>
+#sym diff(sin(omega*t); t; 2)
+'<p>Resultado: <b>−ω²·sin(ω·t)</b> — aparece el famoso factor −ω².</p>
+
+'<h3>2.3. Sustituyendo en la EDP de Bernoulli + Winkler</h3>
+'<p>EDP: EI · ∂⁴w/∂x⁴ + ρA · ∂²w/∂t² + k_y · w = 0</p>
+'<p>Sustituyendo w = φ_n(x)·sin(ω·t):</p>
+'<p style="text-align:center; font-family:monospace; padding:10px; background:#f0f4f8;">
+'EI · (n·π/L)⁴ · sin(...) − ρA · ω² · sin(...) + k_y · sin(...) = 0
+'</p>
+'<p>Dividimos entre sin(...) (no es cero salvo en los nodos):</p>
+'<p style="text-align:center; padding:10px; background:#fff3cd;">
+'<b>EI · (n·π/L)⁴ + k_y = ρA · ω²</b>
+'</p>
+
+'<h3>2.4. Despejando ω simbólicamente</h3>
+#sym solve(EI*(n*pi/L)^4 + k_y - rho_A*omega^2; omega)
+'<p>Esto da:</p>
+'<p style="text-align:center; padding:10px; background:#d1f7e0;">
+'<b>ω_n = √[((n·π/L)⁴ · EI + k_y) / ρA]</b>
+'</p>
+'<hr/>
+
+'<h2>3. Parte NUMÉRICA — evaluamos con valores reales</h2>
+'<p>Caso: viga de cimentación 5m × 0.25m × 0.40m sobre Winkler ks=20000 kN/m³.</p>
+
+'<h3>3.1. Geometría y material</h3>
+L_0 = 5m
+'L₀ = 'L_0
+b = 0.25m
+'b = 'b
+h = 0.40m
+'h = 'h
+A = b*h
+'A = b · h = 'A
+I = b*h^3/12
+'I = b·h³/12 = 'I
+
+'<h3>3.2. Material concreto</h3>
+E = 25000000kN/m^2
+'E = 25 GPa = 'E
+EI = E*I
+'<b>EI = E · I = 'EI'</b>
+
+'<h3>3.3. Densidad de masa</h3>
+rho_c = 2.45ton/m^3
+'ρ_c = 'rho_c' (concreto, masa ≠ peso)
+mu = rho_c*A
+'<b>μ = ρ·A = 'mu' (masa por unidad de longitud)</b>
+
+'<h3>3.4. Winkler distribuido</h3>
+k_s = 20000kN/m^3
+'k_s = 'k_s
+k_y = k_s*b
+'<b>k_y = k_s · b = 'k_y' (kN/m por m de viga)</b>
+
+'<h3>3.5. Parámetro característico λ_y (PDF Austrell §6.4 ec.4)</h3>
+λ_y = (k_y/(4*EI))^(1/4)
+'<b>λ_y = ⁴√(k_y/(4·EI)) = 'λ_y' 1/m</b>
+'<p>Producto adimensional λ_y · L₀:</p>
+ratio = λ_y*L_0
+'λ_y · L₀ = 'ratio' (si > 4 → la viga es "larga" — efectos de borde despreciables al centro)</p>
+'<hr/>
+
+'<h2>4. Frecuencias naturales — sustituyendo en la fórmula simbólica</h2>
+
+'<h3>Modo n=1 (fundamental)</h3>
+n_1 = 1
+ω_1 = sqrt(((n_1*pi/L_0)^4*EI + k_y)/mu)
+'ω_1 = √[((π/L₀)⁴·EI + k_y)/μ] = 'ω_1' rad/s
+f_1 = ω_1/(2*pi)
+'<b>f₁ = ω_1/(2π) = 'f_1' Hz</b>
+
+'<h3>Modo n=2</h3>
+n_2 = 2
+ω_2 = sqrt(((n_2*pi/L_0)^4*EI + k_y)/mu)
+f_2 = ω_2/(2*pi)
+'<b>f₂ = 'f_2' Hz</b>
+
+'<h3>Modo n=3</h3>
+n_3 = 3
+ω_3 = sqrt(((n_3*pi/L_0)^4*EI + k_y)/mu)
+f_3 = ω_3/(2*pi)
+'<b>f₃ = 'f_3' Hz</b>
+
+'<h3>Frecuencia de corte ω_∞ (k_y solo, sin viga)</h3>
+ω_∞ = sqrt(k_y/mu)
+f_∞ = ω_∞/(2*pi)
+'<b>f_∞ = √(k_y/μ)/(2π) = 'f_∞' Hz</b>
+'<p>Esta es la frecuencia que ω_n se acerca cuando n=0 (n=1 y EI grande tienden a este valor).</p>
+'<hr/>
+
+'<h2>5. Verificación — descomposición ω_n² = ω_viga,n² + ω_∞²</h2>
+'<p>Comprobamos que la frecuencia se descompone en suma cuadrática:</p>
+ω_v_1 = (n_1*pi/L_0)^2*sqrt(EI/mu)
+'ω_viga,1 (sin Winkler) = 'ω_v_1' rad/s
+ω_check_1 = sqrt(ω_v_1^2 + ω_∞^2)
+'ω_check = √(ω_viga² + ω_∞²) = 'ω_check_1' rad/s
+'<p>Comparamos con el resultado directo:</p>
+diferencia = abs(ω_check_1 - ω_1)
+'|ω_check − ω_1| = 'diferencia' rad/s ✓ (coincide)
+'<hr/>
+
+'<h2>6. Operaciones simbólicas adicionales</h2>
+
+'<h3>6.1. Integral de la forma modal (masa generalizada)</h3>
+#sym integrate(sin(n*pi*x/L)^2; x; 0; L)
+'<p>Resultado: <b>L/2</b> — masa generalizada normalizada del modo n.</p>
+
+'<h3>6.2. Derivada de la curva de respuesta H(ω) en resonancia</h3>
+'<p>Para encontrar el pico de H(ω) = 1/√[(1−r²)² + (2ζr)²] derivamos:</p>
+#sym diff((1 - r^2)^2 + (2*zeta*r)^2; r)
+'<p>Igualando a cero → r_pico = √(1 − 2ζ²)</p>
+'<p>Para ζ=5%, el pico está casi exactamente en r=1.</p>
+'<hr/>
+
+'<h2>7. Resumen — flujo simbólico → numérico</h2>
+'<table border="1" cellpadding="6" style="border-collapse:collapse;">
+'<tr><th>Paso</th><th>Símbolico</th><th>Numérico</th></tr>
+'<tr><td>Forma modal</td><td>φ_n(x) = sin(n·π·x/L₀)</td><td>—</td></tr>
+'<tr><td>4ª derivada</td><td>(n·π/L)⁴·sin(...)</td><td>(π/5)⁴ = 'EI*(pi/L_0)^4'</td></tr>
+'<tr><td>Frecuencia</td><td>ω_n = √[((nπ/L)⁴·EI + k_y)/μ]</td><td>ω₁ = 'ω_1' rad/s</td></tr>
+'<tr><td>Frec. en Hz</td><td>f_n = ω_n / (2π)</td><td>f₁ = 'f_1' Hz</td></tr>
+'<tr><td>λ_y</td><td>⁴√(k_y / (4·EI))</td><td>'λ_y' 1/m</td></tr>
+'<tr><td>μ (masa/L)</td><td>ρ·A</td><td>'mu</td></tr>
+'</table>
+'<hr/>
+
+'<h2>📚 Notación usada</h2>
+'<table border="1" cellpadding="6" style="border-collapse:collapse;">
+'<tr><th>Símbolo</th><th>Significado</th><th>Unidad SI</th></tr>
+'<tr><td>L₀</td><td>Longitud de la viga</td><td>m</td></tr>
+'<tr><td>EI</td><td>Rigidez flexural</td><td>kN·m²</td></tr>
+'<tr><td>μ = ρA</td><td>Masa por unidad de longitud</td><td>ton/m</td></tr>
+'<tr><td>k_y</td><td>Rigidez Winkler distribuida</td><td>kN/m²</td></tr>
+'<tr><td>λ_y</td><td>Parámetro característico</td><td>1/m</td></tr>
+'<tr><td>ω_n</td><td>Frecuencia natural modo n</td><td>rad/s</td></tr>
+'<tr><td>f_n</td><td>Frecuencia natural modo n</td><td>Hz</td></tr>
+'<tr><td>φ_n(x)</td><td>Forma modal modo n</td><td>—</td></tr>
+'<tr><td>ζ</td><td>Amortiguamiento</td><td>—</td></tr>
+'<tr><td>ω_∞</td><td>Frecuencia de corte (k_y solo)</td><td>rad/s</td></tr>

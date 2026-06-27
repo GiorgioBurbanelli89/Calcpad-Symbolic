@@ -1,0 +1,201 @@
+"Origen y significado de B — historia, algebra lineal, y el rol de la deformacion
+'<p>Tres preguntas centrales:</p>
+'<p>1) ε = B·u y F = k·u comparten u. ¿Podemos igualar las dos?</p>
+'<p>2) ¿Quien invento B y por que? ¿Que significa B^T·B en algebra lineal?</p>
+'<p>3) ¿El significado de B empieza con la deformacion unitaria?</p>
+'<hr/>
+
+"Cap 1 — Sobre igualar ε = B·u con F = k·u
+'<p>Las dos ecuaciones <b>NO describen la misma fisica</b> aunque compartan
+'el simbolo u. Veamos el matiz:</p>
+
+"Lo que mide cada una
+'<p><b>F = k·u (resorte clasico, GLOBAL):</b></p>
+'<p>• u es UN escalar — el desplazamiento del extremo libre del resorte.</p>
+'<p>• F es UN escalar — la fuerza aplicada en ese extremo.</p>
+'<p>• k es UN escalar — la rigidez axial del resorte.</p>
+'<p>Todo es global: 1 GDL, 1 fuerza, 1 desplazamiento.</p>
+
+'<p><b>ε = B·u (FEM, LOCAL):</b></p>
+'<p>• u es VECTOR — los desplazamientos de TODOS los nodos del elemento.</p>
+'<p>• ε es UN escalar (en 1D) o vector — la deformacion en UN punto interior.</p>
+'<p>• B es VECTOR/MATRIZ — el "extractor" de deformacion a partir de los
+'nodos.</p>
+
+"¿Se pueden igualar?
+'<p>Tecnicamente puedes despejar u en una y sustituirlo en otra, pero
+'NO es una identidad util porque las dos u son cosas distintas:</p>
+
+#deq u_resorte ≠ u_FEM (vector)
+
+'<p>El verdadero puente entre las dos descripciones es el siguiente: cuando
+'integras la fuerza interna sobre el elemento usando B, recuperas la
+'rigidez axial del resorte:</p>
+
+"Formula de la matriz de rigidez del elemento
+
+#sym
+integrate(E*A/L^2; x; 0; L)
+#end sym
+
+'<p>El integrando B^T·E·A·B (con B = -1/L, +1/L y E·A constantes) se
+'reduce a E·A/L². Integrado sobre x desde 0 hasta L da <b>E·A/L</b>,
+'que es exactamente la <b>k del resorte axial clasico</b>.</p>
+
+#deq k_resorte = E*A/L
+
+'<p>Las dos visiones son consistentes pero operan a niveles distintos:
+'k del resorte es la version "macro" integrada de B. El resorte es el
+'caso particular del FEM con 1 GDL libre.</p>
+
+'<hr/>
+
+"Cap 2 — ¿Quien invento B y por que?
+
+"Historia abreviada
+'<p><b>1828 — Cauchy</b> formaliza el tensor de deformaciones (no usa B
+'todavia, pero define ε = ∂u/∂x).</p>
+
+'<p><b>1909 — Ritz</b> introduce la idea de aproximar funciones por
+'combinaciones lineales de funciones base. Cuando aplica esto al
+'desplazamiento, aparece de forma implicita una "matriz de derivadas"
+'(precursora de B).</p>
+
+'<p><b>1956 — Turner, Clough, Martin, Topp (Boeing)</b> publican el
+'primer FEM real (CST). Calculan la matriz B explicitamente para el
+'triangulo, aunque no la llaman asi todavia.</p>
+
+'<p><b>1960s — Zienkiewicz</b> en su libro fundamental "The Finite Element
+'Method" formaliza la notacion <b>B</b> (de "B-matrix") y la presenta
+'como herramienta universal: <b>la matriz B conecta cualquier campo
+'discretizado nodalmente con sus derivadas espaciales</b>.</p>
+
+"¿Por que se invento?
+'<p>Para tener una <b>maquinaria algebraica unificada</b>. Sin B, cada
+'elemento (barra, viga, placa, solido) requeriria una derivacion diferente.
+'Con B, todos siguen el mismo esquema:</p>
+
+'<p style="margin-left:1em;font-size:110%"><b>K<sub>e</sub> = ∫ B<sup>T</sup>·D·B dV</b></p>
+
+'<p>Esa "B" puede ser 1×2 (barra), 3×6 (CST), 6×24 (H8) — pero la formula
+'es la misma. Es el equivalente al "operador" de Galerkin discreto.</p>
+
+'<hr/>
+
+"Cap 3 — B^T·B en algebra lineal — la matriz de Gram
+
+'<p>Cuando ves la operacion B^T·B en cualquier lugar, estas viendo una
+'<b>matriz de Gram</b>. Algunas propiedades fundamentales:</p>
+
+"Propiedad 1 — Es siempre simetrica
+'<p>La traspuesta de un producto invierte el orden: (A·B)<sup>T</sup> = B<sup>T</sup>·A<sup>T</sup>.
+'Aplicando esto al producto B<sup>T</sup>·B:</p>
+
+'<p style="margin-left:1em;font-size:110%">(B<sup>T</sup>·B)<sup>T</sup> = B<sup>T</sup>·(B<sup>T</sup>)<sup>T</sup> = B<sup>T</sup>·B</p>
+
+'<p>El resultado es la misma matriz. Asi que B<sup>T</sup>·B es matriz
+'simetrica garantizada (las dos diagonales reflejadas son iguales).</p>
+
+"Propiedad 2 — Es siempre positiva semi-definida
+'<p>Para cualquier vector x evaluamos la forma cuadratica:</p>
+
+'<p style="margin-left:1em;font-size:110%">x<sup>T</sup>·(B<sup>T</sup>·B)·x = (B·x)<sup>T</sup>·(B·x) = ‖B·x‖<sup>2</sup> ≥ 0</p>
+
+'<p>O sea, x<sup>T</sup>·(B<sup>T</sup>·B)·x es siempre ≥ 0 (es la norma
+'cuadrada del vector B·x). Eso es la definicion de PSD (positiva semi-definida).</p>
+
+"Propiedad 3 — Es la "covarianza" de los modos de B
+'<p>Cada columna de B representa un "modo" (una direccion en el espacio
+'de deformaciones). B^T·B captura las interacciones entre esos modos:
+'su diagonal son las normas² de cada modo, su off-diagonal son los
+'productos punto entre modos.</p>
+
+"Propiedad 4 — Sus autovalores son los singular values al cuadrado
+'<p>Si B = U·Σ·V^T (descomposicion SVD), entonces:</p>
+
+#deq B^T*B = V*Σ^T*Σ*V^T
+
+'<p>Los autovalores de B^T·B son los σ_i² (los singular values al cuadrado).
+'Por eso se usa para PCA, regresion lineal, minimos cuadrados, etc.</p>
+
+"En FEM — por que B^T·D·B es el corazon de K
+'<p>K_e = ∫B^T·D·B·dV es <b>casi</b> una matriz de Gram, con D haciendo
+'de "metrica" (peso). Si D fuera la identidad, seria literalmente la
+'matriz de Gram de los modos de B integrada sobre el volumen.</p>
+
+'<p>D incorpora la fisica del material (rigidez direccional, anisotropia,
+'etc). Por eso la formula es tan universal: B^T·D·B es la version
+'"metricada" de B^T·B donde la metrica refleja la energia interna.</p>
+
+"Ejemplo numerico — calcular B^T·B para barra lineal
+L_test = 2
+B11_t = -1/L_test
+B12_t = 1/L_test
+
+'<p>B = [-0.5, 0.5] (1/m). B^T·B es la matriz 2×2:</p>
+
+#noc
+B^T*B = [B11^2; B11*B12|B11*B12; B12^2]
+#equ
+
+BTB_11 = B11_t^2
+BTB_12 = B11_t*B12_t
+BTB_22 = B12_t^2
+
+'<p>Numericamente: B^T·B = [0.25, -0.25; -0.25, 0.25] (1/m²).</p>
+
+'<p>Notar: la suma de elementos por fila es <b>cero</b> (porque B sale
+'de derivar funciones que satisfacen particion de la unidad). Eso significa
+'que B^T·B aniquila al vector [1, 1]^T — modo de cuerpo rigido.</p>
+
+'<hr/>
+
+"Cap 4 — ¿El significado de B empieza con la deformacion unitaria?
+
+'<p>SI Y NO. Veamos los dos angulos:</p>
+
+"En el contexto FEM elastico — SI
+'<p>Para problemas estructurales, B nace de la <b>definicion de Cauchy</b>
+'de deformacion unitaria:</p>
+
+#deq ε = du/dx
+
+'<p>Aplicando esto a la interpolacion u(x) = Σ N_i·u_i, las derivadas
+'dN_i/dx <b>son</b> las entradas de B. Sin la nocion de deformacion
+'unitaria, B no tendria proposito directo.</p>
+
+"En contexto generalizado — NO
+'<p>B es solo la version discreta del <b>operador derivada espacial</b>.
+'En cualquier ecuacion diferencial discretizada, aparece una matriz
+'analoga:</p>
+
+'<table border="1" cellpadding="6">
+'<tr><th>Problema</th><th>Que extrae B</th><th>Notacion</th></tr>
+'<tr><td>Elasticidad</td><td>Deformacion ε</td><td>ε = B·u</td></tr>
+'<tr><td>Calor</td><td>Gradiente de temperatura ∇T</td><td>∇T = B·T_nodal</td></tr>
+'<tr><td>Fluidos</td><td>Gradiente de velocidad</td><td>∇v = B·v_nodal</td></tr>
+'<tr><td>Acustica</td><td>Gradiente de presion</td><td>∇p = B·p_nodal</td></tr>
+'<tr><td>Electromagnetismo</td><td>Campo electrico (= -∇V)</td><td>E = -B·V_nodal</td></tr>
+'</table>
+
+'<p>En todos esos casos B es <b>la misma matematica</b> — derivadas de
+'funciones de forma — pero su <b>significado fisico</b> cambia con el
+'problema. En elasticidad esa derivada es la deformacion unitaria.
+'En conduccion termica es el gradiente de temperatura. En electrostatica
+'es el campo electrico.</p>
+
+"Sintesis
+'<p><b>El significado fisico</b> de B en estructuras empieza con ε = du/dx
+'(Cauchy 1828). Esa es la "puerta de entrada" cuando aprendes FEM
+'estructural.</p>
+
+'<p><b>El significado matematico</b> es mas general: B es el operador
+'derivada espacial discretizado. Cualquier campo aproximado por funciones
+'de forma, al ser derivado, produce una matriz B con la misma estructura.</p>
+
+'<p>Por eso una vez que entiendes B en estructuras, puedes aplicar la
+'misma maquinaria a transferencia de calor, mecanica de fluidos,
+'electromagnetismo, etc. <b>El operador es universal, el significado
+'cambia con el contexto.</b></p>
+
+"Fin del archivo

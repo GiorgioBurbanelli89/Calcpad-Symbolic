@@ -37,6 +37,10 @@ namespace Calcpad.Core
             For,
             Repeat,
             Loop,
+            // `#trace` (alias: `#dependencia`, `#detalle`): inside a loop body it
+            // overrides the default "hide iterations" behaviour so the user can see
+            // every iteration. Placed here near the loop keywords for grouping.
+            Trace,
             Break,
             Continue,
             Local,
@@ -70,7 +74,57 @@ namespace Calcpad.Core
             Pip,
             SkipLine,
             Svg,
-            End_Svg
+            End_Svg,
+            Plotly,
+            End_Plotly,
+            // Web graphics phase 1 — visualisation libraries (CDN-loaded)
+            Three,        // Three.js 3D
+            End_Three,
+            Mermaid,      // Flowcharts / sequence / gantt
+            End_Mermaid,
+            Canvas,       // HTML5 Canvas 2D
+            End_Canvas,
+            Cyto,         // Cytoscape (graphs / networks)
+            End_Cyto,
+            Dot,          // Graphviz via viz.js
+            End_Dot,
+            Jsx,          // JSXGraph (interactive geometry)
+            End_Jsx,
+            Map,          // Leaflet (maps)
+            End_Map,
+            // Mathbox MUST come before Math (it's a longer prefix; otherwise
+            // "#mathbox" matches "#math" first because GetKeyword iterates the
+            // 'm' bucket in declaration order and StartsWith returns true for
+            // the shorter keyword).
+            Mathbox,      // MathBox 2 — math viz 3D, isosurfaces, vector fields
+            End_Mathbox,
+            Math,         // KaTeX (LaTeX rendering)
+            End_Math,
+            Chart,        // Chart.js (simple charts)
+            End_Chart,
+            // Web graphics phase 3 — advanced viz (9)
+            D3,           // D3.js v7 — custom data-driven plots
+            End_D3,
+            Echarts,      // Apache ECharts 5 — sankey, parallel, heatmap, treemap
+            End_Echarts,
+            Vega,         // Vega-Lite 5 — declarative JSON charts
+            End_Vega,
+            Visnet,       // vis-network 9 — networks dinámicos
+            End_Visnet,
+            P5,           // p5.js 1 — creative coding
+            End_P5,
+            Matter,       // Matter.js — physics 2D rígidos
+            End_Matter,
+            Cannon,       // Cannon-es — physics 3D rígidos
+            End_Cannon,
+            Geogebra,     // GeoGebra applet
+            End_Geogebra,
+            // Web graphics phase 4 — animations (2)
+            Anime,        // anime.js v3 — DOM/SVG animations
+            End_Anime,
+            Manim         // animaciones tipo 3blue1brown via MathBox dark theme
+            ,
+            End_Manim
         }
         private enum KeywordResult  
         {
@@ -83,6 +137,12 @@ namespace Calcpad.Core
         private bool _insideBlk = false;
         private bool _insideDeqBlock = false;
         private bool _insideCenBlock = false;
+        // Stack used by `#for` to save the caller's `_isVisible` before forcing
+        // it to false for the loop body, and restore it at `#loop`. This makes
+        // loops silent by default; the user re-enables verbose output with
+        // `#trace` inside the loop body. Outer `#hide`/`#show` is preserved
+        // because we save before clobbering and restore on exit.
+        private readonly System.Collections.Generic.Stack<bool> _loopVisibilityStack = new();
         private static string[] KeywordNames;
         private static Keyword[] KeywordValues;
         private static List<int>[] KeywordIndex;
@@ -105,6 +165,13 @@ namespace Calcpad.Core
                 else
                     KeywordIndex[j].Add(i);
             }
+            // Sort each bucket by keyword length DESCENDING so that longer
+            // keywords match first when they share a common prefix.
+            // E.g. "#mathbox" must match Mathbox (7), not Math (4).
+            for (int j = 0; j < n; j++)
+                if (KeywordIndex[j] is not null)
+                    KeywordIndex[j].Sort((a, b) =>
+                        KeywordNames[b].Length.CompareTo(KeywordNames[a].Length));
         }
 
         private static Keyword GetKeyword(ReadOnlySpan<char> s)
@@ -139,6 +206,31 @@ namespace Calcpad.Core
             else if (s[0] == '#' && keyword == Keyword.None)
                 keyword = GetKeyword(s);
 
+            // Markdown-style headings: "# Title", "## Subtitle", ... "###### h6"
+            // Activates automatically when a '#'-prefixed line has no matching
+            // keyword and follows the markdown pattern (1–6 hashes + space + text).
+            // Lets users write natural Markdown headings without the ugly "'# "
+            // text-prefix workaround.
+            if (keyword == Keyword.None && s.Length > 2 && s[0] == '#')
+            {
+                int hashCount = 0;
+                while (hashCount < s.Length && hashCount < 6 && s[hashCount] == '#')
+                    hashCount++;
+                if (hashCount > 0 && hashCount < s.Length && s[hashCount] == ' ')
+                {
+                    var titleText = s[(hashCount + 1)..].Trim().ToString();
+                    if (_isVisible && !string.IsNullOrEmpty(titleText))
+                    {
+                        // HTML-encode text content (preserves < > & but as safe text).
+                        // If the user wants inline HTML in the title, they can still
+                        // use the classic "Title syntax. Here we treat as plain text.
+                        var safe = System.Web.HttpUtility.HtmlEncode(titleText);
+                        _sb.Append($"<h{hashCount}{HtmlId}{HtmlLineClass}>{safe}</h{hashCount}>\n");
+                    }
+                    return KeywordResult.Continue;
+                }
+            }
+
             if (keyword == Keyword.None)
                 return KeywordResult.None;
 
@@ -148,6 +240,13 @@ namespace Calcpad.Core
                     _isVisible = false;
                     break;
                 case Keyword.Show:
+                    _isVisible = true;
+                    break;
+                case Keyword.Trace:
+                    // Inside a `#for` body, by default we hide each iteration's
+                    // computed output. Use `#trace` to override and reveal the
+                    // iteration values (useful for debugging or for didactic
+                    // step-by-step display).
                     _isVisible = true;
                     break;
                 case Keyword.Pre:
@@ -249,6 +348,134 @@ namespace Calcpad.Core
                     return KeywordResult.Continue;
                 case Keyword.End_Svg:
                     ParseKeywordEndSvg();
+                    return KeywordResult.Continue;
+                case Keyword.Plotly:
+                    ParseKeywordPlotly(s);
+                    return KeywordResult.Continue;
+                case Keyword.End_Plotly:
+                    ParseKeywordEndPlotly();
+                    return KeywordResult.Continue;
+                case Keyword.Three:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Three);
+                    return KeywordResult.Continue;
+                case Keyword.End_Three:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Three);
+                    return KeywordResult.Continue;
+                case Keyword.Mermaid:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Mermaid);
+                    return KeywordResult.Continue;
+                case Keyword.End_Mermaid:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Mermaid);
+                    return KeywordResult.Continue;
+                case Keyword.Canvas:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Canvas);
+                    return KeywordResult.Continue;
+                case Keyword.End_Canvas:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Canvas);
+                    return KeywordResult.Continue;
+                case Keyword.Cyto:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Cyto);
+                    return KeywordResult.Continue;
+                case Keyword.End_Cyto:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Cyto);
+                    return KeywordResult.Continue;
+                case Keyword.Dot:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Dot);
+                    return KeywordResult.Continue;
+                case Keyword.End_Dot:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Dot);
+                    return KeywordResult.Continue;
+                case Keyword.Jsx:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Jsx);
+                    return KeywordResult.Continue;
+                case Keyword.End_Jsx:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Jsx);
+                    return KeywordResult.Continue;
+                case Keyword.Map:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Map);
+                    return KeywordResult.Continue;
+                case Keyword.End_Map:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Map);
+                    return KeywordResult.Continue;
+                case Keyword.Math:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Math);
+                    return KeywordResult.Continue;
+                case Keyword.End_Math:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Math);
+                    return KeywordResult.Continue;
+                case Keyword.Chart:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Chart);
+                    return KeywordResult.Continue;
+                case Keyword.End_Chart:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Chart);
+                    return KeywordResult.Continue;
+                // Fase 3 — 10 librerías adicionales
+                case Keyword.Mathbox:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Mathbox);
+                    return KeywordResult.Continue;
+                case Keyword.End_Mathbox:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Mathbox);
+                    return KeywordResult.Continue;
+                case Keyword.D3:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.D3);
+                    return KeywordResult.Continue;
+                case Keyword.End_D3:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.D3);
+                    return KeywordResult.Continue;
+                case Keyword.Echarts:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Echarts);
+                    return KeywordResult.Continue;
+                case Keyword.End_Echarts:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Echarts);
+                    return KeywordResult.Continue;
+                case Keyword.Vega:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Vega);
+                    return KeywordResult.Continue;
+                case Keyword.End_Vega:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Vega);
+                    return KeywordResult.Continue;
+                case Keyword.Visnet:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Visnet);
+                    return KeywordResult.Continue;
+                case Keyword.End_Visnet:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Visnet);
+                    return KeywordResult.Continue;
+                case Keyword.P5:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.P5);
+                    return KeywordResult.Continue;
+                case Keyword.End_P5:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.P5);
+                    return KeywordResult.Continue;
+                case Keyword.Matter:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Matter);
+                    return KeywordResult.Continue;
+                case Keyword.End_Matter:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Matter);
+                    return KeywordResult.Continue;
+                case Keyword.Cannon:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Cannon);
+                    return KeywordResult.Continue;
+                case Keyword.End_Cannon:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Cannon);
+                    return KeywordResult.Continue;
+                case Keyword.Geogebra:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Geogebra);
+                    return KeywordResult.Continue;
+                case Keyword.End_Geogebra:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Geogebra);
+                    return KeywordResult.Continue;
+                // Fase 4 — animaciones
+                case Keyword.Anime:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Anime);
+                    return KeywordResult.Continue;
+                case Keyword.End_Anime:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Anime);
+                    return KeywordResult.Continue;
+                case Keyword.Manim:
+                    ParseKeywordWebGraphic(s, WebGraphicKind.Manim);
+                    return KeywordResult.Continue;
+                case Keyword.End_Manim:
+                    ParseKeywordEndWebGraphic(WebGraphicKind.Manim);
                     return KeywordResult.Continue;
                 case Keyword.NoSub:
                     _parser.VariableSubstitution = MathParser.VariableSubstitutionOptions.VariablesOnly;
@@ -369,7 +596,7 @@ namespace Calcpad.Core
                 return KeywordResult.Break;
             }
             if (_isVisible && !_calculate)
-                _sb.Append($"<p{HtmlId} class=\"cond\">#pause</p>");
+                _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cond\">#pause</p>");
 
             return KeywordResult.Continue;
         }
@@ -437,13 +664,13 @@ namespace Calcpad.Core
             else if (_isVisible)
             {
                 if (expression.IsWhiteSpace())
-                    _sb.Append($"<p{HtmlId} class=\"cond\">#repeat</p><div class=\"indent\">");
+                    _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cond\">#repeat</p><div class=\"indent\">");
                 else
                 {
                     try
                     {
                         _parser.Parse(expression);
-                        _sb.Append($"<p{HtmlId}><span class=\"cond\">#repeat</span> <span class=\"eq\">{_parser.ToHtml()}</span></p><div class=\"indent\">");
+                        _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"cond\">#repeat</span> <span class=\"eq\">{_parser.ToHtml()}</span></p><div class=\"indent\">");
                     }
                     catch (MathParserException ex)
                     {
@@ -485,16 +712,46 @@ namespace Calcpad.Core
                                 _parser.Calculate();
                                 var r2 = _parser.Result;
                                 var u2 = _parser.Units;
+
+                                // Auto-detect loop "kind" based on units of the bounds:
+                                //   - both endpoints unitless  →  integer counter (FEM index).
+                                //   - both endpoints with consistent units  →  iterate with units
+                                //     preserved on `i` (physical coordinate iteration).
+                                //   - one endpoint unitless 0 + other with units  →  adopt the
+                                //     unit'd side ($Map-style "0 : a_z" pattern).
+                                //   - mixed inconsistent units (leak / bug)  →  strip both
+                                //     to integer to avoid cascading unit failures downstream.
+                                Unit loopUnits = null;
+                                if (u1 is not null && u2 is not null)
+                                {
+                                    if (u1.IsConsistent(u2))
+                                    {
+                                        loopUnits = u1;
+                                        // Convert r2 into u1 system so increment of 1 has consistent meaning.
+                                        r2 = new Complex(r2.Re * u2.ConvertTo(u1), r2.Im);
+                                    }
+                                    // else: inconsistent → fall through, both stripped to null
+                                }
+                                else if (u1 is null && u2 is not null && r1.Re == 0d)
+                                {
+                                    loopUnits = u2;   // `0 : valor_con_unit`
+                                }
+                                else if (u1 is not null && u2 is null && r2.Re == 0d)
+                                {
+                                    loopUnits = u1;   // `valor_con_unit : 0`
+                                }
+                                // (any other combination → integer index, loopUnits stays null)
+
                                 IScalarValue start, end;
                                 if (r1.IsReal && r2.IsReal)
                                 {
-                                    start = new RealValue(r1.Re, u1);
-                                    end = new RealValue(r2.Re, u2);
+                                    start = new RealValue(r1.Re, loopUnits);
+                                    end = new RealValue(r2.Re, loopUnits);
                                 }
                                 else
                                 {
-                                    start = new ComplexValue(r1, u1);
-                                    end = new ComplexValue(r2, u2);
+                                    start = new ComplexValue(r1, loopUnits);
+                                    end = new ComplexValue(r2, loopUnits);
                                 }
                                 var count = Math.Abs((end - start).Re) + 1;
                                 if (count > Loop.MaxCount)
@@ -505,6 +762,12 @@ namespace Calcpad.Core
                                 var counter = _parser.GetVariableRef(varName);
                                 _loops.Push(new ForLoop(_currentLine, start, end, counter, _condition.Id));
                                 _parser.SetVariable(varName, start);
+                                // Save current visibility and force loop body to be
+                                // hidden by default. The user enables iteration-level
+                                // output with `#trace` inside the loop. Restored at
+                                // `#loop`.
+                                _loopVisibilityStack.Push(_isVisible);
+                                _isVisible = false;
                             }
                             catch (MathParserException ex)
                             {
@@ -521,7 +784,7 @@ namespace Calcpad.Core
                             var startHtml = _parser.ToHtml();
                             _parser.Parse(endExpr);
                             var endHtml = _parser.ToHtml();
-                            _sb.Append($"<p{HtmlId}><span class=\"cond\">#for</span> <span class=\"eq\">{varHtml} = {startHtml} : {endHtml}</span></p><div class=\"indent\">");
+                            _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"cond\">#for</span> <span class=\"eq\">{varHtml} = {startHtml} : {endHtml}</span></p><div class=\"indent\">");
                         }
                         catch (MathParserException ex)
                         {
@@ -570,7 +833,7 @@ namespace Calcpad.Core
             {
                 try
                 {
-                    _sb.Append($"<p{HtmlId}><span class=\"cond\">#while</span> ");
+                    _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"cond\">#while</span> ");
                     ParseTokens(GetTokens(expression), true, false);
                     _sb.Append("</p><div class=\"indent\">");
                 }
@@ -595,14 +858,21 @@ namespace Calcpad.Core
                         if (next.Id != _condition.Id)
                             AppendError(s.ToString(), Messages.Entangled_if__end_if__and_repeat__loop_blocks, _currentLine);
                         else if (!Iterate(next, true))
+                        {
+                            // Loop exited (no more iterations). If this was a #for
+                            // that pushed onto _loopVisibilityStack, restore the
+                            // saved visibility now.
+                            if (next is ForLoop && _loopVisibilityStack.Count > 0)
+                                _isVisible = _loopVisibilityStack.Pop();
                             _loops.Pop();
+                        }
                     }
                 }
                 else if (_condition.IsLoop)
                     _condition.SetCondition(Condition.RemoveConditionKeyword);
             }
             else if (_isVisible)
-                _sb.Append($"</div><p{HtmlId} class=\"cond\">#loop</p>");
+                _sb.Append($"</div><p{HtmlId} class=\"{HtmlLineMarker}cond\">#loop</p>");
         }
 
         private bool Iterate(Loop loop, bool removeWhileCondition)
@@ -636,6 +906,18 @@ namespace Calcpad.Core
             if (loop.Iterate(ref _currentLine))
             {
                 _parser.ResetStack();
+                // When the very next body pass is the LAST iteration of a `#for`
+                // loop, re-enable visibility so the user sees the final iteration's
+                // values. Earlier iterations stay hidden (suppressing the spam).
+                // This is the "show last iteration only" default behaviour the user
+                // asked for. `#trace` already overrides via _isVisible=true inside
+                // the body so this doesn't fight with it.
+                if (loop is ForLoop && loop.Iteration == 1 && _loopVisibilityStack.Count > 0)
+                {
+                    // Restore the OUTER visibility for this final iteration. Don't
+                    // pop yet — `#loop` end will pop when iteration finishes.
+                    _isVisible = _loopVisibilityStack.Peek();
+                }
                 return true;
             }
             return false;
@@ -654,7 +936,7 @@ namespace Calcpad.Core
                 }
             }
             else if (_isVisible)
-                _sb.Append($"<p{HtmlId} class=\"cond\">#break</p>");
+                _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cond\">#break</p>");
 
             return false;
         }
@@ -679,7 +961,7 @@ namespace Calcpad.Core
                 }
             }
             else if (_isVisible)
-                _sb.Append($"<p{HtmlId} class=\"cond\">#continue</p>");
+                _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cond\">#continue</p>");
         }
 
         private static (int, int) GetForLoopLimits(ReadOnlySpan<char> expression)
@@ -760,7 +1042,7 @@ namespace Calcpad.Core
                 }
             }
             else if (_isVisible)
-                _sb.Append($"<p><span{HtmlId} class=\"cond\">#read</span> {s[5..]}</p>");
+                _sb.Append($"<p><span{HtmlId} class=\"{HtmlLineMarker}cond\">#read</span> {s[5..]}</p>");
         }
 
         private void ParseKeywordWrite(ReadOnlySpan<char> s, Keyword keyword)
@@ -780,13 +1062,13 @@ namespace Calcpad.Core
                 }
             }
             else if (_isVisible)
-                _sb.Append($"<p><span{HtmlId} class=\"cond\">#write</span> {s[6..]}</p>");
+                _sb.Append($"<p><span{HtmlId} class=\"{HtmlLineMarker}cond\">#write</span> {s[6..]}</p>");
         }
 
         private void ReportDataExchageResult(ReadWriteOptions options, string command)
         {
             var url = $"file:///{options.FullPath.Replace('\\', '/')}";
-            _sb.Append($"<p{HtmlId}>")
+            _sb.Append($"<p{HtmlId}{HtmlLineClass}>")
                .Append($"Matrix <span class=\"eq\">{new HtmlWriter(Settings.Math, false).FormatVariable(options.Name.ToString(), string.Empty, true)}</span>")
                .Append($" was successfully {command} <a href=\"{url}\">{options.Path}.{options.Ext}</a>");
             if (options.IsExcel)
@@ -814,6 +1096,9 @@ namespace Calcpad.Core
         // #formeq expr1 = expr2 = expr3
         // Muestra ecuación simbólica con doble igualdad.
         // Divide por '=' (fuera de []) y renderiza cada parte como #noc con ' = ' entre ellas.
+        // También soporta múltiples ecuaciones separadas por coma:
+        //   #deq θ_x = -∂w/∂y, θ_y = ∂w/∂x
+        // → renderiza cada ecuación y las une con ',  '
         private void ParseKeywordDeq(ReadOnlySpan<char> s)
         {
             _sb.Append($"<!-- FORMEQ CALLED: len={s.Length} -->");
@@ -831,6 +1116,28 @@ namespace Calcpad.Core
                 expr = expr[..atIdx].Trim();
             }
 
+            // Split by top-level ',' to allow multiple equations on one #deq line
+            // e.g. "θ_x = -∂w/∂y, θ_y = ∂w/∂x"
+            var equations = SplitTopLevelByChar(expr, ',').Select(e => e.Trim()).Where(e => e.Length > 0).ToList();
+            if (equations.Count > 1)
+            {
+                // Render each sub-equation independently, join with commas
+                var firstEqNumber = eqNumber;  // equation number applies only once (last eq)
+                for (int e = 0; e < equations.Count; e++)
+                {
+                    if (e > 0) _sb.Append("<p>");
+                    RenderDeqSingle(equations[e], e == equations.Count - 1 ? firstEqNumber : null);
+                    if (e > 0) _sb.Append("</p>");
+                }
+                return;
+            }
+
+            RenderDeqSingle(expr, eqNumber);
+        }
+
+        /// <summary>Render a single equation (possibly with double equality a=b=c).</summary>
+        private void RenderDeqSingle(string expr, string eqNumber)
+        {
             // Pre-define variables to avoid unit interpretation
             PreDefineVariables(expr);
 
@@ -850,7 +1157,18 @@ namespace Calcpad.Core
 
                 if (i > 0) sb2.Append(_lastDeqSeparator);
 
-                // Try special rendering for derivatives and primes
+                // PRIORIDAD: si la parte es una llamada a función literal
+                // tipo "f(x;y)" o "N_1(ξ;η)" o "x(ξ)", renderizarla como
+                // función display, no como producto. Antes este patrón
+                // se interpretaba como N_1·ξ·η por el tokenizer normal.
+                var fnCallHtml = TryRenderFunctionCallSignature(part);
+                if (fnCallHtml != null)
+                {
+                    sb2.Append(fnCallHtml);
+                    continue;
+                }
+
+                // Try special rendering for derivatives, primes, matrices
                 var specialHtml = TryRenderDeqSpecial(part);
                 if (specialHtml != null)
                 {
@@ -858,24 +1176,10 @@ namespace Calcpad.Core
                     continue;
                 }
 
-                try
-                {
-                    _parser.Parse(part, false);
-                    var html = _parser.ToHtml();
-                    if (string.IsNullOrWhiteSpace(html))
-                    {
-                        // Fallback: renderizar como variable formateada
-                        var w = new HtmlWriter(Settings.Math, _parser.Phasor);
-                        html = w.FormatVariable(part, string.Empty, false);
-                    }
-                    sb2.Append(html);
-                }
-                catch
-                {
-                    // Si el parser falla, renderizar como texto con formato de variable
-                    var w = new HtmlWriter(Settings.Math, _parser.Phasor);
-                    sb2.Append(w.FormatVariable(part, string.Empty, false));
-                }
+                // For arbitrary scalar expressions use our recursive scalar
+                // renderer which builds fractions, products, exponents,
+                // subscripts — matching Calcpad's native HTML structure.
+                sb2.Append(RenderDeqScalar(part));
             }
 
             _isVal = savedIsVal;
@@ -883,13 +1187,116 @@ namespace Calcpad.Core
 
             if (sb2.Length > 0)
             {
+                var sb2Str = sb2.ToString();
+                var eqStyle = EqStyleForMatrix(sb2Str);
                 if (eqNumber != null)
-                    _sb.Append($"<p{HtmlId} class=\"eqnum\"><span class=\"eq\">{sb2}</span><span class=\"eqn\">{eqNumber}</span></p>\n");
+                    _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}eqnum\"><span class=\"eq\"{eqStyle}>{sb2Str}</span><span class=\"eqn\">{eqNumber}</span></p>\n");
                 else
-                    _sb.Append($"<p{HtmlId}><span class=\"eq\">{sb2}</span></p>\n");
+                    _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"eq\"{eqStyle}>{sb2Str}</span></p>\n");
             }
             else
-                _sb.Append($"<p{HtmlId}><span class=\"err\">#formeq: no output for '{expr}'</span></p>\n");
+                _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">#formeq: no output for '{expr}'</span></p>\n");
+        }
+
+        /// <summary>
+        /// When the HTML contains a native Calcpad matrix, wrap the whole
+        /// expression in inline-flex with align-items:center so that the
+        /// '=' sign and any operator adjacent to the matrix align with
+        /// the VERTICAL MIDDLE of the matrix brackets (not with the text
+        /// baseline, which the Calcpad stylesheet would otherwise use).
+        /// </summary>
+        private static string EqStyleForMatrix(string html)
+        {
+            if (html != null && html.Contains("class=\"matrix"))
+                return " style=\"display:inline-flex;align-items:center;flex-wrap:nowrap;gap:0 0.3em;\"";
+            return "";
+        }
+
+        /// <summary>
+        /// Render an expression that contains a matrix literal "[..|..|..]"
+        /// anywhere inside (e.g. "A * [1,2|3,4] + B" or "(E·t^3/(..)) · [..|..]").
+        /// Splits at the matrix brackets, renders the prefix/suffix through the
+        /// normal parser and the matrix through the big-bracket template.
+        /// Returns null if no matrix found.
+        /// </summary>
+        private string TryRenderExpressionWithMatrix(string expr)
+        {
+            if (string.IsNullOrEmpty(expr)) return null;
+            // Find the first '[' at depth=0 that starts a matrix literal
+            int depth = 0;
+            int matStart = -1;
+            int matEnd = -1;
+            for (int i = 0; i < expr.Length; i++)
+            {
+                var c = expr[i];
+                if (c == '(') depth++;
+                else if (c == ')') depth--;
+                else if (c == '[' && depth == 0)
+                {
+                    // Find matching ']'
+                    int br = 1;
+                    for (int j = i + 1; j < expr.Length; j++)
+                    {
+                        if (expr[j] == '[') br++;
+                        else if (expr[j] == ']')
+                        {
+                            br--;
+                            if (br == 0)
+                            {
+                                // Check if this bracketed content has a '|' (matrix)
+                                var inner = expr.Substring(i + 1, j - i - 1);
+                                if (inner.Contains('|'))
+                                {
+                                    matStart = i;
+                                    matEnd = j;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    if (matStart >= 0) break;
+                }
+            }
+            if (matStart < 0) return null;
+
+            var prefix = expr.Substring(0, matStart).Trim();
+            var matExpr = expr.Substring(matStart, matEnd - matStart + 1);
+            var suffix = expr.Substring(matEnd + 1).Trim();
+
+            // Strip trailing operator from prefix and leading operator from suffix
+            // so we can render them as separate operator glyphs outside the matrix.
+            string prefixTrail = "";
+            while (prefix.Length > 0 && "+-*/·×⋅ ".IndexOf(prefix[^1]) >= 0)
+            {
+                prefixTrail = prefix[^1] + prefixTrail;
+                prefix = prefix[..^1].TrimEnd();
+            }
+            string suffixHead = "";
+            while (suffix.Length > 0 && "+-*/·×⋅ ".IndexOf(suffix[0]) >= 0)
+            {
+                suffixHead += suffix[0];
+                suffix = suffix[1..].TrimStart();
+            }
+
+            string renderChunk(string s)
+            {
+                if (string.IsNullOrWhiteSpace(s)) return "";
+                return RenderDeqScalar(s);
+            }
+
+            string DispOps(string ops) => ops.Replace("*", "·").Trim();
+
+            var sb = new System.Text.StringBuilder();
+            if (prefix.Length > 0) sb.Append(renderChunk(prefix));
+            var prefixOp = DispOps(prefixTrail);
+            if (!string.IsNullOrEmpty(prefixOp)) sb.Append(' ').Append(prefixOp).Append(' ');
+            var matHtml = TryRenderMatrixLiteral(matExpr);
+            if (string.IsNullOrEmpty(matHtml)) return null;
+            sb.Append(matHtml);
+            var suffixOp = DispOps(suffixHead);
+            if (!string.IsNullOrEmpty(suffixOp)) sb.Append(' ').Append(suffixOp).Append(' ');
+            if (suffix.Length > 0) sb.Append(renderChunk(suffix));
+            return sb.ToString();
         }
 
         // #cen inline: parse expression and center it
@@ -920,7 +1327,7 @@ namespace Calcpad.Core
             // Check if it's a comment (starts with ')
             if (content.StartsWith("'"))
             {
-                _sb.Append($"<p{HtmlId} class=\"cen-line\">{content[1..]}</p>\n");
+                _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cen-line\">{content[1..]}</p>\n");
                 return;
             }
 
@@ -938,7 +1345,7 @@ namespace Calcpad.Core
                     var val = _parser.ResultAsString;
                     html = $"{varHtml} = {val}";
                 }
-                _sb.Append($"<p{HtmlId} class=\"cen-line\"><span class=\"eq\">{html}</span></p>\n");
+                _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cen-line\"><span class=\"eq\">{html}</span></p>\n");
             }
             catch
             {
@@ -949,11 +1356,11 @@ namespace Calcpad.Core
                 {
                     _parser.Parse(content, false);
                     var html = _parser.ToHtml();
-                    _sb.Append($"<p{HtmlId} class=\"cen-line\"><span class=\"eq\">{html}</span></p>\n");
+                    _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cen-line\"><span class=\"eq\">{html}</span></p>\n");
                 }
                 catch
                 {
-                    _sb.Append($"<p{HtmlId} class=\"cen-line\">{content}</p>\n");
+                    _sb.Append($"<p{HtmlId} class=\"{HtmlLineMarker}cen-line\">{content}</p>\n");
                 }
             }
             _isVal = savedIsVal;
@@ -980,6 +1387,27 @@ namespace Calcpad.Core
         // Expressions can be calculations (evaluated) or text ('comment).
         // Supports #deq-style decorative equations and normal calculations.
         // =====================================================================
+        /// <summary>
+        /// True iff <paramref name="s"/> is just one bare identifier (Latin
+        /// or Greek letters, digits, underscore, subscript). Used by
+        /// <see cref="ParseKeywordColumns"/> to override the default
+        /// TEXT-first alternation rule so that `'a' kN/m` evaluates `a`.
+        /// </summary>
+        private static bool IsBareIdentifierForBlk(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return false;
+            // First char must be a letter (Latin, Greek, or _ )
+            char first = s[0];
+            if (!char.IsLetter(first) && first != '_') return false;
+            for (int i = 1; i < s.Length; i++)
+            {
+                char c = s[i];
+                if (!char.IsLetterOrDigit(c) && c != '_' && c != '.')
+                    return false;
+            }
+            return true;
+        }
+
         private void ParseKeywordColumns(ReadOnlySpan<char> s, bool isBlock)
         {
             // Skip "#inl " or "#blk "
@@ -987,18 +1415,70 @@ namespace Calcpad.Core
             if (spaceIdx < 0) return;
             var content = s[(spaceIdx + 1)..].ToString();
 
-            // Split by ';' at top level (not inside parentheses/brackets)
+            // Split by ';' at top level. `;` is a column separator when:
+            //   1) Outside parentheses/brackets, AND
+            //   2) EITHER outside an open text region (i.e. an odd-count of
+            //      `'` has NOT been seen yet on this line), OR
+            //   3) followed by `'` (after optional whitespace), which signals
+            //      the LEGACY `'cell1 ; 'cell2` shorthand — the next `'`
+            //      is the OPENER of the next cell.
+            //
+            // If `;` is inside an open text region AND there is no `'` after,
+            // the `;` stays as a LITERAL character — so
+            //   `'una frase con ; punto y coma`  is ONE cell (the user's
+            //   intuition: text region keeps semicolons as part of text).
+            // To get two text cells while still using semicolons in text,
+            // close each text region:
+            //   `'frase 1'; 'frase 2'`           → 2 cells (both pure text).
             var parts = new List<string>();
             int depth = 0, last = 0;
+            bool inText = false;
             for (int i = 0; i < content.Length; i++)
             {
                 var c = content[i];
-                if (c == '(' || c == '[') depth++;
-                else if (c == ')' || c == ']') depth--;
+                if (c == '\'')
+                {
+                    inText = !inText;
+                }
+                else if (c == '(' || c == '[')
+                {
+                    if (!inText) depth++;
+                }
+                else if (c == ')' || c == ']')
+                {
+                    if (!inText) depth--;
+                }
                 else if (c == ';' && depth == 0)
                 {
-                    parts.Add(content[last..i].Trim());
-                    last = i + 1;
+                    bool shouldSplit = !inText;
+                    if (!shouldSplit)
+                    {
+                        // Inside an open text region. Look ahead for the
+                        // legacy `'cell1 ; 'cell2` shorthand: the `;` is a
+                        // separator only when followed by AT LEAST ONE space
+                        // and THEN `'`. Without the space, `'cell;'` is one
+                        // closed text region (the `'` after `;` is the
+                        // CLOSER of the current region, not the opener of
+                        // a new cell).
+                        int j = i + 1;
+                        bool sawSpace = false;
+                        while (j < content.Length && (content[j] == ' ' || content[j] == '\t'))
+                        {
+                            sawSpace = true;
+                            j++;
+                        }
+                        if (sawSpace && j < content.Length && content[j] == '\'')
+                        {
+                            shouldSplit = true;
+                            inText = false;
+                        }
+                    }
+                    if (shouldSplit)
+                    {
+                        parts.Add(content[last..i].Trim());
+                        last = i + 1;
+                    }
+                    // else: `;` stays inside the cell text as a literal char.
                 }
             }
             parts.Add(content[last..].Trim());
@@ -1017,11 +1497,225 @@ namespace Calcpad.Core
                     continue;
                 }
 
-                // Check if part starts with ' (comment/text)
+                // Cell starts with ' — check for inline alternation
+                // following Calcpad's standard line convention:
+                //   `'` opens TEXT mode; each subsequent `'` toggles to EXPR
+                //   and back to TEXT. So the fragment BETWEEN the 1st and
+                //   2nd `'` is TEXT, between 2nd and 3rd is EXPR, etc.
+                //
+                // Examples (cell shown with leading `'`):
+                //   `'simple text`              → text "simple text"
+                //   `'a vale 'a' kN/m`          → "a vale " + expr `a` + " kN/m"
+                //   `'b vale 'b' al final`      → "b vale " + expr `b` + " al final"
+                //
+                // To EVALUATE an expression with NO leading text inside the
+                // cell, prefix with empty quotes: `'' 'a = 2 + 3' more text`
+                // → "" + "" + expr `a = 2 + 3` + " more text".
+                //
+                // Implementation: split the cell (including leading `'`) by
+                // `'`. fragments[0] is always "" (before opening quote).
+                // ODD fragments are TEXT, EVEN fragments (≥2) are EXPR.
                 if (part.StartsWith("'"))
                 {
-                    var text = part[1..];
-                    columns.Add($"<span>{text}</span>");
+                    if (!part.AsSpan(1).Contains('\''))
+                    {
+                        // Pure text cell — no internal toggles. Strip the
+                        // leading apostrophe and emit as text span.
+                        columns.Add($"<span>{part[1..]}</span>");
+                        continue;
+                    }
+                    // Special-case: cell is exactly `'text'` — one opening
+                    // quote, content, one closing quote, optional trailing
+                    // whitespace. Treat as pure text (no alternation, no
+                    // variable-evaluation heuristic). This is the user's
+                    // preferred convention: `'col1'; 'col2'; 'col3` →
+                    // three pure-text cells, even when col1/col2 happen to
+                    // look like bare identifiers.
+                    var ptrim = part.TrimEnd();
+                    if (ptrim.EndsWith('\'') && ptrim.Length >= 2)
+                    {
+                        // Find the second `'` — it must be at the very end
+                        // for this special case (no other `'` in between).
+                        int firstInner = part.IndexOf('\'', 1);
+                        if (firstInner == ptrim.Length - 1)
+                        {
+                            var inner = part.Substring(1, firstInner - 1);
+                            columns.Add($"<span>{inner}</span>");
+                            continue;
+                        }
+                    }
+                    var fragments = part.Split('\'');
+                    var cellSb = new System.Text.StringBuilder();
+                    // Detect the "alternation phase". Two conventions:
+                    //   Standard (Calcpad line convention): fragments[1] = TEXT
+                    //   Inverted: fragments[1] = EXPR
+                    //
+                    // Pick INVERTED ONLY IF fragments[1].Trim() is a bare
+                    // identifier (single name with no spaces/operators) AND
+                    // that name is already DEFINED as a variable in the
+                    // parser. So `'a' kN/m` (with `a = 5` defined) inverts
+                    // → expr `a` + text ` kN/m`. But `'texto'e = 4` where
+                    // `texto` is NOT defined keeps the standard convention
+                    // → text "texto" + expr `e = 4` (which assigns e).
+                    string frag1Trim = fragments.Length >= 2 ? fragments[1].Trim() : "";
+                    bool invertConvention = frag1Trim.Length > 0 &&
+                                            IsBareIdentifierForBlk(frag1Trim) &&
+                                            _parser.HasVariable(frag1Trim);
+                    for (int fi = 0; fi < fragments.Length; fi++)
+                    {
+                        var frag = fragments[fi];
+                        if (fi == 0)
+                        {
+                            // Always empty before the opening `'`; skip.
+                            continue;
+                        }
+                        // Standard: odd fi → TEXT, even fi → EXPR
+                        // Inverted: odd fi → EXPR, even fi → TEXT
+                        bool isOddIndex = (fi & 1) == 1;
+                        bool treatAsExpr = invertConvention ? isOddIndex : !isOddIndex;
+                        if (!treatAsExpr)
+                        {
+                            // TEXT fragment
+                            if (!string.IsNullOrEmpty(frag))
+                                cellSb.Append($"<span>{frag}</span>");
+                        }
+                        else
+                        {
+                            // EXPRESSION fragment — parse + render
+                            var fragTrim = frag.Trim();
+                            if (string.IsNullOrEmpty(fragTrim))
+                            {
+                                cellSb.Append("<span>&nbsp;</span>");
+                                continue;
+                            }
+                            _isVal = savedIsVal;
+                            _parser.IsCalculation = true;
+                            try
+                            {
+                                _parser.Parse(fragTrim);
+                                _parser.Calculate();
+                                var html = _parser.ToHtml();
+                                if (string.IsNullOrWhiteSpace(html))
+                                    html = System.Web.HttpUtility.HtmlEncode(fragTrim);
+                                cellSb.Append($"<span class=\"eq\">{html}</span>");
+                            }
+                            catch
+                            {
+                                cellSb.Append($"<span class=\"err\">{System.Web.HttpUtility.HtmlEncode(frag)}</span>");
+                            }
+                        }
+                    }
+                    columns.Add(cellSb.ToString());
+                    continue;
+                }
+
+                // Cell does NOT start with `'` but contains `'` internally
+                // (e.g. `c = 3' texto'`). Treat as expression-first, then
+                // alternate: EXPR / TEXT / EXPR / TEXT … so the user can
+                // write `c = 3' suffix text'` and get the value of c plus
+                // the text appended.
+                if (!part.StartsWith("'") && part.Contains('\''))
+                {
+                    var fragments = part.Split('\'');
+                    var cellSb = new System.Text.StringBuilder();
+                    for (int fi = 0; fi < fragments.Length; fi++)
+                    {
+                        var frag = fragments[fi];
+                        // EVEN fi → EXPR, ODD fi → TEXT
+                        bool isEvenIndex = (fi & 1) == 0;
+                        if (isEvenIndex)
+                        {
+                            // EXPR
+                            var fragTrim = frag.Trim();
+                            if (string.IsNullOrEmpty(fragTrim))
+                                continue;
+                            _isVal = savedIsVal;
+                            _parser.IsCalculation = true;
+                            try
+                            {
+                                _parser.Parse(fragTrim);
+                                _parser.Calculate();
+                                var html = _parser.ToHtml();
+                                if (string.IsNullOrWhiteSpace(html))
+                                    html = System.Web.HttpUtility.HtmlEncode(fragTrim);
+                                cellSb.Append($"<span class=\"eq\">{html}</span>");
+                            }
+                            catch
+                            {
+                                cellSb.Append($"<span class=\"err\">{System.Web.HttpUtility.HtmlEncode(frag)}</span>");
+                            }
+                        }
+                        else
+                        {
+                            // TEXT
+                            if (!string.IsNullOrEmpty(frag))
+                                cellSb.Append($"<span>{frag}</span>");
+                        }
+                    }
+                    columns.Add(cellSb.ToString());
+                    continue;
+                }
+
+                // Decorative patterns (matrix literals, partial derivatives,
+                // prime notation, integral calls) — same renderer used by #deq.
+                // Works for cells that START with '[' (matrix) or contain
+                // special operators that the Calcpad parser can't format.
+                if (part.StartsWith("[") && part.EndsWith("]") && part.Contains('|'))
+                {
+                    var matHtml = TryRenderMatrixLiteral(part);
+                    if (!string.IsNullOrEmpty(matHtml))
+                    {
+                        columns.Add($"<span class=\"eq\"{EqStyleForMatrix(matHtml)}>{matHtml}</span>");
+                        continue;
+                    }
+                }
+                // For assignments "Name = [...|...]", split at first '=' outside
+                // brackets and render LHS + " = " + matrix
+                var eqIdx = FindTopLevelEquals(part);
+                if (eqIdx > 0)
+                {
+                    var lhs = part.Substring(0, eqIdx).Trim();
+                    var rhs = part.Substring(eqIdx + 1).Trim();
+                    if (rhs.StartsWith("[") && rhs.EndsWith("]") && rhs.Contains('|'))
+                    {
+                        var matHtml = TryRenderMatrixLiteral(rhs);
+                        if (!string.IsNullOrEmpty(matHtml))
+                        {
+                            var lhsHtml = DeqRenderVar(lhs);
+                            var matContent = $"{lhsHtml} = {matHtml}";
+                            columns.Add($"<span class=\"eq\"{EqStyleForMatrix(matContent)}>{matContent}</span>");
+                            continue;
+                        }
+                    }
+                }
+                // Standalone decorative patterns that the normal parser can't
+                // handle: ∂f/∂x, f'(x), integral(...), etc. Try TryRenderDeqSpecial.
+                if (part.Contains('∂') || part.Contains('∫')
+                    || part.StartsWith("integral(", StringComparison.OrdinalIgnoreCase))
+                {
+                    var specialHtml = TryRenderDeqSpecial(part);
+                    if (!string.IsNullOrEmpty(specialHtml))
+                    {
+                        columns.Add($"<span class=\"eq\">{specialHtml}</span>");
+                        continue;
+                    }
+                }
+
+                // Symbolic operations (integrate, diff, simplify, solve, …):
+                // route through SymbolicProcessor just like #sym does, so cells
+                // can mix symbolic work with plain numeric calculations.
+                if (SymbolicProcessor.IsSymbolicOp(part))
+                {
+                    var symRes = SymbolicProcessor.Process(part);
+                    if (symRes.IsError)
+                    {
+                        columns.Add($"<span class=\"err\">{System.Web.HttpUtility.HtmlEncode(symRes.Error)}</span>");
+                    }
+                    else
+                    {
+                        var body = RenderSymResultBody(symRes);
+                        columns.Add($"<span class=\"eq\">{body}</span>");
+                    }
                     continue;
                 }
 
@@ -1032,6 +1726,15 @@ namespace Calcpad.Core
                 try
                 {
                     _parser.Parse(part);
+                    // Execute: scalar/vector/matrix assignments persist in the parser's
+                    // variable table so subsequent code can reference them.
+                    // Wrapped in try/catch because evaluation may fail for cells that
+                    // reference undefined vars on the RHS — we still want to render them.
+                    try
+                    {
+                        _parser.Calculate(false);
+                    }
+                    catch { }
                     var html = _parser.ToHtml();
                     // If html is just a variable name with no '=', append the result
                     if (string.IsNullOrWhiteSpace(html) || (!html.Contains('=') && !html.Contains("&gt;")))
@@ -1067,10 +1770,12 @@ namespace Calcpad.Core
             _isVal = savedIsVal;
             _parser.IsCalculation = _isVal != -1;
 
-            // Build HTML: flexbox row with equal columns
+            // Build HTML: flexbox row with equal columns. Combine the
+            // line-tracking class with col-blk/col-inl in ONE class attribute
+            // (browsers drop a second `class="…"` silently, which broke flex).
             var cssClass = isBlock ? "col-blk" : "col-inl";
             var sb2 = new System.Text.StringBuilder();
-            sb2.Append($"<div{HtmlId} class=\"{cssClass}\">");
+            sb2.Append($"<div{HtmlId} class=\"{HtmlLineMarker}{cssClass}\">");
             foreach (var col in columns)
                 sb2.Append($"<div class=\"col-cell\">{col}</div>");
             sb2.Append("</div>\n");
@@ -1084,25 +1789,270 @@ namespace Calcpad.Core
         /// - Partial derivatives: ∂f/∂x
         /// Returns null if the part is not a special pattern.
         /// </summary>
+        [ThreadStatic] private static int _tryRenderDeqSpecialDepth;
         private string TryRenderDeqSpecial(string part)
         {
+            // Guard against mutual recursion with TryRenderMultiTermDerivative
+            // and RenderMultiplicativeFactors (both of which call back into
+            // TryRenderDeqSpecial for sub-terms). 16 levels is more than
+            // enough for realistic inputs; past that, bail with null so the
+            // caller can fall back to parser-based rendering.
+            if (_tryRenderDeqSpecialDepth >= 16) return null;
+            _tryRenderDeqSpecialDepth++;
+            try { return TryRenderDeqSpecialImpl(part); }
+            finally { _tryRenderDeqSpecialDepth--; }
+        }
+
+        private string TryRenderDeqSpecialImpl(string part)
+        {
+            // --- Pattern -1c: integrate(expr; var; a; b) → ∫ₐᵇ expr · d var ---
+            // Must come before matrix pattern so cells inside matrices can
+            // detect integrate() by themselves.
+            if (part.StartsWith("integrate(", StringComparison.Ordinal) && part.EndsWith(")"))
+            {
+                int innerStart = 10; // length of "integrate("
+                int d = 1;
+                int innerEnd = part.Length - 1;
+                for (int i = innerStart; i < part.Length; i++)
+                {
+                    if (part[i] == '(') d++;
+                    else if (part[i] == ')') { d--; if (d == 0) { innerEnd = i; break; } }
+                }
+                if (innerEnd == part.Length - 1)
+                {
+                    var inner = part.Substring(innerStart, innerEnd - innerStart);
+                    var innerParts = new List<string>();
+                    int depth = 0; int start = 0;
+                    for (int i = 0; i < inner.Length; i++)
+                    {
+                        var c = inner[i];
+                        if (c == '(' || c == '[' || c == '{') depth++;
+                        else if (c == ')' || c == ']' || c == '}') depth--;
+                        else if (c == ';' && depth == 0)
+                        {
+                            innerParts.Add(inner.Substring(start, i - start).Trim());
+                            start = i + 1;
+                        }
+                    }
+                    innerParts.Add(inner.Substring(start).Trim());
+                    if (innerParts.Count >= 2)
+                    {
+                        var expr = innerParts[0];
+                        var variable = innerParts[1];
+                        string aStr = innerParts.Count >= 3 ? innerParts[2] : "";
+                        string bStr = innerParts.Count >= 4 ? innerParts[3] : "";
+                        string exprHtml;
+                        try
+                        {
+                            _parser.Parse(expr, false);
+                            exprHtml = _parser.ToHtml();
+                            if (string.IsNullOrWhiteSpace(exprHtml))
+                                exprHtml = DeqRenderVar(expr);
+                        }
+                        catch { exprHtml = DeqRenderVar(expr); }
+                        string subHtml = "", supHtml = "";
+                        if (!string.IsNullOrEmpty(aStr))
+                        {
+                            try { _parser.Parse(aStr, false); subHtml = _parser.ToHtml(); } catch { subHtml = DeqRenderVar(aStr); }
+                        }
+                        if (!string.IsNullOrEmpty(bStr))
+                        {
+                            try { _parser.Parse(bStr, false); supHtml = _parser.ToHtml(); } catch { supHtml = DeqRenderVar(bStr); }
+                        }
+                        var varHtml = DeqRenderVar(variable);
+                        if (!string.IsNullOrEmpty(subHtml) && !string.IsNullOrEmpty(supHtml))
+                            return $"<i>∫</i><sub>{subHtml}</sub><sup>{supHtml}</sup> {exprHtml} <i>d</i>{varHtml}";
+                        return $"<i>∫</i> {exprHtml} <i>d</i>{varHtml}";
+                    }
+                }
+            }
+
+            // --- Pattern -1b: diff(expr; var) or diff(expr; var; n) → df/dx ---
+            if (part.StartsWith("diff(", StringComparison.Ordinal) && part.EndsWith(")"))
+            {
+                int innerStart = 5; // length of "diff("
+                int d = 1;
+                int innerEnd = part.Length - 1;
+                for (int i = innerStart; i < part.Length; i++)
+                {
+                    if (part[i] == '(') d++;
+                    else if (part[i] == ')') { d--; if (d == 0) { innerEnd = i; break; } }
+                }
+                if (innerEnd == part.Length - 1)
+                {
+                    var inner = part.Substring(innerStart, innerEnd - innerStart);
+                    var innerParts = new List<string>();
+                    int depth = 0; int start = 0;
+                    for (int i = 0; i < inner.Length; i++)
+                    {
+                        var c = inner[i];
+                        if (c == '(' || c == '[' || c == '{') depth++;
+                        else if (c == ')' || c == ']' || c == '}') depth--;
+                        else if (c == ';' && depth == 0)
+                        {
+                            innerParts.Add(inner.Substring(start, i - start).Trim());
+                            start = i + 1;
+                        }
+                    }
+                    innerParts.Add(inner.Substring(start).Trim());
+                    if (innerParts.Count >= 2)
+                    {
+                        var expr = innerParts[0];
+                        var variable = innerParts[1];
+                        string nStr = innerParts.Count >= 3 ? innerParts[2] : "1";
+                        string exprHtml;
+                        try
+                        {
+                            _parser.Parse(expr, false);
+                            exprHtml = _parser.ToHtml();
+                            if (string.IsNullOrWhiteSpace(exprHtml))
+                                exprHtml = DeqRenderVar(expr);
+                        }
+                        catch { exprHtml = DeqRenderVar(expr); }
+                        var varHtml = DeqRenderVar(variable);
+                        string num, den;
+                        if (nStr == "1")
+                        {
+                            num = "<i>d</i>";
+                            den = $"<i>d</i>{varHtml}";
+                        }
+                        else
+                        {
+                            num = $"<i>d</i><sup>{nStr}</sup>";
+                            den = $"<i>d</i>{varHtml}<sup>{nStr}</sup>";
+                        }
+                        return $"<span class=\"dvc\">{num}<span class=\"dvl\"></span>{den}</span> {exprHtml}";
+                    }
+                }
+            }
+
+            // --- Pattern -1: pdiff(expr; var) → ∂/∂var (expr) ---
+            // pdiff(N_1(ξ;η); ξ) → ∂N_1(ξ,η)/∂ξ rendered as fraction
+            // Must come before matrix pattern so cells inside matrices can
+            // detect pdiff() by themselves.
+            if (part.StartsWith("pdiff(", StringComparison.Ordinal) && part.EndsWith(")"))
+            {
+                int innerStart = 6; // length of "pdiff("
+                int parenDepth = 1;
+                int innerEnd = part.Length - 1;
+                // Verify the closing paren matches the pdiff(
+                int d = 1;
+                for (int i = innerStart; i < part.Length; i++)
+                {
+                    if (part[i] == '(') d++;
+                    else if (part[i] == ')') { d--; if (d == 0) { innerEnd = i; break; } }
+                }
+                if (innerEnd == part.Length - 1)
+                {
+                    var inner = part.Substring(innerStart, innerEnd - innerStart);
+                    // Split inner at top-level ; only
+                    var innerParts = new List<string>();
+                    int depth = 0; int start = 0;
+                    for (int i = 0; i < inner.Length; i++)
+                    {
+                        var c = inner[i];
+                        if (c == '(' || c == '[' || c == '{') depth++;
+                        else if (c == ')' || c == ']' || c == '}') depth--;
+                        else if (c == ';' && depth == 0)
+                        {
+                            innerParts.Add(inner.Substring(start, i - start).Trim());
+                            start = i + 1;
+                        }
+                    }
+                    innerParts.Add(inner.Substring(start).Trim());
+                    if (innerParts.Count == 2)
+                    {
+                        var expr = innerParts[0];
+                        var variable = innerParts[1];
+                        // Render expr using parser if possible (so user functions render nicely)
+                        string exprHtml;
+                        try
+                        {
+                            _parser.Parse(expr, false);
+                            exprHtml = _parser.ToHtml();
+                            if (string.IsNullOrWhiteSpace(exprHtml))
+                                exprHtml = DeqRenderVar(expr);
+                        }
+                        catch { exprHtml = DeqRenderVar(expr); }
+                        var varHtml = DeqRenderVar(variable);
+                        return $"<span class=\"dvc\"><i>∂</i><span class=\"dvl\"></span><i>∂</i>{varHtml}</span> {exprHtml}";
+                    }
+                }
+            }
+
+            // --- Pattern 0: Matrix literal [row1 | row2 | row3] ---
+            // Renders as a proper HTML matrix with brackets. Each row has
+            // comma-separated cells. Each cell is recursively rendered so
+            // partial derivatives / primes / etc. inside the matrix still work.
+            // Also accept 1-row matrices [a; b; c] when they contain pdiff(),
+            // diff() or integrate() so symbolic operators render as math notation.
+            if (part.StartsWith("[") && part.EndsWith("]") &&
+                (part.IndexOf('|') > 0 ||
+                 part.Contains("pdiff(") ||
+                 part.Contains("diff(") ||
+                 part.Contains("integrate(")))
+            {
+                var matHtml = TryRenderMatrixLiteral(part);
+                if (!string.IsNullOrEmpty(matHtml))
+                    return matHtml;
+            }
+            // --- Pattern 0b: Expression with embedded matrix ---
+            // e.g. "(E·t^3/(12(1-ν^2))) · [1, ν, 0 | ...]" or
+            // "A * [1,2|3,4] + B" — find the [..|..] inside and render neighbors
+            // with the normal parser, the matrix with the big-bracket template.
+            if (part.IndexOf('|') > 0 && part.IndexOf('[') >= 0)
+            {
+                var mixedHtml = TryRenderExpressionWithMatrix(part);
+                if (!string.IsNullOrEmpty(mixedHtml))
+                    return mixedHtml;
+            }
+            // --- Pattern 0c: Multi-term expression with partial/total derivative ---
+            // e.g. "∂w/∂x - θ_y", "∂θ_x/∂x - ∂θ_y/∂y", "a*∂f/∂x + b",
+            //      "κ_x = -∂θ_y/∂x" is split earlier by '=', so this sees "-∂θ_y/∂x" alone
+            // Split by top-level +/- and render each term, then join with operators.
+            // hasDeriv: accept d^n, d<digits>, ∂^n, ∂<digits>, and identifiers
+            // with Greek letters / subscripts (e.g. d^2φ_i/dx_j).
+            bool hasDeriv = part.Contains('∂') || part.Contains("d/d") ||
+                 System.Text.RegularExpressions.Regex.IsMatch(part,
+                    @"[d∂](?:\^?\d+)?[a-zA-Zα-ωΑ-Ω_][a-zA-Zα-ωΑ-Ω0-9_]*\s*/\s*[d∂][a-zA-Zα-ωΑ-Ω_]");
+            if (hasDeriv && HasTopLevelAddSub(part))
+            {
+                var multiTermHtml = TryRenderMultiTermDerivative(part);
+                if (!string.IsNullOrEmpty(multiTermHtml))
+                    return multiTermHtml;
+            }
+            // --- Pattern 0d: Single-term multiplicative with derivative ---
+            // e.g. "∂N_i/∂x · u_i", "a·∂f/∂x", "2·∂^2v/∂x^2"
+            if (hasDeriv && (part.Contains('·') || part.Contains('*') || part.Contains('×') || part.Contains('⋅')))
+            {
+                var mulHtml = RenderMultiplicativeFactors(part);
+                if (!string.IsNullOrEmpty(mulHtml))
+                    return mulHtml;
+            }
+
             // --- Pattern 1: Leibniz derivative fractions ---
             // d^nf/dx^n, d^2v/dx^2, df/dx, ∂f/∂x, ∂^2u/∂x^2, ∂^2u/∂x∂y
+            // Acepta signo opcional  -  al inicio: -∂^2w/∂x^2, -df/dx, etc.
+            // También acepta factor multiplicativo al inicio: 2*∂^2w/∂x∂y, 3*d^2v/dx^2
+            // Accept identifiers with Greek letters, digits, and subscripts in
+            // both numerator (e.g. φ_i) and denominator variables (e.g. x_j).
             var leibnizMatch = System.Text.RegularExpressions.Regex.Match(part,
-                @"^([d∂](?:\^(\d+))?)(\w+)\s*/\s*([d∂])(\w)(?:\^(\d+))?(?:([d∂])(\w)(?:\^(\d+))?)?$");
+                @"^(-?)((?:\d+(?:\.\d+)?[·*])?)([d∂](?:\^(\d+))?)([a-zA-Zα-ωΑ-Ω_][a-zA-Zα-ωΑ-Ω0-9_]*)\s*/\s*([d∂])([a-zA-Zα-ωΑ-Ω_][a-zA-Zα-ωΑ-Ω0-9_]*)(?:\^(\d+))?(?:([d∂])([a-zA-Zα-ωΑ-Ω_][a-zA-Zα-ωΑ-Ω0-9_]*)(?:\^(\d+))?)?$");
             if (leibnizMatch.Success)
             {
-                var dSym = leibnizMatch.Groups[1].Value;   // d or ∂ or d^2 or ∂^2
-                var order = leibnizMatch.Groups[2].Value;    // order number (empty for 1st)
-                var func = leibnizMatch.Groups[3].Value;     // function name (v, u, f...)
-                var dSym2 = leibnizMatch.Groups[4].Value;    // d or ∂ in denominator
-                var var1 = leibnizMatch.Groups[5].Value;     // variable (x, y...)
-                var order2 = leibnizMatch.Groups[6].Value;   // order in denominator
-                var dSym3 = leibnizMatch.Groups[7].Value;    // second ∂ in denominator (mixed)
-                var var2 = leibnizMatch.Groups[8].Value;     // second variable
-                var order3 = leibnizMatch.Groups[9].Value;   // second order
+                var signPrefix = leibnizMatch.Groups[1].Value; // "" o "-"
+                var factPrefix = leibnizMatch.Groups[2].Value; // "" o "2*" por ejemplo
+                var dSym = leibnizMatch.Groups[3].Value;   // d or ∂ or d^2 or ∂^2
+                var order = leibnizMatch.Groups[4].Value;    // order number (empty for 1st)
+                var func = leibnizMatch.Groups[5].Value;     // function name (v, u, f...)
+                var dSym2 = leibnizMatch.Groups[6].Value;    // d or ∂ in denominator
+                var var1 = leibnizMatch.Groups[7].Value;     // variable (x, y...)
+                var order2 = leibnizMatch.Groups[8].Value;   // order in denominator
+                var dSym3 = leibnizMatch.Groups[9].Value;    // second ∂ in denominator (mixed)
+                var var2 = leibnizMatch.Groups[10].Value;    // second variable
+                var order3 = leibnizMatch.Groups[11].Value;  // second order
 
-                // Build numerator: d²v or ∂²u
+                // Build numerator: d²v or ∂²u (con signo y factor opcionales al inicio)
                 var numSb = new System.Text.StringBuilder();
                 numSb.Append($"<i>{EscapeDeqChar(dSym[0])}</i>");
                 if (!string.IsNullOrEmpty(order))
@@ -1123,7 +2073,31 @@ namespace Calcpad.Core
                         denSb.Append($"<sup>{order3}</sup>");
                 }
 
-                return $"<span class=\"dvc\">{numSb}<span class=\"dvl\"></span>{denSb}</span>";
+                // Agregar signo y factor al inicio (si existen) antes del wrapper de fracción
+                var prefix = new System.Text.StringBuilder();
+                if (!string.IsNullOrEmpty(signPrefix))
+                    prefix.Append("−"); // signo menos tipográfico
+                if (!string.IsNullOrEmpty(factPrefix))
+                {
+                    // quitar el * final y mostrar el número (ej. "2*" → "2·")
+                    var numStr = factPrefix.TrimEnd('*', '·');
+                    prefix.Append(numStr);
+                    prefix.Append("·");
+                }
+                return $"{prefix}<span class=\"dvc\">{numSb}<span class=\"dvl\"></span>{denSb}</span>";
+            }
+
+            // --- Pattern 1b: Integral function calls (Calcpad) ---
+            // integral(body; var; a; b)            → ∫[a..b] body dvar
+            // integral(integral(body; v1; a1; b1); v2; a2; b2)  → ∫∫ doble
+            // Admite prefijo/sufijo (p.ej. K_e = integral(...)*detJ o A*integral(...)+B)
+            // — reconocemos integral(...) en cualquier posición y renderizamos vecinos
+            //   con el parser normal; el resto cae al parser fallback.
+            if (part.IndexOf("integral(", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                var mixedHtml = TryRenderExpressionWithIntegrals(part);
+                if (!string.IsNullOrEmpty(mixedHtml))
+                    return mixedHtml;
             }
 
             // --- Pattern 2: Prime notation: v'(x), v''(x), f''''(x), θ'  ---
@@ -1149,6 +2123,9 @@ namespace Calcpad.Core
                 }
                 return sb.ToString();
             }
+
+            // --- Helper: render Calcpad integral(...) con simbolo de integral ---
+            // (metodo local; implementacion abajo)
 
             // --- Pattern 3: Simple function call with special chars: κ(x), Π(x) ---
             // These fail in parser because κ etc. are not recognized
@@ -1204,6 +2181,716 @@ namespace Calcpad.Core
             return null; // not a special pattern
         }
 
+        /// <summary>
+        /// Render Calcpad integral(body; var; a; b) calls as ∫ body dvar with limits.
+        /// Supports nested integrals: integral(integral(H; y; -b; b); x; -a; a) → ∫∫
+        /// </summary>
+        private string TryRenderIntegralSpecial(string expr)
+        {
+            // Parse integral(args) — find matching paren
+            if (!expr.StartsWith("integral(", StringComparison.OrdinalIgnoreCase))
+                return null;
+            var openIdx = expr.IndexOf('(');
+            if (openIdx < 0) return null;
+            var closeIdx = FindMatchingParen(expr, openIdx);
+            if (closeIdx < 0 || closeIdx != expr.Length - 1) return null;
+
+            // Split top-level args by ';'
+            var args = SplitTopLevelBySemicolon(expr.Substring(openIdx + 1, closeIdx - openIdx - 1));
+            if (args.Count < 2) return null;
+
+            var body = args[0].Trim();
+            var v = args.Count >= 2 ? args[1].Trim() : "x";
+            var lo = args.Count >= 3 ? args[2].Trim() : null;
+            var hi = args.Count >= 4 ? args[3].Trim() : null;
+
+            // Render body: si es otro integral, recursivo; sino via DeqRenderVar o parser
+            string bodyHtml;
+            if (body.StartsWith("integral(", StringComparison.OrdinalIgnoreCase))
+            {
+                bodyHtml = TryRenderIntegralSpecial(body) ?? body;
+            }
+            else
+            {
+                // Usar el parser normal para el body; fallback a texto plano con DeqRenderVar
+                try
+                {
+                    _parser.Parse(body, false);
+                    bodyHtml = _parser.ToHtml();
+                    if (string.IsNullOrWhiteSpace(bodyHtml))
+                        bodyHtml = DeqRenderVar(body);
+                }
+                catch { bodyHtml = DeqRenderVar(body); }
+            }
+
+            var loHtml = lo is not null ? DeqRenderVar(lo) : "";
+            var hiHtml = hi is not null ? DeqRenderVar(hi) : "";
+
+            // Usar el template nativo de Calcpad para integrales/Nary:
+            //   <span class="dvr"><small>{sup}</small><span class="nary">∫</span><small>{sub}</small></span>{expr}
+            // donde expr = body + " d" + var
+            var sb = new System.Text.StringBuilder();
+            sb.Append("<span class=\"dvr\"><small>");
+            sb.Append(hiHtml);
+            sb.Append("</small><span class=\"nary\">∫</span><small>");
+            sb.Append(loHtml);
+            sb.Append("</small></span>");
+            sb.Append(bodyHtml);
+            sb.Append("\u2009<var>d</var>");
+            sb.Append(DeqRenderVar(v));
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Render una expresión que contiene una o varias llamadas a integral(...)
+        /// como mezcla de HTML (big ∫ template) + fragmentos renderizados por el parser.
+        /// Ejemplo: "K_e = integral(B_b^T*D_b*B_b; ξ; -1; 1)*detJ"
+        ///   → "K_e = ∫... detJ"
+        /// Devuelve null si no encuentra ningún integral(...) válido.
+        /// </summary>
+        private string TryRenderExpressionWithIntegrals(string expr)
+        {
+            var sb = new System.Text.StringBuilder();
+            int cursor = 0;
+            bool foundAny = false;
+            while (cursor < expr.Length)
+            {
+                int idx = expr.IndexOf("integral(", cursor, StringComparison.OrdinalIgnoreCase);
+                if (idx < 0)
+                {
+                    // No hay más integrales — renderizar el resto como fragmento normal
+                    sb.Append(RenderFragmentAsHtml(expr.Substring(cursor)));
+                    break;
+                }
+                // Contenido antes del integral
+                if (idx > cursor)
+                    sb.Append(RenderFragmentAsHtml(expr.Substring(cursor, idx - cursor)));
+                // Encontrar paréntesis de cierre
+                int openIdx = idx + "integral".Length;
+                if (openIdx >= expr.Length || expr[openIdx] != '(')
+                {
+                    // No es una llamada válida — renderizar como fragmento normal
+                    sb.Append(RenderFragmentAsHtml(expr.Substring(idx, openIdx - idx)));
+                    cursor = openIdx;
+                    continue;
+                }
+                int closeIdx = FindMatchingParen(expr, openIdx);
+                if (closeIdx < 0)
+                {
+                    sb.Append(RenderFragmentAsHtml(expr.Substring(idx)));
+                    break;
+                }
+                var intExpr = expr.Substring(idx, closeIdx - idx + 1);
+                var intHtml = TryRenderIntegralSpecial(intExpr);
+                if (!string.IsNullOrEmpty(intHtml))
+                {
+                    sb.Append(intHtml);
+                    foundAny = true;
+                }
+                else
+                    sb.Append(RenderFragmentAsHtml(intExpr));
+                cursor = closeIdx + 1;
+            }
+            return foundAny ? sb.ToString() : null;
+        }
+
+        /// <summary>
+        /// Helper: renderizar un fragmento de expresión (sin integrales) via el parser
+        /// normal; si falla, fallback a DeqRenderVar token-a-token.
+        /// </summary>
+        private string RenderFragmentAsHtml(string fragment)
+        {
+            fragment = fragment.Trim();
+            if (string.IsNullOrEmpty(fragment)) return string.Empty;
+            // Quitar operadores envolventes triviales ("* detJ" → "<var>·detJ</var>")
+            // Pero queremos preservar operadores tipo *, +, etc. en el output.
+            // Estrategia: separar operadores leading/trailing y renderizar solo el núcleo.
+            int leadOps = 0;
+            while (leadOps < fragment.Length && "+-*/·×⋅ ".IndexOf(fragment[leadOps]) >= 0) leadOps++;
+            int trailOps = fragment.Length;
+            while (trailOps > leadOps && "+-*/·×⋅ ".IndexOf(fragment[trailOps - 1]) >= 0) trailOps--;
+            string leading = fragment.Substring(0, leadOps);
+            string core = fragment.Substring(leadOps, trailOps - leadOps);
+            string trailing = fragment.Substring(trailOps);
+            // Reemplazar '*' por '·' para visualización
+            string DispOps(string s) => s.Replace("*", "·");
+            if (string.IsNullOrEmpty(core))
+                return DispOps(leading) + DispOps(trailing);
+            string coreHtml;
+            try
+            {
+                _parser.Parse(core, false);
+                coreHtml = _parser.ToHtml();
+                if (string.IsNullOrWhiteSpace(coreHtml))
+                    coreHtml = DeqRenderVar(core);
+            }
+            catch
+            {
+                coreHtml = DeqRenderVar(core);
+            }
+            return DispOps(leading) + coreHtml + DispOps(trailing);
+        }
+
+        private static int FindMatchingParen(string s, int openIdx)
+        {
+            int depth = 0;
+            for (int i = openIdx; i < s.Length; i++)
+            {
+                if (s[i] == '(') depth++;
+                else if (s[i] == ')') { depth--; if (depth == 0) return i; }
+            }
+            return -1;
+        }
+
+        private static List<string> SplitTopLevelBySemicolon(string s)
+        {
+            var parts = new List<string>();
+            int depth = 0;
+            int start = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                var c = s[i];
+                if (c == '(' || c == '[') depth++;
+                else if (c == ')' || c == ']') depth--;
+                else if (c == ';' && depth == 0)
+                {
+                    parts.Add(s.Substring(start, i - start));
+                    start = i + 1;
+                }
+            }
+            if (start < s.Length) parts.Add(s.Substring(start));
+            return parts;
+        }
+
+        /// <summary>Normalize Unicode math operators to ASCII so the parser accepts them.</summary>
+        private static string NormalizeOps(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            return s.Replace('·', '*').Replace('×', '*').Replace('⋅', '*');
+        }
+
+        /// <summary>
+        /// Render a decorative scalar expression into HTML, recursively handling
+        /// fractions (top-level '/'), multiplication (top-level '·'/'*'),
+        /// exponents ('^'), parentheses, and variables with subscripts.
+        /// Does NOT evaluate — pure decorative output for #deq/#sym/#blk.
+        /// Produces the same HTML structure as Calcpad native output:
+        ///   fraction: <span class="dvc">num<span class="dvl"></span>den</span>
+        ///   mul:      a · b (middle-dot glue)
+        ///   exp:      a<sup>n</sup>
+        /// </summary>
+        [ThreadStatic] private static int _renderDeqScalarDepth;
+        private string RenderDeqScalar(string expr)
+        {
+            if (string.IsNullOrWhiteSpace(expr)) return "";
+            if (++_renderDeqScalarDepth > 32)
+            {
+                _renderDeqScalarDepth--;
+                return DeqRenderVar(expr);
+            }
+            try
+            {
+                return RenderDeqScalarInner(expr);
+            }
+            finally { _renderDeqScalarDepth--; }
+        }
+
+        /// <summary>Like RenderDeqScalar but skips the outer-paren-strip step
+        /// so the caller can render an already-unwrapped expression. Used to
+        /// render the content INSIDE preserved parens.</summary>
+        private string RenderDeqScalarRaw(string expr)
+        {
+            if (string.IsNullOrWhiteSpace(expr)) return "";
+            if (++_renderDeqScalarDepth > 32)
+            {
+                _renderDeqScalarDepth--;
+                return DeqRenderVar(expr);
+            }
+            try
+            {
+                return RenderDeqScalarNoStrip(expr);
+            }
+            finally { _renderDeqScalarDepth--; }
+        }
+
+        private string RenderDeqScalarNoStrip(string expr)
+        {
+            // Copy of RenderDeqScalarInner but without the outer-paren strip.
+            // Top-level add/sub
+            if (HasTopLevelAddSub(expr))
+            {
+                var sb = new System.Text.StringBuilder();
+                int depth = 0; int start = 0;
+                for (int i = 0; i < expr.Length; i++)
+                {
+                    var c = expr[i];
+                    if (c == '(' || c == '[') depth++;
+                    else if (c == ')' || c == ']') depth--;
+                    else if ((c == '+' || c == '-') && depth == 0 && i > 0
+                             && expr[i - 1] != 'e' && expr[i - 1] != 'E')
+                    {
+                        var term = expr.Substring(start, i - start).Trim();
+                        if (term.Length > 0) sb.Append(RenderDeqScalar(term));
+                        sb.Append(c == '+' ? " + " : " &minus; ");
+                        start = i + 1;
+                    }
+                }
+                var last = expr.Substring(start).Trim();
+                if (last.Length > 0) sb.Append(RenderDeqScalar(last));
+                return sb.ToString();
+            }
+            return RenderDeqScalar(expr);
+        }
+
+        private string RenderDeqScalarInner(string expr)
+        {
+            expr = expr.Trim();
+            // Special patterns (partial/total derivatives, primes, integrals, matrix)
+            var sp = TryRenderDeqSpecial(expr);
+            if (!string.IsNullOrEmpty(sp)) return sp;
+
+            // Strip outer parens in-place, BUT only if doing so won't change
+            // the semantic precedence. We keep the parens when the inner
+            // expression has top-level '+' or '-' AND is used as a factor
+            // in a larger expression (caller can wrap). Here we just strip
+            // always, but later we re-add parens if needed at the caller
+            // level (see multiplication split below).
+            bool hadOuterParens = false;
+            while (expr.Length > 1 && expr[0] == '(' && expr[^1] == ')')
+            {
+                int dp = 0;
+                bool ok = true;
+                for (int i = 0; i < expr.Length - 1; i++)
+                {
+                    if (expr[i] == '(') dp++;
+                    else if (expr[i] == ')') { dp--; if (dp == 0) { ok = false; break; } }
+                }
+                if (ok)
+                {
+                    expr = expr.Substring(1, expr.Length - 2).Trim();
+                    hadOuterParens = true;
+                }
+                else break;
+            }
+            // If we stripped outer parens AND the inner expression still has
+            // top-level '+' or '-', restore the parens before rendering so
+            // the grouping is preserved in output (e.g., "12·(1-ν²)").
+            if (hadOuterParens && HasTopLevelAddSub(expr))
+            {
+                return $"&nbsp;(&nbsp;{RenderDeqScalarRaw(expr)}&nbsp;)&nbsp;";
+            }
+
+            // 1. Top-level addition/subtraction → render terms and join
+            if (HasTopLevelAddSub(expr))
+            {
+                var sb = new System.Text.StringBuilder();
+                int depth = 0; int start = 0;
+                for (int i = 0; i < expr.Length; i++)
+                {
+                    var c = expr[i];
+                    if (c == '(' || c == '[') depth++;
+                    else if (c == ')' || c == ']') depth--;
+                    else if ((c == '+' || c == '-') && depth == 0 && i > 0
+                             && expr[i - 1] != 'e' && expr[i - 1] != 'E')
+                    {
+                        var term = expr.Substring(start, i - start).Trim();
+                        if (term.Length > 0) sb.Append(RenderDeqScalar(term));
+                        sb.Append(c == '+' ? " + " : " &minus; ");
+                        start = i + 1;
+                    }
+                }
+                var last = expr.Substring(start).Trim();
+                if (last.Length > 0) sb.Append(RenderDeqScalar(last));
+                return sb.ToString();
+            }
+
+            // 2. Top-level division (fraction) → <span class="dvc">num dvl den</span>
+            var slashIdx = FindTopLevelChar(expr, '/');
+            if (slashIdx > 0)
+            {
+                var num = expr.Substring(0, slashIdx).Trim();
+                var den = expr.Substring(slashIdx + 1).Trim();
+                return $"<span class=\"dvc\">{RenderDeqScalar(num)}<span class=\"dvl\"></span>{RenderDeqScalar(den)}</span>";
+            }
+
+            // 3. Top-level multiplication → a · b · c
+            //    Also handles IMPLICIT multiplication like "12(1-v^2)" or
+            //    "(a+b)(c+d)" → inserts the '·' at the boundary so each side
+            //    is rendered separately and joined with middle-dot.
+            if (expr.IndexOfAny(new[] { '·', '*', '×', '⋅' }) >= 0
+                || System.Text.RegularExpressions.Regex.IsMatch(expr, @"[\w\)]\s*\(|\)\s*[a-zA-Zα-ωΑ-Ω_]"))
+            {
+                var parts = new List<string>();
+                int depth = 0; int start = 0;
+                for (int i = 0; i < expr.Length; i++)
+                {
+                    var c = expr[i];
+                    if (c == '(' || c == '[')
+                    {
+                        // Implicit multiplication: digit/letter/close-paren followed by '('
+                        if (c == '(' && depth == 0 && i > 0)
+                        {
+                            var prev = expr[i - 1];
+                            if (char.IsDigit(prev) || char.IsLetter(prev) || prev == ')' || prev == ']')
+                            {
+                                var chunk = expr.Substring(start, i - start).Trim();
+                                if (chunk.Length > 0) parts.Add(chunk);
+                                start = i;
+                            }
+                        }
+                        depth++;
+                    }
+                    else if (c == ')' || c == ']') depth--;
+                    else if (depth == 0 && (c == '·' || c == '*' || c == '×' || c == '⋅'))
+                    {
+                        parts.Add(expr.Substring(start, i - start).Trim());
+                        start = i + 1;
+                    }
+                    // Implicit multiplication: ')' followed by letter (new factor starts)
+                    else if (c != ' ' && depth == 0 && i > 0 && expr[i - 1] == ')'
+                             && (char.IsLetter(c) || char.IsDigit(c)))
+                    {
+                        var chunk = expr.Substring(start, i - start).Trim();
+                        if (chunk.Length > 0) parts.Add(chunk);
+                        start = i;
+                    }
+                }
+                parts.Add(expr.Substring(start).Trim());
+                if (parts.Count > 1)
+                    return string.Join(" · ", parts.Where(p => p.Length > 0).Select(RenderDeqScalar));
+            }
+
+            // 4. Exponent: base^exponent → base<sup>exp</sup>
+            var caretIdx = FindTopLevelChar(expr, '^');
+            if (caretIdx > 0)
+            {
+                var baseExpr = expr.Substring(0, caretIdx).Trim();
+                var expExpr = expr.Substring(caretIdx + 1).Trim();
+                return $"{RenderDeqScalar(baseExpr)}<sup>{RenderDeqScalar(expExpr)}</sup>";
+            }
+
+            // 5. Leaf — try parser, else DeqRenderVar
+            try
+            {
+                _parser.Parse(NormalizeOps(expr), false);
+                var html = _parser.ToHtml();
+                if (!string.IsNullOrWhiteSpace(html)) return html;
+            }
+            catch { }
+            return DeqRenderVar(expr);
+        }
+
+        /// <summary>Find the index of the first char 'c' at top level (depth=0), or -1.</summary>
+        private static int FindTopLevelChar(string s, char c)
+        {
+            int depth = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (s[i] == '(' || s[i] == '[') depth++;
+                else if (s[i] == ')' || s[i] == ']') depth--;
+                else if (s[i] == c && depth == 0) return i;
+            }
+            return -1;
+        }
+
+        /// <summary>Strip redundant outer parentheses "(expr)" → "expr" when the
+        /// opening '(' matches with the closing ')' at the end.</summary>
+        private static string StripOuterParens(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            s = s.Trim();
+            while (s.Length > 1 && s[0] == '(' && s[^1] == ')')
+            {
+                int depth = 0;
+                bool matches = true;
+                for (int i = 0; i < s.Length - 1; i++)
+                {
+                    if (s[i] == '(') depth++;
+                    else if (s[i] == ')') { depth--; if (depth == 0) { matches = false; break; } }
+                }
+                if (matches && depth == 1) s = s.Substring(1, s.Length - 2).Trim();
+                else break;
+            }
+            return s;
+        }
+
+        /// <summary>
+        /// Render a multiplicative expression "A · B · C" where any factor can
+        /// be a partial derivative (∂f/∂x), a total derivative (df/dx), a
+        /// variable with subscript (u_i), or a scalar. Joins factors with
+        /// a middle-dot operator.
+        /// </summary>
+        private string RenderMultiplicativeFactors(string term)
+        {
+            // Split by top-level '·', '*', '×', '⋅' respecting parentheses.
+            var factors = new List<string>();
+            int depth = 0, start = 0;
+            for (int i = 0; i < term.Length; i++)
+            {
+                var c = term[i];
+                if (c == '(' || c == '[') depth++;
+                else if (c == ')' || c == ']') depth--;
+                else if (depth == 0 && (c == '·' || c == '*' || c == '×' || c == '⋅'))
+                {
+                    factors.Add(term.Substring(start, i - start).Trim());
+                    start = i + 1;
+                }
+            }
+            factors.Add(term.Substring(start).Trim());
+            if (factors.Count < 2) return null;
+
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < factors.Count; i++)
+            {
+                if (i > 0) sb.Append(" · ");
+                var f = factors[i];
+                if (string.IsNullOrEmpty(f)) { sb.Append(f); continue; }
+                // Try the special renderer first (derivatives, primes, etc.)
+                var sp = TryRenderDeqSpecial(f);
+                if (!string.IsNullOrEmpty(sp)) { sb.Append(sp); continue; }
+                // Parser fallback (normalize Unicode mul chars first)
+                try
+                {
+                    _parser.Parse(NormalizeOps(f), false);
+                    var html = _parser.ToHtml();
+                    if (!string.IsNullOrWhiteSpace(html)) { sb.Append(html); continue; }
+                }
+                catch { }
+                // Last resort: format as variable with subscript handling
+                sb.Append(DeqRenderVar(f));
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>True if s contains a '+' or '-' at top-level (outside [](), depth=0) past position 0.</summary>
+        /// <remarks>
+        /// FIX: el loop arrancaba en i=1 (para saltar el signo unario inicial
+        /// como "-x + y") pero también saltaba el '(' inicial de "(1 - ξ)/2",
+        /// dejando depth=0 cuando se procesaba el '-'. Resultado: reportaba
+        /// top-level add/sub falso y RenderDeqScalar entraba en recursión
+        /// infinita hasta el depth-guard que caía a DeqRenderVar — el RHS
+        /// quedaba como "&lt;var&gt;(1 - ξ)/2&lt;/var&gt;" en texto plano.
+        /// Ahora contamos depth desde i=0 y solo NO-evaluamos el carácter
+        /// como operador cuando es signo unario (+/-) en posición 0.
+        /// </remarks>
+        private static bool HasTopLevelAddSub(string s)
+        {
+            int depth = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                var c = s[i];
+                if (c == '(' || c == '[') { depth++; continue; }
+                if (c == ')' || c == ']') { depth--; continue; }
+                // i==0 con '+' o '-' es signo unario, no operador top-level
+                if (i == 0 && (c == '+' || c == '-')) continue;
+                if ((c == '+' || c == '-') && depth == 0)
+                {
+                    // Not an exponent sign like 1e-3
+                    if (i > 0 && (s[i - 1] == 'e' || s[i - 1] == 'E')) continue;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Render an expression with top-level +/- separating terms that may
+        /// include a partial/total derivative (∂f/∂x or df/dx or d^2v/dx^2).
+        /// Splits the expression, renders each term through TryRenderDeqSpecial
+        /// (or parser fallback) and re-joins with the original operators.
+        /// </summary>
+        private string TryRenderMultiTermDerivative(string expr)
+        {
+            // Split into tokens with their preceding operator (+/-).
+            var tokens = new List<(string op, string term)>();
+            int depth = 0;
+            int start = 0;
+            string curOp = "+";
+            if (expr.Length > 0 && expr[0] == '-') { curOp = "-"; start = 1; }
+            else if (expr.Length > 0 && expr[0] == '+') { curOp = "+"; start = 1; }
+            for (int i = start; i < expr.Length; i++)
+            {
+                var c = expr[i];
+                if (c == '(' || c == '[') depth++;
+                else if (c == ')' || c == ']') depth--;
+                else if ((c == '+' || c == '-') && depth == 0
+                         && i > start
+                         && !(i > 0 && (expr[i - 1] == 'e' || expr[i - 1] == 'E')))
+                {
+                    tokens.Add((curOp, expr.Substring(start, i - start).Trim()));
+                    curOp = c.ToString();
+                    start = i + 1;
+                }
+            }
+            if (start < expr.Length)
+                tokens.Add((curOp, expr.Substring(start).Trim()));
+
+            if (tokens.Count == 0) return null;
+
+            var sb = new System.Text.StringBuilder();
+            bool anyDeriv = false;
+            for (int k = 0; k < tokens.Count; k++)
+            {
+                var (op, term) = tokens[k];
+                // Render operator prefix (except leading '+' which we omit)
+                if (k == 0)
+                {
+                    if (op == "-") sb.Append("&minus;");
+                }
+                else
+                {
+                    sb.Append(op == "-" ? " &minus; " : " + ");
+                }
+                // Render the term — try derivative pattern first, then multiplicative
+                // factor rendering, then parser fallback.
+                string termHtml = null;
+                var spHtml = TryRenderDeqSpecial(term);
+                if (!string.IsNullOrEmpty(spHtml))
+                {
+                    termHtml = spHtml;
+                    if (term.Contains('∂') || (term.StartsWith("d") && term.Contains("/d")))
+                        anyDeriv = true;
+                }
+                else if (term.Contains('∂') || term.Contains("d/d")
+                         || System.Text.RegularExpressions.Regex.IsMatch(term,
+                            @"[d∂](?:\^?\d+)?[a-zA-Zα-ωΑ-Ω_][a-zA-Zα-ωΑ-Ω0-9_]*\s*/\s*[d∂][a-zA-Zα-ωΑ-Ω_]"))
+                {
+                    // Term has a derivative + multiplicative factors: split by ·/*
+                    termHtml = RenderMultiplicativeFactors(term);
+                    anyDeriv = true;
+                }
+                else
+                {
+                    try
+                    {
+                        _parser.Parse(NormalizeOps(term), false);
+                        termHtml = _parser.ToHtml();
+                    }
+                    catch { }
+                    if (string.IsNullOrWhiteSpace(termHtml))
+                        termHtml = DeqRenderVar(term);
+                }
+                sb.Append(termHtml);
+            }
+            return anyDeriv ? sb.ToString() : null;
+        }
+
+        /// <summary>Find the index of the first top-level '=' (outside [](), depth=0), or -1.</summary>
+        private static int FindTopLevelEquals(string s)
+        {
+            int depth = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                var c = s[i];
+                if (c == '(' || c == '[') depth++;
+                else if (c == ')' || c == ']') depth--;
+                else if (c == '=' && depth == 0) return i;
+            }
+            return -1;
+        }
+
+        /// <summary>Split a string by a single top-level delimiter (outside [](), depth=0).</summary>
+        private static List<string> SplitTopLevelByChar(string s, char delim)
+        {
+            var parts = new List<string>();
+            int depth = 0;
+            int start = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                var c = s[i];
+                if (c == '(' || c == '[') depth++;
+                else if (c == ')' || c == ']') depth--;
+                else if (c == delim && depth == 0)
+                {
+                    parts.Add(s.Substring(start, i - start));
+                    start = i + 1;
+                }
+            }
+            if (start <= s.Length) parts.Add(s.Substring(start));
+            return parts;
+        }
+
+        /// <summary>
+        /// Render a matrix literal of the form "[row1 | row2 | row3]" where each
+        /// row has cells separated by ',' or ';'. Each cell is recursively
+        /// rendered through the special-renderer (so partial derivatives and
+        /// primes inside the matrix still work), then through the parser
+        /// (fallback), then through DeqRenderVar (last resort).
+        /// Wraps the resulting grid in large square brackets.
+        /// </summary>
+        private string TryRenderMatrixLiteral(string expr)
+        {
+            if (string.IsNullOrEmpty(expr) || expr.Length < 3) return null;
+            if (expr[0] != '[' || expr[^1] != ']') return null;
+            var inner = expr.Substring(1, expr.Length - 2).Trim();
+            if (string.IsNullOrEmpty(inner)) return null;
+            var rows = SplitTopLevelByChar(inner, '|');
+            // Accept 1-row matrices (no '|') ONLY if they contain pdiff()/
+            // diff()/integrate() — we want to render those operators as
+            // math notation. Plain 1-row vectors [a; b; c] are still handled
+            // by the normal parser.
+            if (rows.Count < 2 &&
+                !inner.Contains("pdiff(") &&
+                !inner.Contains("diff(") &&
+                !inner.Contains("integrate("))
+                return null;
+
+            // Split each row by ',' or ';' (whichever yields more cells)
+            var cells = new List<List<string>>();
+            int maxCols = 0;
+            foreach (var row in rows)
+            {
+                var byComma = SplitTopLevelByChar(row, ',');
+                var bySemi  = SplitTopLevelByChar(row, ';');
+                var chosen = byComma.Count >= bySemi.Count ? byComma : bySemi;
+                var trimmed = chosen.Select(c => c.Trim()).ToList();
+                cells.Add(trimmed);
+                if (trimmed.Count > maxCols) maxCols = trimmed.Count;
+            }
+
+            // Render each cell as HTML
+            string renderCell(string cellExpr)
+            {
+                if (string.IsNullOrWhiteSpace(cellExpr)) return "&nbsp;";
+                // Try special render first (partials, primes, integrals)
+                var sp = TryRenderDeqSpecial(cellExpr.Trim());
+                if (!string.IsNullOrEmpty(sp)) return sp;
+                // Fall back to parser
+                try
+                {
+                    _parser.Parse(cellExpr.Trim(), false);
+                    var html = _parser.ToHtml();
+                    if (!string.IsNullOrWhiteSpace(html)) return html;
+                }
+                catch { /* fall through */ }
+                return DeqRenderVar(cellExpr.Trim());
+            }
+
+            // Build HTML using the SAME <span class="matrix"> pattern that
+            // native Calcpad uses for computed matrices. The existing
+            // stylesheet already renders proper tall square brackets via
+            // the empty first/last <span class="td"></span> cells combined
+            // with CSS pseudo-elements — so our decorative matrices look
+            // IDENTICAL to native ones, align perfectly inline with other
+            // expressions, and don't force line breaks in the paragraph.
+            var sb = new System.Text.StringBuilder();
+            sb.Append("<span class=\"matrix matwrap\">");
+            foreach (var row in cells)
+            {
+                sb.Append("<span class=\"tr\"><span class=\"td\"></span>");
+                for (int c = 0; c < maxCols; c++)
+                {
+                    var cell = c < row.Count ? row[c] : "";
+                    sb.Append("<span class=\"td\">");
+                    sb.Append(renderCell(cell));
+                    sb.Append("</span>");
+                }
+                sb.Append("<span class=\"td\"></span></span>");
+            }
+            sb.Append("</span>");
+            return sb.ToString();
+        }
+
         /// <summary>Render a variable name with subscript support for #deq</summary>
         private static string DeqRenderVar(string name)
         {
@@ -1227,6 +2914,51 @@ namespace Calcpad.Core
             '∂' or '\u2202' => "∂",
             _ => c.ToString()
         };
+
+        /// <summary>
+        /// Detecta si la cadena es una llamada a función "literal" tipo
+        /// <c>f(x; y)</c>, <c>N_1(ξ; η)</c>, <c>v_x(t)</c>. Renderiza como
+        /// función display con argumentos, sin tratar de evaluar.
+        /// Retorna null si no matchea el patrón.
+        /// </summary>
+        /// <remarks>
+        /// El patrón es: identificador (opcionalmente con _subscript)
+        /// seguido de '(' + lista de args separados por ; o , + ')',
+        /// y el string completo termina en ')'. No matchea expresiones
+        /// como <c>(1+ξ)(1-η)</c> ni <c>N_1(ξ)·x_1 + ...</c> porque ahí
+        /// el primer carácter no es una letra y/o hay tokens después
+        /// del paréntesis cierre.
+        /// </remarks>
+        private static string TryRenderFunctionCallSignature(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return null;
+            // Regex: id (con sub) ( contenido sin paréntesis anidados )
+            // OJO: esto solo cubre el caso simple — sin paréntesis anidados
+            // dentro de los argumentos. Casos como f(g(x)) no matchearían.
+            var m = System.Text.RegularExpressions.Regex.Match(
+                s.Trim(),
+                @"^([a-zA-Zα-ωΑ-Ω][a-zA-Zα-ωΑ-Ω0-9_]*)\s*\(\s*([^()]+?)\s*\)$");
+            if (!m.Success) return null;
+
+            var fnName = m.Groups[1].Value;
+            var argsRaw = m.Groups[2].Value;
+
+            // Args separados por ; o ,
+            var argList = argsRaw.Split(new[] { ';', ',' },
+                StringSplitOptions.RemoveEmptyEntries);
+
+            var fnHtml = DeqRenderVar(fnName);
+            // Cada argumento se renderiza por separado con DeqRenderVar
+            // (soporta letras griegas, subscripts).
+            var argsHtml = string.Join(", ",
+                argList.Select(a => DeqRenderVar(a.Trim())));
+
+            // Notar: el separador visual de argumentos en notación
+            // matemática estándar es la coma (no el punto y coma).
+            // Calcpad usa ';' por sintaxis interna pero al renderizar
+            // queda más natural mostrar ',' (como N_1(ξ, η) en libros).
+            return $"{fnHtml}({argsHtml})";
+        }
 
         // ─── #svg W H / #end svg — Inline SVG drawing block ──────────────────
         // Lines starting with . are SVG primitives; other lines evaluate normally
@@ -1393,7 +3125,35 @@ namespace Calcpad.Core
         // Parse args, evaluating Calcpad expressions for numeric values
         private string[] SvgSplitArgs(string s)
         {
-            return s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            // Split por espacios pero RESPETANDO comillas dobles, así el
+            // user puede pasar  .text 100 50 "varias palabras juntas" 14 ...
+            // como un solo token. Antes split('') las rompía en 3 tokens
+            // y los textos quedaban como "0" porque "varias se evaluaba
+            // como expresión sin matchear y devolvía 0.
+            var parts = new System.Collections.Generic.List<string>();
+            var cur = new System.Text.StringBuilder();
+            bool inQuotes = false;
+            foreach (var c in s)
+            {
+                if (c == '"')
+                {
+                    inQuotes = !inQuotes;
+                    cur.Append(c);     // mantener las comillas (SvgText las usa de marker)
+                }
+                else if (c == ' ' && !inQuotes)
+                {
+                    if (cur.Length > 0)
+                    {
+                        parts.Add(cur.ToString());
+                        cur.Clear();
+                    }
+                }
+                else
+                    cur.Append(c);
+            }
+            if (cur.Length > 0)
+                parts.Add(cur.ToString());
+            return parts.ToArray();
         }
 
         private double EvalSvgExpr(string expr)
@@ -2063,16 +3823,94 @@ namespace Calcpad.Core
                 return;
             }
 
-            var result = SymbolicProcessor.Process(command);
+            // Decorative patterns rendered by the #deq renderer (partial
+            // derivatives, matrix literals, prime notation, integrals).
+            // We try these FIRST so that #sym can display math that the
+            // SymbolicProcessor backend can't parse (e.g., the ∂ Unicode char).
+            if (_isVisible)
+            {
+                // Matrix literal on its own: "[...|...]"
+                if (command.StartsWith("[") && command.EndsWith("]") && command.Contains('|'))
+                {
+                    var matHtml = TryRenderMatrixLiteral(command);
+                    if (!string.IsNullOrEmpty(matHtml))
+                    {
+                        _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"eq\"{EqStyleForMatrix(matHtml)}>{matHtml}</span></p>\n");
+                        return;
+                    }
+                }
+                // Assignment "Name = [...|...]"
+                var eqIdx2 = FindTopLevelEquals(command);
+                if (eqIdx2 > 0)
+                {
+                    var rhs = command.Substring(eqIdx2 + 1).Trim();
+                    if (rhs.StartsWith("[") && rhs.EndsWith("]") && rhs.Contains('|'))
+                    {
+                        var matHtml = TryRenderMatrixLiteral(rhs);
+                        if (!string.IsNullOrEmpty(matHtml))
+                        {
+                            var lhs = command.Substring(0, eqIdx2).Trim();
+                            var lhsHtml = DeqRenderVar(lhs);
+                            var content = $"{lhsHtml} = {matHtml}";
+                            _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"eq\"{EqStyleForMatrix(content)}>{content}</span></p>\n");
+                            return;
+                        }
+                    }
+                }
+                // Decorative standalone patterns: ∂f/∂x, ∫(...), integral(...), v'(x)
+                // Or assignments "LHS = <pattern>" where RHS has ∂/∫/prime
+                if (command.Contains('∂') || command.Contains('∫')
+                    || command.StartsWith("integral(", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Try render the whole command via the #deq special renderer
+                    var specialHtml = TryRenderDeqSpecial(command);
+                    if (!string.IsNullOrEmpty(specialHtml))
+                    {
+                        _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"eq\"{EqStyleForMatrix(specialHtml)}>{specialHtml}</span></p>\n");
+                        return;
+                    }
+                    // If it's an assignment, split and render each side
+                    if (eqIdx2 > 0)
+                    {
+                        var lhs = command.Substring(0, eqIdx2).Trim();
+                        var rhs = command.Substring(eqIdx2 + 1).Trim();
+                        var lhsHtml = DeqRenderVar(lhs);
+                        var rhsHtml = TryRenderDeqSpecial(rhs) ?? DeqRenderVar(rhs);
+                        var content = $"{lhsHtml} = {rhsHtml}";
+                        _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"eq\"{EqStyleForMatrix(content)}>{content}</span></p>\n");
+                        return;
+                    }
+                }
+            }
+
+            // Normalize Unicode operators before dispatching to AngouriMath:
+            // `·` (U+00B7 middle dot), `×` (U+00D7), `⋅` (U+22C5 dot op) → `*`.
+            // Calcpad Symbolic users habitually type `·` for multiplication but
+            // AngouriMath's parser only understands ASCII `*`.
+            var normalized = NormalizeOps(command);
+            var result = SymbolicProcessor.Process(normalized);
             if (!_isVisible) return;
 
             if (result.IsError)
             {
-                _sb.Append($"<p{HtmlId}><span class=\"err\">{System.Web.HttpUtility.HtmlEncode(result.Error)}</span></p>\n");
+                _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">{System.Web.HttpUtility.HtmlEncode(result.Error)}</span></p>\n");
                 return;
             }
 
+            var sb2 = RenderSymResultBody(result);
+
+            if (sb2.Length > 0)
+                _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"eq\">{sb2}</span></p>\n");
+        }
+
+        // Reusable rendering of a SymResult's Parts into the inner HTML that
+        // would go inside <span class="eq">…</span>. Shared by ParseKeywordSym
+        // and ParseKeywordColumns so symbolic operations render identically
+        // whether they're line-level (#sym …) or cell-level (#blk cells).
+        private System.Text.StringBuilder RenderSymResultBody(SymbolicProcessor.SymResult result)
+        {
             var savedIsVal = _isVal;
+            var savedIsCalc = _parser.IsCalculation;
             _isVal = -1; // #noc mode
             _parser.IsCalculation = false;
             var hw = new HtmlWriter(Settings.Math, _parser.Phasor);
@@ -2204,10 +4042,8 @@ namespace Calcpad.Core
             }
 
             _isVal = savedIsVal;
-            _parser.IsCalculation = _isVal != -1;
-
-            if (sb2.Length > 0)
-                _sb.Append($"<p{HtmlId}><span class=\"eq\">{sb2}</span></p>\n");
+            _parser.IsCalculation = savedIsCalc;
+            return sb2;
         }
 
         // Render a Calcpad expression to HTML via MathParser
@@ -2218,14 +4054,39 @@ namespace Calcpad.Core
             if (expr.Contains('\u2202'))
                 return RenderPartialSymbol(expr);
 
-            // Convert variable names like "u1" to "u_1" so digits render as subscript
-            expr = ConvertDigitSuffixToSubscript(expr);
+            // Clean Maxima / AngouriMath artifacts that confuse Calcpad's parser:
+            //   %e            → Maxima's literal Euler number constant
+            //   log(e)        → AngouriMath leaves this unsimplified when `e`
+            //                   is treated as a free variable; mathematically
+            //                   it equals 1 (natural log of Euler's number).
+            //   log(e)·X      → simplifies to X (since log(e) = 1).
+            // Without these substitutions, integrate(x^2·e^x; x) returns
+            // "((log(e)^2·x^2 − 2·log(e)·x + 2)·%e^(log(e)·x))/log(e)^3"
+            // which renders as plain text because Calcpad doesn't know %e.
+            expr = expr.Replace("%e", "e");
+            // Collapse log(e) → 1 (e here is Euler's constant). Use a simple
+            // string replace; downstream the parser can simplify 1·X → X.
+            if (expr.Contains("log(e)"))
+            {
+                expr = System.Text.RegularExpressions.Regex.Replace(expr,
+                    @"\blog\(e\)", "1");
+            }
+
+            // NOTE: previous versions converted "s1" → "s_1" automatically so
+            // a trailing digit rendered as subscript. The user prefers the
+            // explicit notation (`s_1`, `s_2`) and "s1" must stay as "s1"
+            // (Calcpad already accepts s1, s2 as valid identifiers).
+            // The auto-conversion is intentionally DISABLED here.
 
             // Pre-define variable names found in the expression so MathParser
-            // doesn't interpret them as units (e.g. "u" as atomic mass unit)
+            // doesn't interpret them as units (e.g. "u" as atomic mass unit).
+            // Only stub variables that aren't already bound — otherwise we
+            // would clobber real numeric values assigned earlier (e.g. L = 60
+            // defined outside a #blk cell and referenced inside a #sym op).
             var varNames = ExtractVariableNames(expr);
             foreach (var vn in varNames)
             {
+                if (_parser.HasVariable(vn)) continue;
                 try { _parser.SetVariable(vn, 0); } catch { }
             }
 
@@ -2483,13 +4344,13 @@ namespace Calcpad.Core
                     }
                 }
                 if (!string.IsNullOrWhiteSpace(stderr))
-                    _sb.Append($"<p{HtmlId}><span class=\"err\">{System.Web.HttpUtility.HtmlEncode(stderr.Trim())}</span></p>\n");
+                    _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">{System.Web.HttpUtility.HtmlEncode(stderr.Trim())}</span></p>\n");
                 PipProgressChanged?.Invoke(null);
             }
             catch (Exception ex)
             {
                 PipProgressChanged?.Invoke(null);
-                _sb.Append($"<p{HtmlId}><span class=\"err\">Python error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
+                _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">Python error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
             }
         }
 
@@ -2677,18 +4538,36 @@ namespace Calcpad.Core
             if (!_calculate || !_isVisible) return;
             try
             {
-                // Find Maxima
-                var maximaCmd = "C:/maxima-5.48.1/bin/maxima.bat";
-                if (!System.IO.File.Exists(maximaCmd))
-                    maximaCmd = "maxima"; // fallback to PATH
+                // Auto-discover any C:\maxima-*\bin\maxima.bat instead of
+                // hard-coding 5.48.1. Falls back to PATH.
+                string maximaCmd = null;
+                var preferred = "C:/maxima-5.48.1/bin/maxima.bat";
+                if (System.IO.File.Exists(preferred))
+                    maximaCmd = preferred;
+                else
+                {
+                    try
+                    {
+                        foreach (var dir in System.IO.Directory.EnumerateDirectories("C:/", "maxima-*"))
+                        {
+                            var bat = System.IO.Path.Combine(dir, "bin", "maxima.bat");
+                            if (System.IO.File.Exists(bat)) { maximaCmd = bat; break; }
+                        }
+                    }
+                    catch { }
+                }
+                maximaCmd ??= "maxima"; // PATH fallback
 
                 var tempFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "calcpad_maxima_" + Guid.NewGuid().ToString("N")[..8] + ".mac");
                 System.IO.File.WriteAllText(tempFile, "display2d:false$\n" + code, new System.Text.UTF8Encoding(false));
 
+                // Maxima interprets backslashes in the batch path as escape
+                // chars — force forward slashes.
+                var batchPath = tempFile.Replace('\\', '/');
                 var psi = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = maximaCmd,
-                    Arguments = $"--very-quiet --batch \"{tempFile}\"",
+                    Arguments = $"--very-quiet --batch \"{batchPath}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -2720,7 +4599,7 @@ namespace Calcpad.Core
             }
             catch (Exception ex)
             {
-                _sb.Append($"<p{HtmlId}><span class=\"err\">Maxima error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
+                _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">Maxima error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
             }
         }
 
@@ -2770,7 +4649,7 @@ namespace Calcpad.Core
                         if (trimmed.StartsWith("Successfully") || trimmed.StartsWith("Installing") ||
                             trimmed.StartsWith("Collecting") || trimmed.StartsWith("Downloading"))
                         {
-                            _sb.Append($"<p{HtmlId}><code>{System.Web.HttpUtility.HtmlEncode(trimmed)}</code></p>\n");
+                            _sb.Append($"<p{HtmlId}{HtmlLineClass}><code>{System.Web.HttpUtility.HtmlEncode(trimmed)}</code></p>\n");
                             hasOutput = true;
                         }
                     }
@@ -2782,7 +4661,7 @@ namespace Calcpad.Core
                             var trimmed = line.TrimEnd('\r').Trim();
                             if (trimmed.StartsWith("Requirement already satisfied"))
                             {
-                                _sb.Append($"<p{HtmlId}><code style=\"color:#888\">✓ {System.Web.HttpUtility.HtmlEncode(args)} (already installed)</code></p>\n");
+                                _sb.Append($"<p{HtmlId}{HtmlLineClass}><code style=\"color:#888\">✓ {System.Web.HttpUtility.HtmlEncode(args)} (already installed)</code></p>\n");
                                 break;
                             }
                         }
@@ -2795,7 +4674,7 @@ namespace Calcpad.Core
                         {
                             var trimmed = line.TrimEnd('\r').Trim();
                             if (!string.IsNullOrEmpty(trimmed) && !trimmed.StartsWith("[notice]"))
-                                _sb.Append($"<p{HtmlId}><span class=\"err\">pip: {System.Web.HttpUtility.HtmlEncode(trimmed)}</span></p>\n");
+                                _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">pip: {System.Web.HttpUtility.HtmlEncode(trimmed)}</span></p>\n");
                         }
                     }
                 }
@@ -2804,7 +4683,7 @@ namespace Calcpad.Core
             {
                 PipProgressChanged?.Invoke(null);
                 if (_isVisible)
-                    _sb.Append($"<p{HtmlId}><span class=\"err\">pip error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
+                    _sb.Append($"<p{HtmlId}{HtmlLineClass}><span class=\"err\">pip error: {System.Web.HttpUtility.HtmlEncode(ex.Message)}</span></p>\n");
             }
         }
 
@@ -2814,7 +4693,8 @@ namespace Calcpad.Core
         private void ParseInlineSym(string command)
         {
             if (string.IsNullOrEmpty(command)) return;
-            var result = SymbolicProcessor.Process(command);
+            // Normalize Unicode operators (·, ×, ⋅) → ASCII * for AngouriMath.
+            var result = SymbolicProcessor.Process(NormalizeOps(command));
             if (result.IsError) { _sb.Append($"<span class=\"err\">{System.Web.HttpUtility.HtmlEncode(result.Error)}</span>"); return; }
 
             var savedIsVal = _isVal;
@@ -2917,9 +4797,13 @@ namespace Calcpad.Core
         /// </summary>
         private void PreDefineVariables(string expr)
         {
+            // Only stub variables that aren't already bound. Otherwise we'd
+            // wipe out real values assigned elsewhere — e.g. a preceding
+            // L = 60 would be reset to 0 the first time a #deq referenced L.
             var names = ExtractVariableNames(expr);
             foreach (var vn in names)
             {
+                if (_parser.HasVariable(vn)) continue;
                 try { _parser.SetVariable(vn, 0); } catch { }
             }
         }
@@ -2937,6 +4821,16 @@ namespace Calcpad.Core
             {
                 var part = parts[i].Trim();
                 if (string.IsNullOrEmpty(part)) continue;
+                // Intentar renderizado especial primero (derivadas parciales, leibniz, primes)
+                // para que las derivadas tipo -∂^2w/∂x^2 se rendericen como fraccion incluso
+                // cuando aparecen en inline dentro de texto narrativo.
+                var special = TryRenderDeqSpecial(part);
+                if (!string.IsNullOrEmpty(special))
+                {
+                    if (i > 0) sb2.Append(" = ");
+                    sb2.Append(special);
+                    continue;
+                }
                 try
                 {
                     _parser.Parse(part, false);
@@ -2955,7 +4849,176 @@ namespace Calcpad.Core
             _isVal = savedIsVal;
             _parser.IsCalculation = _isVal != -1;
             if (sb2.Length > 0)
-                _sb.Append($"<span class=\"eq\">{sb2}</span>");
+            {
+                // Apply the matrix-aware style so that when the rendered HTML
+                // contains a <span class="matrix"> the equals sign is
+                // vertically centered with the matrix (inline-flex, align-items:center).
+                var sbStr = sb2.ToString();
+                var eqStyle = EqStyleForMatrix(sbStr);
+                _sb.Append($"<span class=\"eq\"{eqStyle}>{sbStr}</span>");
+            }
+        }
+
+        /// <summary>
+        /// Decide whether an inline math fragment (between apostrophes in a
+        /// text line) should be rendered as display-only — mirroring the
+        /// permissiveness of block-level #deq — instead of being evaluated
+        /// through the normal parser (which rejects identities, Leibniz
+        /// derivatives, and literal directive references).
+        /// </summary>
+        /// <remarks>
+        /// Patterns routed to display-only:
+        /// <list type="bullet">
+        /// <item>Literal directive or function reference: starts with
+        /// <c>#</c> or <c>$</c> (e.g. <c>#blk</c>, <c>$Plot</c>). These
+        /// cannot be evaluated inline but the user wants to show them
+        /// as code while narrating.</item>
+        /// <item>Matrix literal: <c>[row1 | row2 | ...]</c>.</item>
+        /// <item>Leibniz derivative: <c>d^n f / d^m x</c>, <c>∂f/∂x</c>,
+        /// <c>d^2w/dxdy</c> — the normal inline parser tokenises these
+        /// wrong (treats <c>dxdy</c> as units).</item>
+        /// <item>Identity whose LHS is not a simple assignable target:
+        /// <c>(a+b)^2 = a^2 + 2·a·b + b^2</c>. The normal parser insists
+        /// the LHS of <c>=</c> be a variable or function name.</item>
+        /// </list>
+        /// </remarks>
+        internal static bool ShouldRenderInlineAsDisplay(string expr)
+        {
+            if (string.IsNullOrWhiteSpace(expr)) return false;
+            var trimmed = expr.Trim();
+            // 1. Literal directive or function reference
+            if (trimmed.Length > 0 && (trimmed[0] == '#' || trimmed[0] == '$'))
+                return true;
+            // 2. Matrix literal [..|..|..] — whole expression is a matrix
+            if (trimmed.Length > 2 && trimmed[0] == '[' && trimmed[^1] == ']' &&
+                trimmed.IndexOf('|') > 0)
+                return true;
+            // 3. Leibniz derivative pattern: d^n f / d^m x (or with ∂)
+            if (System.Text.RegularExpressions.Regex.IsMatch(trimmed,
+                @"[d∂]\^?\d*[a-zA-Zα-ωΑ-Ω_]+\s*/\s*[d∂]"))
+                return true;
+            // 3b. Integral call — Calcpad core does not have `integral` as a
+            // builtin, but #deq/TryRenderIntegralSpecial renders it as ∫.
+            // Route any inline expression containing `integral(` to display.
+            if (System.Text.RegularExpressions.Regex.IsMatch(trimmed,
+                @"(?i)\bintegral\s*\("))
+                return true;
+            // 4. Equality rules
+            var eqIdx = FindTopLevelEquals(trimmed);
+            if (eqIdx > 0)
+            {
+                var lhs = trimmed[..eqIdx].Trim();
+                // 4a. Identity: LHS is not a simple variable/function
+                if (!IsSimpleAssignmentTarget(lhs))
+                    return true;
+                // 4b. Assignment whose RHS is a matrix literal containing
+                // pdiff() — these need our custom ∂ display path because the
+                // normal parser produces ugly FD expressions. For diff/
+                // integrate the parser handles them via $slope/$area natively,
+                // and for plain matrices the parser must run normally.
+                var rhs = trimmed[(eqIdx + 1)..].Trim();
+                if (rhs.Length > 2 && rhs[0] == '[' && rhs[^1] == ']' &&
+                    rhs.IndexOf('|') > 0 && rhs.Contains("pdiff("))
+                    return true;
+                // 4c. Assignment whose RHS contains pdiff() — render the
+                // partial derivatives as ∂ notation (display) and let
+                // RenderInlineAsDisplay's side-effect register the function
+                // with FD expansion for numerical evaluation.
+                // Note: diff() and integrate() use the normal Parse path —
+                // they get rewritten to native $slope{...}/$area{...} solvers
+                // by ExpandPdiff before parsing, so Calcpad's native rendering
+                // takes care of the math notation and evaluation.
+                if (rhs.Contains("pdiff("))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// A "simple assignment target" is a variable or function call header
+        /// (no operators in the LHS). Accepts:
+        /// <c>name</c>, <c>name_sub</c>, <c>name(args)</c>.
+        /// Rejects: <c>(a+b)^2</c>, <c>a+b</c>, <c>a*b</c>, empty.
+        /// </summary>
+        private static bool IsSimpleAssignmentTarget(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return false;
+            // Identificador: primer char letra (cualquier alfabeto Unicode) o '_',
+            // después letras/dígitos Unicode + '_' + ',' (coma en subscripts
+            // compuestos tipo N_1,w o N_2,θₓ) + sub/super-índices Unicode
+            // (₀-₉, ₐ-ₜ, ⁰-⁹, etc.). Antes el regex era ASCII+Greek-only y
+            // rechazaba ᵧ ₓ ₐ etc., por lo que asignaciones como
+            //   N_1,θₓ(ξ; η) = …
+            // eran routeadas a display-only y la función nunca se registraba.
+            return System.Text.RegularExpressions.Regex.IsMatch(s.Trim(),
+                @"^[\p{L}_][\p{L}\p{Nd}\p{Mn}_,]*(?:\([^)]*\))?$");
+        }
+
+        /// <summary>
+        /// Render an inline math fragment as display-only (no evaluation).
+        /// Delegates to <see cref="ParseInlineDeq"/> for derivatives,
+        /// matrices and identities. Emits a <c>&lt;code&gt;</c> span for
+        /// literal <c>#xxx</c> / <c>$xxx</c> directive references so they
+        /// stand out from surrounding prose.
+        /// </summary>
+        internal void RenderInlineAsDisplay(string expr)
+        {
+            var trimmed = (expr ?? string.Empty).Trim();
+            if (trimmed.Length == 0) return;
+            // Literal directive or function reference → <code>
+            if (trimmed[0] == '#' || trimmed[0] == '$')
+            {
+                _sb.Append($"<code>{System.Web.HttpUtility.HtmlEncode(trimmed)}</code>");
+                return;
+            }
+            // Otherwise route through the same path as #deq inline, which
+            // handles TryRenderDeqSpecial (matrix/Leibniz/partial/primes)
+            // and falls back to _parser.Parse(part, false).ToHtml() with
+            // IsCalculation=false so identities render without evaluating.
+            ParseInlineDeq(trimmed);
+
+            // SIDE-EFFECT: If this is an assignment containing symbolic
+            // operators (pdiff/diff/integrate) or native solvers ($area/$slope
+            // etc.) — or just a matrix literal that might be a function body —
+            // also register the function/variable with the parser so that
+            // subsequent calls/references evaluate. Display already shows
+            // clean math notation; this only adds evaluation.
+            bool hasSymOp = trimmed.Contains("pdiff(") || trimmed.Contains("diff(") ||
+                            trimmed.Contains("integrate(") ||
+                            trimmed.Contains("$area") || trimmed.Contains("$slope") ||
+                            trimmed.Contains("$root") || trimmed.Contains("$sum") ||
+                            trimmed.Contains("$product");
+            bool hasMatrixRhs = false;
+            if (trimmed.IndexOf('=') > 0)
+            {
+                int eqIdx = FindTopLevelEquals(trimmed);
+                if (eqIdx > 0)
+                {
+                    var rhsCheck = trimmed[(eqIdx + 1)..].Trim();
+                    hasMatrixRhs = rhsCheck.Length > 2 && rhsCheck[0] == '['
+                                   && rhsCheck[^1] == ']';
+                }
+            }
+            if ((hasSymOp || hasMatrixRhs) && trimmed.IndexOf('=') > 0)
+            {
+                int eqIdx = FindTopLevelEquals(trimmed);
+                if (eqIdx > 0)
+                {
+                    var lhs = trimmed[..eqIdx].Trim();
+                    if (IsSimpleAssignmentTarget(lhs))
+                    {
+                        try
+                        {
+                            var expanded = ExpandPdiff(trimmed);
+                            var savedIsCalc = _parser.IsCalculation;
+                            _parser.IsCalculation = true;
+                            _parser.Parse(expanded);
+                            _parser.IsCalculation = savedIsCalc;
+                        }
+                        catch { /* swallow: display already rendered */ }
+                    }
+                }
+            }
         }
 
         private static string _lastDeqSeparator = " = ";
@@ -2995,27 +5058,40 @@ namespace Calcpad.Core
         /// This allows using partial derivatives inline in math expressions.
         /// Example: pdiff((1-ξ)*(1-η)/4; ξ) → -(1-η)/4
         /// </summary>
-        private static string ExpandPdiff(string expression)
+        /// <summary>
+        /// Expand diff(expr; var) or diff(expr; var; n) calls.
+        /// Uses Calcpad's native $slope{expr @ var = var} for n=1.
+        /// For n=2+, uses central FD on the n-th order.
+        /// </summary>
+        private static string ExpandDiff(string expression)
         {
-            if (!expression.Contains("pdiff("))
-                return expression;
-
+            if (!expression.Contains("diff(")) return expression;
             var result = new System.Text.StringBuilder(expression.Length);
             int pos = 0;
             while (pos < expression.Length)
             {
-                int pdiffStart = expression.IndexOf("pdiff(", pos, StringComparison.Ordinal);
-                if (pdiffStart < 0)
+                int diffStart = -1;
+                // Find "diff(" not preceded by 'p' (avoid pdiff)
+                int idx = pos;
+                while (idx < expression.Length)
+                {
+                    int hit = expression.IndexOf("diff(", idx, StringComparison.Ordinal);
+                    if (hit < 0) break;
+                    // Reject if this is "pdiff(" — back-char is 'p'
+                    if (hit > 0 && expression[hit - 1] == 'p') { idx = hit + 5; continue; }
+                    // Reject if part of an identifier (preceded by alnum/underscore)
+                    if (hit > 0 && (char.IsLetterOrDigit(expression[hit - 1]) || expression[hit - 1] == '_'))
+                    { idx = hit + 5; continue; }
+                    diffStart = hit;
+                    break;
+                }
+                if (diffStart < 0)
                 {
                     result.Append(expression, pos, expression.Length - pos);
                     break;
                 }
-
-                // Append everything before pdiff(
-                result.Append(expression, pos, pdiffStart - pos);
-
-                // Find matching closing paren
-                int openParen = pdiffStart + 5; // index of '('
+                result.Append(expression, pos, diffStart - pos);
+                int openParen = diffStart + 4;
                 int depth = 1;
                 int i = openParen + 1;
                 while (i < expression.Length && depth > 0)
@@ -3024,81 +5100,311 @@ namespace Calcpad.Core
                     else if (expression[i] == ')') depth--;
                     i++;
                 }
-
                 if (depth != 0)
                 {
-                    // Unbalanced parens — leave as-is
-                    result.Append(expression, pdiffStart, i - pdiffStart);
+                    result.Append(expression, diffStart, i - diffStart);
                     pos = i;
                     continue;
                 }
-
-                // Extract arguments: pdiff(expr; var) or pdiff(expr; var; n)
                 var argsStr = expression[(openParen + 1)..(i - 1)];
                 var args = SplitArgs(argsStr);
-
                 if (args.Length >= 2)
                 {
                     var exprArg = args[0].Trim();
                     var varArg = args[1].Trim();
+                    int n = args.Length >= 3 && int.TryParse(args[2].Trim(), out var nn) ? nn : 1;
 
-                    // Check if expression is a user function call (contains ; inside parens)
-                    // e.g., xc(ξ; η) — AngouriMath can't handle these, go straight to numerical
                     bool isUserFunc = false;
                     int fp = exprArg.IndexOf('(');
                     if (fp > 0 && exprArg.IndexOf(';', fp) > 0)
                         isUserFunc = true;
 
-                    bool symbolic = false;
-                    if (!isUserFunc)
+                    // Translate to Calcpad's native $slope{...} with renaming
+                    // to avoid x=x shadowing. For n>=2, use FD as Calcpad's
+                    // $slope only does first order.
+                    if (n == 1)
                     {
-                        try
-                        {
-                            AngouriMath.Entity ae = exprArg;
-                            var v = (AngouriMath.Entity.Variable)varArg;
-                            int n = args.Length >= 3 && int.TryParse(args[2].Trim(), out var nn) ? nn : 1;
-
-                            AngouriMath.Entity derivResult = ae;
-                            for (int j = 0; j < n; j++)
-                                derivResult = derivResult.Differentiate(v);
-                            derivResult = derivResult.Simplify();
-
-                            var derivStr = derivResult.ToString()
-                                .Replace(" ", "")
-                                .Replace("·", "*")
-                                .Replace("+-", "-")
-                                .Replace("-+", "-");
-
-                            // Reject if AngouriMath returned "Derivative" (unsimplified)
-                            if (!derivStr.Contains("Derivative", StringComparison.OrdinalIgnoreCase))
-                            {
-                                result.Append($"({derivStr})");
-                                symbolic = true;
-                            }
-                        }
-                        catch { }
+                        string dummy = "__t__";
+                        string exprRenamed = SubstWordBoundary(exprArg, varArg, dummy);
+                        result.Append($"$slope{{{exprRenamed} @ {dummy} = {varArg}}}");
                     }
-
-                    // Fallback: numerical differentiation (central finite differences)
-                    // pdiff(f(x; y); x) → (f(x+h; y) - f(x-h; y))/(2*h)
-                    if (!symbolic)
+                    else
                     {
-                        var numExpr = NumericalPdiff(exprArg, varArg);
+                        var numExpr = NumericalDiff(exprArg, varArg, n);
                         if (numExpr != null)
                             result.Append($"({numExpr})");
                         else
-                            result.Append(expression, pdiffStart, i - pdiffStart);
+                            result.Append(expression, diffStart, i - diffStart);
                     }
                 }
                 else
-                {
-                    result.Append(expression, pdiffStart, i - pdiffStart);
-                }
-
+                    result.Append(expression, diffStart, i - diffStart);
                 pos = i;
             }
-
             return result.ToString();
+        }
+
+        /// <summary>
+        /// Numerical derivative using central finite differences for any expression.
+        /// 1st order: (f(x+h) - f(x-h))/(2h)
+        /// 2nd order: (f(x+h) - 2f(x) + f(x-h))/h²
+        /// Higher orders: not supported here, returns null.
+        /// </summary>
+        private static string? NumericalDiff(string expr, string variable, int order)
+        {
+            const string h = "0.0001";
+            // Simple identifier substitution: replace standalone `variable` with (variable+h), (variable-h)
+            // We rebuild expression by treating expr as opaque text but substituting only
+            // standalone occurrences of `variable`.
+            string subst(string e, string repl)
+            {
+                var sb = new System.Text.StringBuilder();
+                int i = 0;
+                while (i < e.Length)
+                {
+                    // Find next occurrence of variable
+                    int idx = e.IndexOf(variable, i, StringComparison.Ordinal);
+                    if (idx < 0) { sb.Append(e, i, e.Length - i); break; }
+                    // Check word boundaries
+                    bool leftOk = idx == 0 || !(char.IsLetterOrDigit(e[idx - 1]) || e[idx - 1] == '_');
+                    int endIdx = idx + variable.Length;
+                    bool rightOk = endIdx >= e.Length || !(char.IsLetterOrDigit(e[endIdx]) || e[endIdx] == '_');
+                    if (leftOk && rightOk)
+                    {
+                        sb.Append(e, i, idx - i);
+                        sb.Append(repl);
+                        i = endIdx;
+                    }
+                    else
+                    {
+                        sb.Append(e, i, endIdx - i);
+                        i = endIdx;
+                    }
+                }
+                return sb.ToString();
+            }
+            if (order == 1)
+            {
+                var fp = subst(expr, $"({variable} + {h})");
+                var fm = subst(expr, $"({variable} - {h})");
+                return $"({fp} - {fm})/(2*{h})";
+            }
+            if (order == 2)
+            {
+                var fp = subst(expr, $"({variable} + {h})");
+                var f0 = expr;
+                var fm = subst(expr, $"({variable} - {h})");
+                return $"({fp} - 2*({f0}) + {fm})/({h}^2)";
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Expand integrate(expr; var; a; b) calls to numerical Simpson's rule
+        /// or AngouriMath symbolic integration. For user functions, uses
+        /// composite Simpson's rule with N=20 subintervals.
+        /// </summary>
+        private static string ExpandIntegrate(string expression)
+        {
+            if (!expression.Contains("integrate(")) return expression;
+            var result = new System.Text.StringBuilder(expression.Length);
+            int pos = 0;
+            while (pos < expression.Length)
+            {
+                int idx = expression.IndexOf("integrate(", pos, StringComparison.Ordinal);
+                if (idx < 0) { result.Append(expression, pos, expression.Length - pos); break; }
+                // Reject if part of a longer identifier
+                if (idx > 0 && (char.IsLetterOrDigit(expression[idx - 1]) || expression[idx - 1] == '_'))
+                {
+                    result.Append(expression, pos, idx + 10 - pos);
+                    pos = idx + 10;
+                    continue;
+                }
+                result.Append(expression, pos, idx - pos);
+                int openParen = idx + 9;
+                int depth = 1;
+                int i = openParen + 1;
+                while (i < expression.Length && depth > 0)
+                {
+                    if (expression[i] == '(') depth++;
+                    else if (expression[i] == ')') depth--;
+                    i++;
+                }
+                if (depth != 0)
+                {
+                    result.Append(expression, idx, i - idx);
+                    pos = i;
+                    continue;
+                }
+                var argsStr = expression[(openParen + 1)..(i - 1)];
+                var args = SplitArgs(argsStr);
+                if (args.Length >= 4)
+                {
+                    var exprArg = args[0].Trim();
+                    var varArg = args[1].Trim();
+                    var aArg = args[2].Trim();
+                    var bArg = args[3].Trim();
+
+                    // Use Calcpad's native $area{expr @ var = a : b} — works
+                    // for both pure expressions and user-function calls, and
+                    // evaluates numerically with Calcpad's adaptive integrator.
+                    result.Append($"$area{{{exprArg} @ {varArg} = {aArg} : {bArg}}}");
+                }
+                else
+                    result.Append(expression, idx, i - idx);
+                pos = i;
+            }
+            return result.ToString();
+        }
+
+        /// <summary>
+        /// Numerical definite integration using composite Simpson's rule with N=20.
+        /// Returns Calcpad expression text.
+        /// </summary>
+        private static string? NumericalIntegrate(string expr, string variable, string a, string b)
+        {
+            const int N = 20; // even, composite Simpson
+            string subst(string e, string repl)
+            {
+                var sb = new System.Text.StringBuilder();
+                int i = 0;
+                while (i < e.Length)
+                {
+                    int idx2 = e.IndexOf(variable, i, StringComparison.Ordinal);
+                    if (idx2 < 0) { sb.Append(e, i, e.Length - i); break; }
+                    bool leftOk = idx2 == 0 || !(char.IsLetterOrDigit(e[idx2 - 1]) || e[idx2 - 1] == '_');
+                    int endIdx = idx2 + variable.Length;
+                    bool rightOk = endIdx >= e.Length || !(char.IsLetterOrDigit(e[endIdx]) || e[endIdx] == '_');
+                    if (leftOk && rightOk)
+                    {
+                        sb.Append(e, i, idx2 - i);
+                        sb.Append(repl);
+                        i = endIdx;
+                    }
+                    else
+                    {
+                        sb.Append(e, i, endIdx - i);
+                        i = endIdx;
+                    }
+                }
+                return sb.ToString();
+            }
+            // h = (b - a)/N
+            string hExpr = $"(({b}) - ({a}))/{N}";
+            // Composite Simpson: h/3 * (f0 + fN + 4*Σodd + 2*Σeven)
+            var sb2 = new System.Text.StringBuilder();
+            sb2.Append("(");
+            sb2.Append($"({hExpr})/3 * (");
+            // f at a (i=0)
+            sb2.Append("(").Append(subst(expr, $"({a})")).Append(") + ");
+            // f at b (i=N)
+            sb2.Append("(").Append(subst(expr, $"({b})")).Append(")");
+            // Sum odd indices (4*) and even (2*)
+            sb2.Append(" + 4*(");
+            for (int k = 1; k < N; k += 2)
+            {
+                if (k > 1) sb2.Append(" + ");
+                var xk = $"(({a}) + {k}*{hExpr})";
+                sb2.Append("(").Append(subst(expr, xk)).Append(")");
+            }
+            sb2.Append(") + 2*(");
+            for (int k = 2; k < N; k += 2)
+            {
+                if (k > 2) sb2.Append(" + ");
+                var xk = $"(({a}) + {k}*{hExpr})";
+                sb2.Append("(").Append(subst(expr, xk)).Append(")");
+            }
+            sb2.Append(")))");
+            return sb2.ToString();
+        }
+
+        private static string ExpandPdiff(string expression)
+        {
+            // Translate symbolic operators to Calcpad's native solvers so the
+            // parser renders them with proper math notation (∫, d/dx) and
+            // evaluates them numerically:
+            //   integrate(expr; var; a; b) → $area{expr @ var = a : b}
+            //   diff(expr; var)            → $slope{expr_renamed @ __t__ = var}
+            //   diff(expr; var; n)         → central FD for n>=2
+            //   pdiff(expr; var)           → $slope{expr_renamed @ __t__ = var}
+            // Renaming the bound variable to a unique placeholder avoids
+            // shadowing when expr already references `var` (e.g. f(x; y)).
+            // Run translations iteratively to handle nested calls like
+            // integrate(integrate(g(x;y); y; 0; 1); x; 0; 1).
+            for (int iter = 0; iter < 8; iter++)
+            {
+                var prev = expression;
+                expression = ExpandDiff(expression);
+                expression = ExpandIntegrate(expression);
+                if (expression == prev) break;
+            }
+            if (!expression.Contains("pdiff(")) return expression;
+
+            var result = new System.Text.StringBuilder(expression.Length);
+            int pos = 0;
+            while (pos < expression.Length)
+            {
+                int pdiffStart = expression.IndexOf("pdiff(", pos, StringComparison.Ordinal);
+                if (pdiffStart < 0) { result.Append(expression, pos, expression.Length - pos); break; }
+                result.Append(expression, pos, pdiffStart - pos);
+                int openParen = pdiffStart + 5;
+                int depth = 1;
+                int i = openParen + 1;
+                while (i < expression.Length && depth > 0)
+                {
+                    if (expression[i] == '(') depth++;
+                    else if (expression[i] == ')') depth--;
+                    i++;
+                }
+                if (depth != 0)
+                {
+                    result.Append(expression, pdiffStart, i - pdiffStart);
+                    pos = i;
+                    continue;
+                }
+                var argsStr = expression[(openParen + 1)..(i - 1)];
+                var args = SplitArgs(argsStr);
+                if (args.Length >= 2)
+                {
+                    var exprArg = args[0].Trim();
+                    var varArg = args[1].Trim();
+                    // Rewrite to native $slope, renaming `varArg` → `__t__` in expr
+                    string dummy = "__t__";
+                    string exprRenamed = SubstWordBoundary(exprArg, varArg, dummy);
+                    result.Append($"$slope{{{exprRenamed} @ {dummy} = {varArg}}}");
+                }
+                else
+                    result.Append(expression, pdiffStart, i - pdiffStart);
+                pos = i;
+            }
+            return result.ToString();
+        }
+
+        /// <summary>Replace standalone occurrences of `name` with `repl` in `expr`.</summary>
+        private static string SubstWordBoundary(string expr, string name, string repl)
+        {
+            var sb = new System.Text.StringBuilder();
+            int i = 0;
+            while (i < expr.Length)
+            {
+                int idx = expr.IndexOf(name, i, StringComparison.Ordinal);
+                if (idx < 0) { sb.Append(expr, i, expr.Length - i); break; }
+                bool leftOk = idx == 0 || !(char.IsLetterOrDigit(expr[idx - 1]) || expr[idx - 1] == '_');
+                int endIdx = idx + name.Length;
+                bool rightOk = endIdx >= expr.Length || !(char.IsLetterOrDigit(expr[endIdx]) || expr[endIdx] == '_');
+                if (leftOk && rightOk)
+                {
+                    sb.Append(expr, i, idx - i);
+                    sb.Append(repl);
+                    i = endIdx;
+                }
+                else
+                {
+                    sb.Append(expr, i, endIdx - i);
+                    i = endIdx;
+                }
+            }
+            return sb.ToString();
         }
 
         /// <summary>

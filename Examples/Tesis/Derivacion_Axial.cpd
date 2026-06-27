@@ -1,0 +1,89 @@
+#margen 20
+"Derivación FEM — Elemento AXIAL (barra)
+
+'Deducción simbólica de las matrices de rigidez Ke y masa consistente Me
+'para un elemento barra de 2 nudos sometido a carga axial.
+
+"Propiedades
+
+#blk
+E = 30000000 ; 'Modulo de elasticidad
+A_s = 10 ; 'Area de seccion transversal
+rho = 0.000733 ; 'Densidad volumetrica
+L = 60 ; 'Longitud del elemento
+EA = E*A_s ; 'Rigidez axial
+#end blk
+
+#pgb
+"1. Grados de libertad y funciones de forma
+
+'El elemento barra tiene 2 DOF axiales: u1 en x=0 y u2 en x=L.
+'Aproximacion lineal: u(x) = N1(x)*u1 + N2(x)*u2.
+
+#blk
+N_1(x) = 1 - x/L ; 'Funcion de forma nudo 1
+N_2(x) = x/L ; 'Funcion de forma nudo 2
+#end blk
+
+"Propiedad: cada Ni vale 1 en su nudo y 0 en el otro.
+
+#pgb
+"2. Matriz B (deformacion-desplazamiento)
+
+'La deformacion axial es epsilon = du/dx = B*{u}
+'con B = [dN1/dx, dN2/dx].
+
+#blk
+diff(1 - x/L; x) ; 'Primera componente de B
+diff(x/L; x) ; 'Segunda componente de B
+#end blk
+
+"Entonces B es un vector constante: B = [-1/L, 1/L].
+
+#pgb
+"3. Matriz de rigidez Ke
+
+'Definicion: Kij = integral de 0 a L de EA por Bi por Bj dx.
+
+#blk
+integrate((1/L)^2; x; 0; L) ; 'Coeficiente 1,1 entre EA
+integrate((1/L)*(-1/L); x; 0; L) ; 'Coeficiente 1,2 entre EA
+integrate((-1/L)^2; x; 0; L) ; 'Coeficiente 2,2 entre EA
+#end blk
+
+"Matriz resultante (truss element clasico):
+
+#deq K_e = (EA/L)*[1; -1 | -1; 1] @@(rigidez axial)
+
+"Verificacion numerica:
+
+k_e = (EA/L)*[1; -1 | -1; 1]
+
+#pgb
+"4. Matriz de masa consistente Me
+
+'Definicion: Mij = integral de 0 a L de rho*A por Ni por Nj dx.
+
+#blk
+integrate((1 - x/L)^2; x; 0; L) ; 'Coeficiente 1,1 entre rho A
+integrate((1 - x/L)*(x/L); x; 0; L) ; 'Coeficiente 1,2 entre rho A
+integrate((x/L)^2; x; 0; L) ; 'Coeficiente 2,2 entre rho A
+#end blk
+
+"Matriz de masa consistente:
+
+#deq M_e = (rho*A_s*L/6)*[2; 1 | 1; 2] @@(masa consistente axial)
+
+"Verificacion numerica:
+
+m_e = (rho*A_s*L/6)*[2; 1 | 1; 2]
+
+#pgb
+"5. Resumen
+
+'Para un elemento barra de 2 nudos con aproximacion lineal:
+'   DOF: u1 y u2
+'   Ke = EA/L por [[1,-1],[-1,1]]
+'   Me = rho*A*L/6 por [[2,1],[1,2]] consistente
+'   Estas ecuaciones son exactas dentro de la cinematica lineal.
+#end margen

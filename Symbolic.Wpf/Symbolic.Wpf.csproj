@@ -38,6 +38,13 @@
   <ItemGroup>
     <ProjectReference Include="..\Symbolic.Core\Symbolic.Core.csproj" />
     <ProjectReference Include="..\Symbolic.OpenXml\Symbolic.OpenXml.csproj" />
+    <!-- Standalone helper process for risky AngouriMath calls. Copy its output
+         artifacts into our bin directory but don't reference its assembly. -->
+    <ProjectReference Include="..\Symbolic.Sandbox\Symbolic.Sandbox.csproj"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Content"
+                      CopyToOutputDirectory="PreserveNewest"
+                      Private="true" />
   </ItemGroup>
 
   <ItemGroup>
@@ -60,6 +67,13 @@
     <Resource Include="resources\search.png" />
     <Resource Include="resources\undo.png" />
     <Resource Include="resources\word.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--Excel Viewer (Univer)-->
+    <None Update="excel-viewer\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

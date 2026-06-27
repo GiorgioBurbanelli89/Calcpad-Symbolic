@@ -1,0 +1,546 @@
+"Funciones de Forma — Curso exhaustivo paso a paso
+'<p>Este archivo se enfoca <b>solo</b> en funciones de forma. Cada concepto
+'tiene su grafica, su derivacion simbolica con AngouriMath y un caso numerico.
+'Empezamos del problema fundamental hasta llegar a iso-parametricos y Hermite.</p>
+'<hr/>
+
+"Cap 0 — La intuicion clave: N_i son PROPORCIONES que suman 1
+'<p>Antes de cualquier formula, internaliza esto:</p>
+
+'<p><b>N₁ y N₂ son proporciones (pesos)</b>. En cada punto x del elemento,
+'N₁ te dice "que fraccion del desplazamiento aporta el nodo 1" y N₂ te
+'dice "que fraccion aporta el nodo 2". <b>Siempre suman 1</b> porque el
+'punto x recibe el 100% del desplazamiento, repartido entre los dos nodos.</p>
+
+"Tabla — los pesos cambian con la posicion x
+'<table border="1" cellpadding="6">
+'<tr><th>Posicion x</th><th>N₁ (peso del nodo 1)</th><th>N₂ (peso del nodo 2)</th><th>Suma</th></tr>
+'<tr><td>x = 0 (nodo 1)</td><td>1.00 (100%)</td><td>0.00 (0%)</td><td>1</td></tr>
+'<tr><td>x = L/4</td><td>0.75 (75%)</td><td>0.25 (25%)</td><td>1</td></tr>
+'<tr><td>x = L/2 (centro)</td><td>0.50 (50%)</td><td>0.50 (50%)</td><td>1</td></tr>
+'<tr><td>x = 3L/4</td><td>0.25 (25%)</td><td>0.75 (75%)</td><td>1</td></tr>
+'<tr><td>x = L (nodo 2)</td><td>0.00 (0%)</td><td>1.00 (100%)</td><td>1</td></tr>
+'</table>
+
+'<p>Notar: en cada fila la suma es 1. Eso es la <b>particion de la unidad</b>
+'expresada como hecho aritmetico. Y los pesos cambian linealmente con x —
+'esa es la "lineal" en "barra lineal".</p>
+
+'<hr/>
+
+"Cap 0.5 — Por que existe ξ (coordenada natural)
+'<p>La coordenada x va de 0 a L y depende de la longitud del elemento.
+'<b>ξ (xi)</b> es una version <b>adimensional</b> que va siempre de -1 a +1,
+'sin importar la longitud real del elemento.</p>
+
+#deq ξ = (2*x - L)/L
+
+'<p>Despejando: x = L·(ξ+1)/2.</p>
+
+"Tabla de equivalencia x ↔ ξ
+'<table border="1" cellpadding="6">
+'<tr><th>x</th><th>ξ</th><th>Significado</th></tr>
+'<tr><td>0</td><td>-1</td><td>Nodo 1 (izquierdo)</td></tr>
+'<tr><td>L/4</td><td>-0.5</td><td>Cuarto de longitud</td></tr>
+'<tr><td>L/2</td><td>0</td><td>Centro del elemento</td></tr>
+'<tr><td>3L/4</td><td>+0.5</td><td>Tres cuartos</td></tr>
+'<tr><td>L</td><td>+1</td><td>Nodo 2 (derecho)</td></tr>
+'</table>
+
+'<p>El centro del elemento es <b>ξ = 0</b> (ni positivo ni negativo). Los
+'extremos son ±1. Este sistema es <b>simetrico</b> alrededor del 0 —
+'una elegancia geometrica que facilita las integrales de Gauss y los
+'mapeos isoparametricos.</p>
+
+"Funciones de forma en coordenadas naturales
+
+#deq N_1(ξ) = (1 - ξ)/2
+
+#deq N_2(ξ) = (1 + ξ)/2
+
+'<p>Verificando con la tabla:</p>
+'<p>• En ξ=-1: N₁ = (1-(-1))/2 = 1, N₂ = (1+(-1))/2 = 0 ✓</p>
+'<p>• En ξ=0: N₁ = 1/2, N₂ = 1/2 ✓ (50%-50% en el centro)</p>
+'<p>• En ξ=+1: N₁ = 0, N₂ = 1 ✓</p>
+
+"Verificacion simbolica — particion de la unidad en ξ
+#sym
+simplify((1 - ξ)/2 + (1 + ξ)/2)
+#end sym
+
+'<p>Resultado = 1 ✓. Las funciones en ξ tambien suman 1 en cualquier punto
+'(por construccion, son la misma matematica reformulada).</p>
+
+"Grafica — N₁(ξ) y N₂(ξ) sobre el elemento padre [-1, +1]
+#hide
+n_g05 = 50
+ξ_v05 = vector(n_g05)
+N1_xi = vector(n_g05)
+N2_xi = vector(n_g05)
+#for i = 1 : n_g05
+    ξi = -1 + 2*(i - 1)/(n_g05 - 1)
+    ξ_v05.(i) = ξi
+    N1_xi.(i) = (1 - ξi)/2
+    N2_xi.(i) = (1 + ξi)/2
+#loop
+#show
+
+$Chart{ξ_v05; N1_xi; ξ_v05; N2_xi @ title=N₁ y N₂ en coordenada natural ξ ∈ [-1, +1] : xlabel=ξ : ylabel=N : labels=N₁,N₂}
+
+"Para que sirve la coordenada ξ
+'<p>Tres ventajas claves:</p>
+'<p><b>1) Adimensional</b> — los integrandos no tienen unidades de longitud
+'mezcladas, simplifica las cuadraturas de Gauss.</p>
+'<p><b>2) Simetrica</b> — los puntos de Gauss vienen en pares simetricos
+'(±1/√3 para 2 puntos), reduciendo el trabajo de calculo.</p>
+'<p><b>3) Universal</b> — el mismo "elemento padre" sirve para cualquier
+'elemento real distorsionado mediante un mapeo (jacobiano). Es la base
+'de los elementos isoparametricos de Bruce Irons (1965).</p>
+
+'<hr/>
+
+"Cap 1 — ¿Que problema resuelven las funciones de forma?
+'<p>El FEM divide el dominio en elementos. Conocemos el desplazamiento solo
+'en los <b>nodos</b>, pero queremos saberlo en cualquier punto interior.</p>
+
+"Grafica 1.1 — Solo conocemos los EXTREMOS
+#hide
+xN_only = vector(2)
+uN_only = vector(2)
+xN_only.(1) = 0
+uN_only.(1) = 0
+xN_only.(2) = 1
+uN_only.(2) = 0.6
+#show
+
+$Chart{xN_only; uN_only @ title=Solo conocemos u(0) y u(L) — ¿que pasa entre los puntos? : xlabel=x/L : ylabel=u}
+
+'<p>Hay infinitas curvas que pasan por dos puntos. La pregunta es: <b>¿cual
+'eligimos para representar la fisica entre nodos?</b></p>
+
+"Grafica 1.2 — Cuatro candidatos pasando por (0,0) y (L,0.6)
+#hide
+n_g12 = 50
+xg12 = vector(n_g12)
+lin12 = vector(n_g12)
+parab12 = vector(n_g12)
+seno12 = vector(n_g12)
+cubic12 = vector(n_g12)
+#for i = 1 : n_g12
+    xg12.(i) = (i - 1)/(n_g12 - 1)
+    lin12.(i) = 0.6*xg12.(i)
+    parab12.(i) = 0.6*xg12.(i)^2
+    seno12.(i) = 0.6*sin(90*xg12.(i))
+    cubic12.(i) = 0.6*xg12.(i)^3
+#loop
+#show
+
+$Chart{xg12; lin12; xg12; parab12; xg12; seno12; xg12; cubic12 @ title=Cuatro funciones que pasan por los mismos extremos : xlabel=x/L : ylabel=u : labels=Lineal,Parabolica,Sinusoidal,Cubica}
+
+"Para que sirve esta grafica
+'<p>Las cuatro curvas <b>cumplen</b> con los puntos extremos pero entre ellos
+'difieren mucho. La eleccion no es arbitraria: <b>la mas simple suficiente</b>
+'es la respuesta del FEM. Para barras axiales sin carga distribuida, la
+'solucion exacta ES lineal — asi que la lineal es perfecta. Para vigas con
+'flexion necesitamos cubicas (Hermite, ver Cap 5).</p>
+
+'<hr/>
+
+"Cap 2 — Las 4 condiciones que TODA funcion de forma debe cumplir
+
+'<p>Para que las N_i sirvan como interpolante en el FEM deben cumplir 4
+'condiciones criticas:</p>
+
+"Condicion 1 — Delta de Kronecker
+'<p>Cada N_i vale 1 en su propio nodo y 0 en los demas:</p>
+
+#deq N_i(x_j) = δ_ij
+
+'<p>Esto garantiza que u(x_j) = u_j (el desplazamiento en el nodo j es
+'exactamente el valor nodal u_j, sin promedios raros).</p>
+
+"Condicion 2 — Particion de la unidad
+'<p>La suma de TODAS las N_i en cualquier punto vale 1:</p>
+
+#deq Σ N_i(x) = 1
+
+'<p>Esto garantiza que un movimiento de cuerpo rigido (todos los nodos se
+'desplazan por igual) NO produce deformaciones espurias.</p>
+
+"Condicion 3 — Continuidad
+'<p>El campo interpolado u(x) debe ser continuo a traves de los bordes entre
+'elementos. Para problemas de barras y placas membranas basta C^0
+'(continuidad del valor). Para vigas Bernoulli necesitamos C^1 (continuidad
+'de la derivada tambien — por eso usaremos Hermite cubicas mas adelante).</p>
+
+"Condicion 4 — Completitud polinomial
+'<p>Las N_i deben ser capaces de representar al menos los polinomios del
+'orden necesario para la convergencia. Para problemas elasticos lineales,
+'esto significa: constante (RBM) + lineal (deformacion uniforme) como
+'minimo.</p>
+
+'<hr/>
+
+"Cap 3 — Funciones de forma del elemento BARRA LINEAL (2 nodos)
+
+"Paso 3.1 — Asumir forma lineal y plantear las condiciones
+'<p>El elemento barra tiene 2 nodos en x=0 y x=L con desplazamientos u₁ y u₂.</p>
+
+'<p>Asumimos forma lineal: 'u(x) = a + b*x'. Imponemos:</p>
+
+#deq u(0) = a = u_1
+
+#deq u(L) = a + b*L = u_2
+
+'<p>Despejando: a = u₁ y b = (u₂ - u₁)/L.</p>
+
+"Paso 3.2 — Reagrupar para extraer N_1 y N_2
+'<p>Sustituyendo:</p>
+
+#deq u(x) = u_1 + ((u_2 - u_1)/L)*x
+
+'<p>Reagrupamos por nodo:</p>
+
+#deq u(x) = (1 - x/L)*u_1 + (x/L)*u_2
+
+'<p>Identificamos:</p>
+
+#deq N_1(x) = 1 - x/L
+
+#deq N_2(x) = x/L
+
+"Paso 3.3 — Verificar las condiciones simbolicamente
+
+'<p>Suma N₁ + N₂ — debe dar 1:</p>
+
+#sym
+simplify((1 - x/L) + (x/L))
+#end sym
+
+'<p>Resultado = 1 ✓ (particion de la unidad cumplida).</p>
+
+'<p>Derivada de N₁ — para encontrar la matriz B:</p>
+
+#sym
+diff(1 - x/L; x)
+#end sym
+
+'<p>Derivada de N₂:</p>
+
+#sym
+diff(x/L; x)
+#end sym
+
+'<p>Las derivadas son -1/L y +1/L (constantes).</p>
+
+"Paso 3.4 — Grafica de las funciones de forma
+#hide
+n_g34 = 50
+xg34 = vector(n_g34)
+N1_lin = vector(n_g34)
+N2_lin = vector(n_g34)
+suma_lin = vector(n_g34)
+#for i = 1 : n_g34
+    xg34.(i) = (i - 1)/(n_g34 - 1)
+    N1_lin.(i) = 1 - xg34.(i)
+    N2_lin.(i) = xg34.(i)
+    suma_lin.(i) = N1_lin.(i) + N2_lin.(i)
+#loop
+#show
+
+$Chart{xg34; N1_lin; xg34; N2_lin; xg34; suma_lin @ title=N₁, N₂ y N₁+N₂ del elemento barra lineal : xlabel=x/L : ylabel=N : labels=N₁,N₂,N₁+N₂}
+
+"Para que sirve esta grafica
+'<p>Las dos rectas (azul y roja) cumplen el delta de Kronecker visualmente
+'(N₁ vale 1 en x=0 y 0 en x=L; N₂ al reves). La verde plana en 1.0 es la
+'particion de la unidad. Tres condiciones cumplidas en una sola grafica.</p>
+
+'<hr/>
+
+"Cap 4 — Funciones de forma del elemento BARRA CUADRATICA (3 nodos)
+
+'<p>Si el elemento tiene 3 nodos (en x=0, L/2, L) podemos usar polinomios
+'cuadraticos. La interpolacion sera mas precisa para problemas con
+'deformacion variable.</p>
+
+"Paso 4.1 — Asumir forma cuadratica
+'<p>Asumimos 'u(x) = a + b*x + c*x^2'. Tres incognitas (a, b, c) y tres
+'condiciones:</p>
+
+#deq u(0) = u_1
+
+#deq u(L/2) = u_2
+
+#deq u(L) = u_3
+
+"Paso 4.2 — Funciones de forma resultantes (sin derivacion completa)
+'<p>Despues de resolver el sistema 3×3 (largo pero mecanico):</p>
+
+#deq N_1(x) = (1 - 2*x/L)*(1 - x/L)
+
+#deq N_2(x) = 4*x/L*(1 - x/L)
+
+#deq N_3(x) = (2*x/L - 1)*(x/L)
+
+"Paso 4.3 — Verificacion simbolica de la particion de la unidad
+
+#sym
+simplify((1 - 2*x/L)*(1 - x/L) + 4*x/L*(1 - x/L) + (2*x/L - 1)*(x/L))
+#end sym
+
+'<p>Resultado = 1 ✓ (Calcpad confirma que las 3 cuadraticas suman 1 en
+'todo punto).</p>
+
+"Paso 4.4 — Grafica de las funciones cuadraticas
+#hide
+n_g44 = 50
+xg44 = vector(n_g44)
+N1q = vector(n_g44)
+N2q = vector(n_g44)
+N3q = vector(n_g44)
+sumaq = vector(n_g44)
+#for i = 1 : n_g44
+    xg44.(i) = (i - 1)/(n_g44 - 1)
+    ξ = xg44.(i)
+    N1q.(i) = (1 - 2*ξ)*(1 - ξ)
+    N2q.(i) = 4*ξ*(1 - ξ)
+    N3q.(i) = (2*ξ - 1)*ξ
+    sumaq.(i) = N1q.(i) + N2q.(i) + N3q.(i)
+#loop
+#show
+
+$Chart{xg44; N1q; xg44; N2q; xg44; N3q; xg44; sumaq @ title=N₁, N₂, N₃ del elemento barra cuadratica (3 nodos) : xlabel=x/L : ylabel=N : labels=N₁,N₂ (centro),N₃,Suma}
+
+"Para que sirve esta grafica
+'<p>Notar que <b>N₂ tiene forma de campana</b> — vale 1 en el nodo central
+'(x=L/2) y 0 en los extremos. N₁ y N₃ son las "esquinas" — valen 1 en
+'su propio extremo, 0 en los otros dos. La suma sigue siendo 1 en todo punto.</p>
+
+'<p>El elemento cuadratico permite representar deformaciones que <b>varian
+'linealmente</b> dentro del elemento (porque la derivada de un polinomio
+'de grado 2 es un polinomio de grado 1).</p>
+
+'<hr/>
+
+"Cap 5 — Funciones de forma de Hermite (viga, C¹ continua)
+
+'<p>Para una viga necesitamos que NO solo el desplazamiento sea continuo
+'entre elementos, sino tambien la <b>rotacion</b> (la derivada). Los
+'polinomios cubicos de Hermite cumplen este requisito C^1.</p>
+
+"Paso 5.1 — 4 GDL por elemento (no 2)
+'<p>Cada nodo tiene <b>2 grados de libertad</b>: deflexion v y rotacion θ.
+'El elemento viga tiene 4 GDL en total: v₁, θ₁, v₂, θ₂.</p>
+
+#deq v(x) = N_1*v_1 + N_2*θ_1 + N_3*v_2 + N_4*θ_2
+
+'<p>donde las N_i son polinomios cubicos en ξ = x/L.</p>
+
+"Paso 5.2 — Las 4 funciones de Hermite
+
+#deq N_1(ξ) = 1 - 3*ξ^2 + 2*ξ^3
+
+#deq N_2(ξ) = L*(ξ - 2*ξ^2 + ξ^3)
+
+#deq N_3(ξ) = 3*ξ^2 - 2*ξ^3
+
+#deq N_4(ξ) = L*(-ξ^2 + ξ^3)
+
+"Paso 5.3 — Verificar N₁ — debe valer 1 en ξ=0 y 0 en ξ=1
+'<p>En ξ=0:</p>
+
+#sym
+1 - 3*0^2 + 2*0^3
+#end sym
+
+'<p>En ξ=1:</p>
+
+#sym
+1 - 3*1^2 + 2*1^3
+#end sym
+
+'<p>Bien — N₁(0)=1 y N₁(1)=0.</p>
+
+"Paso 5.4 — Verificar la derivada N₁'(0) — debe ser 0
+'<p>N₁ debe valer 1 en su nodo y NO afectar la rotacion. Su derivada en
+'ξ=0 debe ser 0:</p>
+
+#sym
+diff(1 - 3*ξ^2 + 2*ξ^3; ξ)
+#end sym
+
+'<p>Evaluada en ξ=0 vale 0 ✓ (no hay rotacion espuria).</p>
+
+"Paso 5.5 — Grafica de las 4 funciones de Hermite
+#hide
+n_g55 = 50
+ξ_g55 = vector(n_g55)
+H1 = vector(n_g55)
+H2 = vector(n_g55)
+H3 = vector(n_g55)
+H4 = vector(n_g55)
+L_g55 = 1
+#for i = 1 : n_g55
+    ξg = (i - 1)/(n_g55 - 1)
+    ξ_g55.(i) = ξg
+    H1.(i) = 1 - 3*ξg^2 + 2*ξg^3
+    H2.(i) = L_g55*(ξg - 2*ξg^2 + ξg^3)
+    H3.(i) = 3*ξg^2 - 2*ξg^3
+    H4.(i) = L_g55*(-ξg^2 + ξg^3)
+#loop
+#show
+
+$Chart{ξ_g55; H1; ξ_g55; H2; ξ_g55; H3; ξ_g55; H4 @ title=Las 4 funciones de Hermite del elemento viga : xlabel=ξ = x/L : ylabel=N : labels=N₁ (v₁),N₂ (θ₁),N₃ (v₂),N₄ (θ₂)}
+
+"Para que sirve esta grafica
+'<p>Cada Hermite representa un <b>modo de deformacion</b> independiente:</p>
+'<ul>
+'<li><b>N₁</b>: solo el nodo 1 baja (con rotacion 0 en ambos extremos)</li>
+'<li><b>N₂</b>: solo el nodo 1 rota (con desplazamiento 0 en ambos extremos)</li>
+'<li><b>N₃</b>: solo el nodo 2 baja</li>
+'<li><b>N₄</b>: solo el nodo 2 rota</li>
+'</ul>
+
+'<p>Cualquier deformacion de la viga es una combinacion lineal de estos 4
+'modos. Por eso los elementos viga reproducen <b>exactamente</b> la solucion
+'analitica de cualquier viga Bernoulli (sin error de discretizacion).</p>
+
+'<hr/>
+
+"Cap 6 — Coordenadas naturales (iso-parametricos)
+
+'<p>Para elementos distorsionados (cuadrilateros generales en 2D) trabajar
+'con (x, y) es complicado. La solucion: <b>mapear</b> el elemento a un
+'cuadrado padre [-1,1]×[-1,1] usando coordenadas naturales (ξ, η).</p>
+
+"Funciones de forma del Q4 (cuadrilatero de 4 nodos)
+
+#deq N_1(ξ,η) = (1 - ξ)*(1 - η)/4
+
+#deq N_2(ξ,η) = (1 + ξ)*(1 - η)/4
+
+#deq N_3(ξ,η) = (1 + ξ)*(1 + η)/4
+
+#deq N_4(ξ,η) = (1 - ξ)*(1 + η)/4
+
+"Verificacion simbolica — particion de la unidad sobre la diagonal η=ξ
+#sym
+simplify((1 - ξ)*(1 - ξ)/4 + (1 + ξ)*(1 - ξ)/4 + (1 + ξ)*(1 + ξ)/4 + (1 - ξ)*(1 + ξ)/4)
+#end sym
+
+"Grafica — N₁(ξ, η=0) y N₁(ξ, η=0.5) a lo largo del eje ξ
+#hide
+n_g66 = 30
+ξ_v66 = vector(n_g66)
+N1_eta0 = vector(n_g66)
+N1_eta05 = vector(n_g66)
+#for i = 1 : n_g66
+    ξi = -1 + 2*(i - 1)/(n_g66 - 1)
+    ξ_v66.(i) = ξi
+    N1_eta0.(i) = (1 - ξi)*1/4
+    N1_eta05.(i) = (1 - ξi)*0.5/4
+#loop
+#show
+
+$Chart{ξ_v66; N1_eta0; ξ_v66; N1_eta05 @ title=N₁(ξ,η) del Q4 a lo largo de dos lineas (η=0 y η=0.5) : xlabel=ξ : ylabel=N₁ : labels=η=0,η=0.5}
+
+"Para que sirve esta grafica
+'<p>N₁ vale 1 en (-1,-1) y va decreciendo conforme nos alejamos hacia los
+'otros 3 nodos. La <b>misma N_i interpola tanto la geometria como los
+'desplazamientos</b> — esa es la idea isoparametrica de Bruce Irons (1965).</p>
+
+'<hr/>
+
+"Cap 7 — De N a B (la matriz de deformacion)
+
+'<p>La deformacion ε es la derivada del desplazamiento: ε = du/dx. Como
+'u = Σ N_i·u_i, la deformacion sale de la derivada de las N_i:</p>
+
+#deq ε(x) = Σ (dN_i/dx)*u_i = B*u_e
+
+'<p>donde <b>B = [dN_1/dx, dN_2/dx, ...]</b> es la "matriz" de deformacion
+'que conecta los desplazamientos nodales con la deformacion del elemento.</p>
+
+"Paso 7.1 — B para el elemento barra lineal (2 nodos)
+'<p>De la derivada de N₁ = -1/L y N₂ = 1/L:</p>
+
+#deq B = [-1/L, 1/L]
+
+'<p>Es un vector fila constante. La deformacion es:</p>
+
+#deq ε = (-1/L)*u_1 + (1/L)*u_2 = (u_2 - u_1)/L
+
+'<p>O sea, la deformacion en una barra lineal es <b>constante</b> e igual
+'al alargamiento dividido por la longitud. Eso es exactamente la
+'deformacion unitaria clasica.</p>
+
+"Grafica 7.1 — Deformacion constante a lo largo del elemento
+#hide
+n_g71 = 50
+xg71 = vector(n_g71)
+ε_v = vector(n_g71)
+'Caso: u₁=0, u₂=0.01 (1 cm en barra de 1 m)
+#for i = 1 : n_g71
+    xg71.(i) = (i - 1)/(n_g71 - 1)
+    ε_v.(i) = 0.01
+#loop
+#show
+
+$Chart{xg71; ε_v @ title=ε(x) constante para barra lineal (u₁=0, u₂=1cm, L=1m) : xlabel=x/L : ylabel=ε}
+
+"Para que sirve esta grafica
+'<p>La linea PLANA confirma que el elemento barra lineal solo puede
+'representar deformacion CONSTANTE. Si el problema fisico requiere
+'deformacion variable (por ejemplo barra con peso propio), necesitamos
+'mas elementos o un elemento de mayor orden (cuadratico, ver Cap 4).</p>
+
+'<hr/>
+
+"Cap 8 — De N a K (la matriz de rigidez)
+
+'<p>La energia interna del elemento es la integral de la deformacion al
+'cuadrado por la rigidez:</p>
+
+#deq U_e = (1/2)*∫(B^T*E*B)*A*dx
+
+'<p>El integrando B^T·E·B es una matriz que depende de las derivadas de
+'las N_i. Al integrar sobre el elemento aparece la <b>matriz de rigidez
+'del elemento K_e</b>.</p>
+
+"Paso 8.1 — K_e simbolico para barra lineal
+'<p>Como B = [-1/L, 1/L] es constante y E·A es constante:</p>
+
+#sym
+integrate(E*A/L^2; x; 0; L)
+#end sym
+
+'<p>Resultado: E·A/L. La matriz K_e completa (2×2) es:</p>
+
+#noc
+K_e = (E*A/L)*[1; -1|-1; 1]
+#equ
+
+'<p>Esa es la <b>rigidez axial</b> que ya viste en el resorte equivalente
+'del Cap 4 de la Leccion 4 anterior. El FEM "encuentra" la formula
+'clasica de la mecanica de barras como caso particular.</p>
+
+'<hr/>
+
+"Resumen — Tabla comparativa de elementos
+'<table border="1" cellpadding="6">
+'<tr><th>Elemento</th><th>Nodos</th><th>GDL/nodo</th><th>Orden de N</th><th>Continuidad</th><th>Aplicacion</th></tr>
+'<tr><td>Barra lineal</td><td>2</td><td>1 (u)</td><td>Lineal</td><td>C^0</td><td>Truss, axial</td></tr>
+'<tr><td>Barra cuadratica</td><td>3</td><td>1 (u)</td><td>Cuadratico</td><td>C^0</td><td>Trusses con flexion suave</td></tr>
+'<tr><td>Viga Bernoulli</td><td>2</td><td>2 (v, θ)</td><td>Cubico Hermite</td><td>C^1</td><td>Vigas, porticos</td></tr>
+'<tr><td>Q4 (cuadrilatero)</td><td>4</td><td>2 (u, v)</td><td>Bilineal</td><td>C^0</td><td>Membranas, planos</td></tr>
+'<tr><td>Q8/Q9</td><td>8 o 9</td><td>2</td><td>Cuadratico</td><td>C^0</td><td>Mallas distorsionadas</td></tr>
+'<tr><td>Triangulo CST</td><td>3</td><td>2</td><td>Lineal</td><td>C^0</td><td>Mallas no estructuradas</td></tr>
+'<tr><td>Tetraedro T4</td><td>4</td><td>3 (u, v, w)</td><td>Lineal</td><td>C^0</td><td>Solidos 3D</td></tr>
+'<tr><td>Hexaedro H8</td><td>8</td><td>3</td><td>Trilineal</td><td>C^0</td><td>Solidos 3D mallas regulares</td></tr>
+'</table>
+
+'<p>Cada uno con sus propias N_i pero TODOS cumpliendo las 4 condiciones
+'del Cap 2 (Kronecker, particion de la unidad, continuidad, completitud
+'polinomial).</p>
+
+"Fin del curso de funciones de forma

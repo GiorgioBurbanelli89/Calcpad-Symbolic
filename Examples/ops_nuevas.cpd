@@ -1,0 +1,11 @@
+"Operaciones simbólicas estilo Mathcad — nuevas en Calcpad-Symbolic
+'Sumatoria (forma cerrada):
+#sym sum(k; k; 1; n)
+'Serie convergente (problema de Basilea):
+#sym sum(1/k^2; k; 1; inf)
+'Productoria:
+#sym product(k; k; 1; n)
+'Fracciones parciales:
+#sym parfrac((x + 3)/(x^2 - 3*x + 2); x)
+'Coeficientes del polinomio:
+#sym coeffs(2*x^3 - 5*x + 7; x)

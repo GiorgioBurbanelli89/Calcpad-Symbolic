@@ -81,13 +81,16 @@
     <value>Стоп! Inline Html елементи не могат да пресичат редове от текста.</value>
   </data>
   <data name="Command_Open_Text_File" xml:space="preserve">
-    <value>Текстов файл (*.txt)|*.txt|Calcpad документ (*.cpd)|*.cpd|Calcpad двоичен файл (*.cpdz)|*.cpdz</value>
+    <value>Текстов файл (*.txt)|*.txt|Calcpad документ (*.cpd; *.cpds)|*.cpd;*.cpds|Calcpad двоичен файл (*.cpdz)|*.cpdz</value>
   </data>
   <data name="Command_Open_Calcpad_Worksheet" xml:space="preserve">
-    <value>Calcpad документ (*.cpd)|*.cpd|Calcpad двоичен файл (*.cpdz)|*.cpdz|Текстов файл (*.txt)|*.txt</value>
+    <value>Calcpad документ (*.cpd; *.cpds)|*.cpd;*.cpds|Calcpad двоичен файл (*.cpdz)|*.cpdz|Текстов файл (*.txt)|*.txt</value>
   </data>
   <data name="SavePrompt" xml:space="preserve">
     <value>Файлът не е записан. Запис?</value>
+  </data>
+  <data name="FileSaveAs_Calcpad_Symbolic_Worksheet" xml:space="preserve">
+    <value>Calcpad Symbolic документ (*.cpds)|*.cpds|Calcpad документ (*.cpd)|*.cpd|Calcpad двоичен файл (*.cpdz)|*.cpdz</value>
   </data>
   <data name="FileSaveAs_Calcpad_Compiled" xml:space="preserve">
     <value>Calcpad двоичен файл (*.cpdz)|*.cpdz</value>

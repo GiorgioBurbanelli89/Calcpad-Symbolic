@@ -1,0 +1,69 @@
+"Cáscara Gruesa — Mindlin-Reissner Shell (MITC4)
+'Combina membrana + flexión Mindlin. 5 GDL/nodo INDEPENDIENTES.
+
+'<b>Paso 1 — Hipótesis</b>
+'  (1) Espesor t comparable a dimensiones (t/R ~ 1/10 a 1/5)
+'  (2) Normales rectas pero NO perpendiculares
+'  (3) Deformación cortante transversal NO despreciable
+
+'<b>Paso 2 — Campo de desplazamientos</b>
+#deq u_α = u_α0 + z*φ_α
+'φ_α son GDL INDEPENDIENTES, no derivadas de w.
+
+'<b>Paso 3 — Deformaciones (tres contribuciones)</b>
+'Membrana:
+#deq ε_αβ_mem = (1/2)*(du_α0/dx_β + du_β0/dx_α)
+
+'Flexión (con giros independientes):
+#deq κ_αβ = (1/2)*(dφ_α/dx_β + dφ_β/dx_α)
+
+'Corte transversal (NUEVA):
+#deq γ_α3 = φ_α + dw/dx_α
+
+'<b>Paso 4 — Datos material (concreto)</b>
+E_mod = 25000
+ν = 0.2
+t = 200
+'(t = 200 mm → zapatas, shear walls)
+
+'<b>Paso 5 — Matriz de membrana</b>
+C_m = E_mod*t/(1 - ν^2)
+D_m = [C_m; ν*C_m; 0 | ν*C_m; C_m; 0 | 0; 0; (1-ν)*C_m/2]
+
+'<b>Paso 6 — Matriz de flexión</b>
+D_f = E_mod*t^3/(12*(1 - ν^2))
+D_b = [D_f; ν*D_f; 0 | ν*D_f; D_f; 0 | 0; 0; (1-ν)*D_f/2]
+
+'<b>Paso 7 — Matriz de corte transversal (NUEVA respecto a Shell thin)</b>
+G = E_mod/(2*(1 + ν))
+k_s = 5/6
+D_s = [k_s*G*t; 0 | 0; k_s*G*t]
+D_s
+
+'<b>Paso 8 — Energía total</b>
+#deq U = (1/2)*integral(ε_mem^T*D_m*ε_mem + κ^T*D_b*κ + γ^T*D_s*γ)*dA
+
+'<b>Paso 9 — Shear locking y MITC</b>
+'Shear locking: rigidez aparente infinita cuando t/R → 0
+'Soluciones:
+'  MITC4 (Bathe-Dvorkin): Mixed Interpolation of Tensorial Components
+'  MITC9:                  cuadrilátero 9 nodos (mayor precisión)
+'  MITC3:                  triangular 3 nodos
+'  ANS:                    Assumed Natural Strain
+
+'<b>Paso 10 — Validación industrial</b>
+'Benchmarks clásicos:
+'  Pinched cylinder (Belytschko)
+'  Scordelis-Lo roof
+'  SAP2000 shell thick (ratio 1.00x ± 5%)
+
+'<b>Paso 11 — Ventaja vs Shell thin</b>
+'FSDT requiere solo continuidad C⁰ (desplazamiento),
+'mientras Kirchhoff-Love requiere C¹.
+'→ Formulación FEM mucho más simple.
+
+'<b>Paso 12 — Ejemplo: zapata de 500 mm</b>
+'Valores para concreto (f_c = 25 MPa):
+C_m
+D_f
+k_s*G*t

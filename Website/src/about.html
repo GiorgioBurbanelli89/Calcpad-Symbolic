@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/partials/head.html"></div>
+  <title>About — Calcpad-Symbolic</title>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+
+  <section class="block">
+    <div class="container">
+      <h1>About</h1>
+      <p>
+        <strong>Calcpad-Symbolic</strong> es un fork de
+        <a href="https://github.com/imartincei/CalcpadCE" target="_blank" rel="noopener">CalcpadCE</a>,
+        que a su vez deriva de
+        <a href="https://github.com/Proektsoftbg/Calcpad" target="_blank" rel="noopener">Calcpad</a>
+        de Proektsoftbg. Añade un stack de cálculo simbólico
+        (AngouriMath + Maxima), FEM en C++/WASM y visualizaciones interactivas
+        orientado a ingeniería estructural.
+      </p>
+
+      <h2>Arquitectura</h2>
+      <ul>
+        <li><strong>Symbolic.Core</strong> — parser y motor (C#, .NET 10)</li>
+        <li><strong>Symbolic.Cli</strong> — conversor <code>.cpd → .html/.docx/.pdf</code></li>
+        <li><strong>Symbolic.Wpf</strong> — editor de escritorio con syntax highlighting</li>
+        <li><strong>calcpad-web-blazor</strong> — editor online (Blazor WebAssembly)</li>
+        <li><strong>FEM C++</strong> — solvers Eigen 3.4.0 compilados a WASM</li>
+      </ul>
+
+      <h2>Licencia</h2>
+      <p>MIT — igual que CalcpadCE y Calcpad original.</p>
+
+      <h2>Créditos</h2>
+      <ul>
+        <li>Calcpad original: Proektsoftbg (Ventsislav Yordanov)</li>
+        <li>CalcpadCE fork: <a href="https://github.com/imartincei/CalcpadCE" target="_blank" rel="noopener">imartincei + community</a></li>
+        <li>Calcpad-Symbolic: <a href="https://github.com/GiorgioBurbanelli89" target="_blank" rel="noopener">GiorgioBurbanelli89</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <div data-include="/partials/footer.html"></div>
+  <script src="/js/include.js"></script>
+</body>
+</html>

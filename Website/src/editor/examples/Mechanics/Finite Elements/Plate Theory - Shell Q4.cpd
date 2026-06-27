@@ -1,0 +1,372 @@
+"Shell Q4 = Membrana + Placa Mindlin + Drilling (6 DOF/nodo)
+
+"1. Teoria
+'Un elemento shell combina tres componentes:
+'- Membrana (in-plane): u, v → Nx, Ny, Nxy
+'- Placa Mindlin (out-of-plane): w, θx, θy → Mx, My, Mxy, Qx, Qy
+'- Drilling: θz → rigidez ficticia para completar 6 DOF
+'Total: 6 DOF por nodo = u, v, w, θx, θy, θz
+
+"1.1 Componentes de rigidez
+#noc
+K_shell = K_membrane + K_plate + K_drilling
+#equ
+'K_membrane (8x8): funciones bilineales, plane stress, 2x2 Gauss
+'K_plate (12x12): Mindlin-Reissner, integracion selectiva
+'K_drilling (4x4): rigidez α·G·t·A para θz
+'Combinados en K_shell (24x24) por reordenamiento de DOFs
+
+"2. Ejemplo - Muro de corte con carga lateral y flexion
+
+"2.1 Datos de entrada
+'Ancho del muro -'W_m = 5 m
+'Altura del muro -'H_m = 3 m
+'Espesor del muro -'t_w = 0.2 m
+'Carga lateral (in-plane) -'P_h = 100 kN
+'Carga perpendicular (out-of-plane) -'q_z = 5 kN/m^2
+'Modulo de elasticidad -'E = 25000 MPa
+'Relacion de Poisson -'ν = 0.2
+'Modulo de corte -'G_m = E/(2*(1 + ν))
+'Factor de correccion de corte -'κ = 5/6
+'Factor de drilling -'α = 0.5
+
+"2.2 Adimensionalizar (& → numero puro, sistema kN-m)
+#hide
+E_a = E & kN/m^2
+G_a = G_m & kN/m^2
+W_a = W_m & m
+H_a = H_m & m
+t_a = t_w & m
+P_a = P_h & kN
+q_a = q_z & kN/m^2
+#show
+
+"2.3 Malla
+'DOFs por nodo -'n_dof = 6
+n_x = 8', 'n_y = 6
+n_e = n_x*n_y
+n_j = (n_x + 1)*(n_y + 1)
+d_x = W_a/n_x
+d_y = H_a/n_y
+n_total = n_dof*n_j
+#hide
+n_1 = n_x + 1
+x_j = vector(n_j)
+y_j = vector(n_j)
+#for j = 0 : n_y
+	#for i = 0 : n_x
+		k = j*n_1 + i + 1
+		x_j.k = i*d_x
+		y_j.k = j*d_y
+	#loop
+#loop
+e_j = matrix(n_e; 4)
+#for j = 0 : n_y - 1
+	#for i = 0 : n_x - 1
+		e = j*n_x + i + 1
+		bl = j*n_1 + i + 1
+		e_j.(e; 1) = bl
+		e_j.(e; 2) = bl + 1
+		e_j.(e; 3) = bl + n_1 + 1
+		e_j.(e; 4) = bl + n_1
+	#loop
+#loop
+n_s = n_1
+j_e(e) = row(e_j; e)
+x_c(e) = sum(extract(x_j; j_e(e)))/4
+y_c(e) = sum(extract(y_j; j_e(e)))/4
+#show
+#equ
+
+"2.3 Visualizacion
+#hide
+w_s = 350
+k_s = w_s/W_a
+d_s = 40
+h_s = H_a*k_s
+r_s = 0.03*k_s
+ar_h = 20
+#show
+#svg w_s+2*d_s h_s+2*d_s+ar_h
+.text d_s+w_s/2 d_s-5 "Shell_Q4_-_6_DOF/nodo_-_Membrana+Mindlin+Drilling" 9 navy middle bold
+.rect d_s d_s+ar_h w_s h_s lightyellow 0.4 gray 1
+#for e = 1 : n_e
+	x = x_c(e)*k_s+d_s
+	y = h_s-y_c(e)*k_s+d_s+ar_h
+	.rect x-d_x/2*k_s y-d_y/2*k_s d_x*k_s d_y*k_s lightcyan 0.2 steelBlue 0.5
+	.text x y e 7 gray middle
+#loop
+#for i = 0 : n_x
+	x = i*d_x*k_s+d_s
+	.rect x-2 d_s+ar_h+h_s 4 8 gray 0.8
+#loop
+#for i = 0 : 3
+	x = d_s - ar_h
+	y = d_s+ar_h + i*h_s/3
+	.arrow x y x+ar_h-3 y red 1.5
+#loop
+.text d_s-ar_h-5 d_s+ar_h+h_s/2 "P_h" 10 red middle bold
+.text d_s+w_s+5 d_s+ar_h+h_s/2 "q_z" 9 blue start
+#for i = 0 : 2
+	y = d_s+ar_h+h_s/6 + i*h_s/3
+	.circle d_s+w_s+8 y 3 blue 0.6
+	.line d_s+w_s+8 y d_s+w_s+8 y-8 blue 1
+#loop
+#end svg
+
+"2.4 Funciones de forma Q4 (bilineales)
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+dN_1ξ(η) = -(1 - η)/4
+dN_2ξ(η) = (1 - η)/4
+dN_3ξ(η) = (1 + η)/4
+dN_4ξ(η) = -(1 + η)/4
+dN_1η(ξ) = -(1 - ξ)/4
+dN_2η(ξ) = -(1 + ξ)/4
+dN_3η(ξ) = (1 + ξ)/4
+dN_4η(ξ) = (1 - ξ)/4
+
+"2.5 Matrices constitutivas
+'Membrana (plane stress):
+D_m = E_a*t_a/(1 - ν^2)*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+D_m
+'Flexion (Mindlin):
+D_b = E_a*t_a^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+D_b
+'Corte transversal:
+D_s = κ*G_a*t_a*[1; 0|0; 1]
+D_s
+
+"2.6 Rigidez del elemento shell (24x24)
+'Jacobiano:
+J_11 = d_x/2
+J_22 = d_y/2
+det_J = J_11*J_22
+'Punto de Gauss -'g_p = 1/sqr(3)
+'Shell = Membrana(8x8) + Placa(12x12) + Drilling(4x4) → 24x24
+#hide
+K_e = symmetric(24)
+
+'--- MEMBRANA (2x2 Gauss) ---
+K_mem = symmetric(8)
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g_p','η_g = -g_p
+	#else if ig ≡ 2
+		ξ_g = g_p','η_g = -g_p
+	#else if ig ≡ 3
+		ξ_g = g_p','η_g = g_p
+	#else
+		ξ_g = -g_p','η_g = g_p
+	#end if
+	dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+	dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+	dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+	dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+	B_mem = [dNdx_1; 0; dNdx_2; 0; dNdx_3; 0; dNdx_4; 0 | _
+	         0; dNdy_1; 0; dNdy_2; 0; dNdy_3; 0; dNdy_4 | _
+	         dNdy_1; dNdx_1; dNdy_2; dNdx_2; dNdy_3; dNdx_3; dNdy_4; dNdx_4]
+	BtDB_m = transp(B_mem)*D_m*B_mem*det_J
+	#for i = 1 : 8
+		#for j = i : 8
+			K_mem.(i; j) = K_mem.(i; j) + BtDB_m.(i; j)
+		#loop
+	#loop
+#loop
+
+'--- PLACA MINDLIN (2x2 flexion + 1x1 corte) ---
+K_plt = symmetric(12)
+#for ig = 1 : 4
+	#if ig ≡ 1
+		ξ_g = -g_p','η_g = -g_p
+	#else if ig ≡ 2
+		ξ_g = g_p','η_g = -g_p
+	#else if ig ≡ 3
+		ξ_g = g_p','η_g = g_p
+	#else
+		ξ_g = -g_p','η_g = g_p
+	#end if
+	dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+	dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+	dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+	dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+	B_b = [0; 0; -dNdx_1; 0; 0; -dNdx_2; 0; 0; -dNdx_3; 0; 0; -dNdx_4 | _
+	       0; dNdy_1; 0; 0; dNdy_2; 0; 0; dNdy_3; 0; 0; dNdy_4; 0 | _
+	       0; dNdx_1; -dNdy_1; 0; dNdx_2; -dNdy_2; 0; dNdx_3; -dNdy_3; 0; dNdx_4; -dNdy_4]
+	BtDB_b = transp(B_b)*D_b*B_b*det_J
+	#for i = 1 : 12
+		#for j = i : 12
+			K_plt.(i; j) = K_plt.(i; j) + BtDB_b.(i; j)
+		#loop
+	#loop
+#loop
+ξ_g = 0','η_g = 0
+NN_1 = N_1(ξ_g; η_g)','NN_2 = N_2(ξ_g; η_g)
+NN_3 = N_3(ξ_g; η_g)','NN_4 = N_4(ξ_g; η_g)
+dNdx_1 = dN_1ξ(η_g)/J_11','dNdy_1 = dN_1η(ξ_g)/J_22
+dNdx_2 = dN_2ξ(η_g)/J_11','dNdy_2 = dN_2η(ξ_g)/J_22
+dNdx_3 = dN_3ξ(η_g)/J_11','dNdy_3 = dN_3η(ξ_g)/J_22
+dNdx_4 = dN_4ξ(η_g)/J_11','dNdy_4 = dN_4η(ξ_g)/J_22
+B_s = [dNdx_1; 0; -NN_1; dNdx_2; 0; -NN_2; dNdx_3; 0; -NN_3; dNdx_4; 0; -NN_4 | _
+       dNdy_1; NN_1; 0; dNdy_2; NN_2; 0; dNdy_3; NN_3; 0; dNdy_4; NN_4; 0]
+BtDB_s = transp(B_s)*D_s*B_s*det_J*4
+#for i = 1 : 12
+	#for j = i : 12
+		K_plt.(i; j) = K_plt.(i; j) + BtDB_s.(i; j)
+	#loop
+#loop
+
+'--- DRILLING (α·G·t·A por nodo) ---
+K_drl = α*G_a*t_a*det_J*4/4
+
+'--- ENSAMBLAJE EN K_e (24x24) ---
+'DOF order per node: u(1) v(2) w(3) θx(4) θy(5) θz(6)
+'Membrana DOFs: u1 v1 u2 v2 u3 v3 u4 v4 → K_mem(8x8)
+'  mapped to: 1,2, 7,8, 13,14, 19,20
+'Placa DOFs: w1 θx1 θy1 w2 θx2 θy2 w3 θx3 θy3 w4 θx4 θy4 → K_plt(12x12)
+'  mapped to: 3,4,5, 9,10,11, 15,16,17, 21,22,23
+'Drilling DOFs: θz1 θz2 θz3 θz4 → diagonal
+'  mapped to: 6, 12, 18, 24
+mem_map = [1; 2; 7; 8; 13; 14; 19; 20]
+plt_map = [3; 4; 5; 9; 10; 11; 15; 16; 17; 21; 22; 23]
+drl_map = [6; 12; 18; 24]
+#for i = 1 : 8
+	#for j = i : 8
+		i_g = mem_map.i
+		j_g = mem_map.j
+		#if i_g > j_g
+			K_e.(j_g; i_g) = K_e.(j_g; i_g) + K_mem.(i; j)
+		#else
+			K_e.(i_g; j_g) = K_e.(i_g; j_g) + K_mem.(i; j)
+		#end if
+	#loop
+#loop
+#for i = 1 : 12
+	#for j = i : 12
+		i_g = plt_map.i
+		j_g = plt_map.j
+		#if i_g > j_g
+			K_e.(j_g; i_g) = K_e.(j_g; i_g) + K_plt.(i; j)
+		#else
+			K_e.(i_g; j_g) = K_e.(i_g; j_g) + K_plt.(i; j)
+		#end if
+	#loop
+#loop
+#for i = 1 : 4
+	d_i = drl_map.i
+	K_e.(d_i; d_i) = K_e.(d_i; d_i) + K_drl
+#loop
+
+#show
+'Matriz de rigidez del elemento K_e (24x24):
+Precision = 10^-1
+K_e
+"2.7 Ensamblaje global
+#hide
+K = symmetric(n_total)
+#for e = 1 : n_e
+	#for i = 1 : 4
+		#for j = i : 4
+			j_1 = e_j.(e; i)
+			j_2 = e_j.(e; j)
+			i_1 = n_dof*(j_1 - 1) + 1
+			i_2 = n_dof*(j_2 - 1) + 1
+			k_ij = submatrix(K_e; n_dof*(i - 1) + 1; n_dof*i; n_dof*(j - 1) + 1; n_dof*j)
+			#if j_1 > j_2
+				add(transp(k_ij); K; i_2; i_1)
+			#else
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+
+"2.8 Condiciones de borde y cargas
+'Apoyos: base empotrada (todos los DOFs = 0 en j=0)
+k_p = 10^20
+#for i = 1 : n_1
+	#for d = 1 : n_dof
+		j = n_dof*(i - 1) + d
+		K.(j; j) = K.(j; j) + k_p
+	#loop
+#loop
+'Cargas:
+F = vector(n_total)
+'Carga lateral P_a distribuida en nodos superiores (DOF u):
+n_top = n_1
+p_n = P_a/n_top
+#for i = 1 : n_top
+	j_top = n_y*n_1 + i
+	F.(n_dof*(j_top - 1) + 1) = p_n
+#loop
+'Carga perpendicular q_a distribuida (DOF w):
+f_node = q_a*d_x*d_y/4
+#for e = 1 : n_e
+	#for i = 1 : 4
+		j = e_j.(e; i)
+		F.(n_dof*(j - 1) + 3) = F.(n_dof*(j - 1) + 3) - f_node
+	#loop
+#loop
+#show
+'Matriz de rigidez global K ('n_total' x 'n_total'):
+K
+'Vector de cargas F:
+F
+'Resolviendo shell con 'n_total' DOFs...
+Z = clsolve(K; F)
+
+"3. Resultados
+
+"3.1 Desplazamiento horizontal (membrana, in-plane)
+#hide
+U_h = matrix(n_x + 1; n_y + 1)
+#for i_x = 0 : n_x
+	#for i_y = 0 : n_y
+		k = i_y*n_1 + i_x + 1
+		U_h.(i_x + 1; i_y + 1) = Z.(n_dof*(k - 1) + 1)
+	#loop
+#loop
+u_map(x; y) = spline(1 + x/d_x; 1 + y/d_y; U_h)
+PlotWidth = 250
+PlotHeight = 150
+PlotStep = 10
+#show
+'Desplazamiento u (mm) - deformacion in-plane:
+$Map{u_map(x; y) @ x = 0 : W_a & y = 0 : H_a}
+
+"3.2 Deflexion perpendicular (placa, out-of-plane)
+#hide
+W_z = matrix(n_x + 1; n_y + 1)
+#for i_x = 0 : n_x
+	#for i_y = 0 : n_y
+		k = i_y*n_1 + i_x + 1
+		W_z.(i_x + 1; i_y + 1) = Z.(n_dof*(k - 1) + 3)
+	#loop
+#loop
+w_map(x; y) = spline(1 + x/d_x; 1 + y/d_y; W_z)
+#show
+'Deflexion w (mm) - deformacion out-of-plane:
+$Map{w_map(x; y) @ x = 0 : W_a & y = 0 : H_a}
+
+"3.3 Validacion
+'Desplazamiento lateral maximo (nodo superior central):
+#hide
+j_tc = n_y*n_1 + floor(n_x/2) + 1
+#show
+'Desplazamiento horizontal (membrana):
+u_max = Z.(n_dof*(j_tc - 1) + 1)*(1 m)
+u_max
+u_max | mm
+'Deflexion perpendicular (placa):
+w_max = Z.(n_dof*(j_tc - 1) + 3)*(1 m)
+w_max
+w_max | mm
+'Euler-Bernoulli (solo membrana): δ = P·H³/(3·E·I)
+I_w = t_w*W_m^3/12
+δ_EB = P_h*H_m^3/(3*E*I_w)
+δ_EB
+δ_EB | mm
+'Ratio FEA/Euler-Bernoulli:
+u_max/δ_EB

@@ -1,0 +1,161 @@
+#margen 20
+"Respuesta armonica 2-DOF — Ejemplo 8.6 Paz
+
+'Shear building de 2 pisos con fuerza armonica F₂·sin(ω_f·t).
+'Se integra con Newmark-β directo en el sistema acoplado.
+
+"Datos del sistema
+
+#blk
+'Asignacion ; 'Descripcion
+m_1 = 136 ; 'Masa piso 1 (lb·s²/in)
+m_2 = 66 ; 'Masa piso 2 (lb·s²/in)
+k_1 = 30700 ; 'Rigidez primer nivel (lb/in)
+k_2 = 44300 ; 'Rigidez segundo nivel (lb/in)
+F_0 = 10000 ; 'Amplitud de fuerza en piso 2 (lb)
+ω_f = 20 ; 'Frecuencia de la fuerza (rad/s)
+#end blk
+
+"Matrices M y K del sistema
+
+M = [m_1; 0 | 0; m_2]
+K = [k_1 + k_2; -k_2 | -k_2; k_2]
+
+"Matriz de amortiguamiento de Rayleigh: C = a0·M + a1·K
+
+a_0 = 0
+a_1 = 0.01
+
+C_damp = a_0*M + a_1*K
+
+#pgb
+"Eigenproblema K·φ = ω²·M·φ
+
+#hide
+K_sim = (K + transp(K))/2
+M_sim = (M + transp(M))/2
+L_chol = cholesky(M_sim)
+L_inv = inverse(L_chol)
+A_eig = L_inv*K_sim*transp(L_inv)
+#show
+
+λ = eigenvals(A_eig; 0)
+
+ω_1 = sqrt(λ.(1))
+ω_2 = sqrt(λ.(2))
+
+T_1 = 2*π/ω_1
+T_2 = 2*π/ω_2
+
+#blk
+'Cantidad ; 'Modo 1 ; 'Modo 2
+'ω (rad/s) ; ω_1 ; ω_2
+'T (s) ; T_1 ; T_2
+#end blk
+
+#pgb
+"Integracion Newmark-β del sistema acoplado
+
+'Parametros:
+dt = 0.01
+n_pts = 1001
+γ_n = 0.5
+β_n = 0.25
+
+'Coeficientes Newmark:
+a_n0 = 1/(β_n*dt^2)
+a_n1 = γ_n/(β_n*dt)
+a_n2 = 1/(β_n*dt)
+a_n3 = 1/(2*β_n) - 1
+a_n4 = γ_n/β_n - 1
+a_n5 = dt/2*(γ_n/β_n - 2)
+
+'Matriz de rigidez efectiva (constante en el tiempo):
+K_eff = K + a_n1*C_damp + a_n0*M
+
+#hide
+'Vectores de tiempo y respuestas:
+t_vec = vector(n_pts)
+
+'Historial de desplazamiento piso 1 y 2:
+u1_hist = vector(n_pts)
+u2_hist = vector(n_pts)
+v1_hist = vector(n_pts)
+v2_hist = vector(n_pts)
+a1_hist = vector(n_pts)
+a2_hist = vector(n_pts)
+
+'Condiciones iniciales:
+u1_hist.(1) = 0
+u2_hist.(1) = 0
+v1_hist.(1) = 0
+v2_hist.(1) = 0
+'Aceleracion inicial: a₀ = M⁻¹·(F₀ - C·v₀ - K·u₀)
+F1_0 = 0
+F2_0 = 0
+a1_hist.(1) = 0
+a2_hist.(1) = F2_0/m_2
+
+#for i = 1 : n_pts - 1
+    t_i = i*dt
+    t_vec.(i+1) = t_i
+
+    'Fuerza en t_{i+1}:
+    F1_new = 0
+    F2_new = F_0*sin(ω_f*t_i)
+
+    'Construir vectores y fuerza efectiva:
+    u_i = [u1_hist.(i); u2_hist.(i)]
+    v_i = [v1_hist.(i); v2_hist.(i)]
+    a_i = [a1_hist.(i); a2_hist.(i)]
+
+    F_new = [F1_new; F2_new]
+
+    'Fuerza efectiva (2x1):
+    F_eff = F_new + M*(a_n0*u_i + a_n2*v_i + a_n3*a_i) + C_damp*(a_n1*u_i + a_n4*v_i + a_n5*a_i)
+
+    'Resolver K_eff·u_new = F_eff:
+    u_new = lsolve(K_eff; F_eff)
+
+    'Calcular nueva aceleracion y velocidad:
+    a_new = a_n0*(u_new - u_i) - a_n2*v_i - a_n3*a_i
+    v_new = v_i + dt*((1 - γ_n)*a_i + γ_n*a_new)
+
+    'Guardar en historial:
+    u1_hist.(i+1) = u_new.(1)
+    u2_hist.(i+1) = u_new.(2)
+    v1_hist.(i+1) = v_new.(1)
+    v2_hist.(i+1) = v_new.(2)
+    a1_hist.(i+1) = a_new.(1)
+    a2_hist.(i+1) = a_new.(2)
+#loop
+#show
+
+#pgb
+"Respuestas — graficas
+
+$Chart{t_vec; u1_hist @ title=Respuesta u₁(t) piso 1 : xlabel=t (s) : ylabel=u₁ (in)}
+
+$Chart{t_vec; u2_hist @ title=Respuesta u₂(t) piso 2 : xlabel=t (s) : ylabel=u₂ (in)}
+
+"Las dos respuestas superpuestas
+
+$Chart{t_vec; u1_hist; t_vec; u2_hist @ title=u₁(t) vs u₂(t) : xlabel=t (s) : ylabel=u (in) : labels=u_1,u_2}
+
+#pgb
+"Valores maximos
+
+u1_max = max(u1_hist)
+u1_min = min(u1_hist)
+u2_max = max(u2_hist)
+u2_min = min(u2_hist)
+
+#blk
+'DOF ; 'u_max (in) ; 'u_min (in) ; 'Paz libro
+'Piso 1 ; u1_max ; u1_min ; '~0.5 in
+'Piso 2 ; u2_max ; u2_min ; '~0.5 in
+#end blk
+
+'El libro muestra u₁ y u₂ oscilando con amplitudes ~0.5 in
+'en regimen permanente, con batidos iniciales por transitorio.
+#end margen

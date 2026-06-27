@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/partials/head.html"></div>
+  <title>Cáscara gruesa — Mindlin-Reissner / MITC</title>
+  <style>.theory-frame { width: 100%; height: 80vh; border: 1px solid var(--color-border); border-radius: var(--radius); }</style>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+  <section class="block">
+    <div class="container">
+      <h1>Cáscara gruesa — Mindlin-Reissner / MITC</h1>
+      <h2>Combinación</h2>
+      <p>Membrana + placa gruesa (Mindlin). Giros <em>φ<sub>α</sub></em> <strong>independientes</strong> de la pendiente. Hay deformación por cortante transversal γ<sub>αz</sub>.</p>
+      <h2>GDL y rango</h2>
+      <p>5 GDL por nodo: <em>u, v, w, φ<sub>x</sub>, φ<sub>y</sub></em>. Válida para <em>t/R ≈ 1/10 a 1/5</em>.</p>
+      <h2>Derivación simbólica</h2>
+      <iframe class="theory-frame" src="/teoria/placas/rendered/shell_thick.html" title="Derivación — shell gruesa"></iframe>
+      <h2>Shear locking y elementos MITC</h2>
+      <p>FSDT estándar rigidiza cuando <em>t/R → 0</em>. Soluciones:</p>
+      <ul>
+        <li><strong>MITC4 / MITC9 / MITC3</strong> — Mixed Interpolation of Tensorial Components (Bathe &amp; Dvorkin)</li>
+        <li>Reduced / Selective Reduced Integration</li>
+        <li>Assumed Natural Strain (ANS)</li>
+      </ul>
+      <h2>Validación</h2>
+      <ul>
+        <li>Pinched cylinder (patch test Belytschko)</li>
+        <li>Scordelis-Lo roof</li>
+        <li>SAP2000 (ratio 1.00x)</li>
+      </ul>
+      <h2>Ventaja</h2>
+      <p>Solo requiere continuidad C⁰, no C¹ como Kirchhoff-Love — formulación FEM más simple.</p>
+      <p><a href="/editor/?script=/teoria/placas/scripts/shell_thick.cpd" target="_blank" rel="noopener">▶ Abrir en editor</a></p>
+    </div>
+  </section>
+  <div data-include="/partials/footer.html"></div>
+  <script src="/js/include.js"></script>
+</body>
+</html>

@@ -10,6 +10,130 @@ Calcpad-Symbolic extends CalcpadCE with three CAS engines, interactive FEM visua
 
 ---
 
+## ⚙️ Native dependencies & the fast matrix engine
+
+Calcpad-Symbolic uses two native (C++) libraries. **You do not need to chase any
+missing file** — read this once:
+
+| Library | Size | Required? | Where it comes from |
+|---|---|---|---|
+| `eigen_solver.dll` | 13 MB | **Yes** (modal / sparse solve) | **Included in this repo** under `Symbolic.Core/Native/`, copied next to the `.exe` on build. |
+| Intel **oneMKL** (`mkl_rt.2.dll` + satellites) | ~388 MB | No — it's an **accelerator** | See below. Without it the app still runs (managed fallback). |
+
+### The fast engine (MKL) — how it's found
+
+Matrix multiplication `A*B` runs **~20× faster** when Intel MKL is available. The
+loader (`BlasInterop`) searches, in order:
+
+1. `HEKATAN_MKL_DIR` environment variable (explicit override).
+2. A `mkl\` folder **next to the executable** (this is what the installer ships).
+3. The executable's own folder.
+4. **FreeCAD's** runtime: `C:\Program Files\FreeCAD 1.0\bin` (free — if you have
+   FreeCAD installed, MKL is picked up automatically).
+5. If none of the above → **OpenBLAS**, then a pure-managed fallback (slower, but
+   identical results). Force a provider with `HEKATAN_BLAS=mkl|openblas|managed|off`.
+
+### How to get MKL (it's on GitHub, in **Releases**)
+
+The 388 MB MKL runtime is **not** committed to this repo (GitHub's free LFS
+bandwidth would throttle clones). Instead, pick whichever is easiest:
+
+- **Just run the program** → download the **installer** from the
+  [Releases](../../releases) page — MKL (and everything else) is bundled inside.
+- **Already have FreeCAD** → nothing to do, it's used automatically.
+- **Building from source and want the speed** → download `mkl-win-x64.zip` from
+  [Releases](../../releases) and extract it into `Symbolic.Core/Native/mkl\`
+  (the build copies it beside the `.exe`) **or** drop the `mkl\` folder next to
+  `Calcpad.exe`.
+
+---
+
+## 🚀 Quick start — mixing text, equations, symbolic and numeric
+
+This is the **most common** thing people want to do — write a paragraph that
+explains a concept and embeds equations or numerical results inline. Here are
+the **five idioms** you need:
+
+### 1. Text only — line starts with `'`
+
+```
+'Esto es texto plano. No se evalua, solo se imprime.
+```
+
+### 2. Numeric calculation — write the formula on its own line (no `'`)
+
+```
+m = 5      'kg
+g = 9.81   'm/s²
+P = m*g    ← Calcpad shows: P = m·g = 5·9.81 = 49.05  (substitution + result)
+```
+
+### 3. Equation WITHOUT result (display only) — `#deq`
+
+When you want to *show* a formula but **not** compute it (variables may be
+undefined), use `#deq`:
+
+```
+#deq F = m*a                    ← shows: F = m·a (no values, no =result)
+#deq E = (1/2)*m*v^2 @@(EC)     ← with equation number on the right
+```
+
+### 4. Symbolic operation (derivative, integral, etc.) — `#sym`
+
+```
+#sym diff(x^3; x)               ← shows: d/dx(x³) = 3·x²
+#sym integrate(sin(x); x)       ← shows: ∫sin(x)dx = -cos(x) + C
+#sym diff(x^5; x; 4)            ← shows: d⁴/dx⁴(x⁵) = 120·x  (n-th derivative)
+```
+
+### 5. Mixing everything in one line (apostrophe toggles)
+
+A line that starts with `'` is in **Text mode**. Each additional `'` flips to
+**Math/Calc mode**. So the count of `'` matters:
+
+```
+'La 2da ley es '#deq F = m*a' fundamental en dinamica.
+'Derivar x³ da '#sym diff(x^3; x)' segun AngouriMath.
+'La energia cinetica '#deq E_c = (1/2)*m*v^2' se conserva.
+'Suma de cuadrados -'S = $Sum{i^2 @ i = 1 : 10}      ← renders as Σᵢ₌₁¹⁰ i² = 385
+```
+
+Pattern: `'<text>'<directive>'<more text>` — the embedded `'#deq …'` /
+`'#sym …'` is in math mode, the surrounding text is in text mode.
+
+**Important gotcha for `$Sum`/`$Integral`/`$Product`:** they need an
+**assignment** (`varname = $Cmd{...}`), and the `'` BEFORE the `=` ends text
+mode. Do **not** wrap them between two `'` like `'$Sum{...}'` — that fails.
+
+### 6. Just an expression / identity, no result wanted
+
+If you only want to display a formula in flowing text without `#deq` (e.g. an
+identity where variables aren't defined), Calcpad's *permissive inline math*
+detects the pattern and routes it to display:
+
+```
+'Identidad: '(a + b)^2 = a^2 + 2*a*b + b^2' es directa.
+'Leibniz: 'χ = -d^2*w/dx^2' es la curvatura.
+```
+
+The bare math between apostrophes renders as proper formula even though no
+variables are defined. This works since v1.3 (Apr 2026) — see
+[Pitfalls section below](#pitfalls--best-practices--deq-sym-layout-html).
+
+### Where to learn more
+
+- **`Examples/Finite Elements/TEST_inline.cpd`** — 12 blocks, each demonstrating
+  one mixing pattern. Renders with 0 errors. Copy-paste idioms from there.
+- **`Examples/Finite Elements/TEST_sintaxis.cpd`** — 24+ patterns testing what
+  works and what doesn't (with labels A1..L2).
+- **`Examples/Finite Elements/FEM_Curso_Paso_a_Paso.cpd`** — 10-lesson FEM
+  tutorial that mixes text + equations + symbolic + numeric + charts in every
+  section. Real production example of the idioms above.
+- **[Mixing text + math + symbolic in the same line](#mixing-text--math--symbolic-in-the-same-line--inline-mode)**
+  — full 6-rule reference with cookbook (further down in this README).
+
+---
+
 ## What CalcpadCE Had (v7.6.2 by Ned Ganchovski)
 
 - Real and complex numbers, vectors, matrices
@@ -62,7 +186,7 @@ Show symbolic equations without computation. Double/triple equality for referenc
 
 ### 5b. Inline Directives in Text (mixed mode)
 
-When a line starts with `'` (text mode), each additional `'` toggles between **Text** and **Expression** mode. Multiple directives can be embedded inline:
+When a line starts with `'` (text mode), each additional `'` toggles between **Text** and **Expression** mode. Multiple directives and bare math expressions can be embedded inline:
 
 ```
 'Hooke '#deq F = k*x' is famous.
@@ -78,6 +202,233 @@ When a line starts with `'` (text mode), each additional `'` toggles between **T
 **Position rule:** need at least 1 character of text before the first directive.
 - ✓ `' '#deq F = k*x' at start.` (space before → works)
 - ✗ `'#deq F = k*x' at start.` (no text before → fails)
+
+#### 🆕 v1.3 — Permissive inline math
+
+Inline math between apostrophes now accepts **display-only constructs** that previously required an explicit `#deq` or would fail evaluation. The parser auto-detects the pattern and routes to the display renderer without attempting to evaluate.
+
+| Pattern | Example | Behaviour |
+|---|---|---|
+| Identity (LHS is not a variable) | `'(a+b)^2 = a^2 + 2·a·b + b^2'` | Renders as HTML math, no assignment check |
+| Leibniz derivative | `'χ_1 = -d^2w/dx^2'` | Proper fraction with d² / dx² |
+| Mixed partials + subscripts + Greek | `'-2·d^2φ_i/dx_j·dy_k'` | Handles Greek letters, subscripts, `^n` exponents |
+| Multi-term biharmonic | `'d^4w/dx^4 + 2·d^4w/dx^2·dy^2 + d^4w/dy^4 = q/D_f'` | Each term rendered as fraction, summed |
+| Integral call | `'W = integral(q·w; x; 0; L)'` | Displays as ∫ with limits |
+| Matrix literal assignment | `'D = [1; ν; 0 \| ν; 1; 0 \| 0; 0; (1-ν)/2]'` | Matrix with proper brackets, RHS can reference undefined vars |
+| Literal `#` / `$` reference | `'usa '#blk' para bloques, '$Plot' para graficas'` | Rendered as `<code>` |
+| Last-resort fallback | `'V = (4/3)·π·R^3'` (R not yet defined) | Falls back to display mode instead of error |
+
+Also fixed in v1.3:
+- `#sym` now normalizes Unicode ops (`·`, `×`, `⋅`) → ASCII `*` before dispatching to AngouriMath.
+- Depth guard (16 levels) in `TryRenderDeqSpecial` prevents stack overflow on pathological recursive inputs like `ε_ij = (∂u_i/∂x_j + ∂u_j/∂x_i)/2`.
+- `#deq` Leibniz regex extended to accept `d^n` with caret, Greek letters, multi-char identifiers with subscripts (e.g. `d^2φ_i/dx_j`).
+- Multi-term derivative renderer handles biharmonic `d^4w/dx^4 + 2·d^4w/dx^2dy^2 + d^4w/dy^4 = q/D` correctly.
+- Inline matrix `=` is vertically centered (inline-flex + align-items:center).
+
+#### 🆕 v1.3.1 — `#sym` output cleanup + explicit subscripts only
+
+- **Maxima/AngouriMath artifact cleanup** in `#sym` results: `%e` → `e`,
+  `log(e)` → `1` before re-parsing through Calcpad's HTML formatter.
+  Without this, `#sym integrate(x^2·e^x; x)` returned the unsimplified
+  Maxima string `((log(e)^2·x^2 − 2·log(e)·x + 2)·%e^(log(e)·x))/log(e)^3`
+  which rendered as plain text. Now it renders as a proper formula.
+- **Auto-subscript disabled**: `s1`, `s2`, `u1` no longer get silently
+  rewritten to `s_1`, `s_2`, `u_1`. The user must use the explicit
+  underscore notation (`s_1`) to get a subscript. `s1` stays as a
+  literal identifier — both forms are valid Calcpad variables.
+
+#### Comprehensive parser test
+
+`Examples/Tests/test_PARSER_COMPLETO.cpd` exercises 30 sections covering
+every directive in both inline and block form (identities, derivatives
+with Greek letters and subscripts, integrals, matrices, `#sym`, `#inl`,
+`#blk`, `#for`, `#if`, `#while`, `$Plot`, `$Map`, `$Sum`, `$Product`,
+`$Integral`, `$Derivative`, `$Root`, `$Find`, cell arrays, units,
+conversions). Renders with **0 errors**.
+
+#### 🆕 v1.3.2 — `$DrawStruct` con primitivas de mecánica
+
+Alias de `$Struct` (ambos nombres funcionan) — utility de **dibujo**
+estructural con primitivas pre-renderizadas estilo libro de texto.
+**No calcula nada**, solo dibuja. Para análisis usar `#sym`/`#deq`/`lsolve`.
+
+Primitivas:
+- **Estructurales:** `spring` (zigzag auto), `bar` (con hatches),
+  `beam`, **`damper`** (cilindro pistón, nuevo), **`mass`** (rectángulo
+  amarillo con borde grueso, nuevo), **`wall`** (línea + hatches, nuevo)
+- **Apoyos:** `fixed`, `pin`, `roller`
+- **Cargas:** `force` (flecha SALE del nodo, no entra),
+  `moment` (arco curvo)
+- **Anotación:** `node`, `label`, `dim`
+
+Ejemplo masa-resorte 1 GDL completo:
+
+```
+$DrawStruct{
+  fixed,0,0
+  : spring,0,0,4,0,k=1000
+  : mass,4.6,0,0.7,m
+  : force,5.0,0,right,F(t)
+  : dim,0,-1,5,-1,L_total
+  @ title=Masa-resorte 1 GDL : w=700 : h=260
+}
+```
+
+Sistema masa-resorte-amortiguador (k y c en paralelo):
+
+```
+$DrawStruct{
+  fixed,0,0
+  : spring,0,0.5,4,0.5,k
+  : damper,0,-0.5,4,-0.5,c
+  : mass,4.6,0,0.7,m
+  : force,5.0,0,right,F(t)
+  @ title=Masa-resorte-amortiguador : w=750 : h=320
+}
+```
+
+Ver `Examples/Tests/test_GRAFICAS_DRAW.cpd` para 11 ejemplos
+(funciones 1D, mapas 2D, charts, masa-resorte, viga simple, pórtico).
+
+#### 🆕 v1.3.2 — `#svg` para diagramas didácticos con flujo de control
+
+Bloque `#svg <w> <h>` ... `#end svg` con primitivas píxel-por-píxel:
+
+- `.rect x y w h fillColor fillOpacity strokeColor strokeWidth`
+- `.line x1 y1 x2 y2 color width`
+- `.circle x y r color`
+- `.arrow x1 y1 x2 y2 color width`
+- `.text x y label size color align [style]`
+- `.arc x y r startAngle endAngle color width`
+
+Soporta variables Calcpad y **estructuras de control** (`#for`, `#if`)
+dentro del bloque. Ejemplo de zigzag con loop:
+
+```
+#svg 480 160
+.rect 0 0 480 160 #f5f5f5 1 #888 1
+#for k = 0 : 12
+    x1 = 60 + k*20
+    y1 = 80 + 20*(-1)^k
+    x2 = 60 + (k+1)*20
+    y2 = 80 + 20*(-1)^(k+1)
+    .line x1 y1 x2 y2 #555 2.5
+#loop
+#end svg
+```
+
+Cuándo usar cada uno:
+
+| Querés... | Usá |
+|---|---|
+| Esquema estructural ya hecho (resorte, masa, viga, apoyo, fuerza) | `$DrawStruct{...}` |
+| Diagrama didáctico con control píxel-por-píxel | `#svg ... #end svg` |
+| CAD interactivo con pan/zoom | `$Draw{...}` |
+| Funciones / vectores / curvas | `$Plot`, `$Map`, `$Chart` |
+
+Ejemplos relacionados — los archivos FEA refactorizados a `#svg` con `#for`/`#if`:
+- `Examples/Mechanics/Finite Elements/Rectangular Slab FEA.cpd`
+- `Examples/Mechanics/Finite Elements/Flat Slab FEA.cpd`
+- `Examples/Mechanics/Finite Elements/Deep Beam FEA.cpd`
+
+#### 🆕 v1.3.3 — Truncado agresivo de vectores y matrices largos
+
+`MathSettings.MaxOutputCount` ahora tiene **default 5** (antes 20).
+Vectores/matrices con más elementos se truncan automáticamente:
+
+- Vectores **siempre horizontales** cuando son largos (antes una columna
+  de 200 elementos generaba 200 líneas verticales que se salían del
+  margen y saltaban de página)
+- Truncado: muestra los primeros 5 + `⋯` + el **último** elemento, con
+  tooltip `"N elementos saltados (vector de M elementos)"`
+- Matrices: filas con `⋮`, columnas con `⋯`, esquina con `⋱`
+
+```
+                            antes (maxCount=20)    ahora (maxCount=5)
+v_5    (5 elementos)         completo               completo
+v_15   (15)                  completo               5 + ⋯ + último
+v_50   (50)                  20 + ⋯ + último        5 + ⋯ + último
+v_200  (200)                 20 + ⋯ + último        5 + ⋯ + último
+M_50×50                      20×20 + ⋮⋯              5×5 + ⋮⋯
+```
+
+Cualquier vector ≥ 6 ocupa exactamente la misma altura visual, sin
+importar si tiene 6 o 6 millones de elementos. Configurable entre 5 y
+100 desde Settings → MaxOutputCount si necesitás ver más detalle.
+
+Ver `Examples/Tests/test_vectores_largos.cpd`.
+
+#### 🆕 v1.4 — 9 directivas web sin escribir HTML
+
+El parser ahora tiene 9 bloques de visualización web. El usuario escribe
+DSL puro (JSON, JS, LaTeX, DOT) entre `#<libreria>` ... `#end <libreria>`
+y el parser inyecta automáticamente el `<div>`, el script de la lib desde
+CDN (una sola vez por documento) y el wrapping JS necesario.
+
+**SIN escribir ningún `<>` HTML.**
+
+| Directiva | Librería | CDN | Para qué |
+|---|---|---|---|
+| `#plotly` | Plotly.js 2.35 | cdn.plot.ly | Gráficas científicas interactivas (3D surface, scatter, contour, hover, zoom) |
+| `#three` | Three.js 0.160 | unpkg | 3D real con OrbitControls (modelos estructurales rotables) |
+| `#mermaid` | Mermaid 10 | jsdelivr | Diagramas (flowchart, sequence, gantt, classDiagram, gitGraph, pie) |
+| `#canvas` | HTML5 nativo | — | Dibujo 2D directo con `ctx`, sin librería externa |
+| `#cyto` | Cytoscape 3 | unpkg | Grafos científicos (sparsity de matrices, networks de nodos) |
+| `#dot` | Graphviz (viz-js) | unpkg | Diagramas declarativos en sintaxis DOT |
+| `#jsx` | JSXGraph 1.10 | jsdelivr | Geometría dinámica (puntos arrastrables, áreas reactivas) |
+| `#map` | Leaflet 1.9 | unpkg | Mapas geográficos (PGA hazard, ubicación de proyectos) |
+| `#math` | KaTeX 0.16 | jsdelivr | LaTeX completo con `\boxed`, `\frac`, matrices, integrales |
+
+**Sintaxis común:**
+```
+#<libreria> [W] [H]
+   ... contenido (DSL/JSON/JS/LaTeX según librería) ...
+#end <libreria>
+```
+
+**Ejemplos rápidos:**
+
+```
+#plotly
+{ data: [{x:[1,2,3], y:[4,5,6], type:'scatter'}], layout: {title:'demo'} }
+#end plotly
+
+#mermaid
+flowchart TD
+  D[DEAD] --> C1[1.4D]
+  D --> C2[1.2D + 1.6L]
+#end mermaid
+
+#dot
+digraph G { rankdir=LR; A -> B [label="x"]; B -> C; }
+#end dot
+
+#math
+\frac{\partial^4 w}{\partial x^4} + 2\frac{\partial^4 w}{\partial x^2\partial y^2} + \frac{\partial^4 w}{\partial y^4} = \frac{q}{D}
+#end math
+
+#three
+const cube = new THREE.Mesh(
+    new THREE.BoxGeometry(2,2,2),
+    new THREE.MeshStandardMaterial({color:0xffd966}));
+scene.add(cube);
+camera.position.set(5,5,5);
+scene.add(new THREE.AmbientLight(0xffffff,1));
+#end three
+```
+
+**Notas técnicas:**
+- Los operadores ASCII (`<=`, `>=`, `==`, `!=`) que el lexer de Calcpad
+  normalmente sustituye a Unicode (`≤`, `≥`, `≡`, `≢`) son **revertidos
+  automáticamente** dentro de los bloques web — sin esto el JS quedaría roto.
+- Three.js usa **importmap** inyectado para resolver el bare specifier
+  `'three'` (necesario para que OrbitControls funcione).
+- Para abrir un HTML generado, usar `http://` (file:// bloquea iframes
+  y módulos por seguridad). Ej: `python -m http.server 8000`.
+
+Ver tests:
+- `Examples/Tests/test_GRAFICAS_WEB.cpd` — Plotly + Three + Mermaid + Canvas
+- `Examples/Tests/test_GRAFICAS_WEB_2.cpd` — Cyto + Dot + Jsx + Map + Math
 
 ### 5c. Cell Arrays — `cells(n)` (Matlab-style)
 
@@ -339,7 +690,7 @@ Complete finite element analysis examples with step-by-step symbolic formulation
 - Python packages: `pip install numpy sympy openseespy` (or use `#pip` inside Calcpad)
 
 ### Download
-- **[Calcpad-Symbolic-Setup-1.0.0.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
+- **[Calcpad-Symbolic-Setup-1.8.17.exe](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Windows installer
 - **[Calcpad-Symbolic-win-x64.zip](https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic/releases/latest)** — Portable zip
 
 ### Build from Source
@@ -377,6 +728,149 @@ dotnet run --project Symbolic.Wpf
 | `mesh_soil_specs_rect([...;Rx;Ry;q])` | Function | Auto-generate loads+BCs (rect. pressure) |
 | `fem_hex8(nodes;elems;E;nu;specs)` | Function | Solve Ku=F sparse Cholesky → u |
 | `fem_hex8_stress(nodes;elems;E;nu;u)` | Function | Nodal stress matrix (Nx6) |
+
+### Web Graphics — 22 directivas de visualización
+
+Bloques `#<lib> ... #end <lib>` que inyectan widgets interactivos desde CDN.
+
+#### Phase 1 — visualización base (10)
+| Directiva | Librería | Uso típico |
+|---|---|---|
+| `#svg` | SVG nativo | Vectores 2D declarativos (.rect, .line, .circle, .text) |
+| `#plotly` | Plotly.js 2.35 | Gráficos científicos 2D/3D (scatter, surface, heatmap) |
+| `#three` | Three.js 0.160 | Visualización 3D WebGL (geometría, FEM viewer, mesh) |
+| `#mermaid` | Mermaid 10 | Diagramas (flowchart, sequence, gantt, classDiagram) |
+| `#canvas` | HTML5 Canvas | Dibujo 2D libre (sin librería externa) |
+| `#cyto` | Cytoscape 3 | Grafos / networks (sparsity de matrices, dependencias) |
+| `#dot` | Graphviz (viz.js 3.7) | Grafos declarativos DOT |
+| `#jsx` | JSXGraph 1.10 | Geometría dinámica interactiva |
+| `#map` | Leaflet 1.9 | Mapas geográficos |
+| `#math` | KaTeX 0.16 | Fórmulas LaTeX puras |
+
+#### Phase 3 — visualización avanzada (10)
+| Directiva | Librería | Uso típico |
+|---|---|---|
+| `#mathbox` | MathBox 2.3.1 | Math viz 3D, isosurfaces, integrales triples ⭐⭐⭐ |
+| `#d3` | D3.js v7.8.5 | Custom plots data-driven (axes log-log, paramétricos) |
+| `#echarts` | Apache ECharts 5.4.3 | Sankey, parallel coords, heatmap, treemap |
+| `#vega` | Vega-Lite 5.21 | Charts declarativos JSON |
+| `#visnet` | vis-network 9.1.9 | Networks dinámicos |
+| `#p5` | p5.js 1.10 | Creative coding |
+| `#matter` | Matter.js 0.20 | Física 2D rígidos |
+| `#cannon` | Cannon-es 0.20 + Three.js | Física 3D rígidos |
+| `#geogebra` | GeoGebra | Math interactivo educativo |
+| `#chart` | Chart.js 4.4 | Gráficos simples (line, bar, doughnut) |
+
+#### Phase 4 — animaciones (2)
+| Directiva | Librería | Uso típico |
+|---|---|---|
+| `#anime` | anime.js 3.2 | Animaciones generales (DOM, SVG) |
+| `#manim` | MathBox + tema oscuro | Animaciones matemáticas estilo 3blue1brown |
+
+**Total: 22 directivas web operativas.** Cada bloque carga su CDN una sola vez por documento. Ejemplo:
+
+```calcpad
+#three 600 400
+const cube = new THREE.Mesh(
+    new THREE.BoxGeometry(2,2,2),
+    new THREE.MeshStandardMaterial({color:0x4a90e2}));
+scene.add(cube);
+scene.add(new THREE.AxesHelper(3));
+camera.position.set(4,4,4);
+#end three
+```
+
+### Parity Map vs Upstream Calcpad (Codeberg)
+
+**Calcpad-Symbolic is a strict superset of upstream Calcpad** (https://codeberg.org/proektsoft/Calcpad). Every parser file, keyword, and SolverType that exists in upstream is also present here, with identical semantics. Symbolic adds 7 new parser files, 3 ExpressionParser sub-files, and ~45 new keywords on top — but never removes or breaks anything from upstream.
+
+This map was generated by auditing both forks side-by-side (May 2026).
+
+#### Parser file inventory
+
+| Parser file | Upstream | Symbolic | Notes |
+|---|---|---|---|
+| `ChartParser.cs` | ✓ | ✓ | Paired |
+| `ExpressionParser/` (dir) | ✓ | ✓ | Symbolic adds 3 sub-files (Functions, Plotly, WebGraphics) |
+| `MacroParser.cs` | ✓ | ✓ | Paired |
+| `MapParser.cs` | ✓ | ✓ | Paired |
+| `MathParser/` (dir) | ✓ | ✓ | Bit-identical sub-file set |
+| `PlotParser.cs` | ✓ | ✓ | Paired |
+| `UnitsParser.cs` | ✓ | ✓ | Paired |
+| `MaximaRunner.cs` | — | ✓ | Symbolic-only: Maxima CAS bridge |
+| `MeshParser.cs` | — | ✓ | Symbolic-only: FEM mesh parsing |
+| `PlotMapParser.cs` | — | ✓ | Symbolic-only: combined plot + map |
+| `SandboxRunner.cs` | — | ✓ | Symbolic-only: isolated execution |
+| `SymbolicProcessor.cs` | — | ✓ | Symbolic-only: symbolic algebra layer (AngouriMath) |
+| `TableParser.cs` | — | ✓ | Symbolic-only: tabular data |
+| `VizParser.cs` | — | ✓ | Symbolic-only: web-graphics dispatcher |
+
+#### Keyword inventory (ExpressionParser.Keywords)
+
+| Keyword group | Upstream | Symbolic |
+|---|---|---|
+| **Visibility / formatting**: Hide, Show, Pre, Post, Val, Equ, Noc, NoSub, NoVar, VarSub, Const, Split, Wrap, Deg, Rad, Gra, Round, Format | ✓ | ✓ |
+| **Control flow**: If, Else_If, Else, End_If, While, For, Repeat, Loop, Break, Continue | ✓ | ✓ |
+| **I/O**: Local, Global, Pause, Input, Md, Read, Write, Append, Phasor, Complex, SkipLine | ✓ | ✓ |
+| **Loop verbosity** `#trace` | — | ✓ (Symbolic-only) |
+| **Multi-line function** `#function` / `#end function` | — | ✓ (Symbolic-only) |
+| **Display equation** `#deq` / `#end deq` | — | ✓ (Symbolic-only) |
+| **Layout** `#inl`, `#blk` / `#end blk`, `#cen` / `#end cen`, `#pgb`, `#margen` / `#end margen` | — | ✓ (Symbolic-only) |
+| **Symbolic algebra** `#sym` / `#end sym` | — | ✓ (Symbolic-only — AngouriMath) |
+| **Python bridge** `#python` / `#end python`, `#pip` | — | ✓ (Symbolic-only) |
+| **Maxima bridge** `#maxima` / `#end maxima` | — | ✓ (Symbolic-only) |
+| **Web graphics** `#svg, #plotly, #three, #mermaid, #canvas, #cyto, #dot, #jsx, #map, #mathbox, #math, #chart, #d3, #echarts, #vega, #visnet, #p5, #matter, #cannon, #geogebra, #anime, #manim` + their `#end <name>` pairs (22 librerías × 2 = 44 keywords) | — | ✓ (Symbolic-only) |
+
+**Net new keywords in Symbolic**: ~45 (covering loops, display, layout, CAS, web graphics).
+**Net removed from upstream**: **0**.
+
+#### SolveBlock SolverTypes parity
+
+The 14 native solver tokens are **bit-identical** between forks:
+
+| Token | Purpose | Upstream | Symbolic |
+|---|---|---|---|
+| `$Find{f(x) = c @ x = a : b}` | Root finder with target | ✓ | ✓ |
+| `$Root{f(x) @ x = a : b}` | Root of f = 0 | ✓ | ✓ |
+| `$Sup{f(x) @ x = a : b}` | Supremum (max) | ✓ | ✓ |
+| `$Inf{f(x) @ x = a : b}` | Infimum (min) | ✓ | ✓ |
+| `$Area{f(x) @ x = a : b}` | Adaptive integral (Simpson) | ✓ | ✓ |
+| `$Integral{f(x) @ x = a : b}` | Same as $Area | ✓ | ✓ |
+| `$Slope{f(x) @ x = a}` | Numerical derivative | ✓ | ✓ |
+| `$Derivative{f(x) @ x = a}` | Higher-order derivative | ✓ | ✓ |
+| `$Sum{expr @ i = a : b}` | Discrete sum | ✓ | ✓ |
+| `$Product{expr @ i = a : b}` | Discrete product | ✓ | ✓ |
+| `$Repeat{body @ i = a : b}` | Loop with index | ✓ | ✓ |
+| `$While{body @ cond}` | Conditional loop | ✓ | ✓ |
+| `$Inline{...}` | Inline display | ✓ | ✓ |
+| `$Block{...}` | Block display | ✓ | ✓ |
+
+#### Parity test files
+
+To verify operational parity after any future change, re-render the 5 tests in `Examples/Tests Paridad/`:
+
+| Test | What it exercises | Parser areas covered |
+|---|---|---|
+| `01_solve_block.cpd` | All 14 SolverTypes | `MathParser.SolveBlock.cs` |
+| `02_units_io.cpd` | Unit arithmetic, conversion, comparison, vectors | `UnitsParser.cs`, `ExpressionParser.ReadWriteOptions.cs` |
+| `03_control_flow.cpd` | Nested `#if/#while/#for/#break/#continue/#trace` | `ExpressionParser.Keywords.cs`, `ExpressionParser.Loops.cs` |
+| `04_macros_funcs.cpd` | Inline functions, macros, `#function`, `Local`, `$Product` | `MacroParser.cs`, `MathParser.CustomFunction.cs` |
+| `05_plot_and_map.cpd` | `$Plot`, `$Map`, `$PlotMap`, `#svg`, `#chart`, `#math`, `#mermaid` | `PlotParser.cs`, `MapParser.cs`, `PlotMapParser.cs`, `VizParser.cs` |
+
+If all five render with **0 errors**, there's no regression vs upstream. The latest audit (May 2026) confirms 5/5 clean.
+
+### Operadores simbólicos en matrices/vectores
+
+`pdiff()`, `diff()`, `integrate()` ahora se traducen a los solvers nativos `$slope{...}` / `$area{...}` y se pueden usar dentro de literales de matriz, incluyendo multi-row e integrales múltiples (doble, triple):
+
+```calcpad
+g(x; y; z) = x^2 + y^2 + z^2
+'Triple integral en cubo unitario:'integrate(integrate(integrate(g(x;y;z); z; 0; 1); y; 0; 1); x; 0; 1)
+'(esperado: 1)
+'Matriz Jacobiana de gradiente:
+J(ξ; η) = [pdiff(N_1(ξ;η); ξ); pdiff(N_2(ξ;η); ξ) | pdiff(N_1(ξ;η); η); pdiff(N_2(ξ;η); η)]
+J(0; 0)  ' evalúa numéricamente con central FD
+```
 
 ---
 
@@ -495,6 +989,345 @@ K & [kN/m; kN | kN; kN*m]
 
 ---
 
+## Gauss Quadrature — pedagogical primer (Q4 FEM)
+
+This section condenses the contents of `Examples/Mechanics/Finite Elements/sin unidades/Cuadratura de Gauss - Tutorial.cpd` (16 SVGs + 8 Chart.js charts + 13 `#sym integrate()` calls). Open the file in Calcpad-Symbolic to see all visualizations rendered.
+
+### Why these specific test functions?
+
+When evaluating Gauss quadrature with `f(x) = 1, x, x², x³, x⁴, x⁶`, we are not testing arbitrary curves — we are testing the **LEGO building blocks** of every polynomial:
+
+```
+f(x) = a₀·1 + a₁·x + a₂·x² + a₃·x³ + a₄·x⁴ + …
+```
+
+Because integration is **linear** (`∫(a·f + b·g) = a·∫f + b·∫g`), if a quadrature rule integrates each piece exactly, it integrates ANY polynomial built from those pieces exactly. So testing the pieces tells us the full operating range.
+
+### The rule — N points integrate exactly up to degree (2N - 1)
+
+| N points | Positions (Gauss-Legendre on [-1, +1]) | Weights | Exact up to degree |
+|---|---|---|---|
+| 1 | `0` | `2` | 1 (lines) |
+| 2 | `±1/√3 ≈ ±0.5774` | `1, 1` | 3 (cubics) |
+| 3 | `±√(3/5) ≈ ±0.7746, 0` | `5/9, 8/9, 5/9` | 5 (quintics) |
+
+Symbolic verification (these are the values `#sym integrate(...; x; -1; 1)` emits):
+
+| Piece | Exact integral | 1-pt result | 2-pt result | 3-pt result |
+|---|---|---|---|---|
+| `1` | `2` | `2` ✓ | `2` ✓ | `2` ✓ |
+| `x` | `0` | `0` ✓ | `0` ✓ | `0` ✓ |
+| `x²` | `2/3 ≈ 0.667` | `0` ✗ | `2/3` ✓ | `2/3` ✓ |
+| `x³` | `0` | `0` ✓ | `0` ✓ | `0` ✓ |
+| `x⁴` | `2/5 = 0.4` | `0` ✗ | `2/9 ≈ 0.222` ✗ | `2/5` ✓ |
+| `x⁶` | `2/7 ≈ 0.286` | `0` ✗ | `2/27 ≈ 0.074` ✗ | `0.246` ✗ |
+
+### Why Q4 membrane needs **2×2 Gauss**
+
+The Q4 shape functions are **bilinear** (degree 1 in each variable):
+
+```
+N₁(ξ, η) = (1-ξ)·(1-η)/4
+N₂(ξ, η) = (1+ξ)·(1-η)/4
+N₃(ξ, η) = (1+ξ)·(1+η)/4
+N₄(ξ, η) = (1-ξ)·(1+η)/4
+```
+
+Their derivatives are LINEAR (degree 1). When we form `Bᵀ·D·B` for the stiffness integrand we get products `linear × linear = QUADRATIC` (degree 2 in ξ, degree 2 in η).
+
+For example, `(Bᵀ·D·B)[1,1]` contains `(1 - η)²` which expanded by `#sym expand((1-η)²)` gives:
+
+```
+(1 - η)² = 1 - 2·η + η²
+           ↑    ↑    ↑
+         deg 0 deg 1 deg 2
+```
+
+The **highest-degree piece is η²** (degree 2). So the rule must be exact for degree 2:
+- `N = 1` ⇒ exact up to degree 1 ⇒ MISSES degree 2 ⇒ K_e under-integrated ⇒ **hourglass modes**.
+- `N = 2` ⇒ exact up to degree 3 ⇒ COVERS degree 2 ⇒ **full integration, correct K_e**.
+- `N = 3` ⇒ exact up to degree 5 ⇒ identical K_e to 2×2, just slower CPU.
+
+### Decision table — when to use each rule
+
+| Problem | Quadrature | Reason |
+|---|---|---|
+| Q4 membrane (plane stress) | **2×2** | Integrand degree 2 |
+| Mindlin plate **thick** (t/L > 0.1) | **2×2** | No shear locking risk |
+| Mindlin plate **thin** (t/L < 0.05) | **2×2 bending + 1×1 shear (selective)** | 2×2 shear would lock |
+| Q4 element **distorted** (curved sides) | **3×3** | det(J) no longer constant — effective degree > 2 |
+| Q9 / Q8 (quadratic shape functions) | **3×3 obligatory** | Shape functions degree 2 → Bᵀ·D·B degree 4 |
+| Nearly incompressible (ν → 0.5, rubber, saturated soil) | **2×2 deviatoric + 1×1 volumetric (B-bar)** | Volumetric locking |
+| ABAQUS S4R shell / C3D8R brick | **1×1 + hourglass control** | 8× faster than full integration |
+| Plasticity with non-linear hardening | **3×3 or higher** | Better spatial resolution of yielding |
+
+### The balance analogy (intuition)
+
+The stiffness integrand is a **SUM of pieces** of different polynomial degrees mixed together. Think of integrating it as **weighing several objects at once**. The Gauss rule is the balance. You need a balance strong enough for the HEAVIEST object — once you have that, every lighter object (and any combination) also weighs correctly.
+
+```
+Q4 stiffness:  heaviest piece = degree 2 → balance = 2-point Gauss
+Q9 stiffness:  heaviest piece = degree 4 → balance = 3-point Gauss
+```
+
+### Symbolic vs numeric partial derivatives
+
+For computing `∂f/∂x` of FEM shape functions (the `B` matrix), Calcpad-Symbolic offers BOTH:
+
+```calcpad
+'Numerical partial derivative ($Slope, central differences):
+f(x; y) = x^2 + 3*x*y + y^2
+f_x(x) = f(x; 1)
+df_dx_at_2_1 = $Slope{f_x(x) @ x = 2}     'gives 7
+
+'Symbolic partial derivative (#sym pdiff, AngouriMath):
+#sym pdiff(x^2 + 3*x*y + y^2; x)          'returns the expression 2x + 3y
+
+'Symbolic gradient, hessian, jacobian:
+#sym gradient(x^2 + 3*x*y + y^2; x; y)    'returns [2x + 3y; 3x + 2y]
+#sym hessian(x^3 + x*y^2; x; y)           'returns [[6x, 2y], [2y, 2x]]
+#sym jacobian(r*cos(θ); r*sin(θ); r; θ)   'polar→cartesian Jacobian
+```
+
+Verify in `Examples/Tests Paridad/06_derivadas_parciales_numericas.cpd` and `07_derivadas_parciales_simbolicas.cpd`.
+
+---
+
+## Pitfalls & Best Practices — `#deq`, `#sym`, layout, HTML
+
+> Verified empirically with `Examples/Finite Elements/TEST_sintaxis.cpd` against the
+> Apr-26-2026 build of `Symbolic.Cli`. Run that test file with the **current** `Cli.exe`
+> from `Symbolic.Cli/bin/Release/net10.0/` to reproduce. **Do not use older binaries** —
+> they don't recognize newer keywords (`#margen`, `#pgb`, `#blq`) and report
+> `Invalid symbol: "#"` on line 1 of any file using them.
+
+### Visibility modes — `#val`, `#equ`, `#noc`
+
+| Directive | `_isVal` | Effect |
+|---|---|---|
+| `#val` | 1 | Show **only the numeric value** (substituted, no formula) |
+| `#equ` | 0 | Default — show formula AND value (`F = m·a = 5·2 = 10`) |
+| `#noc` | -1 | **No calculation** — show formula symbolically, no substitution |
+
+`#noc` ... `#equ` blocks are useful to **type matrix equations as text** without Calcpad evaluating them:
+
+```
+#noc
+[F_1|F_2] = [k_e; -k_e|-k_e; k_e]*[u_1|u_2]
+#equ
+```
+
+### Layout — `#blk`, `#inl`, `#cen`, `#pgb`, `#margen`
+
+| Directive | Mode | Effect |
+|---|---|---|
+| `#inl A=5 ; B=3 ; C=8` | inline | N columns in one line (separated by `;`) |
+| `#blk` ... `#end blk` | block | Multi-row column layout |
+| `#cen expr` | inline | Center single line |
+| `#cen` ... `#end cen` | block | Center entire block |
+| `#pgb` | inline | Page break (PDF/DOCX only — empty `<div class="pgb">` in HTML) |
+| `#margen 20` ... `#end margen` | block | Justified text with 20mm margins both sides (default 15mm) |
+
+### `#deq` — what works and what doesn't
+
+| Pattern | Result | Notes |
+|---|---|---|
+| `#deq y = a*x + b` | ✅ math | Basic algebra |
+| `#deq E = m*c^2` | ✅ superscript | `^` for single-char exponent |
+| `#deq u_1 = N_1*ua` | ✅ subscript | `_1` works (numeric) |
+| `#deq v_max = 5*q*L^4` | ✅ subscript | `_max` works (alphabetic, no braces) |
+| `#deq σ_xx = E*ε_xx` | ✅ subscript | Greek + multi-char subscript works |
+| `#deq T_{max} = K*L^2` | ✅ subscript | **`_{...}` LaTeX braces work** — extract subscript content |
+| `#deq A^{2} = π*r^2` | ⚠️ partial | **`^{...}` braces fail** — `A^{2}` shows literally (asymmetric with `_{...}`) |
+| `#deq F = m*a @@(2da ley)` | ✅ eqnum | **`@@(text)` produces equation number on the right** (CSS class `.eqn`) |
+| `#deq v''''(x) = q(x) @@(EDP)` | ✅ eqnum | Works even with multiple primes |
+| `#deq v(x) = a_1*φ_1(x) + a_2*φ_2(x)` | ⚠️ varies | Long sum with `(x)` argument may render plain — split into multiple lines |
+| `#deq U = ∫f(x)dx` | ⚠️ math literal | Integral symbol renders, but content shows multiplication dots |
+| `#deq U = ∫*f(x)*dx` | ❌ asterisks visible | `*` between integrand parts displays literally — use HTML for clean integrals |
+| `#deq U = ∫_{0}^{L} f dx` | ❌ shows `∫0{L}` | Underscore before `{` is stripped, content not nested under integral |
+| `#deq E = m*c^2 — formula` | ❌ "Invalid symbol —" | **Em dash inside `#deq` breaks the AngouriMath parser** |
+| `#deq` (alone) ... `#end deq` | ✅ block | Multi-line block — use `#deq` alone on its line, content next, then `#end deq` |
+| `#deq θ_x = -∂w/∂y, θ_y = ∂w/∂x` | ✅ multi | Top-level `,` splits into multiple equations on the same `#deq` line |
+
+**Best practice for integrals:** for complex limits, use HTML — produces visually cleaner output:
+```
+'<p>U = (1/2) ∫₀<sup>L</sup> EI · (d²v/dx²)² dx</p>
+'<p>K_e = ∫₋₁<sup>1</sup> ∫₋₁<sup>1</sup> B<sup>T</sup>·D·B·|J| dξ dη</p>
+```
+
+### `#sym` — what works and what doesn't
+
+| Pattern | Result | Notes |
+|---|---|---|
+| `diff(expr; x)` | ✅ | 1st derivative |
+| `diff(expr; x; n)` | ✅ | **n-th derivative** (undocumented; see `SymbolicProcessor.cs:147`). Internal loop: `for i in 0..n: r = r.Differentiate(v)` |
+| `diff(diff(f; x); x)` | ❌ stack overflow | **Nested `diff` does NOT work** — use `diff(f; x; 2)` |
+| `integrate(x^2; x)` | ✅ | Indefinite integral |
+| `integrate(x^2; x; 0; 2)` | ✅ | Definite with **numeric** bounds |
+| `integrate(x; x; 0; L)` | ⚠️ may hang | **Definite with symbolic bound** can stack-overflow AngouriMath. Stay with indefinite + describe bounds in text |
+| `integrate(sin(π*x/L)^2; x)` | ⚠️ may hang | `sin²` with symbolic compound argument recurses infinitely |
+| `simplify((1-ν)/(2*(1-ν^2)))` | ⚠️ may hang | **Simplify with single-char Greek (ν, ξ, η)** can stack-overflow. Workaround: rename to Roman (`nu`, `r`, `s`) |
+| `simplify(N1+N2+N3+N4)` (sum of 4 products) | ⚠️ may hang | OOM on large symbolic sums |
+| `expand((a+b)^3)` | ✅ | |
+| `factor(x^2-4)` | ✅ | |
+| `solve(x^2-5*x+6; x)` | ✅ | Polynomial solver |
+| `pdiff(x^2*y; x)` | ✅ | Partial derivative |
+| `gradient(x^2+y^2; x; y)` | ✅ | Vector calculus |
+
+**Why nested `diff` fails:** `Diff()` returns a `SymResult` containing a presentation tag `TAG_DERIV|d|dx|body` (string with metadata for rendering the `d/dx` fraction), **not** an AngouriMath `Entity`. The outer `diff` cannot re-parse it. Use the 3-arg form.
+
+**Recommendation for symbolic Greek arguments:** if `#sym simplify`/`#sym integrate` hangs, **rename single-char Greek to Roman**:
+- `ν` → `nu`
+- `ξ` → `r`  (or `xi`)
+- `η` → `s`  (or `eta`)
+- `θ` → `theta`
+- `π` → leave (AngouriMath knows π is a constant)
+
+### Escape rules for `'`-prefixed HTML lines
+
+The leading `'` starts a comment-as-HTML line. Inside that line:
+
+| Pattern | Result |
+|---|---|
+| `'<p>texto sin apostrofes</p>` | ✅ |
+| `'<p>x<sub>1</sub> + y<sup>2</sup></p>` | ✅ HTML subs/sups |
+| `'<p>Esto es importante — muy.</p>` | ✅ Em dash in HTML text fine |
+| `'<p>los '60 fueron decisivos</p>` | ❌ Apostrophe **closes** comment context, rest parsed as math, errors |
+| `'<p>derivada w' a coincidir — ...</p>` | ❌ Same — `w'` closes context, em-dash invalid in math |
+| `'kPa (concreto f'c 4000 psi)` | ❌ `f'c` closes the comment in a regular comment line |
+
+**Rule:** any **additional** `'` inside a `'`-line closes the comment context. Everything after is parsed as a Calcpad expression. Use `anios 60`, `dw/dx`, `fc`, etc.
+
+### Quick checklist before rendering
+
+- [ ] Use the **current** `Cli.exe` (Apr 2026 build or later) — older builds reject `#margen`, `#pgb`, `#blq`
+- [ ] Avoid `^{...}` LaTeX braces in `#deq` (use `^N` for single chars; `^{N}` shows literally)
+- [ ] No em dashes (`—`) inside `#deq` (use them only in `'<p>` HTML)
+- [ ] No additional apostrophes inside `'`-prefixed comment lines
+- [ ] **Nested `diff(diff(...))` now WORKS** since `SymbolicProcessor.cs` v1.3.3 (May 2026) — recursively resolves inner symbolic calls before applying the outer derivative
+- [ ] No `simplify(...)` of expressions with single-char Greek vars (rename to Roman)
+- [ ] Definite `integrate(...; var; 0; L)` with symbolic bound — risky; use indefinite + describe bounds in text
+- [ ] For clean integrals with limits, use HTML `∫₀<sup>L</sup>` instead of `#deq`
+
+---
+
+## Mixing text + math + symbolic in the same line — Inline mode
+
+Calcpad has rich support for mixing text and math in a single line. The rules
+take some practice — see `Examples/Finite Elements/TEST_inline.cpd` for a
+12-block test that exercises every pattern. Here are the working idioms:
+
+### Rule 1 — `'` toggles between Text and Math mode
+
+A line that starts with `'` is in **Text mode**. Each additional `'` toggles to
+**Math mode** (and back). This means the count of apostrophes matters.
+
+### Rule 2 — Inline `#deq` and `#sym` directly in text
+
+```
+'La 2da ley es '#deq F = m*a' fundamental.
+'Derivada cubica '#sym diff(x^3; x; 3)' constante.
+```
+
+Pattern: `'<text>'<directive>'<more text>`. The first `'` opens text, the second
+`'` switches to math (where the directive lives), the third `'` returns to text.
+Renders as: *La 2da ley es F = m·a fundamental.*
+
+### Rule 3 — Inline `$Sum`, `$Integral`, `$Product`
+
+These need an explicit assignment: `varname = $Cmd{...}`. The pattern is
+**different** from `#deq`/`#sym`:
+
+```
+'Suma -'S = $Sum{i^2 @ i = 1 : 10}
+'Trabajo -'W = $Integral{k*x @ x = 0 : 1}
+'Factorial -'P = $Product{i @ i = 1 : 5}
+```
+
+The `'` inside text closes the comment, then `S = $Sum{...}` is parsed as a
+calculation. Result: *Suma - S = Σᵢ₌₁¹⁰ i² = 385*. Note: do **not** wrap
+`$Sum{...}` between two apostrophes — that treats it as text and shows
+`$Sum{...}` literally.
+
+### Rule 4 — Permissive inline math (v1.3+)
+
+Bare math identities work without any directive (auto-detected and routed to
+display renderer):
+
+```
+'Identidad: '(a + b)^2 = a^2 + 2*a*b + b^2' clasica.
+'Biharmonica: 'd^4*w/dx^4 + 2*d^4*w/dx^2*dy^2 + d^4*w/dy^4 = q/D_f' multi-termino.
+```
+
+If you reference variables that aren't yet defined, Calcpad falls back to
+display mode instead of erroring. Useful for citing formulas before computing.
+
+### Rule 5 — Numeric values mixed in text
+
+The cleanest way to mix numeric results with text is to **define variables in
+their own block lines**, then reference them in `'<p>` HTML:
+
+```
+masa = 5
+g = 9.81
+P = masa*g
+
+'<p>Para masa=5kg y g=9.81 m/s² el peso es P = 49.05 N.</p>
+```
+
+If you want the *substitution chain* visible (`P = m·g = 5·9.81 = 49.05`), put
+the calculation on its own line **without** `'`:
+
+```
+masa = 5
+g = 9.81
+P = masa*g    ← shows: P = m·g = 5·9.81 = 49.05 with substitution arrows
+```
+
+### Rule 6 — Block mode for complex multi-line content
+
+When a line gets too cluttered or you want each item visually separated, use
+block form. Every directive has a block counterpart:
+
+| Inline | Block |
+|---|---|
+| `'foo '#deq F = k*x' bar` | `#deq F = k*x` (alone on a line) |
+| `'foo '#sym diff(x^3; x)' bar` | `#sym` ... `diff(x^3; x)` ... `#end sym` |
+| `'foo '$Sum{i @ i=1:5}'` | (always on its own line — no block form) |
+
+### Cookbook
+
+```
+"Section title — inline mixed
+'<p>The cinetic energy of a body is '#deq E_c = (1/2)*m*v^2'
+'where m is mass and v is velocity. The derivative w.r.t. v
+'is '#sym diff((1/2)*m*v^2; v)' which equals momentum p = m·v.</p>
+
+"Block form of the same content
+#deq E_c = (1/2)*m*v^2
+
+#sym
+diff((1/2)*m*v^2; v)
+#end sym
+
+'<p>The above shows the kinetic energy formula and its derivative
+'as separate display equations.</p>
+
+"Numeric example
+m = 2     'kg
+v = 10    'm/s
+E_c = (1/2)*m*v^2     'Joules
+
+'<p>Para m=2 kg y v=10 m/s la energia cinetica vale E_c = 100 J.</p>
+```
+
+### Working example in repo
+
+`Examples/Finite Elements/TEST_inline.cpd` — 12 blocks covering every pattern.
+Render with `Cli.exe TEST_inline.cpd test_inline.html -s` and inspect the HTML.
+
+---
+
 ## Licensing
 
 MIT License.
@@ -523,4 +1356,412 @@ Calcpad-Symbolic/
   Examples/            Example files (.cpd)
   Include/             FEM_Graphics.cpd macro library
   calcpad-viz/         TypeScript visualization library
+  explicaciones/       FEM didactic .cpd lessons (B^T·D·B, Jacobian, K_e…)
 ```
+
+---
+
+## Changelog
+
+### v1.8.18 (May 2026) — Parity audit + Gauss tutorial + SIN UNIDADES folder
+
+**Examples reorganized + new pedagogy:**
+- New folder `Examples/Mechanics/Finite Elements/sin unidades/` consolidates all 10 SIN UNIDADES FEM examples (apostrofé text-only unit decoration) — removed `_ejemplo_sin_unidades` suffix.
+- Removed `& kN/m^2` anti-pattern in 3 SIN UNIDADES files (Shell Q4, Membrane Q4, Reissner) — the conversion operator only makes sense with real units, not decorative text.
+- `Plate Theory - Mindlin.cpd`: fixed Winkler sign convention (now `q = k_w * w` matches the displayed formula; clamp `q > 0` instead of `q < 0`); added explicit Mx, My moment load documentation; rewrote input section with `#blk` tabular display.
+- New file `Cuadratura de Gauss - Tutorial.cpd`: 100% visual tutorial of Gauss quadrature with 13 SVGs, 8 Chart.js charts, 13 `#sym integrate()` calls (real symbolic integration via AngouriMath), explicit "section 0" explaining LEGO-piece decomposition of polynomials and why we test on `1, x, x², x³, x⁴`, plus practical Section 5 covering when to use 1×1, 2×2, 3×3, and selective integration in commercial software contexts.
+- New `Examples/Tests Paridad/` folder with 5 parity tests (`01_solve_block`, `02_units_io`, `03_control_flow`, `04_macros_funcs`, `05_plot_and_map`) — re-render any time after parser changes to detect regression vs upstream.
+
+**README:**
+- New section "Parity Map vs Upstream Calcpad" documenting parser-file inventory, keyword inventory, and SolverType parity. Audit confirms Symbolic is a strict superset (~45 extra keywords, 7 extra parsers, 0 missing from upstream).
+
+### v1.8.17 (May 2026) — Legacy `;` split requires whitespace before next `'`
+
+User found: `'texto;'; 'otro'` was producing THREE cells instead of two
+because the inside-text legacy lookahead saw `;` followed by `'` and
+treated it as the start of a new cell — but that `'` was actually the
+CLOSING quote of the current text region (`'texto;'`).
+
+Tightened the rule: the legacy `'a ; 'b` shorthand requires AT LEAST
+ONE SPACE between `;` and the next `'`. Without the space, the `'`
+after `;` is treated as a region CLOSER and the `;` stays as literal
+text inside the cell.
+
+```cpd
+'texto;'; 'otro'            → TWO cells: "texto;" | "otro"  (was 3 cells before)
+'texto'; 'otro'              → TWO cells: "texto" | "otro"
+'texto; '; 'otro'            → TWO cells: "texto;" | "otro"   (space after ; still ok)
+'a + b ; a + b               → ONE cell (no `'` after ;)
+'1 DOF (barra) ; '2DOF        → TWO cells (legacy lookahead: space + `'`)
+```
+
+### v1.8.16 (May 2026) — Re-apply text-aware `;` split + highlighter cell-boundary
+
+User feedback after v1.8.15: `'a + b ; a + b` should be ONE pure-text
+cell, not two — anything inside an open `'` region (including `;`) is
+text. v1.8.15's "always split" was too aggressive.
+
+Re-applied the text-aware split with lookahead (originally v1.8.13):
+  - `;` outside an open text region → split (predictable).
+  - `;` inside an open text region:
+      * followed by `'` → split (legacy `'cell1 ; 'cell2` form).
+      * NOT followed by `'` → literal char, no split.
+
+Plus: when the WPF highlighter is inside `#blk`/`#inl`/`#cen` and hits
+a `;` while a text region is open, the region is closed at the `;` so
+the next `'` opens a FRESH region for cell 2 (otherwise the editor
+treated the second `'` as a closer and tokenised cell 2's words as
+expressions, painting them blue/red).
+
+Combined effect (recommended forms):
+
+```cpd
+'a + b ; a + b              → ONE cell, pure text (with literal ;)
+'frase con ; punto y coma   → ONE cell, pure text
+'1 DOF (barra) ; '2DOF      → TWO cells (legacy lookahead)
+'cell1'; 'cell2'             → TWO cells (closed quotes)
+a + b ; c + d                → TWO cells (both expressions)
+```
+
+### v1.8.15 (May 2026) — Revert text-aware `;` split (predictability)
+
+v1.8.13 made `;` literal inside an open text region (`'`-opener with no
+closer). It was too clever: cases like `'a + b ; c + d` or
+`'a = a + 1 ; a` collapsed into one cell because `;` was treated as
+text. Users expect `;` to ALWAYS split at top level.
+
+Reverted to "split-always-at-top-level" (predictable). To get a literal
+`;` inside the text of a cell, close the text region with `'` first:
+
+```cpd
+'frase con ; punto y coma'                  ← one cell, ; is literal
+'frase con ; punto y coma                    ← TWO cells now
+'a + b ; c + d                               ← TWO cells (text | expr)
+a + b ; c + d                                ← TWO cells (both expr)
+```
+
+The pure-text fast path `'<text>'` and the expr-first path for cells
+without `'` opener are preserved from v1.8.14.
+
+### v1.8.14 (May 2026) — Inversion only for DEFINED variables + expr-first cells
+
+Two corrections to `#blk` / `#inl` cell rendering:
+
+1. The "invert convention" heuristic (so `'a' kN/m` evaluates `a`) now
+   requires the bare identifier to actually be DEFINED as a variable
+   (`_parser.HasVariable(name)`). Otherwise standard text-first
+   convention applies. Before this, `'texto'e = 4` mis-fired the
+   heuristic — `texto` looked like an identifier, got marked as EXPR,
+   and showed as a red "undeclared" error. Now `texto` stays as text
+   and `e = 4` evaluates as expression (assigning `e`).
+
+2. Cells that DON'T start with `'` but contain `'` internally are now
+   processed with expression-first alternation (EXPR / TEXT / EXPR …).
+   So `c = 3' texto2'` produces: `c = 3` evaluated + " texto2" as text.
+   Previously this fell through to the regular expression parser which
+   choked on the literal `'` and produced an error.
+
+Combined with v1.8.13, the recommended canonical forms are now:
+
+```cpd
+#blk
+'col1'; 'col2'; 'col3                ← three text cells
+'text1'; 'a' kN/m                    ← text | expr (when a is defined)
+'text 'a = 4; b = a + 2              ← text + expr + expr in two cells
+c = 3' suffix text'                  ← expr + text (no leading quote)
+#end blk
+```
+
+### v1.8.13 (May 2026) — `;` inside text region is literal + accent colour + `'cell'` is pure text
+
+Three improvements to `#blk` / `#inl` column splitting and editor UX:
+
+1. `;` inside an OPEN text region (between a `'` opener and the next `'`
+   or end-of-line) is now treated as a LITERAL character — so
+   `'una frase con ; punto y coma interno` renders as a single cell.
+   Legacy `'cell1 ; 'cell2` syntax still works (a `'` after the `;` is
+   recognised as the start of a new cell, so the `;` becomes a separator
+   even when text is open).
+
+2. New "pure text cell" rule: a cell matching exactly `'<content>'`
+   (one opening quote, content, one closing quote, optional trailing
+   whitespace) is rendered as plain text WITHOUT applying the
+   alternation/identifier heuristic. So `'col1'; 'col2'; 'col3` produces
+   three text cells, even when `col1` happens to look like an identifier
+   (previously the heuristic tried to evaluate it and showed a red
+   "undeclared variable" error).
+
+3. Editor highlight: `;` that acts as a column separator in `#blk`,
+   `#inl`, or `#cen` lines is now rendered in a strong DodgerBlue +
+   bold so the visual layout of cells is unambiguous.
+
+Combined effect: the recommended way to write a row is now
+`'col1'; 'col2'; 'col3` (close every quote, semicolon between cells).
+But the historic `'col1 ; 'col2` shorthand still produces two columns.
+
+### v1.8.12 (May 2026) — Smarter alternation in `#blk` cells (`'a'` evaluates)
+
+v1.8.10 used Calcpad's standard line convention for `#blk` cells:
+fragments[1] = TEXT, fragments[2] = EXPR, etc. This worked for
+`'a vale 'a' kN/m` (which has 3 `'`s and a TEXT prefix) but failed
+when the user typed `'a' kN/m` expecting `a` to evaluate — the
+standard convention puts `a` in TEXT mode.
+
+Fix: detect the case where the cell looks like `'<bare-identifier>'…`
+(fragments[1] trimmed is a single Latin/Greek/underscore identifier
+with no operators or spaces) and INVERT the alternation phase. Now:
+
+```
+'Esto es una variable;'a' esto es #blk
+   → "Esto es una variable" | (a=5) " esto es #blk"
+'a vale 'a' kN/m
+   → "a vale " (a=5) " kN/m"     ← standard, fragments[1]="a vale " is not a bare id
+'b vale 'b' al final
+   → "b vale " (b=10) " al final"
+```
+
+The override only kicks in when fragments[1] is unambiguous (matches
+`\w+`), so phrasing like `'La fórmula es 'expr' útil` (with leading
+prose) still uses the standard text/expr/text convention.
+
+### v1.8.11 (May 2026) — Highlighter block-context detection on single-paragraph re-parse
+
+Body lines of an open `#blk` (or `#cen`, `#margen`, `#noc`) block were
+sometimes shown with stale red-error highlighting in the editor after
+the user edited them. RichTextBox.TextChanged calls Parse with
+`single=true` to re-tokenise only the changed paragraph, but that path
+previously skipped both the flag-reset AND `DetectBlockContextFromPrevious`.
+The `_isIn*Block` flags kept whatever value they had at the end of the
+last full pass, so the Error→Comment demote in Append() didn't trigger.
+
+Fix: always reset the block flags and re-walk backwards to detect the
+surrounding open block on every Parse() entry — `single=true` included.
+A single-line edit now sees the correct context.
+
+### v1.8.10 (May 2026) — Inline alternation inside `#blk` cells
+
+Previously a `#blk` cell starting with `'` was rendered as pure text
+even when it contained internal `'` characters — the second apostrophe
+would appear literally in the output. Now each cell that starts with
+`'` and contains more `'`s applies the same alternation rule Calcpad
+uses on regular lines:
+
+  - The first `'` opens TEXT mode
+  - Each subsequent `'` toggles between EXPRESSION and TEXT
+
+Concrete examples:
+
+```cpd
+a = 5
+b = 10
+#blk
+'simple text                  ; 'just two text cells
+'a vale 'a' kN/m              ; text + expr `a` (=5) + text
+'b vale 'b' al final          ; text + expr `b` (=10) + text
+'1 DOF (barra) ; '2 DOF (m)   ; pure-text cells (no internal `'`)
+#end blk
+```
+
+To evaluate an expression with no leading text inside a cell, prefix
+with empty quotes: `'  'a = 2 + 3' more text` → empty text + expr +
+trailing text.
+
+### v1.8.9 (May 2026) — Preserve spaces in editor (not just in HTML output)
+
+v1.8.8 added the `p.line { white-space: pre-wrap }` CSS rule that kept
+multiple/leading spaces alive in the HTML output. But the WPF editor
+(RichTextBox over a FlowDocument) ALSO collapses consecutive spaces
+when rendering Run text, so `'    pico    pato` looked like
+`' pico pato` in the editor — even though the cached HTML had the
+spaces.
+
+Fix: when the highlighter emits a Comment run that contains two or
+more consecutive spaces, replace every space-after-a-space with
+U+00A0 NO-BREAK SPACE. WPF renders nbsp at the same width as a space
+but does not collapse it. `GetInputText()` converts the nbsp back to
+plain space before save/evaluation, so the on-disk `.cpd` stays
+ASCII-clean and the parser still sees regular spaces.
+
+### v1.8.8 (May 2026) — Preserve leading/multiple spaces in text comments
+
+A `'   x` or `'                              x` text comment used to render
+with collapsed whitespace ("x" or " x") because HTML collapses runs of
+spaces in flow content by default. Two changes:
+
+1. CSS rule `p.line { white-space: pre-wrap }` added to both the WPF and
+   CLI `doc/template.html`. Now leading and consecutive internal spaces
+   inside text paragraphs are preserved verbatim while still allowing
+   wrapping at word boundaries.
+2. `HtmlLineClass` / `HtmlLineMarker` now emit `class="line"` regardless
+   of `Debug`, so the same CSS rule applies to BOTH the WPF (Debug=true)
+   and the CLI (Debug=false). Previously only WPF tagged paragraphs with
+   `class="line"`, so the CSS fix only worked there.
+
+A `.col-cell, .col-cell span { white-space: normal }` override prevents
+inheritance from messing up `#blk` flex cell layout.
+
+### v1.8.7 (May 2026) — `#blk` columns render in WPF (duplicate class= attribute)
+
+`#blk`/`#inl` flexbox columns rendered as stacked single-column rows in
+the WPF WebView2 even though the CLI output produced correct multi-cell
+HTML. Root cause: the parser's `HtmlId` property (active when `Debug=true`)
+emitted ` id="line-N" class="line"` as a single token, and several callers
+appended their OWN `class="…"` afterwards, producing malformed HTML with
+TWO `class` attributes:
+
+```html
+<div id="line-203" class="line" class="col-blk">  ← second class silently dropped by browsers
+```
+
+`.col-blk { display: flex }` therefore never applied — every cell rendered
+as a block on its own line. The CLI output had no duplicate because Debug
+was off there, so the bug was invisible until WPF.
+
+Fix: split `HtmlId` into three pieces so each emission site picks the right
+combination:
+- `HtmlId` → just ` id="line-N"`
+- `HtmlLineClass` → just ` class="line"`
+- `HtmlLineMarker` → `"line "` to inject inside an existing class= value
+
+Updated all ~20 call sites in `ExpressionParser.cs` and
+`ExpressionParser.Keywords.cs` (`<p{HtmlId}>` → `<p{HtmlId}{HtmlLineClass}>`,
+and `<X{HtmlId} class="cond">` → `<X{HtmlId} class="{HtmlLineMarker}cond">`).
+Output now has exactly ONE class attribute per element, both line-tracking
+hooks and flex layout work simultaneously.
+
+### v1.8.6 (May 2026) — Greek-letter panel fix (font typo)
+
+The toolbar `GreekLettersWarpPanel` (α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ
+υ φ χ ψ ω ϑ ø ° ′ ″ ‰ ∂) was showing as boxes / blank because the
+TextBlock style hard-coded `FontFamily = "Times New Romans"` (extra `s`).
+WPF couldn't resolve that face and fell back to a font without Unicode
+Greek glyphs. Fixed to `"Times New Roman"`. The Ctrl+G transliteration
+shortcut (e.g. `x` → `ξ`) was always working — this only affected the
+clickable panel rendering.
+
+### v1.8.5 (May 2026) — Highlighter respects multi-line display blocks
+
+`#blk` body cells like `'2DOF(membrana)`, `'Ley: matriz D (3x3)` were
+flagged in pink because the second `'`-prefixed cell after the `;`
+separator triggered Variable→Error promotion (the parser tokenized
+`2DOF` as `2*DOF`, `(membrana)` as undeclared variable, etc.).
+
+The previous fix (v1.8.2) only escaped error promotion when the LINE
+itself started with `#deq`/`#sym`/etc. Body lines of `#blk` / `#cen`
+/ `#margen` / `#noc` blocks were not covered.
+
+Fix: added `_isInBlkBlock` / `_isInCenBlock` / `_isInMargenBlock` /
+`_isInNocBlock` flags mirroring `_isInSymBlock`. They flip on the
+opening keyword, reset on `#end <kind>`. The flags are honoured by
+`Append()` (Error → Comment demote), `CheckError()` (skip undeclared
+checks), and `CheckHighlight()` (skip post-pass error re-promotion —
+with its own per-paragraph local copy because it runs after Parse()
+finished).
+
+`DetectBlockContextFromPrevious` walks back to recover the active
+block when re-highlighting starts mid-block.
+
+### v1.8.4 (May 2026) — Save round-trip protection (no .cpd corruption on close)
+
+The WPF editor used to silently corrupt `.cpd` files when the user opened
+them and clicked Save / answered Yes to "Save changes?" on close — even
+when no real edit had been made. The HighLighter's re-tokenization
+sometimes lost whitespace around inline `'#deqξ'` directives or dropped
+the leading apostrophe of a `#blk` cell, and `GetInputText()` re-emitted
+the corrupted reconstruction.
+
+Fix:
+- Snapshot the exact disk bytes (`_loadedFileText`) on every `FileOpen`.
+- Track whether the user actually typed something since load
+  (`_userTypedSinceLoad`) via `RichTextBox_PreviewKeyDown`.
+- On save: if `_userTypedSinceLoad == false`, write the original bytes
+  verbatim. Only emit `GetInputText()` when the user really edited.
+
+Net effect: opening + closing a file (without typing) is now a true
+no-op — the file on disk is byte-identical to what it was.
+
+### v1.8.3 (May 2026) — Repackage clean (no contaminated examples)
+
+Same source as v1.8.2 but the v1.8.2 installer accidentally included a
+`.cpd` file that was overwritten by the WPF auto-save on close (lost
+inline `'#deqξ'` spaces and a `#blk` cell apostrophe). The repo `.cpd`
+was reverted to its clean form and the installer was recompiled.
+
+### v1.8.2 (May 2026) — WPF highlighter polish + CLI batch mode
+
+**WPF highlighter:**
+- `#sym ... #end sym` blocks now render as passthrough (dark blue). Symbol
+  names like `xi`, `eta`, `theta`, `alpha` no longer flagged as undeclared
+  variables / red error background.
+- Greek letters (`ξ`, `η`, etc.) and `@@(label)` after display equations no
+  longer marked as errors in `#deq`. Tokens that hit `Types.Error` from
+  `InitType` get demoted to `Types.Comment` (green) when the line is a
+  display directive (`#deq`, `#sym`, `#inl`, `#blk`, `#cen`, `#noc`).
+- `DetectBlockContextFromPrevious` recognizes `#sym` alone as block opener
+  for paragraph-by-paragraph re-highlighting.
+
+**CLI batch mode:**
+- No longer crashes with `InvalidOperationException` when stdin is
+  redirected (was blocking `for f in *.cpd; do cli.exe "$f" "$out" -s; done`).
+- Relative paths like `Examples/x.cpd` no longer get duplicated to
+  `Examples/Examples/x.cpd` after `cwd` change. Now resolves to absolute
+  paths *before* `Directory.SetCurrentDirectory`.
+
+### v1.8.0 (May 2026) — Merge with main lineage
+
+Brought 87 commits from `origin/main` into the parser-fixes branch:
+
+- **Excel Viewer** (Univer-based) with `#blk` Calculate() integration
+- **Sandbox + Maxima fallback** — `Symbolic.Sandbox` project, AngouriMath
+  fallback to Maxima for unsupported operations
+- **12 explicaciones FEM** in `explicaciones/` — curso paso a paso, B^T·B
+  desde álgebra lineal, funciones de forma, energía cuadrática, B vs k,
+  análisis dimensional, etc.
+- **Solver SAPFIRE doc** — `Archivos_K_Solver_SAPFIRE.cpd` explica
+  `.K_0/.K_I/.K_J/.K_M`, ensamblaje sparse, Cholesky, AMD reordering
+- **6 ejemplos Placas** — Kirchhoff, Mindlin, Q4 membrana, DKT, MITC4,
+  Layered Laminate
+- **Tesis Cap 15 Paz** — derivación triangular plate plane stress + axial,
+  corte, flexión, torsión
+
+### v1.7.0–v1.7.4 (May 2026) — Unit propagation + `''` semantics
+
+- **HpMatrix.CreateFromRows** unit propagation: when first row is unitless
+  but later rows have units, propagate to all rows (was assigning row units
+  in column-major confusion).
+- **HpVector setter** inherits Units from first non-zero unit-bearing
+  assignment when initially null. Lets users build matrices with
+  `K.(j;j) = K.(j;j) + k_node` without pre-declaring Unit on the template.
+- **MatrixCalculator.SetUnits**: literal `1` accepted as alias for
+  `clrunits` (`setunits(M; 1)` ≡ `setunits(M; clrunits(M))`).
+- **`''` (double single quote)** outside a text region = "close
+  expression and re-enter text mode" (`'expr''text'` ≡ `'expr' 'text'`).
+  Inside a text region of same quote type = literal escaped quote.
+- **WPF editor**: `''` is rendered as visible chars in the editor (the
+  delimiter the user typed) instead of being silently consumed.
+
+### v1.6.0 (May 2026) — Complete 22 web visualization directives
+
+Phase 1 (10): `#svg`, `#plotly`, `#three`, `#mermaid`, `#canvas`, `#cyto`,
+`#dot`, `#jsx`, `#map`, `#math`.
+Phase 3 (10): `#mathbox`, `#d3`, `#echarts`, `#vega`, `#visnet`, `#p5`,
+`#matter`, `#cannon`, `#geogebra`, `#chart`.
+Phase 4 (2): `#anime`, `#manim`.
+
+`Mathbox` enum reordered before `Math` to avoid prefix collision (`#mathbox`
+matched `#math` first because `GetKeyword` iterated bucket in declaration
+order).
+
+### v1.5.0 (May 2026) — Parser/units/web-graphics groundwork
+
+- **Unicode multiplication operator aliases** `·` (U+00B7), `×` (U+00D7)
+  added to `MathParser.Input.GetCharType` and `Calculator.OperatorIndex`
+  (slot 4, same as `*`).
+- **Prose-text fallback** in `ExpressionParser`: lines that look like prose
+  (no operators, no assignments, several spaces) are routed to text rendering
+  instead of being parsed and erroring out as undeclared identifiers.
+- **Inline directives** (`#deqξ`, `#sym expr`) compact form supported via
+  `TryStripInlineDirective`.
+- **Line-extension splice** (`_` continuation) skipped inside `#plotly`,
+  web-graphics, and `#svg` blocks so JavaScript `;` doesn't trigger
+  unintended line concatenation.

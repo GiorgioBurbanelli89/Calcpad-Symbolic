@@ -1,0 +1,235 @@
+"¿Que significa que la ENERGIA es CUADRATICA? — explicacion intuitiva
+'<p>"Cuadratica" significa que la energia depende de u<sup>2</sup>, no solo
+'de u. Una palabra extrana que en realidad describe algo muy simple e
+'intuitivo. Aqui lo desglosamos.</p>
+'<hr/>
+
+"Cap 1 — Lineal vs Cuadratica — la diferencia fundamental
+'<p>Comparemos dos situaciones cotidianas:</p>
+
+"Caso A — Levantar un peso (LINEAL)
+'<p>Tienes una caja de 10 kg. La levantas 1 metro con tus manos. Energia
+'gastada: W = m·g·h = 10·9.81·1 = 98.1 J.</p>
+
+'<p>Si la levantas 2 metros: W = 10·9.81·2 = 196.2 J. <b>El doble.</b></p>
+
+'<p>Si la levantas 3 metros: W = 294.3 J. <b>Tres veces el original.</b></p>
+
+'<p>Esto es <b>LINEAL</b>: el trabajo es proporcional a la altura.
+'Doblar la altura dobla el trabajo. Sin sorpresas.</p>
+
+"Grafica 1A — Trabajo lineal (peso)
+#hide
+n_g1 = 30
+h_v = vector(n_g1)
+W_lineal = vector(n_g1)
+mg = 98.1
+#for i = 1 : n_g1
+    h_v.(i) = (i - 1)*3/(n_g1 - 1)
+    W_lineal.(i) = mg*h_v.(i)
+#loop
+#show
+
+$Chart{h_v; W_lineal @ title=Trabajo LINEAL: levantar 10 kg a altura h (recta) : xlabel=h (m) : ylabel=W (J)}
+
+"Caso B — Estirar un resorte (CUADRATICA)
+'<p>Tienes un resorte k = 100 N/m. Lo estiras 0.1 m. Energia almacenada:
+'U = (1/2)·k·u² = (1/2)·100·0.01 = <b>0.5 J</b>.</p>
+
+'<p>Si lo estiras 0.2 m (el doble): U = (1/2)·100·0.04 = <b>2 J</b>.
+'¡<b>4 veces</b>, no el doble!</p>
+
+'<p>Si lo estiras 0.3 m: U = (1/2)·100·0.09 = <b>4.5 J</b>. <b>9 veces</b>
+'el original.</p>
+
+'<p>Esto es <b>CUADRATICO</b>: la energia depende de u<sup>2</sup>. Doblar
+'el estiramiento NO dobla la energia — la <b>cuadruplica</b>.</p>
+
+"Grafica 1B — Energia cuadratica (resorte)
+#hide
+u_v = vector(n_g1)
+U_cuad = vector(n_g1)
+k_demo = 100
+#for i = 1 : n_g1
+    u_v.(i) = (i - 1)*0.3/(n_g1 - 1)
+    U_cuad.(i) = 0.5*k_demo*u_v.(i)^2
+#loop
+#show
+
+$Chart{u_v; U_cuad @ title=Energia CUADRATICA: estirar resorte k=100 N/m (parabola) : xlabel=u (m) : ylabel=U (J)}
+
+"La diferencia visual
+'<p>El primer grafico es <b>una recta</b> — pendiente constante. El segundo
+'es <b>una parabola</b> — la pendiente crece con u. Esa diferencia geometrica
+'(recta vs parabola) es la diferencia entre lineal y cuadratico.</p>
+
+'<hr/>
+
+"Cap 2 — ¿Por que el resorte es cuadratico y no lineal?
+'<p>La razon esta en la <b>fuerza</b>: cuando estiras un resorte, la
+'fuerza que tienes que aplicar va aumentando.</p>
+
+"Caso del peso — fuerza CONSTANTE
+'<p>Para levantar la caja de 10 kg, la fuerza que aplicas es siempre la
+'misma: F = m·g = 98.1 N. Aunque suba 0 metros, 1 metro, 5 metros — la
+'fuerza es la misma porque la gravedad no cambia.</p>
+
+#hide
+F_const = vector(n_g1)
+#for i = 1 : n_g1
+    F_const.(i) = mg
+#loop
+#show
+
+$Chart{h_v; F_const @ title=Caso peso: fuerza CONSTANTE (recta horizontal) : xlabel=h (m) : ylabel=F (N)}
+
+"Caso del resorte — fuerza CRECIENTE
+'<p>Para estirar el resorte, la fuerza CRECE linealmente con u: F = k·u.
+'Al principio (u=0) la fuerza es 0. Al estirar 0.1 m, F = 10 N. Al estirar
+'0.2 m, F = 20 N. La fuerza no es constante.</p>
+
+#hide
+F_resorte = vector(n_g1)
+#for i = 1 : n_g1
+    F_resorte.(i) = k_demo*u_v.(i)
+#loop
+#show
+
+$Chart{u_v; F_resorte @ title=Caso resorte: fuerza CRECIENTE (recta diagonal) : xlabel=u (m) : ylabel=F (N)}
+
+"La energia es el AREA BAJO LA CURVA F-u
+'<p>El trabajo (energia) que haces al estirar/levantar es el AREA bajo
+'la curva F vs u (o F vs h):</p>
+
+'<p><b>Caso peso (F constante):</b> el area es un <b>rectangulo</b>
+'F·h. Doblas h, doblas el area. Lineal.</p>
+
+'<p><b>Caso resorte (F creciente):</b> el area es un <b>triangulo</b>
+'(1/2)·u·F = (1/2)·u·(k·u) = (1/2)·k·u<sup>2</sup>. Doblas u, doblas
+'la base Y la altura del triangulo, asi que el area se cuadruplica.
+'Cuadratica.</p>
+
+'<p>Esa es la <b>razon geometrica</b>: cuando la fuerza crece con u, la
+'energia (area bajo F vs u) crece como u<sup>2</sup>.</p>
+
+'<hr/>
+
+"Cap 3 — Verificacion con calculo — la integral
+
+'<p>Matematicamente la energia es la integral de la fuerza respecto al
+'desplazamiento. Para el resorte F = k·u con k=100 N/m, evaluando de
+'u=0 hasta u=0.1 m:</p>
+
+#sym
+integrate(100*u; u; 0; 0.1)
+#end sym
+
+'<p>El simbolo de integral con sus limites (0 abajo, 0.1 arriba) y el
+'integrando 100·u se renderizan via Calcpad-Symbolic. El resultado es
+'<b>0.5 J</b>, que coincide con la formula (1/2)·k·u<sup>2</sup> =
+'(1/2)·100·(0.1)² = 0.5.</p>
+
+"Forma simbolica generica con k arbitrario
+#sym
+integrate(k*u; u; 0; u_max)
+#end sym
+
+'<p>El resultado simbolico es (1/2)·k·u_max<sup>2</sup> — la formula
+'clasica de la energia de un resorte aparece automaticamente al integrar
+'la fuerza linealmente creciente.</p>
+
+'<hr/>
+
+"Cap 4 — ¿Por que importa que sea cuadratica?
+
+"Razon 1 — La cuadratica tiene UN SOLO MINIMO claro
+'<p>La parabola U = (1/2)·k·u<sup>2</sup> tiene un valor minimo: u=0.
+'Eso es <b>la posicion de equilibrio</b>: el sistema "quiere" volver
+'ahi cuando lo sueltas.</p>
+
+'<p>Si la energia fuera lineal (U = c·u), no habria minimo — la energia
+'seguiria bajando indefinidamente. El sistema no tendria equilibrio.</p>
+
+"Grafica 4 — La parabola tiene minimo, la recta no
+#hide
+n_g4 = 50
+u_g4 = vector(n_g4)
+U_parab = vector(n_g4)
+U_recta = vector(n_g4)
+#for i = 1 : n_g4
+    u_g4.(i) = -0.3 + (i - 1)*0.6/(n_g4 - 1)
+    U_parab.(i) = 0.5*100*u_g4.(i)^2
+    U_recta.(i) = -10*u_g4.(i)   'Pendiente arbitraria
+#loop
+#show
+
+$Chart{u_g4; U_parab; u_g4; U_recta @ title=Cuadratica (parabola con minimo) vs Lineal (recta sin minimo) : xlabel=u (m) : ylabel=U (J) : labels=Cuadratica,Lineal}
+
+"Razon 2 — La derivada da una recta (la fuerza)
+'<p>La derivada de U = (1/2)·k·u<sup>2</sup> es F = k·u. Lineal en u.
+'Por eso F=k·u es la ley de Hooke.</p>
+
+"Operacion simbolica — derivar la energia da la fuerza
+#sym
+diff(0.5*k*u^2; u)
+#end sym
+
+'<p>Resultado k·u. La fuerza es la <b>tasa de cambio</b> de la energia
+'respecto al desplazamiento — eso conecta dinamica con energia.</p>
+
+'<hr/>
+
+"Cap 5 — Cuadratica en FEM — por que K aparece "doble"
+
+'<p>En FEM la energia se escribe en notacion vectorial como:</p>
+
+#deq U = (1/2)*u_e^T*K_e*u_e
+
+'<p>Para 1 GDL (resorte): u<sub>e</sub><sup>T</sup>·K·u<sub>e</sub> = u·k·u
+'= k·u<sup>2</sup>. Recuperas la formula clasica.</p>
+
+'<p>Para 2 GDL (barra con 2 nodos):</p>
+
+'<p style="margin-left:1em">u<sub>e</sub><sup>T</sup>·K·u<sub>e</sub> = u<sub>1</sub>(K<sub>11</sub>u<sub>1</sub> + K<sub>12</sub>u<sub>2</sub>) + u<sub>2</sub>(K<sub>21</sub>u<sub>1</sub> + K<sub>22</sub>u<sub>2</sub>)</p>
+
+'<p style="margin-left:1em">= K<sub>11</sub>·u<sub>1</sub><sup>2</sup> + 2K<sub>12</sub>·u<sub>1</sub>u<sub>2</sub> + K<sub>22</sub>·u<sub>2</sub><sup>2</sup></p>
+
+'<p>Notar los terminos: <b>cuadrados</b> (u<sub>1</sub><sup>2</sup>,
+'u<sub>2</sub><sup>2</sup>) y <b>productos cruzados</b> (u<sub>1</sub>u<sub>2</sub>).
+'Eso es lo que significa "forma cuadratica en n variables": una expresion
+'donde aparecen todos los productos posibles de dos componentes.</p>
+
+"Caso numerico — barra L=2, E·A/L = 100 kN/m
+K11 = 100
+K12 = -100
+K22 = 100
+
+'<p>K_e = [100 -100; -100 100] (kN/m). Si u₁=0.001 m, u₂=0.002 m:</p>
+
+u1_v = 0.001
+u2_v = 0.002
+U_total = 0.5*(K11*u1_v^2 + 2*K12*u1_v*u2_v + K22*u2_v^2)
+
+'<p>U = 0.5·(100·(0.001)² - 200·0.001·0.002 + 100·(0.002)²) = 0.5·(0.0001 -
+'0.0004 + 0.0004) = 0.5·0.0001 = <b>0.00005 kN·m = 0.05 J</b>.</p>
+
+'<p>Cada termino es u<sup>2</sup> (cuadratico en u). La energia total
+'es la suma de cuadrados ponderados por las entradas de K. Esa es la
+'forma cuadratica en accion.</p>
+
+'<hr/>
+
+"Resumen — qué significa "cuadratica"
+'<p>1) <b>Cuadratico</b> = depende de u<sup>2</sup>, no solo de u.</p>
+'<p>2) <b>Razon fisica</b>: la fuerza crece linealmente con el desplazamiento
+'(F=k·u), asi que el trabajo (=energia) crece como u<sup>2</sup>.</p>
+'<p>3) <b>Geometricamente</b>: una parabola en lugar de una recta. Crece
+'mas rapido cuanto mas grande es u.</p>
+'<p>4) <b>En FEM matricial</b>: u<sup>T</sup>·K·u tiene cuadrados
+'(u<sub>i</sub><sup>2</sup>) y productos cruzados (u<sub>i</sub>u<sub>j</sub>).
+'Es la generalizacion natural de k·u<sup>2</sup> al caso multi-nodal.</p>
+'<p>5) <b>¿Por que importa?</b> Una funcion cuadratica tiene un unico
+'minimo — la posicion de equilibrio. Si la energia no fuera cuadratica
+'no habria un punto donde el sistema se "quedara" en reposo.</p>
+
+"Fin del archivo

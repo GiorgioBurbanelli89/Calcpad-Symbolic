@@ -1,0 +1,46 @@
+"Install Python Libraries from Calcpad Symbolic
+"=============================================
+'Calcpad Symbolic lets you install any Python library
+'directly with the #pip command. First time downloads the package,
+'subsequent times are instant.
+
+"1. Install pint — Physical units
+#pip install pint
+
+#python
+import pint
+u = pint.UnitRegistry()
+P = 50 * u.kN
+b = 300 * u.mm
+h = 500 * u.mm
+A = b * h
+sigma = P / A
+print(f"P = {P}")
+print(f"A = {A.to(u.cm**2):.1f}")
+print(f"sigma = {sigma.to(u.MPa):.2f}")
+print(f"CALCPAD:sigma_MPa={sigma.to(u.MPa).magnitude:.10e}")
+#end python
+
+'Axial stress:
+sigma_MPa
+
+"2. Install NumPy — Solve Ku = F
+#pip install numpy
+
+#python
+import numpy as np
+K = np.array([[100, -50, 0], [-50, 100, -50], [0, -50, 50]])
+F = np.array([0, 0, 10])
+u = np.linalg.solve(K, F)
+print(f"u1 = {u[0]:.6f}")
+print(f"u2 = {u[1]:.6f}")
+print(f"u3 = {u[2]:.6f}")
+print(f"CALCPAD:u_1={u[0]:.10e}")
+print(f"CALCPAD:u_2={u[1]:.10e}")
+print(f"CALCPAD:u_3={u[2]:.10e}")
+#end python
+
+'Results from Python:
+u_1
+u_2
+u_3

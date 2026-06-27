@@ -1,0 +1,219 @@
+"Analogia B (FEM) vs k (resorte) — que tienen en comun y que no
+'<p>Pregunta intuitiva del aprendiz: <i>"¿B es una constante como k del
+'resorte? ¿Su valor sale de derivar/integrar segun el numero de grados
+'de libertad?"</i></p>
+
+'<p>La respuesta es <b>parcialmente si</b>. Hay analogia pero tambien
+'diferencias importantes. Este archivo aclara cada punto.</p>
+'<hr/>
+
+"Cap 1 — Lo que tienen en COMUN
+'<p>Ambos son <b>"constantes geometricas/mecanicas"</b> que relacionan
+'causa con efecto en una ecuacion lineal:</p>
+
+'<table border="1" cellpadding="6">
+'<tr><th>Constante</th><th>Ecuacion</th><th>Que relaciona</th></tr>
+'<tr><td>k (resorte)</td><td>F = k·u</td><td>Fuerza con desplazamiento</td></tr>
+'<tr><td>B (FEM)</td><td>ε = B·u</td><td>Deformacion con desplazamiento nodal</td></tr>
+'</table>
+
+'<p>En ambos casos, una vez que conoces la "constante" y el desplazamiento,
+'puedes calcular el efecto (fuerza o deformacion) por simple multiplicacion.
+'Esa es la idea elastica lineal — todo es proporcional a u.</p>
+
+"Caso numerico paralelo — resorte vs barra
+'<p><b>Resorte:</b> k = 100 N/m, u = 0.05 m → F = 5 N.</p>
+F_resorte = 100*0.05
+
+'<p><b>Barra (1D):</b> con B = -1/L_b, +1/L_b = -0.5, +0.5 (1/m) y
+'desplazamientos u₁ = 0, u₂ = 0.001 m → ε = 0.5·(0.001) - 0.5·0 = 0.0005.</p>
+
+L_b = 2
+B11 = -1/L_b
+B12 = 1/L_b
+u_1 = 0
+u_2 = 0.001
+ε_barra = B11*u_1 + B12*u_2
+
+'<p>Ambas son operaciones lineales: tomas un dato (u) lo multiplicas por
+'una constante geometrica/mecanica (k o B) y obtienes el efecto (F o ε).</p>
+
+'<hr/>
+
+"Cap 2 — Lo que DIFIERE entre B y k
+
+"Diferencia 1 — k es ESCALAR, B es MATRIZ
+'<p>k es un solo numero. B tiene varias entradas — al menos un valor por
+'cada grado de libertad del elemento.</p>
+
+'<p>Para resorte 1D con 1 GDL: k es 1×1 (un escalar).</p>
+'<p>Para barra 1D con 2 GDL: B es 1×2 (vector de 2 componentes).</p>
+'<p>Para triangulo 2D con 6 GDL: B es 3×6 (matriz con 18 entradas).</p>
+
+"Diferencia 2 — k incluye material, B es solo geometria
+'<p>k = E·A/L combina <b>material</b> (E), <b>seccion</b> (A) y <b>longitud</b>
+'(L). Es una constante mecanica completa.</p>
+
+'<p>B = dN/dx contiene <b>solo geometria</b> (derivadas espaciales). El
+'material se introduce por separado a traves de la matriz constitutiva D
+'(que es donde vive E o E·I para vigas).</p>
+
+"Diferencia 3 — Donde aparece la integral
+'<p>La integral NO esta en construir B (B es derivada). La integral aparece
+'al construir K_e:</p>
+
+#deq K_e = ∫(B^T*D*B)*dV
+
+'<p>Para barra lineal: B es constante, D = E (escalar), dV = A·dx.
+'La integral se evalua simbolicamente:</p>
+
+#sym
+integrate(E*A/L^2; x; 0; L)
+#end sym
+
+'<p>Resultado E·A/L. Eso ES exactamente k (la rigidez axial clasica).
+'Por lo tanto la analogia profunda es:</p>
+
+#deq K_e = ∫(B^T*D*B)*dV ↔ k = E*A/L
+
+'<p>K_e (la matriz de rigidez del elemento) es el ANALOGO de k del resorte,
+'NO B. B es un paso intermedio en la construccion de K_e.</p>
+
+'<hr/>
+
+"Cap 3 — La cadena conceptual completa
+
+'<p>Para evitar confusiones, esta es la receta paso a paso:</p>
+
+'<p><b>1) Defino N_i (funciones de forma)</b> — base geometrica del elemento.
+'   Ejemplo: N₁ = 1 - x/L, N₂ = x/L para barra lineal.</p>
+
+'<p><b>2) Derivo: B = dN/dx</b> — matriz de derivadas (geometria diferencial).
+'   Aqui aparece la <b>derivada</b>, no la integral.</p>
+
+#sym
+diff(1 - x/L; x)
+#end sym
+
+#sym
+diff(x/L; x)
+#end sym
+
+'<p><b>3) Defino D (matriz constitutiva)</b> — info del material (Hooke).
+'   Para barra 1D: D = E. Para placa: matriz 3×3 que incluye E y ν.</p>
+
+'<p><b>4) Integro: K_e = ∫(B^T·D·B)·dV</b> — matriz de rigidez del elemento.
+'   <b>Aqui aparece la integral</b>. Se ejecuta sobre el volumen del elemento.</p>
+
+#sym
+integrate(E*A/L^2; x; 0; L)
+#end sym
+
+'<p><b>5) Ensamblo</b> los K_e de todos los elementos en K_global. Aplico
+'condiciones de borde.</p>
+
+'<p><b>6) Resuelvo</b> el sistema lineal K·u = F → obtengo desplazamientos
+'nodales u.</p>
+
+'<p><b>7) Post-proceso</b> con B y D: ε = B·u (deformaciones), σ = D·ε
+'(esfuerzos). Aqui se vuelve a USAR B (no a construirla).</p>
+
+'<hr/>
+
+"Cap 4 — La verdadera analogia paralela
+
+'<p>Si quieres mapear el FEM al resorte de forma exacta:</p>
+
+'<table border="1" cellpadding="6">
+'<tr><th>Resorte (1 GDL)</th><th>FEM Barra (2 GDL)</th></tr>
+'<tr><td>F = k·u</td><td>F_e = K_e·u_e</td></tr>
+'<tr><td>k (escalar)</td><td>K_e (matriz 2×2)</td></tr>
+'<tr><td>k = E·A/L (formula directa)</td><td>K_e = ∫B^T·D·B·dV (integrar)</td></tr>
+'<tr><td>1 nodo libre</td><td>2 nodos (uno fijo, otro libre)</td></tr>
+'<tr><td>B implicita = 1/L (geometria)</td><td>B = [-1/L, +1/L] explicita</td></tr>
+'<tr><td>D implicita = E·A (material+seccion)</td><td>D = E (material), A en integral</td></tr>
+'</table>
+
+'<p>El resorte es el caso <b>limite</b> del FEM: solo 1 GDL, sin necesidad
+'de funciones de forma porque no hay puntos interiores. Cuando pasas a
+'multiples GDL (barra de varios nodos, triangulo, etc), <b>B aparece
+'como la herramienta para "extraer" la deformacion local desde los
+'desplazamientos discretos</b>.</p>
+
+'<hr/>
+
+"Cap 5 — Tabla de tamanos de B segun los GDL
+
+'<p>El tamano de B esta determinado por dos cosas:</p>
+'<p><b>Filas:</b> numero de componentes de deformacion (1 en 1D, 3 en 2D
+'plano, 6 en 3D solido).</p>
+'<p><b>Columnas:</b> numero total de grados de libertad del elemento
+'(numero de nodos × DOFs por nodo).</p>
+
+'<table border="1" cellpadding="6">
+'<tr><th>Elemento</th><th>Nodos</th><th>DOFs/nodo</th><th>DOFs totales</th><th>Componentes de ε</th><th>Tamano B</th></tr>
+'<tr><td>Barra 1D</td><td>2</td><td>1 (u)</td><td>2</td><td>1 (ε_xx)</td><td>1×2</td></tr>
+'<tr><td>Truss 2D</td><td>2</td><td>2 (u, v)</td><td>4</td><td>1</td><td>1×4</td></tr>
+'<tr><td>Triangulo CST</td><td>3</td><td>2</td><td>6</td><td>3 (ε_xx, ε_yy, γ_xy)</td><td>3×6</td></tr>
+'<tr><td>Q4</td><td>4</td><td>2</td><td>8</td><td>3</td><td>3×8</td></tr>
+'<tr><td>Tetraedro T4</td><td>4</td><td>3 (u, v, w)</td><td>12</td><td>6</td><td>6×12</td></tr>
+'<tr><td>Hexaedro H8</td><td>8</td><td>3</td><td>24</td><td>6</td><td>6×24</td></tr>
+'</table>
+
+'<p>Mientras mas GDL, mas grande es la matriz B y mas grande es K_e.</p>
+
+'<hr/>
+
+"Cap 6 — Ejemplo numerico — barra de acero comparada con resorte
+
+'<p>Tomamos una barra de acero de 2 m, seccion 10 cm² y un resorte equivalente.</p>
+
+E_acero = 200000000   'kN/m² (200 GPa)
+A_acero = 0.001       'm² (10 cm²)
+L_acero = 2           'm
+
+'Rigidez axial = "k del resorte equivalente"
+k_equiv = E_acero*A_acero/L_acero
+
+'<p>k_equiv = 100,000 kN/m. Si aplicas F = 50 kN en el extremo libre:</p>
+
+F_aplicada = 50
+u_extremo = F_aplicada/k_equiv
+
+'<p>El extremo se desplaza u = F/k = 0.5 mm.</p>
+
+"Verificacion via FEM (B y K_e)
+B_acero_1 = -1/L_acero
+B_acero_2 = 1/L_acero
+
+'<p>B = [-0.5, 0.5] (1/m). La matriz K_e completa:</p>
+
+#noc
+K_e = (E*A/L)*[1; -1|-1; 1]
+#equ
+
+'<p>Numericamente K_e = 100,000 · [1 -1; -1 1] kN/m. Con nodo 1 fijo y
+'F = 50 kN en nodo 2, el sistema reducido es 1×1:</p>
+
+#deq 100000*u_2 = 50
+
+'<p>u_2 = 0.0005 m = 0.5 mm. <b>Mismo resultado</b> que el resorte.</p>
+
+"La deformacion via B
+ε_via_B = B_acero_1*0 + B_acero_2*u_extremo
+
+'<p>ε = 0.5 · 0.0005 = 0.00025 (0.025% deformacion). Esto coincide con
+'la formula clasica ε = ΔL/L = 0.0005/2 = 0.00025. <b>B reproduce la
+'definicion clasica de deformacion unitaria.</b></p>
+
+'<hr/>
+
+"Resumen — la analogia en una linea
+'<p>El resorte (k) es el FEM de 1 GDL. Cuando pasas a multiples GDL, B aparece
+'como la matriz que extrae deformaciones desde desplazamientos. K_e (no B)
+'es el verdadero analogo del k del resorte. La integral aparece SOLO al
+'construir K_e, nunca al construir B.</p>
+
+#deq K_e = ∫(B^T*D*B)*dV ↔ k = E*A/L
+
+"Fin del archivo

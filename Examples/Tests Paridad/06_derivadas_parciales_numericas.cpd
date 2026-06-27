@@ -1,0 +1,99 @@
+"Test 06 - Derivadas parciales NUMERICAS
+'Calcpad calcula derivadas parciales numericamente con $Slope (diferencias
+'centrales). Para multi-variable se fija el "otro" valor y se deriva.
+
+"1. Funcion de una variable - derivada simple
+f1(x) = x^2 + 3*x + 1
+'f'(x) = 2x + 3 analitico
+'f'(2) = 7 (esperado)
+df1_dx = $Slope{f1(x) @ x = 2}
+df1_dx_expected = 2*2 + 3
+#blk
+df1_dx          ; 'derivada numerica de x^2 + 3x + 1 en x=2
+df1_dx_expected ; 'derivada analitica: 2x + 3 en x=2 = 7
+#end blk
+
+"2. Funcion de DOS variables - derivadas parciales
+'f(x; y) = x^2 + 3*x*y + y^2
+'Analitico:
+'   df/dx = 2x + 3y
+'   df/dy = 3x + 2y
+'En el punto (x=2, y=1):
+'   df/dx = 2*2 + 3*1 = 7
+'   df/dy = 3*2 + 2*1 = 8
+f(x; y) = x^2 + 3*x*y + y^2
+
+'2.1 Parcial respecto a x con y = 1 fijo
+'Definimos f_x(x) = f(x; 1) y derivamos:
+f_x(x) = f(x; 1)
+df_dx = $Slope{f_x(x) @ x = 2}
+df_dx_expected = 2*2 + 3*1
+#blk
+df_dx          ; 'df/dx numerica en (2, 1)
+df_dx_expected ; 'df/dx analitica 2x+3y = 7
+#end blk
+
+'2.2 Parcial respecto a y con x = 2 fijo
+'Definimos f_y(y) = f(2; y) y derivamos:
+f_y(y) = f(2; y)
+df_dy = $Slope{f_y(y) @ y = 1}
+df_dy_expected = 3*2 + 2*1
+#blk
+df_dy          ; 'df/dy numerica en (2, 1)
+df_dy_expected ; 'df/dy analitica 3x+2y = 8
+#end blk
+
+"3. Gradiente numerico en (2, 1)
+'El gradiente es el vector [df/dx; df/dy] en el punto.
+grad_f = [df_dx; df_dy]
+grad_f
+'Esperado: [7; 8]
+
+"4. Derivada de orden superior (segunda derivada)
+'d²f/dx² en x=2 (para f1(x) = x^2 + 3x + 1, deberia ser 2)
+'Calcpad: derivada de la derivada via $Slope anidado.
+'Definimos g(x) = $Slope{f1(t) @ t = x} y luego derivamos g(x).
+g_first(x) = $Slope{f1(t) @ t = x}
+d2f1_dx2 = $Slope{g_first(x) @ x = 2}
+d2f1_dx2_expected = 2
+#blk
+d2f1_dx2          ; 'segunda derivada numerica de x^2+3x+1
+d2f1_dx2_expected ; 'segunda derivada analitica = 2
+#end blk
+
+"5. Derivada parcial cruzada d²f/(dx dy)
+'Para f(x;y) = x^2 + 3xy + y^2:
+'   df/dx = 2x + 3y  ->  d/dy(df/dx) = 3
+'Calculamos df/dx(x=2; y) como funcion de y, luego derivamos en y=1
+df_dx_of_y(y) = $Slope{f(t; y) @ t = 2}
+d2f_dxdy = $Slope{df_dx_of_y(y) @ y = 1}
+d2f_dxdy_expected = 3
+#blk
+d2f_dxdy          ; 'derivada cruzada d^2f/(dx dy) numerica
+d2f_dxdy_expected ; 'esperado 3 (analitico)
+#end blk
+
+"6. Aplicacion FEM - gradiente de una funcion de forma
+'Tomemos la funcion de forma N_1(xi; eta) = (1-xi)*(1-eta)/4 del Q4.
+'Analiticamente:
+'   dN_1/dxi  = -(1-eta)/4
+'   dN_1/deta = -(1-xi)/4
+'En el centro (xi=0; eta=0):
+'   dN_1/dxi  = -1/4 = -0.25
+'   dN_1/deta = -1/4 = -0.25
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_1xi(ξ) = N_1(ξ; 0)
+N_1eta(η) = N_1(0; η)
+dN1_dxi = $Slope{N_1xi(ξ) @ ξ = 0}
+dN1_deta = $Slope{N_1eta(η) @ η = 0}
+#blk
+dN1_dxi  ; 'dN_1/dxi en (0,0) -> esperado -0.25
+dN1_deta ; 'dN_1/deta en (0,0) -> esperado -0.25
+#end blk
+
+"7. Resumen
+'$Slope hace diferencias centrales: f'(x) ~ (f(x+h) - f(x-h))/(2h).
+'Para derivadas parciales: fijamos las otras variables a una constante
+'y derivamos respecto a la que nos interesa.
+'Para derivadas cruzadas o de orden superior: $Slope anidado.
+'Para FEM esto es lo que se usa en B (gradientes de funciones de forma).

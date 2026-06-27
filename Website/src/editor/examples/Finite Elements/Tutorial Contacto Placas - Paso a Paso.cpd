@@ -1,0 +1,369 @@
+"Tutorial: Contacto entre Placas (Compression-Only GAP) — Paso a Paso
+'<hr/>
+'<b>Concepto:</b> Dos placas apoyadas una sobre otra, sin union rigida.
+'Pueden transmitir compresion (contacto) pero se SEPARAN si hay traccion (uplift).
+'
+'<b>Diferencia con Layered:</b>
+'- Layered: capas EMPOTRADAS (comparten w, θx, θy) — colado monolitico
+'- Contacto: capas INDEPENDIENTES + elementos GAP compression-only
+'
+'<b>Aplicaciones tipicas:</b>
+'1. Placa base de acero sobre pedestal de concreto (con anchor bolts)
+'2. Viga prefabricada apoyada sobre columna
+'3. Losa sobre neopreno
+'4. Junta constructiva entre etapas de colado
+'5. Cimentacion sobre suelo Winkler (caso 1D del mismo concepto)
+
+"PASO 1) Formulacion del contacto
+'<b>Condicion de Karush-Kuhn-Tucker (KKT):</b>
+'En cada punto de contacto:
+'1. Separacion: g ≥ 0 (las placas no pueden interpenetrarse)
+'2. Fuerza:     p ≤ 0 (solo compresion, nunca traccion)
+'3. Complementariedad: g·p = 0 (o hay gap, o hay fuerza, no ambos)
+'
+'<b>En terminos de rigidez:</b>
+'- Si g = 0 (contacto): k_gap = k_contact (muy alto, como un resorte rigido)
+'- Si g > 0 (separado): k_gap = 0 (sin fuerza)
+
+"PASO 2) Datos del problema
+'Sistema consistente N-mm (sin unidades explicitas)
+'<b>Placa 1 (abajo):</b>
+'Dimensiones -'L1 = 1500','B1 = 1500
+'Espesor -'t1 = 400
+'<b>Placa 2 (encima):</b>
+'Dimensiones -'L2 = 1500','B2 = 1500
+'Espesor -'t2 = 300
+'<b>Material concreto:</b>
+Ec = 22000','νc = 0.2
+Gc = Ec/(2*(1 + νc))
+'<b>Rigidez del contacto (muy alta, penalty — N/mm):</b>
+k_contact = 10^8
+'<b>Carga puntual en centro de placa 2 (N, hacia abajo):</b>
+P = 20*9806.65
+
+"PASO 3) Malla — 2 placas superpuestas
+'Cada placa tiene su propia malla.
+'Los nudos de placa 1 y placa 2 estan en posiciones identicas (x, y)
+'pero SON NUDOS DIFERENTES (no comparten DOFs).
+#hide
+ne1 = 4
+de = L1/ne1
+nj1d = ne1 + 1
+nj_plate = nj1d^2
+ne_plate = ne1^2
+nd = 3
+'Nudos placa 1: indices 1 a nj_plate
+'Nudos placa 2: indices nj_plate+1 a 2*nj_plate
+nj = 2*nj_plate
+nt = nd*nj
+xj = vector(nj)','yj = vector(nj)
+'Placa 1:
+#for j = 0 : ne1
+    #for i = 0 : ne1
+        k = j*nj1d + i + 1
+        xj.k = i*de','yj.k = j*de
+    #loop
+#loop
+'Placa 2: mismas coordenadas (X, Y), mismo nivel Z (en el plano)
+#for j = 0 : ne1
+    #for i = 0 : ne1
+        k = nj_plate + j*nj1d + i + 1
+        xj.k = i*de','yj.k = j*de
+    #loop
+#loop
+'Conectividad:
+ne = 2*ne_plate
+ej = matrix(ne; 4)
+'Placa 1:
+#for j = 0 : ne1 - 1
+    #for i = 0 : ne1 - 1
+        e = j*ne1 + i + 1
+        bl = j*nj1d + i + 1
+        ej.(e; 1) = bl','ej.(e; 2) = bl + 1
+        ej.(e; 3) = bl + nj1d + 1','ej.(e; 4) = bl + nj1d
+    #loop
+#loop
+'Placa 2:
+#for j = 0 : ne1 - 1
+    #for i = 0 : ne1 - 1
+        e = ne_plate + j*ne1 + i + 1
+        bl = nj_plate + j*nj1d + i + 1
+        ej.(e; 1) = bl','ej.(e; 2) = bl + 1
+        ej.(e; 3) = bl + nj1d + 1','ej.(e; 4) = bl + nj1d
+    #loop
+#loop
+#show
+'Total: 'nj' nudos, 'ne' elementos ('ne_plate' por placa)
+
+"PASO 4) Matrices constitutivas (iguales para ambas placas)
+'Placa 1 — espesor t1
+Dbm_1 = Ec*t1^3/(12*(1 - νc^2))*[1; νc; 0|νc; 1; 0|0; 0; (1 - νc)/2]
+Dsm_1 = 5/6*Gc*t1*[1; 0|0; 1]
+'Placa 2 — espesor t2
+Dbm_2 = Ec*t2^3/(12*(1 - νc^2))*[1; νc; 0|νc; 1; 0|0; 0; (1 - νc)/2]
+Dsm_2 = 5/6*Gc*t2*[1; 0|0; 1]
+
+"PASO 5) Ensamblaje MITC4 (ambas placas independientes)
+#hide
+gp = 1/sqr(3)','nk = 12
+dN1x(η) = -(1 - η)/4','dN2x(η) = (1 - η)/4
+dN3x(η) = (1 + η)/4','dN4x(η) = -(1 + η)/4
+dN1y(ξ) = -(1 - ξ)/4','dN2y(ξ) = -(1 + ξ)/4
+dN3y(ξ) = (1 + ξ)/4','dN4y(ξ) = (1 - ξ)/4
+
+K = symmetric(nt)
+#for e = 1 : ne
+    i1 = ej.(e; 1)','i3 = ej.(e; 3)
+    dx = xj.i3 - xj.i1','dy = yj.i3 - yj.i1
+    J11 = dx/2','J22 = dy/2','detJ = J11*J22
+    'Seleccionar matriz constitutiva segun placa
+    #if e ≤ ne_plate
+        Dbm = Dbm_1','Dsm = Dsm_1
+    #else
+        Dbm = Dbm_2','Dsm = Dsm_2
+    #end if
+    Ke = symmetric(nk)
+    'Flexion 2x2 Gauss
+    #for ig = 1 : 4
+        #if ig ≡ 1
+            ξg = -gp','ηg = -gp
+        #else if ig ≡ 2
+            ξg = gp','ηg = -gp
+        #else if ig ≡ 3
+            ξg = gp','ηg = gp
+        #else
+            ξg = -gp','ηg = gp
+        #end if
+        dx1 = dN1x(ηg)/J11','dy1 = dN1y(ξg)/J22
+        dx2 = dN2x(ηg)/J11','dy2 = dN2y(ξg)/J22
+        dx3 = dN3x(ηg)/J11','dy3 = dN3y(ξg)/J22
+        dx4 = dN4x(ηg)/J11','dy4 = dN4y(ξg)/J22
+        Bb = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+              0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+              0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+        BtDB = transp(Bb)*Dbm*Bb*detJ
+        #for i = 1 : nk
+            #for j = i : nk
+                Ke.(i; j) = Ke.(i; j) + BtDB.(i; j)
+            #loop
+        #loop
+    #loop
+    'Cortante MITC4 2x2
+    #for ig = 1 : 4
+        #if ig ≡ 1
+            ξg = -gp','ηg = -gp
+        #else if ig ≡ 2
+            ξg = gp','ηg = -gp
+        #else if ig ≡ 3
+            ξg = gp','ηg = gp
+        #else
+            ξg = -gp','ηg = gp
+        #end if
+        Bs = matrix(2; nk)
+        #for it = 1 : 2
+            #if it ≡ 1
+                ηt = -1
+            #else
+                ηt = 1
+            #end if
+            wt = (1 + ηt*ηg)/2
+            dt1 = dN1x(ηt)/J11','dt2 = dN2x(ηt)/J11
+            dt3 = dN3x(ηt)/J11','dt4 = dN4x(ηt)/J11
+            Nt1 = (1 - ξg)*(1 - ηt)/4','Nt2 = (1 + ξg)*(1 - ηt)/4
+            Nt3 = (1 + ξg)*(1 + ηt)/4','Nt4 = (1 - ξg)*(1 + ηt)/4
+            Bs.(1; 1) = Bs.(1; 1) + wt*dt1','Bs.(1; 3) = Bs.(1; 3) - wt*Nt1
+            Bs.(1; 4) = Bs.(1; 4) + wt*dt2','Bs.(1; 6) = Bs.(1; 6) - wt*Nt2
+            Bs.(1; 7) = Bs.(1; 7) + wt*dt3','Bs.(1; 9) = Bs.(1; 9) - wt*Nt3
+            Bs.(1; 10) = Bs.(1; 10) + wt*dt4','Bs.(1; 12) = Bs.(1; 12) - wt*Nt4
+        #loop
+        #for it = 1 : 2
+            #if it ≡ 1
+                ξt = -1
+            #else
+                ξt = 1
+            #end if
+            wt = (1 + ξt*ξg)/2
+            dt1 = dN1y(ξt)/J22','dt2 = dN2y(ξt)/J22
+            dt3 = dN3y(ξt)/J22','dt4 = dN4y(ξt)/J22
+            Nt1 = (1 - ξt)*(1 - ηg)/4','Nt2 = (1 + ξt)*(1 - ηg)/4
+            Nt3 = (1 + ξt)*(1 + ηg)/4','Nt4 = (1 - ξt)*(1 + ηg)/4
+            Bs.(2; 1) = Bs.(2; 1) + wt*dt1','Bs.(2; 2) = Bs.(2; 2) + wt*Nt1
+            Bs.(2; 4) = Bs.(2; 4) + wt*dt2','Bs.(2; 5) = Bs.(2; 5) + wt*Nt2
+            Bs.(2; 7) = Bs.(2; 7) + wt*dt3','Bs.(2; 8) = Bs.(2; 8) + wt*Nt3
+            Bs.(2; 10) = Bs.(2; 10) + wt*dt4','Bs.(2; 11) = Bs.(2; 11) + wt*Nt4
+        #loop
+        BtDBs = transp(Bs)*Dsm*Bs*detJ
+        #for i = 1 : nk
+            #for j = i : nk
+                Ke.(i; j) = Ke.(i; j) + BtDBs.(i; j)
+            #loop
+        #loop
+    #loop
+    'Ensamblar
+    #for i = 1 : 4
+        #for j = i : 4
+            j1 = ej.(e; i)','j2 = ej.(e; j)
+            i1 = nd*(j1 - 1) + 1','i2 = nd*(j2 - 1) + 1
+            kij = submatrix(Ke; nd*(i - 1) + 1; nd*i; nd*(j - 1) + 1; nd*j)
+            #if j1 > j2
+                add(transp(kij); K; i2; i1)
+            #else
+                add(kij; K; i1; i2)
+            #end if
+        #loop
+    #loop
+#loop
+#show
+
+"PASO 6) Elementos GAP (contacto compression-only)
+'Por cada par de nudos coincidentes (k1 en placa 1, k2 en placa 2):
+'Si hay contacto: k_contact se suma a la rigidez que acopla sus UZ
+'K.(dw1; dw1) += k_contact
+'K.(dw2; dw2) += k_contact
+'K.(dw1; dw2) -= k_contact  (off-diagonal)
+'
+'<b>PRIMERA ITERACION: asumir TODOS los nudos en contacto</b>
+#hide
+#for j = 0 : ne1
+    #for i = 0 : ne1
+        k1 = j*nj1d + i + 1
+        k2 = nj_plate + k1
+        dw1 = nd*(k1 - 1) + 1
+        dw2 = nd*(k2 - 1) + 1
+        K.(dw1; dw1) = K.(dw1; dw1) + k_contact
+        K.(dw2; dw2) = K.(dw2; dw2) + k_contact
+        K.(dw1; dw2) = K.(dw1; dw2) - k_contact
+    #loop
+#loop
+#show
+
+"PASO 7) Apoyos de la placa inferior
+'La placa 1 esta apoyada en su periferia (w=0 en los bordes).
+'Penalizar w en los nudos del contorno de placa 1.
+#hide
+pen = 10^15
+#for j = 0 : ne1
+    #for i = 0 : ne1
+        #if i ≡ 0 ∨ i ≡ ne1 ∨ j ≡ 0 ∨ j ≡ ne1
+            k = j*nj1d + i + 1
+            dw = nd*(k - 1) + 1
+            K.(dw; dw) = K.(dw; dw) + pen
+        #end if
+    #loop
+#loop
+#show
+
+"PASO 8) Vector de cargas
+'Carga puntual en el centro de placa 2 (hacia abajo)
+#hide
+F = vector(nt)
+ic = round(ne1/2)','jc = round(ne1/2)
+k_center = nj_plate + jc*nj1d + ic + 1
+F.(nd*(k_center - 1) + 1) = -P
+#show
+'Nudo de carga (placa 2, centro) = 'k_center
+
+"PASO 9) Resolucion del sistema
+#hide
+Z = clsolve(K; F)
+#show
+'K·u = F
+
+"PASO 10) Extraer deflexiones y verificar contacto
+#hide
+w1 = vector(nj_plate)','w2 = vector(nj_plate)
+gap_force = vector(nj_plate)','gap_sep = vector(nj_plate)
+'Placa 1:
+#for k = 1 : nj_plate
+    w1.k = re(Z.(nd*(k - 1) + 1))
+#loop
+'Placa 2:
+#for k = 1 : nj_plate
+    w2.k = re(Z.(nd*(nj_plate + k - 1) + 1))
+#loop
+'Gap = w2 - w1 (separacion positiva = uplift)
+#for k = 1 : nj_plate
+    gap_sep.k = w2.k - w1.k
+    'Fuerza en el gap: f = k_contact * (w1 - w2)  (compresion negativa)
+    gap_force.k = k_contact*(w1.k - w2.k)
+#loop
+#show
+'<b>Resultados primera iteracion:</b>
+'Gap separation (w2 - w1) — si > 0 hay UPLIFT (deberia desactivarse):
+gap_sep
+'Gap force — si > 0 hay TRACCION (no fisico, desactivar):
+gap_force
+
+"PASO 11) Interpretacion
+'<b>Si TODOS los gap_force ≤ 0:</b>
+'Todos en compresion — la solucion es valida, NO hace falta iterar.
+'
+'<b>Si algun gap_force > 0:</b>
+'Ese par de nudos se esta separando — desactivar ese GAP y resolver de nuevo.
+'Iterar hasta que no haya gap_force > 0.
+'
+'<b>En este caso simple (carga centrada, no hay momento):</b>
+'Todas las fuerzas de gap son de compresion (negativas) porque la carga hacia
+'abajo en placa 2 la empuja contra placa 1 en todos los puntos.
+'NO hace falta iterar.
+
+"PASO 12) Deflexion en el centro
+#hide
+w1_c = w1.(jc*nj1d + ic + 1)
+w2_c = w2.(jc*nj1d + ic + 1)
+PlotWidth = 500
+#show
+'w placa 1 (centro) = 'round(w1_c*10000)/10000' mm
+'w placa 2 (centro) = 'round(w2_c*10000)/10000' mm
+'Gap = 'round((w2_c - w1_c)*10000)/10000' mm
+
+"PASO 13) Color map — placas separadas
+'<b>Deflexion placa 1:</b>
+#hide
+ej_p1 = matrix(ne_plate; 4)
+xj_p1 = vector(nj_plate)','yj_p1 = vector(nj_plate)
+#for k = 1 : nj_plate
+    xj_p1.k = xj.k','yj_p1.k = yj.k
+#loop
+#for e = 1 : ne_plate
+    ej_p1.(e; 1) = ej.(e; 1)','ej_p1.(e; 2) = ej.(e; 2)
+    ej_p1.(e; 3) = ej.(e; 3)','ej_p1.(e; 4) = ej.(e; 4)
+#loop
+#show
+$PlotMap{xj_p1; yj_p1; w1; ej_p1}
+'<b>Deflexion placa 2:</b>
+$PlotMap{xj_p1; yj_p1; w2; ej_p1}
+
+"PASO 14) Caso con UPLIFT — Momento excentrico
+'Si la carga estuviera excentrica (con momento), parte de la placa 2 se
+'LEVANTARIA de la placa 1. En ese caso:
+'- gap_sep > 0 en los nudos que se separan
+'- gap_force > 0 (no fisico, hay que desactivar)
+'
+'<b>Algoritmo de iteracion:</b>
+'1. Resolver asumiendo TODOS los gaps activos (k_contact)
+'2. Para cada nudo: verificar si gap_force > 0 (traccion no fisica)
+'3. Si hay traccion: desactivar ese gap (k_contact = 0)
+'4. Re-ensamblar K y resolver
+'5. Repetir hasta que ningun gap tenga traccion
+'6. Convergencia tipica: 2-5 iteraciones
+
+"Resumen
+'<b>Contacto compression-only</b> entre placas:
+'- 2 placas con mallas independientes (diferentes nudos)
+'- Elementos GAP en cada par de nudos coincidentes
+'- GAP: k_contact en UZ si hay compresion, 0 si hay separacion
+'- Algoritmo iterativo (penalty method)
+'
+'<b>Diferencia con Layered Shell:</b>
+'- Layered: nudos COMPARTIDOS, sin posibilidad de separacion
+'- Contacto: nudos INDEPENDIENTES, pueden separarse libremente
+'
+'<b>Usos tipicos:</b>
+'1. Placa base + pedestal con anchor bolts (uplift por momento)
+'2. Zapata sobre suelo no cohesivo (Winkler compression-only)
+'3. Viga prefabricada sobre columna (junta constructiva)
+'4. Contacto estructura-suelo en general
+'
+'<b>En SAP2000:</b> Define → Section Properties → Link → Gap
+'<b>En Calcpad:</b> Penalty method con iteracion compression-only

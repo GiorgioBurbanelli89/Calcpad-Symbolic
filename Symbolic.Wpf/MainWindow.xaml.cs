@@ -41,6 +41,56 @@ namespace Calcpad.Wpf
         private static readonly Regex HtmlImgCurRegex = new(@"src\s*=\s*""\s*\.", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex HtmlImgAnyRegex = new(@"src\s*=\s*""\s*\.\.?(.+?)""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+        // Keywords that exist ONLY in Calcpad Symbolic (not in the original Calcpad
+        // parser). If any of these appear in the file content, saving as `.cpd`
+        // would produce a file that fails to parse in vanilla Calcpad — so we
+        // silently switch the target extension to `.cpds`.
+        private static readonly HashSet<string> SymbolicOnlyKeywords = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "deq", "inl", "blk", "cen", "pgb", "margen",
+            "sym", "python", "maxima", "pip",
+            "svg", "plotly", "three", "mermaid", "canvas",
+            "cyto", "dot", "jsx", "map", "mathbox",
+            "math", "chart", "d3", "echarts", "vega",
+            "visnet", "p5", "matter", "cannon", "geogebra",
+            "anime", "manim",
+            "trace", "dependencia", "detalle",
+            "function", "local", "global"
+        };
+
+        // Returns true when the document uses any Symbolic-only directive
+        // and therefore must be saved as `.cpds` (not `.cpd`).
+        private static bool ContentRequiresCpds(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return false;
+            foreach (var line in text.AsSpan().EnumerateLines())
+            {
+                var trimmed = line.TrimStart();
+                if (trimmed.Length < 2 || trimmed[0] != '#') continue;
+                // Identifier chars after '#'
+                int end = 1;
+                while (end < trimmed.Length && (char.IsLetter(trimmed[end]) || trimmed[end] == '_')) end++;
+                if (end == 1) continue;
+                var kw = trimmed.Slice(1, end - 1).ToString();
+                // `#end <kw>` — check the second token too
+                if (kw.Equals("end", StringComparison.OrdinalIgnoreCase))
+                {
+                    int p = end;
+                    while (p < trimmed.Length && trimmed[p] == ' ') p++;
+                    int e2 = p;
+                    while (e2 < trimmed.Length && (char.IsLetter(trimmed[e2]) || trimmed[e2] == '_')) e2++;
+                    if (e2 > p)
+                    {
+                        var second = trimmed.Slice(p, e2 - p).ToString();
+                        if (SymbolicOnlyKeywords.Contains(second)) return true;
+                    }
+                    continue;
+                }
+                if (SymbolicOnlyKeywords.Contains(kw)) return true;
+            }
+            return false;
+        }
+
         internal readonly struct AppInfo
         {
             static AppInfo()
@@ -125,6 +175,14 @@ namespace Calcpad.Wpf
         private bool _isParsing;
         private bool _isPasting;
         private bool _isTextChangedEnabled;
+        // Round-trip protection: keep an exact copy of the file text loaded
+        // from disk. The HighLighter occasionally reformats whitespace and
+        // apostrophes during re-tokenization (e.g. `' #deqξ '` → `'#deqξ'`,
+        // `#blk` cell-2 leading `'` dropped). If the user has not actually
+        // typed anything, we prefer rewriting the original bytes verbatim
+        // over re-emitting the highlighter's reconstruction.
+        private string _loadedFileText;
+        private bool _userTypedSinceLoad;
         private readonly double _inputHeight;
         private bool _mustPromptUnlock;
         private bool _forceHighlight;
@@ -213,7 +271,14 @@ namespace Calcpad.Wpf
             var docPath = AppInfo.DocPath;
             var docUrl = $"file:///{docPath.Replace("\\", "/")}";
             var htmlExt = AddCultureExt("html");
-            _htmlWorksheet = ReadTextFromFile($"{docPath}\\template{htmlExt}").Replace("https:// calcpad.local", docUrl);
+            // Embed jQuery and calcpad-viz inline (avoids cross-origin warnings in WebView2/DevTools).
+            // Falls back to file:/// only if the JS file isn't found alongside the .exe.
+            var rawTemplate = ReadTextFromFile($"{docPath}\\template{htmlExt}");
+            rawTemplate = EmbedScriptInline(rawTemplate, "jquery-3.6.3.min.js", docPath);
+            rawTemplate = EmbedScriptInline(rawTemplate, "calcpad-viz.umd.js", docPath);
+            // Any remaining calcpad.local references → resolve to local doc URL.
+            // (Fixed typo: there used to be an erroneous space "https:// calcpad.local".)
+            _htmlWorksheet = rawTemplate.Replace("https://calcpad.local", docUrl);
             _htmlParsingPath = $"{docPath}\\parsing{htmlExt}";
             _htmlParsingUrl = $"{docUrl}/parsing{htmlExt}";
             _htmlHelpPath = GetHelp(MainWindowResources.calcpad_download_help_html);
@@ -922,7 +987,7 @@ namespace Calcpad.Wpf
             if (!string.IsNullOrWhiteSpace(CurrentFileName))
                 s = Path.GetExtension(CurrentFileName).ToLowerInvariant();
             else
-                s = ".cpd";
+                s = ContentRequiresCpds(InputText) ? ".cpds" : ".cpd";
 
             var dlg = new SaveFileDialog
             {
@@ -934,6 +999,7 @@ namespace Calcpad.Wpf
                 {
                     ".txt" => MainWindowResources.Command_Open_Text_File,
                     ".cpdz" => MainWindowResources.FileSaveAs_Calcpad_Compiled,
+                    ".cpds" => MainWindowResources.FileSaveAs_Calcpad_Symbolic_Worksheet,
                     _ => MainWindowResources.Command_Open_Calcpad_Worksheet
                 }
             };
@@ -1029,6 +1095,27 @@ namespace Calcpad.Wpf
                 if (!await GetAndSetInputFieldsAsync())
                     return;
             }
+            // Auto-promote `.cpd` → `.cpds` if the document uses Symbolic-only
+            // directives (#deq, #blk, #math, …). Saving Symbolic features as
+            // plain `.cpd` would produce a file that breaks when opened in
+            // vanilla Calcpad. `.cpdz` (compiled) is left alone.
+            var ext = Path.GetExtension(fileName);
+            if (string.Equals(ext, ".cpd", StringComparison.OrdinalIgnoreCase)
+                && ContentRequiresCpds(GetInputText()))
+            {
+                var promoted = Path.ChangeExtension(fileName, ".cpds");
+                if (!string.Equals(promoted, fileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Drop the old `.cpd` only if it was the file we just
+                    // opened — avoids leaving a stale duplicate side-by-side.
+                    if (File.Exists(fileName)
+                        && string.Equals(fileName, CurrentFileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        try { File.Delete(fileName); } catch { /* keep the old file if locked */ }
+                    }
+                    fileName = promoted;
+                }
+            }
             var isZip = string.Equals(Path.GetExtension(fileName), ".cpdz", StringComparison.OrdinalIgnoreCase);
             if (isZip)
             {
@@ -1040,7 +1127,27 @@ namespace Calcpad.Wpf
             }
             else
             {
-                WriteFile(fileName, GetInputText());
+                var newText = GetInputText();
+                // Round-trip protection: if the user has not actually typed
+                // anything since load, write the ORIGINAL bytes from disk
+                // verbatim. Otherwise the highlighter's reconstruction may
+                // strip whitespace around inline #deq directives or drop the
+                // leading apostrophe of a #blk cell — corrupting the file
+                // even though the user just opened it.
+                if (!_userTypedSinceLoad && _loadedFileText != null
+                    && string.Equals(fileName, CurrentFileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    WriteFile(fileName, _loadedFileText);
+                }
+                else
+                {
+                    WriteFile(fileName, newText);
+                    // After an explicit save the in-memory state IS the new disk
+                    // contents — refresh the snapshot so a second save without
+                    // edits stays a no-op.
+                    _loadedFileText = newText;
+                    _userTypedSinceLoad = false;
+                }
                 CurrentFileName = fileName;
             }
             SaveButton.Tag = null;
@@ -1361,7 +1468,28 @@ namespace Calcpad.Wpf
             {
                 if (!string.IsNullOrEmpty(htmlResult))
                 {
-                    await _wv2Warper.NavigateToStringAsync(htmlResult);
+                    // NavigateToStringAsync uses document.write+ExecuteScriptAsync, which has
+                    // a ~2 MB JSON limit AND triggers parser-blocking warnings for external
+                    // scripts (calcpad-viz, jQuery). For HTML over ~1 MB or containing big
+                    // SVG meshes (>500 inline <line>s), write to %TEMP% and Navigate(file:///).
+                    const int NAV_STRING_LIMIT = 1_000_000; // 1 MB margin (UTF-16 in C# is 2 B/char)
+                    bool hasLargeSvg = htmlResult.Length > 200_000 &&
+                        System.Text.RegularExpressions.Regex.IsMatch(htmlResult,
+                            @"<svg[^>]*>.{0,500}<line", System.Text.RegularExpressions.RegexOptions.Singleline);
+                    if (htmlResult.Length > NAV_STRING_LIMIT || hasLargeSvg)
+                    {
+                        var tempHtml = Path.Combine(Path.GetTempPath(),
+                            $"calcpad_render_{Guid.NewGuid():N}.html");
+                        File.WriteAllText(tempHtml, htmlResult, Encoding.UTF8);
+                        // CoreWebView2.Navigate() requires a URI — convert Windows path
+                        // "C:\Users\…\file.html" → "file:///C:/Users/.../file.html"
+                        var fileUri = "file:///" + tempHtml.Replace("\\", "/");
+                        _wv2Warper.Navigate(fileUri);
+                    }
+                    else
+                    {
+                        await _wv2Warper.NavigateToStringAsync(htmlResult);
+                    }
                 }
             }
             catch (Exception e)
@@ -1523,6 +1651,20 @@ namespace Calcpad.Wpf
             return images;
         }
 
+        /// <summary>Replace `<script src="https://calcpad.local/{file}">` with inline content.
+        /// Mirrors the CLI Converter.EmbedScript so both binaries produce browser-portable HTML.</summary>
+        private static string EmbedScriptInline(string html, string fileName, string docPath)
+        {
+            var scriptTag = $"<script src=\"https://calcpad.local/{fileName}\"></script>";
+            var filePath = Path.Combine(docPath, fileName);
+            if (File.Exists(filePath))
+            {
+                var content = File.ReadAllText(filePath);
+                return html.Replace(scriptTag, $"<script>{content}</script>");
+            }
+            return html;
+        }
+
         private string HtmlApplyWorksheet(string s)
         {
             _stringBuilder.Clear();
@@ -1637,6 +1779,12 @@ namespace Calcpad.Wpf
         private bool GetInputTextFromFile()
         {
             var lines = ReadLines(CurrentFileName);
+            // Snapshot exact disk text BEFORE any tokenization side-effect so
+            // we can detect "no real edit" later and avoid corrupting the file
+            // on save.
+            try { _loadedFileText = System.IO.File.ReadAllText(CurrentFileName); }
+            catch { _loadedFileText = null; }
+            _userTypedSinceLoad = false;
             _isTextChangedEnabled = false;
             RichTextBox.BeginChange();
             _document.Blocks.Clear();
@@ -1805,6 +1953,12 @@ namespace Calcpad.Wpf
                 if (n > 12)
                     n = 12;
                 var line = new TextRange(b.ContentStart, b.ContentEnd).Text;
+                // Convert NO-BREAK SPACE (U+00A0) back to regular space.
+                // The highlighter injects nbsp into comment runs so WPF
+                // doesn't collapse consecutive spaces in the editor, but
+                // the on-disk .cpd / the parser input should use plain ' '.
+                if (line.IndexOf(' ') >= 0)
+                    line = line.Replace(' ', ' ');
                 if (n == 0)
                     _stringBuilder.AppendLine(line);
                 else
@@ -2278,7 +2432,7 @@ namespace Calcpad.Wpf
                 if (File.Exists(s))
                 {
                     var ex = Path.GetExtension(s).ToLowerInvariant();
-                    if (ex == ".cpd" || ex == ".cpdz")
+                    if (ex == ".cpd" || ex == ".cpds" || ex == ".cpdz")
                     {
                         _parser.ShowWarnings = ex != ".cpdz";
                         CurrentFileName = s;
@@ -2678,6 +2832,30 @@ namespace Calcpad.Wpf
             var modifiers = e.KeyboardDevice.Modifiers;
             var isCtrl = modifiers == ModifierKeys.Control;
             var isCtrlShift = modifiers == (ModifierKeys.Control | ModifierKeys.Shift);
+            // Detect "real user edit" vs autoformatting/highlight-induced change.
+            // Anything that mutates content (text key, backspace, delete, enter,
+            // tab, paste, cut) flips the flag; pure navigation / modifiers do not.
+            if (!_userTypedSinceLoad)
+            {
+                bool isMutating =
+                    e.Key == Key.Back || e.Key == Key.Delete ||
+                    e.Key == Key.Return || e.Key == Key.Enter || e.Key == Key.Tab ||
+                    (isCtrl && (e.Key == Key.V || e.Key == Key.X)) ||
+                    // Any printable key without Ctrl-only modifier
+                    (modifiers != ModifierKeys.Control &&
+                     modifiers != ModifierKeys.Alt &&
+                     ((e.Key >= Key.A && e.Key <= Key.Z) ||
+                      (e.Key >= Key.D0 && e.Key <= Key.D9) ||
+                      (e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9) ||
+                      e.Key == Key.Space || e.Key == Key.OemPeriod ||
+                      e.Key == Key.OemComma || e.Key == Key.OemMinus ||
+                      e.Key == Key.OemPlus || e.Key == Key.OemQuestion ||
+                      e.Key == Key.OemSemicolon || e.Key == Key.OemQuotes ||
+                      e.Key == Key.OemOpenBrackets || e.Key == Key.OemCloseBrackets ||
+                      e.Key == Key.OemBackslash || e.Key == Key.OemTilde));
+                if (isMutating)
+                    _userTypedSinceLoad = true;
+            }
             if (e.Key == Key.V && isCtrlShift)
             {
                 PasteAsCommentMenu_Click(PasteAsCommentMenu, e);
@@ -3932,6 +4110,22 @@ namespace Calcpad.Wpf
             Execute(AppInfo.Path + "Cli.exe");
         }
 
+        private ExcelViewerWindow _excelViewerWindow;
+
+        private void MenuExcelViewer_Click(object sender, RoutedEventArgs e)
+        {
+            if (_excelViewerWindow == null || !_excelViewerWindow.IsLoaded)
+            {
+                _excelViewerWindow = new ExcelViewerWindow { Owner = this };
+                _excelViewerWindow.Closed += (_, _) => _excelViewerWindow = null;
+                _excelViewerWindow.Show();
+            }
+            else
+            {
+                _excelViewerWindow.Activate();
+            }
+        }
+
         private void ZeroSmallMatrixElementsCheckBox_Click(object sender, RoutedEventArgs e) => ClearOutput();
 
         private void MaxOutputCountTextBox_KeyUp(object sender, KeyEventArgs e)
@@ -4019,7 +4213,7 @@ namespace Calcpad.Wpf
                 {
                     fileName = path;
                     var ext = Path.GetExtension(fileName).ToLowerInvariant();
-                    if (ext == ".cpd" || ext == ".cpdz" || ext == ".txt")
+                    if (ext == ".cpd" || ext == ".cpds" || ext == ".cpdz" || ext == ".txt")
                     {
                         var r = PromptSave();
                         if (r != MessageBoxResult.Cancel)

@@ -1,0 +1,342 @@
+#margen 20
+#md on
+"Tres conceptos clave en FEM de placas — para entender qué pasa por dentro
+
+# Introducción
+
+'Cuando le aplicás una fuerza a una placa y ETABS o Hekatan te devuelven
+'desplazamientos, ESFUERZOS y reacciones, por dentro pasaron tres cosas
+'separadas. Vamos a verlas una por una.
+
+#svg 720 200
+.rect 0 0 720 200 #f0f8ff 1 #888 1
+.text 360 25 "Los tres conceptos por dentro de un solver FEM" 14 black middle bold
+
+.rect 30 60 210 130 #c8e6c9 0.5 #2e7d32 2
+.text 135 88 "1. CALCULO de FUERZAS" 12 black middle bold
+.text 135 110 "Como la carga distribuida q" 10 black middle
+.text 135 125 "se reparte a los nodos" 10 black middle
+.text 135 155 "F_i = integral N_i q dA" 11 #2e7d32 middle italic
+
+.rect 255 60 210 130 #b3d9ff 0.5 #0d47a1 2
+.text 360 88 "2. CONTINUIDAD" 12 black middle bold
+.text 360 110 "Como las placas vecinas" 10 black middle
+.text 360 125 "comparten el desplazamiento" 10 black middle
+.text 360 155 "u_borde_A = u_borde_B" 11 #0d47a1 middle italic
+
+.rect 480 60 210 130 #ffe699 0.6 #b58900 2
+.text 585 88 "3. JACOBIANO" 12 black middle bold
+.text 585 110 "Factor de escala numerico" 10 black middle
+.text 585 125 "de la integral" 10 black middle
+.text 585 155 "K_e = SUM B^T D B det(J) w_g" 11 #b58900 middle italic
+#end svg
+
+# §1. Cálculo de fuerzas — cómo la carga llega a los nodos
+
+'Tenés una losa cuadrada con una carga repartida q = 10 kN/m². ETABS
+'no aplica la carga "directamente sobre el área", la **reparte a los
+'NODOS** de cada elemento.
+
+## §1.1 Visualización del reparto
+
+#svg 720 320
+.rect 0 0 720 320 #fafafa 1 #ccc 1
+.text 360 22 "Reparto de carga distribuida q a los nodos" 13 black middle bold
+
+'Placa real con carga distribuida (izquierda)
+.text 170 60 "PLACA con carga uniforme q" 12 black middle bold
+.rect 70 90 200 200 #ffe699 0.5 #b58900 2
+
+'Flechas verdes representando la carga distribuida (15 flechas)
+.arrow 90 70 90 90 #2e7d32 1.5
+.arrow 110 70 110 90 #2e7d32 1.5
+.arrow 130 70 130 90 #2e7d32 1.5
+.arrow 150 70 150 90 #2e7d32 1.5
+.arrow 170 70 170 90 #2e7d32 1.5
+.arrow 190 70 190 90 #2e7d32 1.5
+.arrow 210 70 210 90 #2e7d32 1.5
+.arrow 230 70 230 90 #2e7d32 1.5
+.arrow 250 70 250 90 #2e7d32 1.5
+.text 170 60 "q = 10 kN/m^2 (uniforme)" 11 #2e7d32 middle italic
+.text 170 200 "carga repartida en TODA" 11 black middle italic
+.text 170 215 "el area de la placa" 11 black middle italic
+.text 170 280 "(continuo)" 10 #555 middle
+
+'Flecha del proceso
+.arrow 295 200 415 200 red 3
+.text 355 185 "F_i = integral" 12 #c33 middle bold
+.text 355 220 "N_i q dA" 12 #c33 middle bold
+
+'Placa con cargas equivalentes en nodos (derecha)
+.text 580 60 "CARGAS NODALES equivalentes" 12 black middle bold
+.rect 480 90 200 200 #b3d9ff 0.3 #0d47a1 2
+
+'4 nodos con flechas grandes
+.circle 480 90 8 #c33 1
+.circle 680 90 8 #c33 1
+.circle 480 290 8 #c33 1
+.circle 680 290 8 #c33 1
+.arrow 480 60 480 90 #c33 3
+.arrow 680 60 680 90 #c33 3
+.arrow 480 320 480 290 #c33 3
+.arrow 680 320 680 290 #c33 3
+.text 470 50 "F_1" 11 #c33 end bold
+.text 690 50 "F_2" 11 #c33 start bold
+.text 470 320 "F_3" 11 #c33 end bold
+.text 690 320 "F_4" 11 #c33 start bold
+
+.text 580 200 "cada nodo recibe" 10 #555 middle italic
+.text 580 215 "una fraccion de la carga" 10 #555 middle italic
+#end svg
+
+'## §1.2 La fórmula explicada en palabras
+
+'La regla mágica del FEM:
+
+#deq F_i = integral(integral(N_i(x; y) · q(x; y); x; 0; a); y; 0; b)
+
+'Lo que dice esa integral:
+'- **N_i(x; y)** = "función de forma" del nodo i. Vale 1 en el nodo i,
+'  vale 0 en los demás nodos, y varía suavemente entre medio.
+'- **q(x; y)** = la carga distribuida en cada punto.
+'- **dA = dx·dy** = el "elemento de área" (un pedacito infinitesimal).
+
+'**Interpretación física:** en cada punto (x, y) de la placa hay una
+'carga q. Al nodo i le toca una fracción de esa carga proporcional a
+'**cuánto "siente" el nodo ese punto** (esa proximidad la cuantifica N_i).
+
+'## §1.3 Caso simple — placa cuadrada con q uniforme
+
+a_p = 4
+b_p = 4
+q = 10
+A_p = a_p*b_p
+F_total = q*A_p
+
+#blk
+a_p     ; 'lado X de la placa (m)
+b_p     ; 'lado Y (m)
+q       ; 'carga uniforme (kN/m²)
+A_p     ; 'área total (m²)
+F_total ; 'carga total = q × A
+#end blk
+
+'Para una placa cuadrada con carga uniforme repartida sobre 4 nodos
+'iguales, la simetría dice que cada nodo recibe la misma fracción:
+
+F_nodo = F_total/4
+
+#blk
+F_nodo  ; 'cada nodo recibe F_total / 4
+#end blk
+
+'**Cierre del balance:** 4 × F_nodo = F_total ✓
+
+balance = 4*F_nodo
+
+#blk
+balance ; 'verificación: debe coincidir con F_total
+#end blk
+
+'Si la carga NO fuera uniforme (ej. una carga puntual cerca del nodo 1),
+'la fórmula `F_i = ∫ N_i q dA` repartiría más fuerza al nodo 1 y menos
+'a los lejanos. Esto es **lo que hace el solver automáticamente**.
+
+# §2. Continuidad entre placas — cómo se comunican vecinas
+
+'Una losa real se discretiza en MUCHAS placas chicas (elementos). Para
+'que el modelo represente UNA sola losa y no muchas separadas, los
+'desplazamientos deben ser **continuos** en los bordes compartidos.
+
+## §2.1 Visualización del problema
+
+#svg 720 280
+.rect 0 0 720 280 #fafafa 1 #ccc 1
+.text 360 22 "Dos placas vecinas: comparten el borde y los nodos" 13 black middle bold
+
+'Placa A (izquierda)
+.rect 80 70 240 180 #c8e6c9 0.4 #2e7d32 2.5
+.text 200 100 "Placa A" 14 #2e7d32 middle bold
+
+'Borde compartido (vertical)
+.line 320 70 320 250 red 4
+
+'Placa B (derecha)
+.rect 320 70 240 180 #b3d9ff 0.4 #0d47a1 2.5
+.text 440 100 "Placa B" 14 #0d47a1 middle bold
+
+'Nodos del borde compartido (los rojos = compartidos)
+.circle 320 70 9 #c33 1
+.circle 320 160 9 #c33 1
+.circle 320 250 9 #c33 1
+.text 335 70 "nodo 5" 11 #c33 start bold
+.text 335 160 "nodo 6" 11 #c33 start bold
+.text 335 250 "nodo 7" 11 #c33 start bold
+
+'Nodos de las esquinas (no compartidos)
+.circle 80 70 7 #888 1
+.circle 80 250 7 #888 1
+.circle 560 70 7 #888 1
+.circle 560 250 7 #888 1
+
+.text 360 270 "Los 3 nodos del BORDE rojo pertenecen a A y a B simultaneamente" 11 #c33 middle italic
+#end svg
+
+'## §2.2 Por qué importa
+
+'**Cuando armás el sistema global K · u = F:**
+'- El nodo 6 (compartido) tiene UN solo desplazamiento u_6 en el vector
+'  global de incógnitas.
+'- Tanto la placa A como la placa B contribuyen a la rigidez asociada
+'  a u_6 (sus K_e se suman en la posición [6, 6] de la matriz K global).
+'- Esto **garantiza** que cuando A se deforma, B se deforma de la misma
+'  forma en el borde compartido.
+
+'## §2.3 Niveles de continuidad — C^0, C^1, C^2
+
+#svg 720 240
+.rect 0 0 720 240 #fff8e1 1 #d4a017 1
+.text 360 22 "Niveles de continuidad entre elementos" 14 black middle bold
+
+.rect 30 50 210 170 #c8e6c9 0.5 #2e7d32 2
+.text 135 75 "C^0 (basico)" 13 black middle bold
+.text 135 100 "El desplazamiento u" 10 black middle
+.text 135 115 "es continuo en el borde" 10 black middle
+.text 135 145 "Suficiente para:" 11 #2e7d32 middle bold
+.text 135 165 "* membranas (corte)" 10 black middle
+.text 135 180 "* solidos 3D" 10 black middle
+.text 135 195 "* placas Reissner-Mindlin" 10 black middle
+
+.rect 255 50 210 170 #b3d9ff 0.5 #0d47a1 2
+.text 360 75 "C^1 (mas exigente)" 13 black middle bold
+.text 360 100 "u y sus pendientes du/dx" 10 black middle
+.text 360 115 "son continuas en el borde" 10 black middle
+.text 360 145 "Suficiente para:" 11 #0d47a1 middle bold
+.text 360 165 "* placas Kirchhoff (delgadas)" 10 black middle
+.text 360 180 "* vigas Euler-Bernoulli" 10 black middle
+.text 360 195 "* difícil de programar" 10 #c33 middle italic
+
+.rect 480 50 210 170 #ffe699 0.6 #b58900 2
+.text 585 75 "C^2 y superiores" 13 black middle bold
+.text 585 100 "Hasta segundas derivadas" 10 black middle
+.text 585 115 "(curvaturas) continuas" 10 black middle
+.text 585 145 "Suficiente para:" 11 #b58900 middle bold
+.text 585 165 "* problemas biharmonic" 10 black middle
+.text 585 180 "* algunos splines" 10 black middle
+.text 585 195 "(raro en FEM ingenieril)" 10 #555 middle italic
+#end svg
+
+'**En la práctica:**
+'- Para una **losa de hormigón delgada (Kirchhoff)** se necesita C¹ →
+'  por eso ETABS usa elementos especiales (DKQ, DKT) que imponen C¹
+'  en los bordes con trucos de interpolación.
+'- Para una **losa de hormigón gruesa (Mindlin) o placa membrana**
+'  basta con C⁰ → elementos Q4 estándar.
+
+'## §2.4 Qué pasa si NO hay continuidad
+
+'Si dos elementos NO comparten nodos en el borde, son **dos elementos
+'independientes**. Físicamente significa: hay una **rótula** ahí (los
+'desplazamientos pueden ser diferentes a cada lado).
+
+'En ETABS esto se llama **"separation"** y aparece cuando NO se hace
+'mesh-merge entre elementos vecinos. El warning típico es:
+'"Element edges do not coincide - check mesh assignment".
+
+# §3. Jacobiano — la plomería que hace que las cuentas den bien
+
+'Ya armamos un documento exclusivo para esto:
+'`Jacobiano FEM 1D y 2D.cpd` (en la misma carpeta).
+
+'**Resumen para conectar con los temas anteriores:**
+
+#svg 720 250
+.rect 0 0 720 250 #fafafa 1 #ccc 1
+.text 360 22 "Donde aparece el Jacobiano en los calculos previos" 14 black middle bold
+
+.text 60 60 "1. Calcular cargas nodales F_i:" 12 #2e7d32 start bold
+.text 80 82 "F_i = integral N_i q dA  (en la PLACA REAL, distorsionada)" 11 black start
+.text 80 100 "Usando Jacobiano:" 11 black start
+.text 100 118 "F_i = integral N_i(xi,eta) q(xi,eta) det(J) dxi deta" 11 #c33 start italic
+.text 100 135 "(integral en el cuadrado natural -1,+1 con el factor det(J))" 9 #555 start
+
+.text 60 165 "2. Calcular matriz de rigidez K_e:" 12 #0d47a1 start bold
+.text 80 187 "K_e = integral B^T D B dA  (en la PLACA REAL)" 11 black start
+.text 80 205 "Usando Jacobiano:" 11 black start
+.text 100 223 "K_e = SUM_g B^T(xi_g,eta_g) D B(xi_g,eta_g) det(J(xi_g,eta_g)) w_g" 10 #c33 start italic
+#end svg
+
+'**El Jacobiano es UN engranaje invisible** dentro de los puntos 1 y 2.
+'No tiene significado físico (no es una propiedad de la placa, no es
+'una carga, no es un esfuerzo), pero sin él los números 1 y 2 darían
+'mal por un factor de escala.
+
+# §4. Conexión con lo que ves en ETABS / Hekatan
+
+#svg 720 280
+.rect 0 0 720 280 #f0f8ff 1 #888 1
+.text 360 25 "Que ve el ingeniero en su pantalla" 14 black middle bold
+
+'Concepto 1
+.rect 30 60 210 200 #c8e6c9 0.5 #2e7d32 2
+.text 135 85 "1. Cargas nodales" 12 black middle bold
+.text 135 110 "Lo que ves en ETABS:" 10 #2e7d32 middle italic
+.text 135 130 "* Tabla 'Joint Reactions'" 10 black middle
+.text 135 145 "* Diagrama 'Joint Loads'" 10 black middle
+.text 135 165 "Ejemplo numerico:" 10 #2e7d32 middle italic
+.text 135 185 "Placa 4x4m, q=10 kN/m^2" 10 black middle
+.text 135 200 "Cada nodo recibe 40 kN" 11 #c33 middle bold
+.text 135 230 "(suma 4 x 40 = 160 kN" 9 #555 middle
+.text 135 245 "= q x A = 10 x 16) ✓" 9 #555 middle
+
+'Concepto 2
+.rect 255 60 210 200 #b3d9ff 0.5 #0d47a1 2
+.text 360 85 "2. Continuidad" 12 black middle bold
+.text 360 110 "Lo que ves en ETABS:" 10 #0d47a1 middle italic
+.text 360 130 "* Mesh edges coinciding" 10 black middle
+.text 360 145 "* Section cuts continuos" 10 black middle
+.text 360 165 "Si NO hay continuidad:" 10 #0d47a1 middle italic
+.text 360 185 "Warning: 'Edges do not" 10 #c33 middle
+.text 360 200 "coincide'" 10 #c33 middle
+.text 360 230 "Solucion: 'Auto-Mesh'" 10 #555 middle
+.text 360 245 "o 'Edge Constraints'" 10 #555 middle
+
+'Concepto 3
+.rect 480 60 210 200 #ffe699 0.6 #b58900 2
+.text 585 85 "3. Jacobiano" 12 black middle bold
+.text 585 110 "Lo que ves en ETABS:" 10 #b58900 middle italic
+.text 585 130 "* (NADA usualmente)" 10 black middle
+.text 585 145 "Solo si malla esta mala:" 10 #b58900 middle italic
+.text 585 165 "Warning: 'Element has" 10 #c33 middle
+.text 585 180 "negative or zero" 10 #c33 middle
+.text 585 195 "Jacobian'" 10 #c33 middle
+.text 585 225 "Solucion: mejorar la" 10 #555 middle
+.text 585 240 "calidad de la malla" 10 #555 middle
+.text 585 255 "(esquinas no colineales)" 9 #555 middle
+#end svg
+
+# §5. Cierre
+
+'**Las 3 cosas, recopiladas:**
+'
+'1. **Cálculo de fuerzas (F_i)**: la integral `F_i = ∫ N_i q dA`
+'   reparte la carga distribuida q a los nodos. Para una placa
+'   cuadrada con q uniforme, cada nodo recibe q·A/4 (por simetría).
+'   Esto **lo ves directamente** en la tabla "Joint Reactions" de ETABS.
+'
+'2. **Continuidad entre placas**: las placas vecinas comparten los
+'   nodos del borde común. Esto garantiza que el desplazamiento sea
+'   continuo (C⁰) y, para placas delgadas Kirchhoff, también la
+'   rotación (C¹). Lo ves cuando ETABS te avisa que los bordes no
+'   coinciden — la solución es Auto-Mesh.
+'
+'3. **Jacobiano**: factor de escala invisible para que la integral
+'   del paso 1 y el paso 2 (al armar K_e) den el resultado físico
+'   correcto. Solo se asoma en pantalla cuando la malla está MUY
+'   distorsionada y aparece el warning "negative Jacobian".
+'
+'**Los tres conceptos juntos en una frase:**
+'> "FEM **reparte** la carga (Cálculo de fuerzas), **conecta** placas
+'> vecinas (Continuidad), y usa una **trampa matemática** para hacer
+'> integrales sobre cada elemento sin volverse loco con coordenadas
+'> locales (Jacobiano)."

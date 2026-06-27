@@ -1724,7 +1724,7 @@ namespace Calcpad.Core
             for (int i = 1; i < _size; ++i)
             {
                 v = _values is null ? this[i] : _values[i];
-                var d = v.D * Unit.Convert(u, v.Units, ',');
+                var d = v.D * Unit.ConvertLenient(u, v.Units);
                 norm += d * d;
             }
             return new(Math.Sqrt(norm), u);
@@ -1745,7 +1745,7 @@ namespace Calcpad.Core
             for (int i = 1; i < _size; ++i)
             {
                 v = _values is null ? this[i] : _values[i];
-                var d = Unit.Convert(u, v.Units, ',');
+                var d = Unit.ConvertLenient(u, v.Units);
                 norm += Math.Pow(Math.Abs(v.D) * d, p);
             }
             return new(Math.Pow(norm, 1d / p), u);
@@ -1763,7 +1763,7 @@ namespace Calcpad.Core
             for (int i = 1; i < _size; ++i)
             {
                 v = _values is null ? this[i] : _values[i];
-                var c = Math.Abs(v.D) * Unit.Convert(u, v.Units, ',');
+                var c = Math.Abs(v.D) * Unit.ConvertLenient(u, v.Units);
                 if (c > norm)
                     norm = c;
             }
@@ -1783,7 +1783,7 @@ namespace Calcpad.Core
             for (int i = 1; i < _size; ++i)
             {
                 v = _values is null ? this[i] : _values[i];
-                var b = v.D * Unit.Convert(u, v.Units, ',');
+                var b = v.D * Unit.ConvertLenient(u, v.Units);
                 if (b < min)
                     min = b;
             }
@@ -1804,7 +1804,7 @@ namespace Calcpad.Core
             for (int i = 1; i < _size; ++i)
             {
                 v = _values is null ? this[i] : _values[i];
-                var b = v.D * Unit.Convert(u, v.Units, ',');
+                var b = v.D * Unit.ConvertLenient(u, v.Units);
                 if (b > max)
                     max = b;
             }
@@ -1825,7 +1825,7 @@ namespace Calcpad.Core
             for (int i = 1; i < _size; ++i)
             {
                 v = _values is null ? this[i] : _values[i];
-                sum += v.D * Unit.Convert(u, v.Units, ',');
+                sum += v.D * Unit.ConvertLenient(u, v.Units);
             }
             return new(sum, u);
         }
@@ -1842,7 +1842,7 @@ namespace Calcpad.Core
             for (int i = 1; i < _size; ++i)
             {
                 v = _values is null ? this[i] : _values[i];
-                var b = v.D * Unit.Convert(u, v.Units, ',');
+                var b = v.D * Unit.ConvertLenient(u, v.Units);
                 sumsq += b * b;
             }
             return new(sumsq, u?.Pow(2f));
@@ -1948,7 +1948,7 @@ namespace Calcpad.Core
             for (int i = 1; i < _size; ++i)
             {
                 v = _values is null ? this[i] : _values[i];
-                var b = Calculator.AsLong(v.D * Unit.Convert(u, v.Units, ','));
+                var b = Calculator.AsLong(v.D * Unit.ConvertLenient(u, v.Units));
                 a = Calculator.Gcd(a, b);
             }
             return new(a);
@@ -1965,7 +1965,7 @@ namespace Calcpad.Core
             for (int i = 1; i < _size; ++i)
             {
                 v = _values is null ? this[i] : _values[i];
-                var b = Calculator.AsLong(v.D * Unit.Convert(u, v.Units, ','));
+                var b = Calculator.AsLong(v.D * Unit.ConvertLenient(u, v.Units));
                 a = a * b / Calculator.Gcd(a, b);
             }
             return new(a);
@@ -2008,7 +2008,7 @@ namespace Calcpad.Core
             var u = v.Units;
             var y0 = v.D;
             v = this[i + 1];
-            var y1 = v.D * Unit.Convert(u, v.Units, ',');
+            var y1 = v.D * Unit.ConvertLenient(u, v.Units);
             var dy = y1 - y0;
             var a = dy;
             var b = dy;
@@ -2016,13 +2016,13 @@ namespace Calcpad.Core
             if (i > 0)
             {
                 v = this[i - 1];
-                var y2 = v.D * Unit.Convert(u, v.Units, ',');
+                var y2 = v.D * Unit.ConvertLenient(u, v.Units);
                 a = (y1 - y2) * (Math.Sign(y0 - y2) == dy ? 0.5 : 0.25);
             }
             if (i < Length - 2)
             {
                 v = this[i + 2];
-                var y2 = v.D * Unit.Convert(u, v.Units, ',');
+                var y2 = v.D * Unit.ConvertLenient(u, v.Units);
                 b = (y2 - y0) * (Math.Sign(y2 - y1) == dy ? 0.5 : 0.25);
             }
             if (i == 0)

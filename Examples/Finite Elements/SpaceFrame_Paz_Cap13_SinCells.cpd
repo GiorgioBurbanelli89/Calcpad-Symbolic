@@ -1,0 +1,173 @@
+#margen 20
+"Space Frame — Ejemplo Cap. 13 Mario Paz (sin cells)
+
+'Misma logica que Matlab: ensamble directo a la matriz global K
+'sin usar cell arrays. Se crea K con zeros, se recorren los 4
+'elementos y cada K_e se suma a las posiciones correctas de K.
+
+"Datos — propiedades del material
+
+E = 30000000
+G = 12000000
+
+'Miembros 1 y 3:
+A_1 = 50
+Iz_1 = 200
+Iy_1 = 200
+J_1 = 40
+m_1 = 0.2
+
+'Miembros 2 y 4:
+A_2 = 28
+Iz_2 = 64
+Iy_2 = 64
+J_2 = 12.8
+m_2 = 0.1
+
+#pgb
+"Geometria
+
+'Longitud de todos los elementos (por simetria del portico):
+L_elem = 200
+
+'Numero de nudos y DOF totales (para caso axial simplificado):
+n_nudos = 5
+dof = n_nudos - 1
+'4 DOF libres: nudo 1 (x-axial) + 4 elementos conectando a nudo 1
+
+#pgb
+"Matriz global K — inicializada con ceros
+
+'En Matlab: K = zeros(dof).  En Calcpad: matrix(rows, cols)
+
+K = matrix(dof; dof)
+
+'K es ahora una matriz 4x4 de ceros, lista para ensamblar.
+
+#pgb
+"Rigideces axiales de cada elemento
+
+'Elemento 1 (miembro 1):
+k_e1 = E*A_1/L_elem
+
+'Elemento 2 (miembro 2):
+k_e2 = E*A_2/L_elem
+
+'Elemento 3 (miembro 1):
+k_e3 = E*A_1/L_elem
+
+'Elemento 4 (miembro 2):
+k_e4 = E*A_2/L_elem
+
+#pgb
+"Ensamble directo — suma en K global
+
+'Matlab:
+'   K(lm, lm) = K(lm, lm) + ke
+'
+'Aqui lo hacemos entrada por entrada. La matriz de rigidez axial
+'2x2 de cada elemento e es:
+'   K_e = k_e * [ 1  -1 ]
+'               [-1   1 ]
+'
+'Para este ensamble cada elemento conecta nudo 1 con su apoyo
+'(nudo i+1, donde i = 1..4). El nudo 1 aparece en TODOS los
+'elementos, por eso la entrada K(1,1) acumula todas las k_e.
+'
+'Los nudos 2-5 aparecen solo en su propio elemento.
+
+'Entrada K(1,1) — nudo central, suma de todos:
+K11 = k_e1 + k_e2 + k_e3 + k_e4
+
+'Entradas diagonales de cada apoyo:
+K22 = k_e1
+K33 = k_e2
+K44 = k_e3
+'K55 existira si tuviera 5x5, pero solo usamos 4 DOF
+
+'Entradas fuera-diagonal (acoplamientos nudo 1 con nudo 2,3,4):
+K12 = -k_e1
+K13 = -k_e2
+K14 = -k_e3
+
+'Matriz global ensamblada manualmente:
+K_global = [K11; K12; K13; K14 | K12; K22; 0; 0 | K13; 0; K33; 0 | K14; 0; 0; K44]
+
+#pgb
+"Verificacion numerica
+
+'Valores:
+'   k_e1 = 30e6 * 50 / 200 = 7.5e6
+'   k_e2 = 30e6 * 28 / 200 = 4.2e6
+'   k_e3 = 30e6 * 50 / 200 = 7.5e6
+'   k_e4 = 30e6 * 28 / 200 = 4.2e6
+'   K(1,1) = 7.5e6 + 4.2e6 + 7.5e6 + 4.2e6 = 23.4e6
+
+#pgb
+"Ensamble con #for — estilo Matlab
+
+'En Matlab el loop es:
+'   for i = 1:4
+'       lm = lmm(i,:);
+'       K(lm, lm) += ke_i;
+'   end
+
+'En Calcpad con #for — acumulacion manual de k(1,1):
+
+areas = [50; 28; 50; 28]
+K_11_acum = 0
+
+#for i = 1 : 4
+    k_i = E*areas.(i)/L_elem
+    K_11_acum = K_11_acum + k_i
+#loop
+
+'K_11_acum debe ser 23.4e6 (suma de las 4 rigideces).
+
+#pgb
+"Version equivalente con K global 4x4 via matrix() + asignacion
+
+'Inicializar global K como 4x4 de ceros:
+Kg = matrix(4; 4)
+
+'Asignar las entradas una por una — simulando el ensamble:
+Kg.(1; 1) = k_e1 + k_e2 + k_e3 + k_e4
+Kg.(1; 2) = -k_e1
+Kg.(1; 3) = -k_e2
+Kg.(1; 4) = -k_e3
+Kg.(2; 1) = -k_e1
+Kg.(3; 1) = -k_e2
+Kg.(4; 1) = -k_e3
+Kg.(2; 2) = k_e1
+Kg.(3; 3) = k_e2
+Kg.(4; 4) = k_e3
+
+'Matriz ensamblada:
+Kg
+
+#pgb
+"Resumen
+
+'Matlab original (Paz Cap. 13):
+'   K = zeros(dof);
+'   for i = 1:4
+'       ke = SpaceFrameElement(...);
+'       K(lm, lm) = K(lm, lm) + ke;
+'   end
+
+'Calcpad equivalente (sin cells):
+'   Kg = matrix(dof; dof)
+'   #for i = 1 : 4
+'       ...calcular k_i...
+'       Kg.(1; 1) = Kg.(1; 1) + k_i    ← acumula en posiciones
+'   #loop
+
+'Ambos resuelven el mismo problema. La diferencia:
+'   - Matlab tiene sintaxis de submatrices K(lm, lm)
+'   - Calcpad ensambla entrada por entrada con M.(i; j)
+
+'Para casos simples (axial 1D), el ensamble manual es directo.
+'Para 3D con K_e de 12x12 y mapeo DOF complejo, Matlab simplifica
+'con submatrices. Calcpad requeriria doble #for con indexacion
+'cuidadosa.
+#end margen

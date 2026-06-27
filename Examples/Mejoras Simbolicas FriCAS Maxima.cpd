@@ -1,0 +1,13 @@
+"Mejoras simbólicas — FriCAS + Maxima en Calcpad-Symbolic
+'Estas operaciones antes fallaban (AngouriMath se trababa); ahora las resuelve el motor fuerte.
+'
+'1) Integral con función especial (error function erf):
+#sym integrate(exp(-x^2); x)
+'2) Integral racional — primitiva con logaritmos y arcotangente:
+#sym integrate(1/(x^3 + 1); x)
+'3) Integral definida:
+#sym integrate(x^2; x; 0; 1)
+'4) Derivada de arcotangente:
+#sym diff(atan(x); x)
+'5) Integral de un producto (antes infinito por partes):
+#sym integrate(x^2*exp(x); x)

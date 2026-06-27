@@ -78,10 +78,16 @@ namespace Calcpad.Core
                 Parser.Parse(input[3]);
                 var right = Parser.CalculateReal();
                 var rightUnits = Parser.Units;
+                // Allow `0 : a_z` patterns: when only one side has units, adopt
+                // them on the other side (same lenient policy as $Map / +/-).
+                if (leftUnits is null && rightUnits is not null)
+                    leftUnits = rightUnits;
+                else if (leftUnits is not null && rightUnits is null)
+                    rightUnits = leftUnits;
                 if (!Unit.IsConsistent(leftUnits, rightUnits))
                     throw Exceptions.InconsistentUnits(Unit.GetText(leftUnits), Unit.GetText(rightUnits));
 
-                if (leftUnits is not null)
+                if (leftUnits is not null && rightUnits is not null)
                 {
                     var factor = rightUnits.ConvertTo(leftUnits);
                     right *= factor;

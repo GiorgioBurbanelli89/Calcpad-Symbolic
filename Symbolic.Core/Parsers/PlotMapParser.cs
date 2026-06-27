@@ -137,15 +137,28 @@ namespace Calcpad.Core
             double dx = xmax - xmin, dy = ymax - ymin;
             if (dx <= 0 || dy <= 0) throw new MathParserException("$PlotMap: invalid range");
 
-            // Image size
-            int imgWidth = (int)Parser.PlotWidth;
-            if (imgWidth <= 0) imgWidth = 500;
-            int margin = 50;
-            int legendWidth = hasGroups ? 100 : 70;  // wider for dual legend
-            int plotWidth = imgWidth - 2 * margin - legendWidth;
+            // High-DPI rendering at dpr× the logical size, displayed in CSS at the
+            // same visual size as $Map (using $Map's exact formula). $Map treats
+            // PlotWidth as the *plot area* (not total image) and grows the image
+            // around it; the final CSS width comes out to `0.75 * (PlotWidth + 120)`
+            // pt. We replicate that so both plots look visually identical.
+            const int dpr = 4;
+            int userPlotWidth = (int)Parser.PlotWidth;
+            if (userPlotWidth <= 0) userPlotWidth = 500;
+
+            // Bitmap layout (in physical pixels, scaled by dpr).
+            int plotArea = userPlotWidth * dpr;                  // pure plot region width
+            int margin = 50 * dpr;                                // top/bottom & left side
+            int legendWidth = (hasGroups ? 100 : 70) * dpr;       // right side reserved for legend
+            int imgWidth = plotArea + 2 * margin + legendWidth;   // total bitmap width
+            int plotWidth = plotArea;                              // alias for downstream code
             int plotHeight = (int)(plotWidth * dy / dx);
-            if (plotHeight < 80) plotHeight = 80;
+            if (plotHeight < 80 * dpr) plotHeight = 80 * dpr;
             int imgHeight = plotHeight + 2 * margin;
+            // CSS visual size matches $Map: dw = 0.75 * (PlotArea + L + R) where
+            // L+R ≈ 120 pt total. For userPlotWidth=300 ⇒ cssWidth ≈ 315pt.
+            int cssWidth = (int)(0.75 * (userPlotWidth + 120));
+            int cssHeight = (int)(cssWidth * (double)imgHeight / imgWidth);
             double sx = plotWidth / dx, sy = plotHeight / dy;
 
             using var bitmap = new SKBitmap(imgWidth, imgHeight);
@@ -257,7 +270,7 @@ namespace Calcpad.Core
                 canvas.DrawBitmap(pixBmp, new SKRect(margin, margin, margin + plotWidth, margin + plotHeight));
 
                 // Draw element edges
-                using var edgePaint = new SKPaint { Color = new SKColor(0, 0, 0, 70), StrokeWidth = 0.7f, Style = SKPaintStyle.Stroke, IsAntialias = true };
+                using var edgePaint = new SKPaint { Color = new SKColor(0, 0, 0, 70), StrokeWidth = 0.7f * dpr, Style = SKPaintStyle.Stroke, IsAntialias = true };
                 for (int e = 0; e < ne; e++)
                 {
                     var path = new SKPath();
@@ -296,12 +309,12 @@ namespace Calcpad.Core
             // Border and axes
             if (hasGroups)
                 DrawAxesAndDualLegend(canvas, margin, plotWidth, plotHeight, imgWidth, imgHeight, legendWidth,
-                                      xmin, xmax, ymin, ymax, vmin1, vmax1, vmin2, vmax2);
+                                      xmin, xmax, ymin, ymax, vmin1, vmax1, vmin2, vmax2, dpr);
             else
                 DrawAxesAndLegend(canvas, margin, plotWidth, plotHeight, imgWidth, imgHeight, legendWidth,
-                                  xmin, xmax, ymin, ymax, vmin, vmax);
+                                  xmin, xmax, ymin, ymax, vmin, vmax, dpr);
 
-            return BitmapToHtml(bitmap, imgWidth, imgHeight);
+            return BitmapToHtml(bitmap, cssWidth, cssHeight);
         }
 
         // ===================== FUNCTION MODE (multi-region) =====================
@@ -335,13 +348,19 @@ namespace Calcpad.Core
             }
             double gDx = gxMax - gxMin, gDy = gyMax - gyMin;
 
-            int imgWidth = (int)Parser.PlotWidth;
-            if (imgWidth <= 0) imgWidth = 500;
-            int margin = 50, legendWidth = 70;
-            int plotWidth = imgWidth - 2 * margin - legendWidth;
+            // High-DPI render matching $Map's CSS size (see PlotFromInputs).
+            const int dpr = 4;
+            int userPlotWidth = (int)Parser.PlotWidth;
+            if (userPlotWidth <= 0) userPlotWidth = 500;
+            int plotArea = userPlotWidth * dpr;
+            int margin = 50 * dpr, legendWidth = 70 * dpr;
+            int imgWidth = plotArea + 2 * margin + legendWidth;
+            int plotWidth = plotArea;
             int plotHeight = (int)(plotWidth * gDy / gDx);
-            if (plotHeight < 80) plotHeight = 80;
+            if (plotHeight < 80 * dpr) plotHeight = 80 * dpr;
             int imgHeight = plotHeight + 2 * margin;
+            int cssWidth = (int)(0.75 * (userPlotWidth + 120));
+            int cssHeight = (int)(cssWidth * (double)imgHeight / imgWidth);
             double sx = plotWidth / gDx, sy = plotHeight / gDy;
 
             using var bitmap = new SKBitmap(imgWidth, imgHeight);
@@ -355,36 +374,79 @@ namespace Calcpad.Core
                 int rw = (int)((reg.X1 - reg.X0) * sx);
                 int rh = (int)((reg.Y1 - reg.Y0) * sy);
 
-                double range = globalMax - globalMin;
-                if (range == 0) range = 1;
-                double gradScale = 0.5 * reg.Ny / range;
-
-                for (int jj = 0; jj < reg.Ny; jj++)
+                // Pixel-by-pixel rasterisation with bilinear interpolation +
+                // Phong-style shadow lighting. Replaces the previous chunky
+                // "one SKRect per grid cell" approach which produced visible
+                // mosaic blocks. We render to a temp bitmap matching the plot
+                // area (rw × rh physical px) then composite onto the main canvas.
+                using var pixBmp = new SKBitmap(rw, rh);
+                int Nx = reg.Nx, Ny = reg.Ny;
+                for (int py = 0; py < rh; py++)
                 {
-                    for (int ii = 0; ii < reg.Nx; ii++)
+                    // Y physical position → grid coordinate (top→bottom flipped)
+                    double gyN = ((double)(rh - 1 - py) / (rh - 1)) * (Ny - 1);
+                    int gj = (int)gyN;
+                    if (gj >= Ny - 1) gj = Ny - 2;
+                    double ty = gyN - gj;
+                    for (int px = 0; px < rw; px++)
                     {
-                        double val = reg.Grid[ii, jj];
-                        if (double.IsNaN(val) || double.IsInfinity(val)) continue;
-
-                        var color = GetMapColor(val, globalMin, globalMax);
-                        float px = margin + rx0 + (float)ii / reg.Nx * rw;
-                        float py = margin + ry0 + (float)(reg.Ny - 1 - jj) / reg.Ny * rh;
-                        float cw = (float)rw / reg.Nx + 1;
-                        float ch = (float)rh / reg.Ny + 1;
-
-                        using var paint = new SKPaint { Color = color, Style = SKPaintStyle.Fill, IsAntialias = false };
-                        canvas.DrawRect(px, py, cw, ch, paint);
+                        double gxN = ((double)px / (rw - 1)) * (Nx - 1);
+                        int gi = (int)gxN;
+                        if (gi >= Nx - 1) gi = Nx - 2;
+                        double tx = gxN - gi;
+                        // 4 grid corners — skip pixel if any is invalid.
+                        double v00 = reg.Grid[gi, gj];
+                        double v10 = reg.Grid[gi + 1, gj];
+                        double v01 = reg.Grid[gi, gj + 1];
+                        double v11 = reg.Grid[gi + 1, gj + 1];
+                        if (double.IsNaN(v00) || double.IsNaN(v10) || double.IsNaN(v01) || double.IsNaN(v11)) continue;
+                        // Bilinear interpolation.
+                        double v0 = v00 + (v10 - v00) * tx;
+                        double v1 = v01 + (v11 - v01) * tx;
+                        double val = v0 + (v1 - v0) * ty;
+                        // Local pixel-space gradient for Phong shadow. The scale
+                        // factor below is what gives the characteristic "3D ring"
+                        // shading of $Map — too small and the Phong term gets lost,
+                        // too large and the highlights blow out to white. The value
+                        // 8.0 was tuned to match $Map's MapPlotter output for a
+                        // typical 60×60 grid spanning ~14 units of range.
+                        double dvdx_grid = ((v10 - v00) * (1 - ty) + (v11 - v01) * ty);
+                        double dvdy_grid = ((v01 - v00) * (1 - tx) + (v11 - v10) * tx);
+                        double range = globalMax - globalMin;
+                        double normFactor = range > 0 ? 8.0 / range : 1.0;
+                        double gradX = dvdx_grid * normFactor;
+                        double gradY = -dvdy_grid * normFactor;   // flipped Y
+                        pixBmp.SetPixel(px, py, GetMapColorShadow(val, globalMin, globalMax, gradX, gradY));
                     }
                 }
+                canvas.DrawBitmap(pixBmp, new SKRect(margin + rx0, margin + ry0,
+                                                    margin + rx0 + rw, margin + ry0 + rh));
 
-                using var borderPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1.5f, Style = SKPaintStyle.Stroke, IsAntialias = true };
+                // Light grid overlay (10×10 cells) — matches $Map's look.
+                using var gridPaint = new SKPaint
+                {
+                    Color = new SKColor(100, 100, 100, 80),
+                    StrokeWidth = 0.5f * dpr,
+                    Style = SKPaintStyle.Stroke,
+                    IsAntialias = true
+                };
+                const int gridDivs = 10;
+                for (int gi = 1; gi < gridDivs; gi++)
+                {
+                    float gx = margin + rx0 + (float)gi / gridDivs * rw;
+                    float gy = margin + ry0 + (float)gi / gridDivs * rh;
+                    canvas.DrawLine(gx, margin + ry0, gx, margin + ry0 + rh, gridPaint);
+                    canvas.DrawLine(margin + rx0, gy, margin + rx0 + rw, gy, gridPaint);
+                }
+
+                using var borderPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1.5f * dpr, Style = SKPaintStyle.Stroke, IsAntialias = true };
                 canvas.DrawRect(margin + rx0, margin + ry0, rw, rh, borderPaint);
             }
 
             DrawAxesAndLegend(canvas, margin, plotWidth, plotHeight, imgWidth, imgHeight, legendWidth,
-                              gxMin, gxMax, gyMin, gyMax, globalMin, globalMax);
+                              gxMin, gxMax, gyMin, gyMax, globalMin, globalMax, dpr);
 
-            return BitmapToHtml(bitmap, imgWidth, imgHeight);
+            return BitmapToHtml(bitmap, cssWidth, cssHeight);
         }
 
         // ===================== SHARED RENDERING =====================
@@ -400,8 +462,11 @@ namespace Calcpad.Core
         {
             if (vmax <= vmin) return SKColors.Gray;
             double normalized = Math.Clamp((value - vmin) / (vmax - vmin), 0, 1);
-
-            // Discretize to NBands: low value=blue(t=0), high value=red(t=1) — same as $Map
+            // Discrete bands like $Map's non-SmoothScale default. The band index is
+            // the value's level (0..NBands-1) and `t` is normalised band-center for
+            // the rainbow mapping. The Phong shadow below modulates lightness
+            // continuously inside each band — that produces the characteristic
+            // "concentric rings with 3D shading" look of $Map.
             int band = (int)(normalized * NBands);
             if (band >= NBands) band = NBands - 1;
             double t = (double)band / (NBands - 1);
@@ -448,10 +513,10 @@ namespace Calcpad.Core
 
         private void DrawAxesAndLegend(SKCanvas canvas, int margin, int plotWidth, int plotHeight,
             int imgWidth, int imgHeight, int legendWidth,
-            double xmin, double xmax, double ymin, double ymax, double vmin, double vmax)
+            double xmin, double xmax, double ymin, double ymax, double vmin, double vmax, int dpr = 1)
         {
-            using var axisPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1, Style = SKPaintStyle.Stroke, IsAntialias = true };
-            using var textPaint = new SKPaint { Color = SKColors.Black, TextSize = 10, IsAntialias = true };
+            using var axisPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1 * dpr, Style = SKPaintStyle.Stroke, IsAntialias = true };
+            using var textPaint = new SKPaint { Color = SKColors.Black, TextSize = 10 * dpr, IsAntialias = true };
 
             double dx = xmax - xmin, dy = ymax - ymin;
             int nTicks = 6;
@@ -459,19 +524,19 @@ namespace Calcpad.Core
             {
                 double v = xmin + t * dx / nTicks;
                 float px = margin + (float)(t * plotWidth / (double)nTicks);
-                canvas.DrawLine(px, margin + plotHeight, px, margin + plotHeight + 4, axisPaint);
-                canvas.DrawText(Fmt(v), px - 15, margin + plotHeight + 16, textPaint);
+                canvas.DrawLine(px, margin + plotHeight, px, margin + plotHeight + 4 * dpr, axisPaint);
+                canvas.DrawText(Fmt(v), px - 15 * dpr, margin + plotHeight + 16 * dpr, textPaint);
             }
             for (int t = 0; t <= nTicks; t++)
             {
                 double v = ymin + t * dy / nTicks;
                 float py = margin + plotHeight - (float)(t * plotHeight / (double)nTicks);
-                canvas.DrawLine(margin - 4, py, margin, py, axisPaint);
-                canvas.DrawText(Fmt(v), 2, py + 4, textPaint);
+                canvas.DrawLine(margin - 4 * dpr, py, margin, py, axisPaint);
+                canvas.DrawText(Fmt(v), 2 * dpr, py + 4 * dpr, textPaint);
             }
 
             // Legend
-            int lx = imgWidth - legendWidth + 5, ly = margin, lh = plotHeight, lw = 18;
+            int lx = imgWidth - legendWidth + 5 * dpr, ly = margin, lh = plotHeight, lw = 18 * dpr;
             float stripH = (float)lh / NBands;
             for (int c = 0; c < NBands; c++)
             {
@@ -481,54 +546,54 @@ namespace Calcpad.Core
                 using var p = new SKPaint { Color = color, Style = SKPaintStyle.Fill };
                 canvas.DrawRect(lx, ly + c * stripH, lw, stripH + 1, p);
             }
-            using var legBorder = new SKPaint { Color = SKColors.Black, StrokeWidth = 1, Style = SKPaintStyle.Stroke };
+            using var legBorder = new SKPaint { Color = SKColors.Black, StrokeWidth = 1 * dpr, Style = SKPaintStyle.Stroke };
             canvas.DrawRect(lx, ly, lw, lh, legBorder);
 
-            using var legText = new SKPaint { Color = SKColors.Black, TextSize = 9, IsAntialias = true };
+            using var legText = new SKPaint { Color = SKColors.Black, TextSize = 9 * dpr, IsAntialias = true };
             for (int c = 0; c <= NBands; c += 2)
             {
                 double t = 1.0 - (double)c / NBands;
                 double val = vmin + t * (vmax - vmin);
-                canvas.DrawText(Fmt(val), lx + lw + 3, ly + c * stripH + 4, legText);
+                canvas.DrawText(Fmt(val), lx + lw + 3 * dpr, ly + c * stripH + 4 * dpr, legText);
             }
         }
 
         private void DrawAxesAndDualLegend(SKCanvas canvas, int margin, int plotWidth, int plotHeight,
             int imgWidth, int imgHeight, int legendWidth,
             double xmin, double xmax, double ymin, double ymax,
-            double vmin1, double vmax1, double vmin2, double vmax2)
+            double vmin1, double vmax1, double vmin2, double vmax2, int dpr = 1)
         {
             // Axes
-            using var axisPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1, Style = SKPaintStyle.Stroke, IsAntialias = true };
-            using var textPaint = new SKPaint { Color = SKColors.Black, TextSize = 10, IsAntialias = true };
+            using var axisPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1 * dpr, Style = SKPaintStyle.Stroke, IsAntialias = true };
+            using var textPaint = new SKPaint { Color = SKColors.Black, TextSize = 10 * dpr, IsAntialias = true };
             double dx = xmax - xmin, dy = ymax - ymin;
             int nTicks = 6;
             for (int t = 0; t <= nTicks; t++)
             {
                 double v = xmin + t * dx / nTicks;
                 float px = margin + (float)(t * plotWidth / (double)nTicks);
-                canvas.DrawLine(px, margin + plotHeight, px, margin + plotHeight + 4, axisPaint);
-                canvas.DrawText(Fmt(v), px - 15, margin + plotHeight + 16, textPaint);
+                canvas.DrawLine(px, margin + plotHeight, px, margin + plotHeight + 4 * dpr, axisPaint);
+                canvas.DrawText(Fmt(v), px - 15 * dpr, margin + plotHeight + 16 * dpr, textPaint);
             }
             for (int t = 0; t <= nTicks; t++)
             {
                 double v = ymin + t * dy / nTicks;
                 float py = margin + plotHeight - (float)(t * plotHeight / (double)nTicks);
-                canvas.DrawLine(margin - 4, py, margin, py, axisPaint);
-                canvas.DrawText(Fmt(v), 2, py + 4, textPaint);
+                canvas.DrawLine(margin - 4 * dpr, py, margin, py, axisPaint);
+                canvas.DrawText(Fmt(v), 2 * dpr, py + 4 * dpr, textPaint);
             }
 
             // Dual legend SIDE BY SIDE: Legend1 | Legend2
-            int lx1 = imgWidth - legendWidth + 2;
-            int lx2 = lx1 + 35;
-            int ly = margin, lh = plotHeight, lw = 16;
+            int lx1 = imgWidth - legendWidth + 2 * dpr;
+            int lx2 = lx1 + 35 * dpr;
+            int ly = margin, lh = plotHeight, lw = 16 * dpr;
             float stripH = (float)lh / NBands;
-            using var labelPaint = new SKPaint { Color = SKColors.DarkBlue, TextSize = 8, IsAntialias = true, FakeBoldText = true };
-            using var legBorder = new SKPaint { Color = SKColors.Black, StrokeWidth = 1, Style = SKPaintStyle.Stroke };
-            using var legText = new SKPaint { Color = SKColors.Black, TextSize = 8, IsAntialias = true };
+            using var labelPaint = new SKPaint { Color = SKColors.DarkBlue, TextSize = 8 * dpr, IsAntialias = true, FakeBoldText = true };
+            using var legBorder = new SKPaint { Color = SKColors.Black, StrokeWidth = 1 * dpr, Style = SKPaintStyle.Stroke };
+            using var legText = new SKPaint { Color = SKColors.Black, TextSize = 8 * dpr, IsAntialias = true };
 
             // Legend 1 (left)
-            canvas.DrawText("Zap1", lx1, ly - 3, labelPaint);
+            canvas.DrawText("Zap1", lx1, ly - 3 * dpr, labelPaint);
             for (int c = 0; c < NBands; c++)
             {
                 double t = 1.0 - (double)c / (NBands - 1);
@@ -537,11 +602,11 @@ namespace Calcpad.Core
                 canvas.DrawRect(lx1, ly + c * stripH, lw, stripH + 1, p);
             }
             canvas.DrawRect(lx1, ly, lw, lh, legBorder);
-            canvas.DrawText(Fmt(vmax1), lx1 - 2, ly - 12, legText);
-            canvas.DrawText(Fmt(vmin1), lx1 - 2, ly + lh + 10, legText);
+            canvas.DrawText(Fmt(vmax1), lx1 - 2 * dpr, ly - 12 * dpr, legText);
+            canvas.DrawText(Fmt(vmin1), lx1 - 2 * dpr, ly + lh + 10 * dpr, legText);
 
             // Legend 2 (right)
-            canvas.DrawText("Zap2", lx2, ly - 3, labelPaint);
+            canvas.DrawText("Zap2", lx2, ly - 3 * dpr, labelPaint);
             for (int c = 0; c < NBands; c++)
             {
                 double t = 1.0 - (double)c / (NBands - 1);
@@ -550,8 +615,8 @@ namespace Calcpad.Core
                 canvas.DrawRect(lx2, ly + c * stripH, lw, stripH + 1, p);
             }
             canvas.DrawRect(lx2, ly, lw, lh, legBorder);
-            canvas.DrawText(Fmt(vmax2), lx2 + lw + 2, ly + 7, legText);
-            canvas.DrawText(Fmt(vmin2), lx2 + lw + 2, ly + lh, legText);
+            canvas.DrawText(Fmt(vmax2), lx2 + lw + 2 * dpr, ly + 7 * dpr, legText);
+            canvas.DrawText(Fmt(vmin2), lx2 + lw + 2 * dpr, ly + lh, legText);
         }
 
         private static string BitmapToHtml(SKBitmap bitmap, int w, int h)
@@ -559,7 +624,13 @@ namespace Calcpad.Core
             using var image = SKImage.FromBitmap(bitmap);
             using var data = image.Encode(SKEncodedImageFormat.Png, 90);
             var base64 = Convert.ToBase64String(data.ToArray());
-            return $"<img class=\"plot\" src=\"data:image/png;base64,{base64}\" alt=\"PlotMap\" style=\"width:{w}px;height:{h}px;\">";
+            // Emit only `width` in pt (height auto from PNG aspect ratio) — matches
+            // exactly how $Map / MapPlotter emits its image. Setting both width and
+            // height forces an explicit aspect that may not match the PNG, and the
+            // image ends up visually narrower than $Map for the same logical
+            // PlotWidth. With only width, the browser scales the PNG keeping its
+            // intrinsic aspect, identical to the $Map reference.
+            return $"<img class=\"plot\" src=\"data:image/png;base64,{base64}\" alt=\"PlotMap\" style=\"width:{w}pt;\">";
         }
 
         /// <summary>Continuous Rainbow for vertex interpolation (no banding)</summary>
@@ -592,6 +663,7 @@ namespace Calcpad.Core
         private class FuncRegion
         {
             public double X0, X1, Y0, Y1;
+            public Unit XUnits, YUnits;     // units of the range; applied to ParamX/Y when evaluating
             public int Nx, Ny;
             public double[,] Grid;
             public double Min = double.MaxValue, Max = double.MinValue;
@@ -618,10 +690,31 @@ namespace Calcpad.Core
             if (parts[0] == null || parts[1] == null) return null;
 
             var reg = new FuncRegion();
-            Parser.Parse(parts[2]); reg.X0 = Parser.CalculateReal();
-            Parser.Parse(parts[3]); reg.X1 = Parser.CalculateReal();
-            Parser.Parse(parts[5]); reg.Y0 = Parser.CalculateReal();
-            Parser.Parse(parts[6]); reg.Y1 = Parser.CalculateReal();
+            // Parse range bounds; capture units so we can re-apply them when
+            // evaluating the function at each grid point. Matches $Map's
+            // lenient policy: if one side is 0 (unitless) and the other has
+            // units, adopt the unit'd side for the whole range.
+            Parser.Parse(parts[2]); reg.X0 = Parser.CalculateReal(); var ux0 = Parser.Units;
+            Parser.Parse(parts[3]); reg.X1 = Parser.CalculateReal(); var ux1 = Parser.Units;
+            Parser.Parse(parts[5]); reg.Y0 = Parser.CalculateReal(); var uy0 = Parser.Units;
+            Parser.Parse(parts[6]); reg.Y1 = Parser.CalculateReal(); var uy1 = Parser.Units;
+
+            // X axis: adopt non-null side; reconcile units.
+            if (ux0 is null && ux1 is not null) reg.XUnits = ux1;
+            else if (ux0 is not null && ux1 is null) reg.XUnits = ux0;
+            else if (ux0 is not null && ux1 is not null && ux0.IsConsistent(ux1))
+            {
+                reg.XUnits = ux0;
+                reg.X1 *= ux1.ConvertTo(ux0);
+            }
+            // Y axis
+            if (uy0 is null && uy1 is not null) reg.YUnits = uy1;
+            else if (uy0 is not null && uy1 is null) reg.YUnits = uy0;
+            else if (uy0 is not null && uy1 is not null && uy0.IsConsistent(uy1))
+            {
+                reg.YUnits = uy0;
+                reg.Y1 *= uy1.ConvertTo(uy0);
+            }
 
             ReadOnlySpan<Parameter> parameters = [new(parts[1].Trim()), new(parts[4].Trim())];
             reg.CompiledFunc = Parser.Compile(parts[0], parameters);
@@ -646,11 +739,19 @@ namespace Calcpad.Core
             for (int j = 0; j < reg.Ny; j++)
             {
                 double y = reg.Y0 + (j + 0.5) * dys;
-                reg.ParamY.Variable.SetNumber(y);
+                // Assign value with the captured range units so the function under
+                // $PlotMap sees x/y with their intended physical units.
+                if (reg.YUnits is not null)
+                    reg.ParamY.Variable.Assign(new RealValue(y, reg.YUnits));
+                else
+                    reg.ParamY.Variable.SetNumber(y);
                 for (int i = 0; i < reg.Nx; i++)
                 {
                     double x = reg.X0 + (i + 0.5) * dxs;
-                    reg.ParamX.Variable.SetNumber(x);
+                    if (reg.XUnits is not null)
+                        reg.ParamX.Variable.Assign(new RealValue(x, reg.XUnits));
+                    else
+                        reg.ParamX.Variable.SetNumber(x);
                     try
                     {
                         var result = reg.CompiledFunc();

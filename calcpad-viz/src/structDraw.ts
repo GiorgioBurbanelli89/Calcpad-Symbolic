@@ -7,11 +7,14 @@ export interface StructDrawData {
 }
 
 export interface StructElement {
-  type: "spring" | "bar" | "beam" | "node" | "support" | "force" | "moment" | "label" | "dim";
+  type: "spring" | "bar" | "beam" | "damper" | "mass" | "wall"
+    | "node" | "support" | "force" | "moment" | "label" | "dim";
   x1?: number; y1?: number;
   x2?: number; y2?: number;
   x?: number; y?: number;
   value?: number;
+  size?: number;        // for "mass" — square side in world units
+  side?: "left" | "right";  // for "wall" — which side gets hatches
   text?: string;
   color?: string;
   supportType?: "pin" | "fixed" | "roller";
@@ -108,6 +111,37 @@ export function structDraw(containerId: string, data: StructDrawData): void {
           const my = (ty(el.y1!) + ty(el.y2!)) / 2 - 18;
           ctx.fillText(el.text, mx, my);
         }
+        break;
+
+      case "damper":
+        drawDamper(ctx, tx(el.x1!), ty(el.y1!), tx(el.x2!), ty(el.y2!), color);
+        if (el.text) {
+          ctx.font = "italic 12px sans-serif";
+          ctx.fillStyle = "#666";
+          ctx.textAlign = "center";
+          const mx = (tx(el.x1!) + tx(el.x2!)) / 2;
+          const my = (ty(el.y1!) + ty(el.y2!)) / 2 - 22;
+          ctx.fillText(el.text, mx, my);
+        }
+        break;
+
+      case "mass": {
+        const cx = tx(el.x!);
+        const cy = ty(el.y!);
+        const size = (el.size ?? 0.5) * sc;
+        drawMass(ctx, cx, cy, size, color);
+        if (el.text) {
+          ctx.font = "bold 18px sans-serif";
+          ctx.fillStyle = "#222";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(el.text, cx, cy);
+        }
+        break;
+      }
+
+      case "wall":
+        drawWall(ctx, tx(el.x!), ty(el.y1!), ty(el.y2!), el.side || "left", color);
         break;
 
       case "node":
@@ -308,8 +342,9 @@ function drawSupport(ctx: CanvasRenderingContext2D, x: number, y: number, type: 
 }
 
 function drawForce(ctx: CanvasRenderingContext2D, x: number, y: number, dir: string, value: number, text: string, sc: number) {
-  const arrowLen = Math.max(30, sc * 0.3);
-  const headLen = 10;
+  const arrowLen = Math.max(40, sc * 0.4);
+  const headLen = 12;
+  const offset = 6;        // separación entre el punto (x,y) y la cola, para que la flecha NO toque al elemento aplicado
   let dx = 0, dy = 0;
 
   switch (dir) {
@@ -319,32 +354,45 @@ function drawForce(ctx: CanvasRenderingContext2D, x: number, y: number, dir: str
     case "left": dx = -arrowLen; break;
   }
 
-  // Arrow line (from tail to tip at node)
-  const tailX = x - dx, tailY = y - dy;
+  // Convención: la flecha SALE desde (x,y) hacia la dirección indicada.
+  // Esto evita que la flecha invada el rectángulo de la masa cuando la
+  // fuerza está aplicada al borde derecho.
+  const ux = dx === 0 ? 0 : Math.sign(dx);
+  const uy = dy === 0 ? 0 : Math.sign(dy);
+  const tailX = x + ux * offset;
+  const tailY = y + uy * offset;
+  const tipX = x + dx + ux * offset;
+  const tipY = y + dy + uy * offset;
+
   ctx.beginPath();
   ctx.moveTo(tailX, tailY);
-  ctx.lineTo(x, y);
+  ctx.lineTo(tipX, tipY);
   ctx.strokeStyle = "#e44";
   ctx.lineWidth = 2.5;
   ctx.stroke();
 
-  // Arrowhead
+  // Arrowhead en la punta (tip)
   const angle = Math.atan2(dy, dx);
   ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(x - headLen * Math.cos(angle - 0.4), y - headLen * Math.sin(angle - 0.4));
-  ctx.lineTo(x - headLen * Math.cos(angle + 0.4), y - headLen * Math.sin(angle + 0.4));
+  ctx.moveTo(tipX, tipY);
+  ctx.lineTo(tipX - headLen * Math.cos(angle - 0.4), tipY - headLen * Math.sin(angle - 0.4));
+  ctx.lineTo(tipX - headLen * Math.cos(angle + 0.4), tipY - headLen * Math.sin(angle + 0.4));
   ctx.closePath();
   ctx.fillStyle = "#e44";
   ctx.fill();
 
-  // Label
+  // Label encima/junto a la punta de la flecha
   if (text) {
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = "bold 13px sans-serif";
     ctx.fillStyle = "#c33";
-    const lx = tailX + (dir === "left" ? -10 : dir === "right" ? 10 : 0);
-    const ly = tailY + (dir === "up" ? -10 : dir === "down" ? -10 : -15);
+    ctx.textAlign = (dir === "left") ? "end" : (dir === "right") ? "start" : "center";
+    ctx.textBaseline = "middle";
+    const lx = tipX + (dir === "right" ? 4 : dir === "left" ? -4 : 0);
+    const ly = tipY + (dir === "up" ? -10 : dir === "down" ? 14 : -10);
     ctx.fillText(text, lx, ly);
+    // reset
+    ctx.textAlign = "start";
+    ctx.textBaseline = "alphabetic";
   }
 }
 
@@ -420,4 +468,111 @@ function drawDimension(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2
   ctx.font = "11px sans-serif";
   ctx.fillStyle = "#555";
   ctx.fillText(text, (x1 + x2) / 2, (dy1 + dy2) / 2 - 8);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// drawDamper — amortiguador (dashpot) tipo cilindro
+// Dibujo: línea horizontal + cilindro con pistón en el medio
+// ──────────────────────────────────────────────────────────────────────────
+function drawDamper(ctx: CanvasRenderingContext2D,
+                    x1: number, y1: number, x2: number, y2: number,
+                    color: string) {
+  const len = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  const cylLen = len * 0.4;
+  const cylH = 12;
+  const cylStart = (len - cylLen) / 2;
+
+  ctx.save();
+  ctx.translate(x1, y1);
+  ctx.rotate(angle);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+
+  // línea de entrada
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(cylStart + cylLen * 0.4, 0);
+  ctx.stroke();
+
+  // cilindro (3 lados, abierto a la derecha)
+  ctx.beginPath();
+  ctx.moveTo(cylStart, -cylH);
+  ctx.lineTo(cylStart, cylH);
+  ctx.moveTo(cylStart, -cylH);
+  ctx.lineTo(cylStart + cylLen, -cylH);
+  ctx.moveTo(cylStart, cylH);
+  ctx.lineTo(cylStart + cylLen, cylH);
+  ctx.stroke();
+
+  // pistón vertical (línea gruesa)
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(cylStart + cylLen * 0.4, -cylH * 0.85);
+  ctx.lineTo(cylStart + cylLen * 0.4, cylH * 0.85);
+  ctx.stroke();
+
+  // línea de salida
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cylStart + cylLen * 0.4, 0);
+  ctx.lineTo(len, 0);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// drawMass — rectángulo con borde grueso para representar una masa
+// (cx, cy) es el centro del rectángulo. size es el lado en píxeles del canvas.
+// Asegura un tamaño mínimo legible incluso si la escala mundial es chica.
+// ──────────────────────────────────────────────────────────────────────────
+function drawMass(ctx: CanvasRenderingContext2D,
+                  cx: number, cy: number, size: number, color: string) {
+  const half = Math.max(size, 40) / 2;   // mínimo 80px para que la "m" se vea
+  // Fondo amarillo cálido (estilo libro de texto)
+  ctx.fillStyle = "#ffe699";
+  ctx.fillRect(cx - half, cy - half, half * 2, half * 2);
+  // Borde
+  ctx.strokeStyle = color && color !== "#333" ? color : "#222";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(cx - half, cy - half, half * 2, half * 2);
+  // Diagonal sutil que indica "cuerpo rígido" (estilo SAP/ETABS)
+  ctx.strokeStyle = "#999";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx - half, cy - half);
+  ctx.lineTo(cx + half, cy + half);
+  ctx.moveTo(cx + half, cy - half);
+  ctx.lineTo(cx - half, cy + half);
+  ctx.stroke();
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// drawWall — pared con hatches (líneas inclinadas) en un lado
+// (x, y1..y2) define la pared vertical. side="left" pone hatches a la izquierda.
+// ──────────────────────────────────────────────────────────────────────────
+function drawWall(ctx: CanvasRenderingContext2D,
+                  x: number, y1: number, y2: number,
+                  side: "left" | "right", color: string) {
+  const ymin = Math.min(y1, y2);
+  const ymax = Math.max(y1, y2);
+  ctx.strokeStyle = color || "#222";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(x, ymin);
+  ctx.lineTo(x, ymax);
+  ctx.stroke();
+
+  // hatches inclinados
+  ctx.lineWidth = 1;
+  const sign = side === "right" ? 1 : -1;
+  const step = 12;
+  const len = 12;
+  for (let y = ymin; y <= ymax; y += step) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + sign * len, y + len);
+    ctx.stroke();
+  }
 }

@@ -32,6 +32,44 @@ namespace Calcpad.Core
             internal SymResult(string error, bool isError) { Parts = null; Error = error; }
         }
 
+        // Does this raw expression look like one of the symbolic/CAS operations
+        // dispatched by Process()? Used by cell-level renderers (e.g. #blk) to
+        // decide whether to route a cell through the symbolic pipeline instead
+        // of the standard numeric parser.
+        internal static bool IsSymbolicOp(string command)
+        {
+            if (string.IsNullOrWhiteSpace(command)) return false;
+            var s = command.TrimStart();
+            var pi = s.IndexOf('(');
+            if (pi <= 0) return false;
+            var op = s[..pi].Trim().ToLowerInvariant();
+            return op switch
+            {
+                "diff" or "derivative" or
+                "integrate" or "integral" or "int" or
+                "simplify" or "simp" or "expand" or "factor" or "solve" or
+                "limit" or "lim" or "series" or "taylor" or
+                "eval" or "subs" or "substitute" or
+                "jacobian" or "jac" or
+                "gradient" or "grad" or "nabla" or
+                "divergence" or "div" or "curl" or "rot" or
+                "laplacian" or "lap" or "hessian" or "hess" or
+                "pdiff" or "partial" or
+                "det" or "determinant" or "inv" or "inverse" or
+                "eigen" or "eigenvalues" or "transp" or "transpose" or
+                "laplace" or "lap_t" or "ilaplace" or "ilt" or
+                "ode" or "ode1" or "ode2" or
+                "strain" or "epsilon" or "stress" or "sigma" or
+                "voigt" or "invariants" or "inv_t" or
+                "dyadic" or "outer" or
+                "sum" or "product" or "prod" or
+                "parfrac" or "partfrac" or "coeffs" or "coeff" or "collect" or
+                "fourier" or "invfourier" or "ifourier" or
+                "combine" or "confrac" or "cf" or "assume" => true,
+                _ => false
+            };
+        }
+
         internal static SymResult Process(string command)
         {
             try
@@ -54,6 +92,19 @@ namespace Calcpad.Core
                 }
 
                 var (op, args) = ParseCommand(trimmed);
+
+                // AngouriMath's parser doesn't understand Calcpad's diff(x;y;n)
+                // with semicolons. Resolve each nested diff(...) inside every
+                // arg using safe in-process Differentiate. The top-level "diff"
+                // op handler (Diff) still receives raw args and uses the proper
+                // rendering path.
+                if (!op.Equals("diff", StringComparison.OrdinalIgnoreCase) &&
+                    !op.Equals("derivative", StringComparison.OrdinalIgnoreCase))
+                {
+                    for (int i = 0; i < args.Length; i++)
+                        args[i] = ExpandNestedDiffCalls(args[i]);
+                }
+
                 return op.ToLowerInvariant() switch
                 {
                     "diff" or "derivative" => Diff(args),
@@ -91,6 +142,16 @@ namespace Calcpad.Core
                     "voigt" => Voigt(args),
                     "invariants" or "inv_t" => TensorInvariants(args),
                     "dyadic" or "outer" => Dyadic(args),
+                    "sum" => SumOp(args),
+                    "product" or "prod" => ProductOp(args),
+                    "parfrac" or "partfrac" => Parfrac(args),
+                    "coeffs" or "coeff" => Coeffs(args),
+                    "collect" => Collect(args),
+                    "fourier" => FourierOp(args),
+                    "invfourier" or "ifourier" => InvFourierOp(args),
+                    "combine" => CombineOp(args),
+                    "confrac" or "cf" => Confrac(args),
+                    "assume" => Assume(args),
                     _ => Expression(command.Trim())
                 };
             }
@@ -139,10 +200,62 @@ namespace Calcpad.Core
 
         // ─── Operations ────────────────────────────────────────────
 
+        // Recursively resolve nested symbolic function calls in an expression
+        // string and return the actual AngouriMath Entity. Allows callers like
+        // diff(diff(f; x); x) to compute correctly instead of failing because
+        // the inner `diff(...)` is not AngouriMath syntax.
+        private static Entity ParseExpressionResolvingNested(string s)
+        {
+            var t = s.Trim();
+            if (string.IsNullOrEmpty(t)) return t;
+
+            // Cheap prefix dispatch — only inspect strings that look like a call
+            var pi = t.IndexOf('(');
+            if (pi <= 0 || !t.EndsWith(")"))
+                return t;
+            var op = t[..pi].Trim().ToLowerInvariant();
+            var ci = FindClose(t, pi);
+            if (ci != t.Length - 1)
+                return t; // not a single wrapping call (e.g. "diff(...) + 1")
+            var inner = t[(pi + 1)..ci];
+            var args = Split(inner);
+
+            switch (op)
+            {
+                case "diff":
+                case "derivative":
+                {
+                    if (args.Length < 2) return t;
+                    var e = ParseExpressionResolvingNested(args[0]);
+                    var v = Var(args[1]);
+                    int n = args.Length >= 3 && int.TryParse(args[2], out var nn) ? nn : 1;
+                    Entity r = e;
+                    for (int i = 0; i < n; i++) r = r.Differentiate(v);
+                    return r.Simplify();
+                }
+                case "simplify":
+                case "simp":
+                    return args.Length >= 1
+                        ? ParseExpressionResolvingNested(args[0]).Simplify()
+                        : (Entity)t;
+                case "expand":
+                    return args.Length >= 1
+                        ? ParseExpressionResolvingNested(args[0]).Expand()
+                        : (Entity)t;
+                case "factor":
+                    return args.Length >= 1
+                        ? ParseExpressionResolvingNested(args[0]).Factorize()
+                        : (Entity)t;
+                default:
+                    return t;
+            }
+        }
+
         private static SymResult Diff(string[] a)
         {
             if (a.Length < 2) return Err("diff(expr; var)");
-            Entity e = a[0];
+            // Resolve nested symbolic calls in the body so diff(diff(...)) works
+            Entity e = ParseExpressionResolvingNested(a[0]);
             var v = Var(a[1]);
             int n = a.Length >= 3 && int.TryParse(a[2], out var nn) ? nn : 1;
             Entity r = e;
@@ -154,36 +267,172 @@ namespace Calcpad.Core
             if (n == 1) { num = "d"; den = $"d{a[1]}"; }
             else { num = $"d^{n}"; den = $"d{a[1]}^{n}"; }
 
-            return new SymResult($"{TAG_DERIV}{num}|{den}|{a[0]}", TC(r));
+            // For nested calls, show the resolved inner entity instead of the
+            // raw "diff(...)" string so the displayed body is readable.
+            var bodyStr = a[0].TrimStart().StartsWith("diff(", StringComparison.OrdinalIgnoreCase)
+                       || a[0].TrimStart().StartsWith("derivative(", StringComparison.OrdinalIgnoreCase)
+                ? e.ToString()
+                : a[0];
+            return new SymResult($"{TAG_DERIV}{num}|{den}|{bodyStr}", TC(r));
         }
 
         private static SymResult Integrate(string[] a)
         {
             if (a.Length < 2) return Err("integrate(expr; var)");
-            Entity e = a[0];
-            var v = Var(a[1]);
 
+            // AngouriMath's symbolic integrator can hang (infinite recursion) or
+            // stack-overflow on certain polynomials with symbolic parameters (e.g.
+            // Hermite shape functions with free length L). StackOverflowException
+            // is uncatchable in .NET, so we isolate each call in a child process
+            // (SymSandbox) with a hard timeout. On timeout/crash we surface a
+            // readable error instead of killing the host (WPF / CLI).
+
+            // Nested diff(...) calls inside a[0] have already been expanded in
+            // Process() before dispatch — AngouriMath in the sandbox sees pure
+            // polynomial expressions it can parse.
+            //
+            // Strategy: prefer Maxima when available — it handles polynomials
+            // with free parameters (e.g. Hermite shape functions in L) that
+            // AngouriMath gets stuck on, and is just as fast for trivial ones.
+            // Fall back to the AngouriMath sandbox otherwise.
+            bool preferMaxima = MaximaRunner.IsAvailable();
             if (a.Length >= 4)
             {
                 // Definite: ∫_a^b f dx
-                Entity lo = a[2], hi = a[3];
-                var ad = e.Integrate(v).Simplify();
-                var def = (ad.Substitute(v, hi) - ad.Substitute(v, lo)).Simplify();
-                // TAG_NARY: symbol|sub|sup|bodyExpr
                 var label = $"{TAG_NARY}\u222B|{a[2]}|{a[3]}|{a[0]}*d{a[1]}";
-                return new SymResult(label, TC(def));
+                if (preferMaxima)
+                {
+                    var mx = MaximaRunner.IntegrateDefinite(a[0], a[1], a[2], a[3]);
+                    if (mx.ok) return new SymResult(label, NormalizeAxiom(mx.output));
+                }
+                // FriCAS/Axiom: el mismo integrador (Risch) que usa Mathcad.
+                if (AxiomRunner.IsAvailable())
+                {
+                    var ax = AxiomRunner.IntegrateDefinite(a[0], a[1], a[2], a[3]);
+                    if (ax.ok) return new SymResult(label, NormalizeAxiom(ax.output));
+                }
+                var defRes = SandboxRunner.Run(
+                    new[] { "integrate_def", a[1], a[2], a[3] },
+                    a[0]);
+                if (defRes.ok) return new SymResult(label, defRes.output);
+                return new SymResult(label, $"<span class=\"err\">integrate: {defRes.output}</span>");
             }
             else
             {
-                var r = e.Integrate(v).Simplify();
                 var label = $"{TAG_NARY}\u222B||0|{a[0]}*d{a[1]}";
-                var rs = TC(r);
-                // AngouriMath may already include integration constant 'C'
-                // Check for C as standalone variable (not part of cos, etc.)
+                string rs = null;
+                string fallbackErr = null;
+                if (preferMaxima)
+                {
+                    var mx = MaximaRunner.Integrate(a[0], a[1]);
+                    if (mx.ok) rs = NormalizeAxiom(mx.output);
+                    else fallbackErr = mx.output;
+                }
+                if (rs == null && AxiomRunner.IsAvailable())
+                {
+                    // FriCAS/Axiom: integrador fuerte (resuelve casos con erf, logs
+                    // complejos que AngouriMath no). Mismo motor que Mathcad.
+                    var ax = AxiomRunner.Integrate(a[0], a[1]);
+                    if (ax.ok) rs = NormalizeAxiom(ax.output);
+                }
+                if (rs == null)
+                {
+                    var res = SandboxRunner.Run(new[] { "integrate", a[1] }, a[0]);
+                    if (!res.ok)
+                    {
+                        var msg = preferMaxima
+                            ? $"integrate: {res.output} (maxima: {fallbackErr})"
+                            : $"integrate: {res.output}";
+                        return new SymResult(label, $"<span class=\"err\">{msg}</span>");
+                    }
+                    rs = res.output;
+                }
+                // Integration constant 'C' — only append if not already present
                 bool hasC = System.Text.RegularExpressions.Regex.IsMatch(rs, @"(?<![a-zA-Z])C(?![a-zA-Z])");
                 if (!hasC) rs += " + C";
                 return new SymResult(label, rs);
             }
+        }
+
+        // Convierte la notación de FriCAS/Axiom a la de Calcpad:
+        //  - `log(` de FriCAS es logaritmo NATURAL → `ln(` en Calcpad
+        //  - `pi()` → `pi`  ·  `%e` → `e`  ·  espacios sobrantes
+        private static string NormalizeAxiom(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            s = System.Text.RegularExpressions.Regex.Replace(s, @"\blog\s*\(", "ln(");
+            s = s.Replace("pi()", "pi").Replace("%e", "e").Replace("%pi", "pi");
+            s = System.Text.RegularExpressions.Regex.Replace(s, @"\bpi\b", "π");
+            s = System.Text.RegularExpressions.Regex.Replace(s, @"\bminf\b", "-∞");
+            s = System.Text.RegularExpressions.Regex.Replace(s, @"\binf\b", "∞");
+            return s.Trim();
+        }
+
+        // Replace each diff(expr; var; n) call with its computed derivative so
+        // AngouriMath's parser (which only understands commas) doesn't choke on
+        // semicolons. Differentiation itself is safe and always terminates.
+        private static string ExpandNestedDiffCalls(string s)
+        {
+            if (s.IndexOf("diff(", StringComparison.Ordinal) < 0) return s;
+
+            var sb = new System.Text.StringBuilder();
+            int pos = 0;
+            while (pos < s.Length)
+            {
+                int idx = s.IndexOf("diff(", pos, StringComparison.Ordinal);
+                if (idx < 0) { sb.Append(s, pos, s.Length - pos); break; }
+                // Reject matches that are part of a longer identifier (pdiff, Xdiff, …).
+                if (idx > 0 && (char.IsLetterOrDigit(s[idx - 1]) || s[idx - 1] == '_'))
+                {
+                    sb.Append(s, pos, idx - pos + 5);
+                    pos = idx + 5;
+                    continue;
+                }
+                sb.Append(s, pos, idx - pos);
+
+                int open = idx + 4; // index of '('
+                int depth = 1, ci = open + 1;
+                while (ci < s.Length && depth > 0)
+                {
+                    if (s[ci] == '(') depth++;
+                    else if (s[ci] == ')') depth--;
+                    if (depth == 0) break;
+                    ci++;
+                }
+                if (ci >= s.Length)
+                {
+                    sb.Append(s, idx, s.Length - idx);
+                    break;
+                }
+                var inner = s[(open + 1)..ci];
+                var parts = Split(inner);
+                if (parts.Length >= 2)
+                {
+                    try
+                    {
+                        // Inner expr may itself contain diff — expand recursively.
+                        var innerExpr = ExpandNestedDiffCalls(parts[0].Trim());
+                        Entity e = innerExpr;
+                        var v = Var(parts[1].Trim());
+                        int n = parts.Length >= 3 && int.TryParse(parts[2].Trim(), out var nn) ? nn : 1;
+                        for (int i = 0; i < n; i++) e = e.Differentiate(v);
+                        e = e.Simplify();
+                        sb.Append('(').Append(TC(e)).Append(')');
+                    }
+                    catch
+                    {
+                        // Fall back to raw text if differentiation fails; sandbox
+                        // will then surface a parse error for that line.
+                        sb.Append(s, idx, ci - idx + 1);
+                    }
+                }
+                else
+                {
+                    sb.Append(s, idx, ci - idx + 1);
+                }
+                pos = ci + 1;
+            }
+            return sb.ToString();
         }
 
         private static SymResult Simplify(string[] a)
@@ -201,25 +450,73 @@ namespace Calcpad.Core
         private static SymResult Factor(string[] a)
         {
             if (a.Length < 1) return Err("factor(expr)");
+            // Maxima factoriza de verdad (AngouriMath suele devolver la entrada sin tocar).
+            if (MaximaRunner.IsAvailable())
+            {
+                var mx = MaximaRunner.Factor(ToMaxima(a[0]));
+                if (mx.ok && mx.output != a[0]) return new SymResult(a[0], NormalizeAxiom(mx.output));
+            }
             return new SymResult(a[0], TC(((Entity)a[0]).Factorize().Simplify()));
         }
 
         private static SymResult Solve(string[] a)
         {
             if (a.Length < 2) return Err("solve(expr; var)");
+
+            // Preferir Maxima: DESPEJA de fórmulas (A = π·r²  →  r = √(A/π)) y es
+            // mucho más robusto que AngouriMath para ecuaciones con parámetros.
+            if (MaximaRunner.IsAvailable())
+            {
+                var mx = MaximaRunner.Solve(ToMaxima(a[0]), a[1]);
+                if (mx.ok && mx.output.Contains('='))
+                {
+                    var inner = mx.output.Trim();
+                    if (inner.StartsWith("[")) inner = inner.Trim('[', ']');
+                    var solTag = $"{TAG_SOLVE}{a[1]}";
+                    foreach (var part in SplitTopComma(inner))
+                    {
+                        var eq = part.Trim();
+                        int ei = eq.IndexOf('=');
+                        solTag += "|" + NormalizeAxiom(ei >= 0 ? eq[(ei + 1)..].Trim() : eq);
+                    }
+                    // display: si la entrada es una ecuación "lhs = rhs", mostrarla así
+                    int di = a[0].IndexOf('=');
+                    return di >= 0
+                        ? new SymResult(a[0][..di].Trim(), a[0][(di + 1)..].Trim(), solTag)
+                        : new SymResult(a[0], "0", solTag);
+                }
+            }
+
+            // Fallback AngouriMath (forma expr = 0)
             Entity e = a[0];
             var v = Var(a[1]);
             var sol = e.SolveEquation(v);
-
-            // TAG_SOLVE: var|val1|val2|...
             var solStr = TC(sol);
             var vals = solStr.Trim('{', '}', ' ').Split(',');
-            var solTag = $"{TAG_SOLVE}{a[1]}";
+            var solTagAm = $"{TAG_SOLVE}{a[1]}";
             foreach (var val in vals)
-                solTag += "|" + val.Trim();
+                solTagAm += "|" + val.Trim();
+            return new SymResult(a[0], "0", solTagAm);
+        }
 
-            // 3 parts: expression = 0 → solution set
-            return new SymResult(a[0], "0", solTag);
+        // Convierte notación Calcpad → Maxima para enviar al solver (π→%pi).
+        private static string ToMaxima(string s)
+            => s.Replace("π", "%pi");
+
+        // Divide por comas de nivel superior (respeta paréntesis/corchetes).
+        private static System.Collections.Generic.List<string> SplitTopComma(string s)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            int depth = 0, start = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                char c = s[i];
+                if (c is '(' or '[') depth++;
+                else if (c is ')' or ']') depth--;
+                else if (c == ',' && depth == 0) { parts.Add(s[start..i]); start = i + 1; }
+            }
+            parts.Add(s[start..]);
+            return parts;
         }
 
         private static SymResult Limit(string[] a)
@@ -260,6 +557,114 @@ namespace Calcpad.Core
         {
             if (a.Length < 1) return Err("eval(expr)");
             return new SymResult(a[0], TC(((Entity)a[0]).EvalNumerical()));
+        }
+
+        // ─── Operaciones de Mathcad agregadas (vía Maxima) ───────────────
+
+        // Muestra de límites: inf/minf → ∞/-∞
+        private static string Lim(string s) => s == "inf" ? "∞" : s == "minf" ? "-∞" : s;
+
+        // Σ en forma cerrada:  sum(expr; var; lo; hi)
+        private static SymResult SumOp(string[] a)
+        {
+            if (a.Length < 4) return Err("sum(expr; var; lo; hi)");
+            if (!MaximaRunner.IsAvailable()) return Err("sum requiere Maxima");
+            var mx = MaximaRunner.Sum(a[0], a[1], a[2], a[3]);
+            if (!mx.ok) return Err("sum: " + mx.output);
+            return new SymResult($"{TAG_NARY}∑|{a[1]}={a[2]}|{Lim(a[3])}|{a[0]}", NormalizeAxiom(mx.output));
+        }
+
+        // ∏ en forma cerrada:  product(expr; var; lo; hi)
+        private static SymResult ProductOp(string[] a)
+        {
+            if (a.Length < 4) return Err("product(expr; var; lo; hi)");
+            if (!MaximaRunner.IsAvailable()) return Err("product requiere Maxima");
+            var mx = MaximaRunner.Product(a[0], a[1], a[2], a[3]);
+            if (!mx.ok) return Err("product: " + mx.output);
+            return new SymResult($"{TAG_NARY}∏|{a[1]}={a[2]}|{Lim(a[3])}|{a[0]}", NormalizeAxiom(mx.output));
+        }
+
+        // Fracciones parciales:  parfrac(expr; var)
+        private static SymResult Parfrac(string[] a)
+        {
+            if (a.Length < 2) return Err("parfrac(expr; var)");
+            if (!MaximaRunner.IsAvailable()) return Err("parfrac requiere Maxima");
+            var mx = MaximaRunner.Partfrac(a[0], a[1]);
+            if (!mx.ok) return Err("parfrac: " + mx.output);
+            return new SymResult(a[0], NormalizeAxiom(mx.output));
+        }
+
+        // Coeficientes del polinomio:  coeffs(expr; var) → [c0; c1; ...]
+        private static SymResult Coeffs(string[] a)
+        {
+            if (a.Length < 2) return Err("coeffs(expr; var)");
+            if (!MaximaRunner.IsAvailable()) return Err("coeffs requiere Maxima");
+            var mx = MaximaRunner.Coeffs(a[0], a[1]);
+            if (!mx.ok) return Err("coeffs: " + mx.output);
+            // [1,2,3] → vector Calcpad [1; 2; 3]
+            var v = NormalizeAxiom(mx.output).Trim('[', ']').Replace(",", "; ");
+            return new SymResult(a[0], $"[{v}]");
+        }
+
+        // Recolectar términos:  collect(expr; var)
+        private static SymResult Collect(string[] a)
+        {
+            if (a.Length < 2) return Err("collect(expr; var)");
+            if (!MaximaRunner.IsAvailable()) return Err("collect requiere Maxima");
+            var mx = MaximaRunner.Collect(a[0], a[1]);
+            if (!mx.ok) return Err("collect: " + mx.output);
+            return new SymResult(a[0], NormalizeAxiom(mx.output));
+        }
+
+        // Transformada de Fourier:  fourier(expr; t; w)  →  F(w)
+        private static SymResult FourierOp(string[] a)
+        {
+            if (a.Length < 3) return Err("fourier(expr; t; w)");
+            if (!MaximaRunner.IsAvailable()) return Err("fourier requiere Maxima");
+            var mx = MaximaRunner.Fourier(a[0], a[1], a[2]);
+            if (!mx.ok || mx.output.Contains("integrate")) return Err("fourier: no converge para esta f");
+            return new SymResult(a[0], NormalizeAxiom(mx.output));
+        }
+
+        // Transformada inversa de Fourier:  invfourier(expr; w; t)  →  f(t)
+        private static SymResult InvFourierOp(string[] a)
+        {
+            if (a.Length < 3) return Err("invfourier(expr; w; t)");
+            if (!MaximaRunner.IsAvailable()) return Err("invfourier requiere Maxima");
+            var mx = MaximaRunner.InvFourier(a[0], a[1], a[2]);
+            if (!mx.ok || mx.output.Contains("integrate")) return Err("invfourier: no converge");
+            return new SymResult(a[0], NormalizeAxiom(mx.output));
+        }
+
+        // Combinar sobre denominador común:  combine(expr)
+        private static SymResult CombineOp(string[] a)
+        {
+            if (a.Length < 1) return Err("combine(expr)");
+            if (!MaximaRunner.IsAvailable()) return Err("combine requiere Maxima");
+            var mx = MaximaRunner.Combine(a[0]);
+            if (!mx.ok) return Err("combine: " + mx.output);
+            return new SymResult(a[0], NormalizeAxiom(mx.output));
+        }
+
+        // Fracción continua de un número:  confrac(x)  →  [a0; a1; a2; ...]
+        private static SymResult Confrac(string[] a)
+        {
+            if (a.Length < 1) return Err("confrac(numero)");
+            if (!MaximaRunner.IsAvailable()) return Err("confrac requiere Maxima");
+            var mx = MaximaRunner.ContinuedFraction(a[0]);
+            if (!mx.ok) return Err("confrac: " + mx.output);
+            var v = NormalizeAxiom(mx.output).Trim('[', ']').Replace(",", "; ");
+            return new SymResult(a[0], $"[{v}]");
+        }
+
+        // Supuesto de dominio + simplificación:  assume(condicion; expr)
+        private static SymResult Assume(string[] a)
+        {
+            if (a.Length < 2) return Err("assume(condicion; expr)");
+            if (!MaximaRunner.IsAvailable()) return Err("assume requiere Maxima");
+            var mx = MaximaRunner.Eval($"assume({ToMaxima(a[0])})$fullratsimp(radcan({ToMaxima(a[1])}))");
+            if (!mx.ok) return Err("assume: " + mx.output);
+            return new SymResult(a[1], NormalizeAxiom(mx.output));
         }
 
         private static SymResult Substitute(string[] a)
@@ -611,10 +1016,47 @@ namespace Calcpad.Core
 
         private static SymResult Expression(string s)
         {
+            // Expressions containing a top-level '=' are definitions / equations
+            // (e.g. "N_1(x) = 1 - 3*(x/L)^2 + 2*(x/L)^3"). AngouriMath would
+            // misparse these as implicit products (N_1 * x) and return a string
+            // that Calcpad's math renderer can't lay out properly. Calcpad's own
+            // MathParser, given the whole line with '=' in it, stuffs the RHS
+            // into the subscript of the LHS. Split the two sides so the keyword
+            // renderer formats each independently and joins them with " = ".
+            int eq = FindTopLevelEquals(s);
+            if (eq >= 0)
+            {
+                var lhs = s[..eq].Trim();
+                var rhs = s[(eq + 1)..].Trim();
+                if (lhs.Length > 0 && rhs.Length > 0)
+                    return new SymResult(lhs, rhs);
+                return new SymResult(s);
+            }
+
             Entity e = s;
             var r = e.Simplify();
             var rs = TC(r);
             return rs == s ? new SymResult(s) : new SymResult(s, rs);
+        }
+
+        // Returns the index of the first top-level '=' that is not part of a
+        // comparison operator (==, <=, >=, !=), or -1 if none.
+        private static int FindTopLevelEquals(string s)
+        {
+            int d = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                var c = s[i];
+                if (c is '(' or '[' or '{') d++;
+                else if (c is ')' or ']' or '}') d--;
+                else if (c == '=' && d == 0)
+                {
+                    if (i + 1 < s.Length && s[i + 1] == '=') { i++; continue; }
+                    if (i > 0 && (s[i - 1] == '<' || s[i - 1] == '>' || s[i - 1] == '!' || s[i - 1] == '=')) continue;
+                    return i;
+                }
+            }
+            return -1;
         }
 
         // ─── Vector Calculus / FEM operators ───────────────────────

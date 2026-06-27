@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/partials/head.html"></div>
+  <title>Ejemplo Moita — Placa isótropa validación</title>
+  <style>
+    .theory-frame { width: 100%; height: 75vh; border: 1px solid var(--color-border); border-radius: var(--radius); }
+    .cite { background: #fffbea; border-left: 3px solid #f59e0b; padding: 0.6rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+    .result-box { background: #ecfdf5; border-left: 3px solid #10b981; padding: 0.8rem 1.2rem; margin: 1rem 0; }
+  </style>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+  <section class="block">
+    <div class="container">
+      <h1>Ejemplo Moita — Placa isótropa cuadrada, validación</h1>
+
+      <div class="cite">
+        <strong>Fuente:</strong> Moita, J. S. — <em>Método dos Elementos Finitos</em>, §APLICACIONES "Placa quadrada isótropica simplesmente apoiada", p. 94-95.
+      </div>
+
+      <h2>Datos del problema</h2>
+      <ul>
+        <li>Geometría: <em>a = b = 1.0 m</em>, espesor <em>h = 0.02 m</em></li>
+        <li>Material: acero <em>E = 200 GPa</em>, <em>ν = 0.3</em>, <em>ρ = 7850 kg/m³</em></li>
+        <li>Carga: uniforme <em>q = 50 000 N/m²</em></li>
+        <li>Apoyos: simples en los 4 bordes</li>
+      </ul>
+
+      <h2>Teoría aplicada — Principio de Hamilton</h2>
+      <p>Para análisis dinámico, del principio de Hamilton resulta (Moita p. 92):</p>
+      <p style="font-family: 'Georgia Pro', serif; background: var(--color-bg-shaded); padding: 0.8rem; border-left: 3px solid var(--color-accent)">
+        <strong>[K<sub>L</sub><sup>e</sup> − ω² M<sup>e</sup>] {a<sup>e</sup>} = 0</strong>
+      </p>
+      <p>Para vibraciones libres armónicas (<em>F<sub>ext</sub> = 0</em>, <em>ä<sup>e</sup> = −ω² a<sup>e</sup></em>). Los autovalores dan las frecuencias naturales <em>ω</em> y los autovectores los modos de vibración.</p>
+
+      <h2>Fórmula analítica Navier (placa cuadrada apoyada)</h2>
+      <p style="font-family: 'Georgia Pro', serif;">
+        ω<sub>mn</sub> = π² (m²/a² + n²/a²) √(D / ρh)&nbsp;&nbsp;[rad/s]
+      </p>
+
+      <h2>Reproducción con el parser de Calcpad-Symbolic</h2>
+      <p>El script calcula:</p>
+      <ol>
+        <li>Rigidez a flexión <em>D</em></li>
+        <li>Flecha central con serie de Navier (9 términos impares)</li>
+        <li>Tensión máxima de flexión</li>
+        <li>Frecuencias naturales (modos 1-5)</li>
+      </ol>
+
+      <iframe class="theory-frame" style="height:90vh" src="/editor/?script=/teoria/placas/scripts/ejemplo_moita_placa_isotropa.cpd" title="Editor TS — script + output"></iframe>
+
+      <h2>Tabla de comparación</h2>
+
+      <h3>Análisis estático</h3>
+      <table class="specs">
+        <tr><th>Resultado</th><th>Moita MEF</th><th>Solución teórica</th><th>Calcpad-Symbolic</th></tr>
+        <tr><td>Flecha central W<sub>c</sub></td><td>1.382 mm</td><td>1.384 mm</td><td><strong>≈ 1.38 mm</strong></td></tr>
+        <tr><td>Tensión máxima σ</td><td>±35.934 MPa</td><td>±35.9 MPa</td><td><strong>≈ 35.9 MPa</strong></td></tr>
+      </table>
+
+      <h3>Análisis modal — primeras 5 frecuencias (Hz)</h3>
+      <table class="specs">
+        <tr><th>Modo</th><th>(m, n)</th><th>Moita MEF</th><th>Analítica</th><th>Calcpad-Symbolic</th></tr>
+        <tr><td>1</td><td>(1, 1)</td><td>598.9</td><td>603.0</td><td>≈ 603</td></tr>
+        <tr><td>2</td><td>(1, 2)</td><td>1488.8</td><td>1507.5</td><td>≈ 1508</td></tr>
+        <tr><td>3</td><td>(2, 1)</td><td>1488.8</td><td>1507.5</td><td>≈ 1508</td></tr>
+        <tr><td>4</td><td>(2, 2)</td><td>2352.5</td><td>2412.0</td><td>≈ 2412</td></tr>
+        <tr><td>5</td><td>(1, 3)</td><td>2976.7</td><td>3015.0</td><td>≈ 3015</td></tr>
+      </table>
+
+      <div class="result-box">
+        <strong>Conclusión:</strong> Calcpad-Symbolic reproduce los resultados analíticos de Moita
+        con match &gt; 98 %. Para mallas arbitrarias (geometría compleja, aberturas)
+        usar el solver FEM C++/WASM de Hekatan Struct.
+      </div>
+
+      <h2>Referencias</h2>
+      <ol>
+        <li>Moita, J. S. — <em>Método dos Elementos Finitos</em>, §APLICACIONES p. 94-95, Figuras 43-45.</li>
+        <li>Timoshenko, S., Woinowsky-Krieger, S. — <em>Theory of Plates and Shells</em>, 2nd ed., McGraw-Hill, 1959.</li>
+        <li>Navier, C. L. — solución en serie de Fourier para placa rectangular simplemente apoyada.</li>
+      </ol>
+
+      <p><a href="/editor/?script=/teoria/placas/scripts/ejemplo_moita_placa_isotropa.cpd" target="_blank" rel="noopener">▶ Abrir en editor</a></p>
+    </div>
+  </section>
+  <div data-include="/partials/footer.html"></div>
+  <script src="/js/include.js"></script>
+</body>
+</html>

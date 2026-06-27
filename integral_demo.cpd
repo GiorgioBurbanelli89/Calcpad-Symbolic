@@ -1,0 +1,47 @@
+"Calculo Simbolico de Integrales con Calcpad-Symbolic
+'Operaciones simbolicas impulsadas por AngouriMath
+
+"1. Integral indefinida de un polinomio
+'∫ (x^2 + 3x + 1) dx
+#sym integrate(x^2 + 3*x + 1; x)
+
+"2. Integral indefinida trigonometrica
+'∫ sin(x) dx
+#sym integrate(sin(x); x)
+
+"3. Integral indefinida exponencial
+'∫ e^x dx
+#sym integrate(e^x; x)
+
+"4. Integral indefinida racional
+'∫ 1/(1 + x^2) dx
+#sym integrate(1/(1 + x^2); x)
+
+"5. Integral definida de x^2 en [0, 3]
+'∫_0^3 x^2 dx = 9
+#sym integrate(x^2; x; 0; 3)
+
+"6. Integral definida de sin(x) en [0, pi]
+'∫_0^π sin(x) dx = 2
+#sym integrate(sin(x); x; 0; pi)
+
+"7. Verificacion con derivada
+'d/dx [x^3/3 + 3x^2/2 + x] = x^2 + 3x + 1
+#sym diff(x^3/3 + 3*x^2/2 + x; x)
+
+"8. Derivada de orden 2
+'d²/dx² [x^3 - 3x^2 + 2x]
+#sym diff(x^3 - 3*x^2 + 2*x; x; 2)
+
+"9. Derivada parcial
+'∂/∂x [x^2*y + y^3]
+#sym pdiff(x^2*y + y^3; x)
+
+"10. Limite
+'lim x→0 sin(x)/x
+#sym limit(sin(x)/x; x; 0)
+
+"11. Resumen
+'Calcpad-Symbolic permite evaluar integrales simbolicamente
+'(indefinidas y definidas), derivadas totales y parciales,
+'asi como limites, a traves de la directiva #sym.

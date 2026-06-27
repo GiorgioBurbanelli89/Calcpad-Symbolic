@@ -442,10 +442,31 @@ namespace Calcpad.Core
                 {
                     x2 = IValue.AsReal((_b?.Invoke() ?? _vb), Exceptions.Items.Limit);
                     var ux2 = x2.Units;
+                    // Lenient unit policy (matches $Map / #for): if only one side
+                    // has units, adopt them for the other side. For $Repeat this
+                    // lets the user write `@ i = 1 : n_h+1` where the upper bound
+                    // accidentally inherits units (eg from a `round(L/dx)` where
+                    // dx was unitless), and `1` is a bare integer. Same for the
+                    // physical-iteration pattern `@ x = 0 : 5 m`.
+                    if (ux1 is null && ux2 is not null)
+                        ux1 = ux2;
+                    else if (ux1 is not null && ux2 is null)
+                        ux2 = ux1;
+                    // For $Repeat specifically, units on the loop counter are
+                    // dropped (counter is conceptually an integer index). This
+                    // matches the #for default behaviour and avoids cascading
+                    // unit failures in matrix-cell assignments inside the body.
+                    if (_type == SolverTypes.Repeat)
+                    {
+                        x1 = new RealValue(x1.D, null);
+                        x2 = new RealValue(x2.D, null);
+                        ux1 = null;
+                        ux2 = null;
+                    }
                     if (!Unit.IsConsistent(ux1, ux2))
                         throw Exceptions.InconsistentUnits2(_items[0].Input, Unit.GetText(ux1), Unit.GetText(ux2));
 
-                    if (ux2 is not null)
+                    if (ux2 is not null && ux1 is not null)
                         x2 *= ux2.ConvertTo(ux1);
                 }
                 _var.SetValue(x1);
@@ -528,6 +549,11 @@ namespace Calcpad.Core
                             result = new RealValue(d);
                             break;
                     }
+                    if (_type == SolverTypes.Sup || _type == SolverTypes.Inf)
+                    {
+                        var s = _items[1].Input + (_type == SolverTypes.Sup ? "_sup" : "_inf");
+                        _parser.SetVariable(s, (RealValue)_var.Value);
+                    }
                 }
                 catch (MathParserException e)
                 {
@@ -538,12 +564,13 @@ namespace Calcpad.Core
                     }
                     throw;
                 }
-                if (_type == SolverTypes.Sup || _type == SolverTypes.Inf)
+                finally
                 {
-                    var s = _items[1].Input + (_type == SolverTypes.Sup ? "_sup" : "_inf");
-                    _parser.SetVariable(s, (RealValue)_var.Value);
+                    // Asegurar que _isSolver se decremente incluso si el solver lanza.
+                    // Si no, queda en > 0 y bloquea definiciones de función posteriores
+                    // con "Function definition not allowed in solver or expression block".
+                    --_parser._isSolver;
                 }
-                --_parser._isSolver;
 
                 if (double.IsNaN(d) && !_parser.IsPlotting)
                     throw Exceptions.NoSolution(ToString());
@@ -609,8 +636,8 @@ namespace Calcpad.Core
                     if (_type == SolverTypes.Integral || _type == SolverTypes.Area)
                         return writer.FormatNary(
                             $"<em>{TypeName(_type)}</em>",
-                            _items[2].Html + "&nbsp;",
-                            "&emsp; " + _items[3].Html,
+                            _items[2].Html + " ",       //   = NBSP (no `;` in source)
+                            "  " + _items[3].Html,      //   = EM SPACE (no `;` in source)
                             string.Concat(_items[0].Html, " d", _items[1].Html)
                             );
 

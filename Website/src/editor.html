@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <div data-include="/partials/head.html"></div>
+  <title>Editor online — Calcpad-Symbolic</title>
+  <style>
+    .editor-wrap { height: calc(100vh - 72px); display: flex; }
+    .editor-wrap iframe { width: 100%; height: 100%; border: 0; }
+    .editor-fallback { padding: 3rem 1.5rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+
+  <div class="editor-wrap" id="editor-wrap">
+    <iframe
+      id="editor-frame"
+      src="/editor/"
+      title="Calcpad-Symbolic editor (Blazor WASM)"
+      allow="clipboard-read; clipboard-write; cross-origin-isolated"
+      onerror="document.getElementById('editor-wrap').innerHTML = document.getElementById('fallback').innerHTML"
+    ></iframe>
+  </div>
+
+  <template id="fallback">
+    <div class="editor-fallback container">
+      <h2>El editor Blazor aún no está desplegado aquí</h2>
+      <p>Podés abrirlo localmente con <code>dotnet run</code> en
+        <code>calcpad-web-blazor/</code> o usar la versión TypeScript.</p>
+      <a class="btn btn-primary" href="http://localhost:5100/" target="_blank" rel="noopener">Abrir local (Blazor :5100)</a>
+      <a class="btn btn-ghost" href="http://localhost:4800/" target="_blank" rel="noopener">Abrir local (TS :4800)</a>
+    </div>
+  </template>
+
+  <script src="/js/include.js"></script>
+</body>
+</html>

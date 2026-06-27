@@ -1,0 +1,96 @@
+#margen 20
+"Derivación FEM — Elemento de TORSIÓN (Saint-Venant)
+
+'Elemento 1D con torsion uniforme (Saint-Venant, sin alabeo).
+'2 nudos, 1 DOF por nudo: angulo de giro phi_1 y phi_2.
+
+"Propiedades
+
+#blk
+G = 12000000 ; 'Modulo de rigidez (corte)
+J = 200 ; 'Constante torsional
+I_p = 125 ; 'Momento polar de inercia de masa
+rho = 0.000733 ; 'Densidad
+L = 60 ; 'Longitud
+GJ = G*J ; 'Rigidez torsional
+#end blk
+
+#pgb
+"1. Funciones de forma lineales
+
+'La ecuacion de torsion uniforme es GJ por d2phi/dx2 = 0.
+'La solucion exacta varia linealmente en x.
+
+#blk
+N_1(x) = 1 - x/L ; 'Funcion de forma nudo 1
+N_2(x) = x/L ; 'Funcion de forma nudo 2
+#end blk
+
+"phi(x) = N1*phi1 + N2*phi2
+
+#pgb
+"2. Tasa de torsion — B = [dN1/dx, dN2/dx]
+
+'El par interno es Mt = GJ por dphi/dx = GJ por B por {phi}.
+
+#blk
+diff(1 - x/L; x) ; 'dN1/dx
+diff(x/L; x) ; 'dN2/dx
+#end blk
+
+"Entonces B = [-1/L, 1/L].
+
+#pgb
+"3. Matriz de rigidez torsional Ke
+
+'Definicion: Kij = integral de 0 a L de GJ por (dNi/dx)(dNj/dx) dx.
+
+#blk
+integrate((-1/L)^2; x; 0; L) ; 'Coeficiente 1,1 entre GJ
+integrate((-1/L)*(1/L); x; 0; L) ; 'Coeficiente 1,2 entre GJ
+integrate((1/L)^2; x; 0; L) ; 'Coeficiente 2,2 entre GJ
+#end blk
+
+"Matriz resultante:
+
+#deq K_e = (GJ/L)*[1; -1 | -1; 1] @@(rigidez torsional)
+
+"Verificacion numerica:
+
+k_e = (GJ/L)*[1; -1 | -1; 1]
+
+#pgb
+"4. Masa torsional consistente Me
+
+'Ip es el momento polar de inercia de masa por unidad de longitud
+'(momento polar de la seccion por densidad).
+
+#blk
+integrate((1 - x/L)^2; x; 0; L) ; 'Coeficiente 1,1 entre rho*Ip
+integrate((1 - x/L)*(x/L); x; 0; L) ; 'Coeficiente 1,2 entre rho*Ip
+integrate((x/L)^2; x; 0; L) ; 'Coeficiente 2,2 entre rho*Ip
+#end blk
+
+"Matriz de masa consistente torsional:
+
+#deq M_e = (rho*I_p*L/6)*[2; 1 | 1; 2] @@(masa torsional)
+
+m_e = (rho*I_p*L/6)*[2; 1 | 1; 2]
+
+#pgb
+"5. Analogia axial - torsion
+
+'Las matrices axial y torsional son estructuralmente identicas:
+'   Axial:   K = (EA/L)*[[1,-1],[-1,1]]   M = (rhoA*L/6)*[[2,1],[1,2]]
+'   Torsion: K = (GJ/L)*[[1,-1],[-1,1]]   M = (rhoIp*L/6)*[[2,1],[1,2]]
+'Se intercambia EA con GJ y rhoA con rhoIp. Misma EDO de segundo orden.
+
+#pgb
+"6. Resumen
+
+'   DOF: phi1, phi2 (angulos de giro)
+'   Interpolacion lineal — exacta para Saint-Venant
+'   Ke = (GJ/L)*[[1,-1],[-1,1]]
+'   Me = (rho*Ip*L/6)*[[2,1],[1,2]]
+'   Para torsion con alabeo se requiere Hermite C1 — analogo a flexion.
+#end margen

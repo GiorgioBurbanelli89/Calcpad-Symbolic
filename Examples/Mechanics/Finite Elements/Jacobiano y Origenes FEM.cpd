@@ -1,0 +1,597 @@
+#margen 20
+#md on
+"De los orígenes del FEM al Jacobiano — paso a paso, gráfico y simbólico
+
+# §0. Mapa del documento
+
+#mermaid
+flowchart TD
+    A[§1 Orígenes históricos del FEM] --> B[§2 Qué es un elemento]
+    B --> C[§3 Coordenadas naturales ξ η ζ]
+    C --> D[§4 Funciones de forma N_i]
+    D --> E[§5 Mapeo isoparamétrico x ξ]
+    E --> F[§6 El JACOBIANO entra acá]
+    F --> G[§7 Para qué sirve det J]
+    G --> H[§8 Caso 1D barra]
+    H --> I[§9 Caso 2D Q4]
+    I --> J[§10 Caso 3D H8]
+    J --> K[§11 Integración de Gauss]
+    K --> L[§12 Warning Jacobiano negativo]
+    L --> M[§13 Resumen]
+    style F fill:#ffd966
+    style M fill:#c8e6c9
+#end mermaid
+
+# §1. Orígenes históricos — del análisis matricial al FEM moderno
+
+'El método de elementos finitos no apareció de un solo golpe. Vino de
+'cruzar tres líneas de trabajo independientes:
+
+#mermaid
+timeline
+    title Línea de tiempo FEM (1909 - 1965)
+    1909 : Ritz (Aachen)
+         : método de aproximación variacional
+    1915 : Galerkin (Petersburgo)
+         : residuos ponderados
+    1941 : Hrennikoff
+         : sustituye continuo por barras (lattice)
+    1943 : Courant (NYU)
+         : variacional + triangulación → primer "elemento finito" matemático
+    1953 : Levy (Boeing)
+         : flexibility/stiffness matrix en alas de avión
+    1956 : Turner Clough Martin Topp
+         : "Stiffness and Deflection Analysis of Complex Structures"
+         : nace el FEM aplicado
+    1960 : Clough acuña el nombre "Finite Element Method"
+    1965 : Zienkiewicz publica el libro de referencia
+#end mermaid
+
+'Tres ideas fundamentales que se juntaron:
+'
+'1. **Variacional / energías** (Ritz, Galerkin) — una solución aproximada
+'   minimiza un funcional energético.
+'2. **Discretización del continuo** (Hrennikoff, Courant) — partir el
+'   dominio en pedazos chicos donde la solución es simple.
+'3. **Análisis matricial estructural** (Argyris, Turner) — ensamblar la
+'   rigidez global a partir de elementos.
+
+# §2. ¿Qué es un "elemento"?
+
+'Un **elemento finito** es un trozo geométrico simple (línea, triángulo,
+'cuadrilátero, tetraedro, hexaedro...) donde:
+'
+'- La geometría está definida por unos pocos **nodos** (1, 2, 3, 4 puntos).
+'- La solución (desplazamientos, temperatura, etc.) se aproxima por una
+'  combinación de **funciones de forma** N_i, una por nodo.
+
+#three 700 400
+// Edificio dividido en muchos elementos finitos
+const Lv = 4, Hp = 2.5;
+const N = 3;
+const Np = 4;
+
+const colMat = new THREE.MeshStandardMaterial({color:0x666666});
+const slabMat = new THREE.MeshStandardMaterial({color:0xffd966, transparent:true, opacity:0.35});
+const wireMat = new THREE.MeshBasicMaterial({color:0x222222, wireframe:true});
+
+// Columnas (un elemento cada una)
+for (let ix = 0; ix <= N; ix++) for (let iy = 0; iy <= N; iy++) {
+    const col = new THREE.Mesh(new THREE.BoxGeometry(0.3, Np*Hp, 0.3), colMat);
+    col.position.set(ix*Lv - N*Lv/2, Np*Hp/2, iy*Lv - N*Lv/2);
+    scene.add(col);
+}
+
+// Losas — cada una dividida en NxN elementos Q4 (mostramos el wireframe)
+for (let iz = 1; iz <= Np; iz++) {
+    for (let ix = 0; ix < N; ix++) for (let iy = 0; iy < N; iy++) {
+        const slab = new THREE.Mesh(new THREE.BoxGeometry(Lv, 0.05, Lv), slabMat);
+        slab.position.set((ix+0.5)*Lv - N*Lv/2, iz*Hp - 0.025, (iy+0.5)*Lv - N*Lv/2);
+        scene.add(slab);
+        const wf = new THREE.Mesh(new THREE.BoxGeometry(Lv, 0.05, Lv), wireMat);
+        wf.position.copy(slab.position);
+        scene.add(wf);
+    }
+}
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+dir.position.set(20, 30, 20);
+scene.add(dir);
+
+camera.position.set(20, 18, 22);
+camera.lookAt(0, Np*Hp/2, 0);
+#end three
+
+'Cada cuadrito amarillo de la losa es **un elemento Q4**. Tiene 4 nodos
+'en sus esquinas. Todo el "comportamiento" interno del cuadrito se
+'reconstruye desde los valores en esos 4 nodos.
+
+# §3. Coordenadas naturales (ξ, η, ζ) — el truco fundamental
+
+'Los elementos pueden tener cualquier forma y tamaño en el espacio físico.
+'Para evitar trabajar con N geometrías distintas, mapeamos cada elemento
+'a un dominio de **referencia universal** llamado **coordenadas naturales**:
+
+#svg 760 360
+.rect 0 0 760 360 #fafafa 1 #ccc 1
+.text 380 25 "Cada elemento real se mapea al MISMO dominio natural" 13 black middle bold
+
+'Tres elementos físicos diferentes (izquierda)
+.text 150 60 "ELEMENTOS FISICOS" 12 black middle bold
+'rect 1 (Q4 raro)
+.line 50 100 130 110 #b58900 2
+.line 130 110 140 180 #b58900 2
+.line 140 180 60 175 #b58900 2
+.line 60 175 50 100 #b58900 2
+.text 95 145 "Q4 raro" 10 black middle italic
+'rect 2 (Q4 normal)
+.line 180 100 260 95 #b58900 2
+.line 260 95 270 180 #b58900 2
+.line 270 180 175 185 #b58900 2
+.line 175 185 180 100 #b58900 2
+.text 220 145 "Q4 normal" 10 black middle italic
+'rect 3 (Q4 alargado)
+.line 50 210 270 215 #b58900 2
+.line 270 215 270 250 #b58900 2
+.line 270 250 50 245 #b58900 2
+.line 50 245 50 210 #b58900 2
+.text 160 230 "Q4 alargado" 10 black middle italic
+
+'Flechas y texto del proceso
+.arrow 290 175 440 175 red 3
+.text 365 160 "TODOS al mismo" 12 #c33 middle bold
+.text 365 195 "cuadrado natural" 11 #c33 middle italic
+
+'El cuadrado natural (derecha) — ahora con MUCHO margen para etiquetas
+.rect 500 110 170 170 #b3d9ff 0.4 #0d47a1 3
+'esquinas
+.circle 500 280 6 #c33 1
+.circle 670 280 6 #c33 1
+.circle 670 110 6 #c33 1
+.circle 500 110 6 #c33 1
+'etiquetas de coordenadas (con espacio: y=305 abajo, y=98 arriba)
+.text 490 305 "(-1, -1)" 10 black end
+.text 680 305 "(+1, -1)" 10 black start
+.text 680 100 "(+1, +1)" 10 black start
+.text 490 100 "(-1, +1)" 10 black end
+'eje ξ (cabe holgado dentro del viewport 760)
+.arrow 670 280 720 280 #888 2
+.text 730 285 "ξ" 13 #888 start bold
+'eje η (con margen arriba)
+.arrow 500 110 500 75 #888 2
+.text 495 65 "η" 13 #888 end bold
+'pie del subgrupo natural
+.text 585 335 "cuadrado de referencia universal" 10 #555 middle italic
+#end svg
+
+'Convención:
+'- **1D:** una sola coordenada natural ξ ∈ [-1, +1]
+'- **2D:** dos coordenadas (ξ, η) ∈ [-1, +1]²
+'- **3D:** tres coordenadas (ξ, η, ζ) ∈ [-1, +1]³
+
+# §4. Funciones de forma N_i
+
+'Cada nodo i tiene asociada una **función de forma** N_i que vale:
+'  → 1 en el nodo i,
+'  → 0 en los demás nodos,
+'  → varía suavemente entre medio (lineal, cuadrática, etc.).
+
+'Para un Q4 bilineal (la base más usada en placas), las **4 funciones
+'de forma bilineales** se definen así:
+
+#deq N_1(ξ; η) = (1 - ξ)·(1 - η)/4
+#deq N_2(ξ; η) = (1 + ξ)·(1 - η)/4
+#deq N_3(ξ; η) = (1 + ξ)·(1 + η)/4
+#deq N_4(ξ; η) = (1 - ξ)·(1 + η)/4
+
+'**Verificación simbólica** — la suma debe valer **1** (partición de la unidad):
+
+#sym (1-ξ)*(1-η)/4 + (1+ξ)*(1-η)/4 + (1+ξ)*(1+η)/4 + (1-ξ)*(1+η)/4
+
+'**Verificación gráfica** — visualizamos N_1(ξ, η):
+
+#plotly 700 450
+{
+  data: [{
+    type: 'surface',
+    z: (function(){
+      const z = [];
+      for (let i = -10; i <= 10; i++) {
+        const row = [];
+        for (let j = -10; j <= 10; j++) {
+          const xi = i/10, eta = j/10;
+          row.push((1-xi)*(1-eta)/4);
+        }
+        z.push(row);
+      }
+      return z;
+    })(),
+    colorscale: 'YlOrRd'
+  }],
+  layout: {
+    title: 'N_1(ξ, η) — vale 1 en (ξ=-1,η=-1), cae a 0 en los demás nodos',
+    scene: {
+      xaxis: {title:'ξ'},
+      yaxis: {title:'η'},
+      zaxis: {title:'N_1', range:[0,1]}
+    },
+    margin: {t:50, b:30, l:30, r:30}
+  }
+}
+#end plotly
+
+# §5. Mapeo isoparamétrico — x(ξ, η) e y(ξ, η)
+
+'La idea **isoparamétrica**: la geometría se interpola con las MISMAS
+'funciones N_i que se usan para los desplazamientos:
+
+#math
+x(\xi, \eta) = \sum_{i=1}^{4} N_i(\xi, \eta)\, x_i = N_1\, x_1 + N_2\, x_2 + N_3\, x_3 + N_4\, x_4
+y(\xi, \eta) = \sum_{i=1}^{4} N_i(\xi, \eta)\, y_i = N_1\, y_1 + N_2\, y_2 + N_3\, y_3 + N_4\, y_4
+#end math
+
+'Donde (x_i, y_i) son las coordenadas físicas de los 4 nodos del Q4.
+'**Mové los nodos del Q4 con el mouse** y mirá cómo cambia el área del
+'elemento:
+
+#jsx 500 500
+const board = JXG.JSXGraph.initBoard(JSXBOARD, {
+    boundingbox:[-1, 6, 6, -1], axis:true,
+    showCopyright:false, showNavigation:false
+});
+const A = board.create('point', [0, 0],   {name:'1 (x₁,y₁)', size:6, color:'#c33'});
+const B = board.create('point', [4, 0.5], {name:'2 (x₂,y₂)', size:6, color:'#c33'});
+const C = board.create('point', [4.5, 4], {name:'3 (x₃,y₃)', size:6, color:'#c33'});
+const D = board.create('point', [0.5, 3.5], {name:'4 (x₄,y₄)', size:6, color:'#c33'});
+board.create('polygon', [A,B,C,D], {
+    fillColor:'#ffd966', fillOpacity:0.4,
+    borderColor:'#b58900', borderWidth:2
+});
+board.create('text', [0.3, 5.5,
+    () => 'Área Q4 = ' + Math.abs(0.5*((A.X()-C.X())*(B.Y()-D.Y()) - (B.X()-D.X())*(A.Y()-C.Y()))).toFixed(3)
+], {fontSize:18, color:'#0d47a1'});
+#end jsx
+
+# §6. ENTRA EL JACOBIANO
+
+'Ahora viene la pregunta clave del cálculo numérico:
+'
+'> "Si tengo una integral en el dominio físico (x, y), pero las
+'> funciones N_i están definidas en el dominio natural (ξ, η)...
+'> **¿cómo cambio entre los dos dominios?**"
+'
+'Esto es un problema clásico de **cambio de variables en cálculo**.
+'La regla matemática dice:
+
+#math
+\boxed{\iint_{\Omega^e} f(x, y)\, dx\, dy = \int_{-1}^{+1}\!\int_{-1}^{+1} f(x(\xi,\eta), y(\xi,\eta))\, |\det J|\, d\xi\, d\eta}
+#end math
+
+'Donde |det J| es el **determinante del Jacobiano** — la matriz que
+'recoge las derivadas del mapeo:
+
+#math
+J = \begin{bmatrix} \dfrac{\partial x}{\partial \xi} & \dfrac{\partial y}{\partial \xi} \\[6pt] \dfrac{\partial x}{\partial \eta} & \dfrac{\partial y}{\partial \eta} \end{bmatrix}
+\det J = \dfrac{\partial x}{\partial \xi}\,\dfrac{\partial y}{\partial \eta} - \dfrac{\partial x}{\partial \eta}\,\dfrac{\partial y}{\partial \xi}
+#end math
+
+# §7. Significado físico de det(J)
+
+'**det(J) es el factor de escala del área local.** Una unidad cuadrada
+'del cuadrado natural (1 × 1) ocupa det(J) unidades cuadradas en el
+'elemento físico:
+
+#svg 720 260
+.rect 0 0 720 260 #fafafa 1 #ccc 1
+.text 360 25 "det(J) = factor de escala del area local" 13 black middle bold
+
+'Cuadrado natural pequeño (izquierda)
+.text 100 70 "natural (1 x 1)" 11 black middle bold
+.rect 60 90 80 80 #b3d9ff 0.5 #0d47a1 2
+.text 100 175 "Area = 1" 11 #0d47a1 middle italic
+.text 100 195 "(referencia)" 10 #555 middle italic
+
+'Flecha del mapeo
+.arrow 200 130 380 130 red 3
+.text 290 110 "multiplicar por det(J)" 12 #c33 middle bold
+.text 290 152 "(factor de escala)" 11 #c33 middle italic
+
+'Cuadrilátero físico distorsionado (derecha)
+.text 520 70 "fisico (distorsionado)" 11 black middle bold
+.line 440 90 620 115 #b58900 2.5
+.line 620 115 605 200 #b58900 2.5
+.line 605 200 455 185 #b58900 2.5
+.line 455 185 440 90 #b58900 2.5
+.text 525 145 "Area = det(J)" 12 #b58900 middle bold
+.text 525 215 "(unidades cuadradas reales)" 10 #555 middle italic
+
+'Pie
+.text 360 240 "Sin el factor det(J), las integrales darian numeros con dimension equivocada" 11 #2e7d32 middle italic
+#end svg
+
+'Si det(J) > 0 → mapeo orientado correctamente.
+'Si det(J) = 0 → elemento DEGENERADO (esquinas colineales).
+'Si det(J) < 0 → elemento INVERTIDO (orden de nodos al revés).
+
+# §8. Caso 1D — barra (el más simple)
+
+'Tenemos una barra entre dos nodos: x₁ = 0, x₂ = L.
+
+x_1 = 0
+L_bar = 4
+x_2 = x_1 + L_bar
+
+#blk
+x_1   ; 'nodo 1 (m)
+x_2   ; 'nodo 2 (m)
+L_bar ; 'longitud
+#end blk
+
+'Funciones de forma 1D:
+
+#deq N_1(ξ) = (1 - ξ)/2
+#deq N_2(ξ) = (1 + ξ)/2
+
+'Mapeo isoparamétrico:
+
+#deq x(ξ) = N_1(ξ)·x_1 + N_2(ξ)·x_2 = (1-ξ)/2·x_1 + (1+ξ)/2·x_2
+
+'**Cálculo simbólico del Jacobiano:**
+
+#sym diff((1-ξ)/2*0 + (1+ξ)/2*4; ξ)
+
+'Resultado: J = 2 (escalar). Como L = 4, el Jacobiano es L/2 = 2 ✓
+
+#deq J_1D = dx/dξ = (x_2 - x_1)/2 = L/2
+
+J_1D = L_bar/2
+
+#blk
+J_1D  ; 'Jacobiano = L/2 (escalar)
+#end blk
+
+# §9. Caso 2D — Q4
+
+'**Caso particular muy común: rectángulo a × b axis-aligned.**
+
+a = 6
+b = 4
+
+#blk
+a   ; 'lado X del rectángulo
+b   ; 'lado Y
+#end blk
+
+'Para este caso el mapeo se simplifica a:
+
+#deq x(ξ) = a/2·(ξ + 1)
+#deq y(η) = b/2·(η + 1)
+
+'**Las 4 derivadas del Jacobiano:**
+
+#math
+\dfrac{\partial x}{\partial \xi} = \dfrac{a}{2}, \quad \dfrac{\partial x}{\partial \eta} = 0
+\dfrac{\partial y}{\partial \xi} = 0, \quad \dfrac{\partial y}{\partial \eta} = \dfrac{b}{2}
+#end math
+
+'**El Jacobiano queda DIAGONAL:**
+
+#math
+J = \begin{bmatrix} a/2 & 0 \\ 0 & b/2 \end{bmatrix}, \quad \det J = \dfrac{a}{2} \cdot \dfrac{b}{2} = \dfrac{a\,b}{4}
+#end math
+
+'Numéricamente:
+
+J_2D = [a/2; 0 | 0; b/2]
+J_2D
+det_J = a*b/4
+
+#blk
+det_J     ; 'det(J) = a·b/4
+#end blk
+
+'**Verificación:** el cuadrado natural [-1,+1]² tiene área 4. Entonces:
+
+A_natural = 4
+A_fisica = det_J*A_natural
+
+#blk
+A_natural  ; 'área cuadrado natural
+A_fisica   ; 'det(J) × A_natural = a·b ✓
+#end blk
+
+'**Caso general: Q4 distorsionado.** det(J) varía punto a punto. Lo
+'visualizamos en el dominio natural:
+
+#plotly 700 450
+{
+  data: [{
+    type: 'surface',
+    z: (function(){
+      // Q4 con esquinas (0,0), (5,0.5), (5.5,4), (0.3,3.5)
+      const x1=0, y1=0, x2=5, y2=0.5, x3=5.5, y3=4, x4=0.3, y4=3.5;
+      const z = [];
+      for (let j = -10; j <= 10; j++) {
+        const row = [];
+        for (let i = -10; i <= 10; i++) {
+          const xi = i/10, eta = j/10;
+          // dN/dxi
+          const dN1xi = -(1-eta)/4, dN2xi = (1-eta)/4, dN3xi = (1+eta)/4, dN4xi = -(1+eta)/4;
+          // dN/deta
+          const dN1eta = -(1-xi)/4, dN2eta = -(1+xi)/4, dN3eta = (1+xi)/4, dN4eta = (1-xi)/4;
+          // Jacobiano
+          const dxdxi = dN1xi*x1 + dN2xi*x2 + dN3xi*x3 + dN4xi*x4;
+          const dxdeta = dN1eta*x1 + dN2eta*x2 + dN3eta*x3 + dN4eta*x4;
+          const dydxi = dN1xi*y1 + dN2xi*y2 + dN3xi*y3 + dN4xi*y4;
+          const dydeta = dN1eta*y1 + dN2eta*y2 + dN3eta*y3 + dN4eta*y4;
+          row.push(dxdxi*dydeta - dxdeta*dydxi);
+        }
+        z.push(row);
+      }
+      return z;
+    })(),
+    colorscale: 'Viridis'
+  }],
+  layout: {
+    title: 'det(J)(ξ, η) en un Q4 distorsionado',
+    scene: {xaxis:{title:'ξ'}, yaxis:{title:'η'}, zaxis:{title:'det(J)'}},
+    margin: {t:50, b:30, l:30, r:30}
+  }
+}
+#end plotly
+
+# §10. Caso 3D — H8 hexaedro (8 nodos)
+
+'En 3D el Jacobiano es una matriz **3 × 3** y det(J) es el factor de
+'escala del **volumen** local (no del área):
+
+#math
+J = \begin{bmatrix} \partial x/\partial \xi & \partial y/\partial \xi & \partial z/\partial \xi \\ \partial x/\partial \eta & \partial y/\partial \eta & \partial z/\partial \eta \\ \partial x/\partial \zeta & \partial y/\partial \zeta & \partial z/\partial \zeta \end{bmatrix}
+dV_{\text{físico}} = \det J \cdot d\xi\, d\eta\, d\zeta
+#end math
+
+'Con ζ ∈ [-1,+1] como tercera coordenada natural. Las 8 funciones de
+'forma H8 son **trilineales** N_i(ξ, η, ζ) = (1±ξ)(1±η)(1±ζ)/8.
+
+# §11. Aplicación: integración de Gauss
+
+'La integral natural se aproxima por una suma ponderada en puntos
+'**de Gauss** (ξ_g, η_g):
+
+#math
+\iint_{-1}^{+1}\!\!f(\xi,\eta)\, d\xi\, d\eta \;\approx\; \sum_{g=1}^{n_g} f(\xi_g, \eta_g)\cdot w_g
+#end math
+
+'**Para Q4 con integración 2 × 2 (4 puntos):** los puntos están en
+'(±1/√3, ±1/√3) y todos los pesos w_g = 1.
+
+ξ_g = 1/sqrt(3)
+w_g = 1
+
+#blk
+ξ_g  ; '1/√3 ≈ 0.5774
+w_g  ; 'peso de Gauss
+#end blk
+
+'**Visualización de los 4 puntos de Gauss en el cuadrado natural:**
+
+#canvas 500 500
+ctx.fillStyle = '#fafafa'; ctx.fillRect(0,0,500,500);
+
+// Cuadrado natural
+ctx.strokeStyle = '#0d47a1'; ctx.lineWidth = 3;
+ctx.strokeRect(80, 80, 340, 340);
+ctx.fillStyle = '#b3d9ff'; ctx.globalAlpha = 0.3;
+ctx.fillRect(80, 80, 340, 340);
+ctx.globalAlpha = 1;
+
+// Ejes
+ctx.strokeStyle = '#888'; ctx.lineWidth = 1;
+ctx.beginPath();
+ctx.moveTo(250, 80); ctx.lineTo(250, 420); // eje vertical (η)
+ctx.moveTo(80, 250); ctx.lineTo(420, 250); // eje horizontal (ξ)
+ctx.stroke();
+
+// Etiquetas ejes
+ctx.fillStyle = '#222'; ctx.font = '14px sans-serif';
+ctx.fillText('ξ', 425, 255);
+ctx.fillText('η', 245, 70);
+
+// Esquinas
+ctx.fillStyle = '#c33';
+[[80,420], [420,420], [420,80], [80,80]].forEach(([x,y], i) => {
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, 2*Math.PI); ctx.fill();
+});
+
+// Puntos de Gauss en (±1/√3, ±1/√3) → en pantalla: (±1/√3 * 170)
+ctx.fillStyle = '#2e7d32';
+const offset = 170 / Math.sqrt(3);
+const gauss = [
+    [250 - offset, 250 - offset],
+    [250 + offset, 250 - offset],
+    [250 - offset, 250 + offset],
+    [250 + offset, 250 + offset]
+];
+gauss.forEach((p, i) => {
+    ctx.beginPath(); ctx.arc(p[0], p[1], 10, 0, 2*Math.PI); ctx.fill();
+    ctx.fillStyle = 'white'; ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('G' + (i+1), p[0], p[1]+4);
+    ctx.fillStyle = '#2e7d32';
+});
+
+ctx.fillStyle = '#222'; ctx.font = 'bold 14px sans-serif';
+ctx.textAlign = 'center';
+ctx.fillText('Cuadrado natural [-1, +1]² con 4 puntos Gauss', 250, 460);
+ctx.font = '12px sans-serif';
+ctx.fillText('(±1/√3, ±1/√3) ≈ (±0.5774, ±0.5774), pesos w = 1', 250, 480);
+#end canvas
+
+'Aplicado al cálculo de la matriz de rigidez de un elemento:
+
+#math
+\boxed{K^e = \sum_{g=1}^{4} B^T(\xi_g, \eta_g) \cdot D \cdot B(\xi_g, \eta_g) \cdot \det J(\xi_g, \eta_g) \cdot w_g}
+#end math
+
+# §12. Cuándo te aparece como ingeniero — warning Jacobiano negativo
+
+#mermaid
+flowchart TD
+    M[Modelar geometría en ETABS/SAP] --> A[Mallar la losa/muro]
+    A --> CHK{Forma de los Q4?}
+    CHK -->|esquinas bien| OK[OK — det J > 0]
+    CHK -->|esquinas casi colineales| WARN[⚠ det J ≈ 0]
+    CHK -->|nodos en orden invertido| ERR[❌ det J < 0]
+    OK --> RUN[Solver corre limpio]
+    WARN --> SLOW[Resultados con error]
+    ERR --> CRASH[Error: Negative Jacobian]
+    SLOW --> FIX[Mejorar la malla]
+    CRASH --> FIX
+    style OK fill:#c8e6c9
+    style WARN fill:#ffd966
+    style ERR fill:#ffcdd2
+    style FIX fill:#b3d9ff
+#end mermaid
+
+# §13. Resumen visual — del problema físico al cálculo numérico
+
+#dot 700 380
+digraph G {
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fontname="Arial", fontsize=11];
+
+    P [label="Problema físico\\nplaca, viga, sólido", fillcolor=lightgreen];
+    M [label="Discretizar\\nelementos finitos", fillcolor=white];
+    K [label="Para cada elemento\\nintegral en (x, y)", fillcolor=white];
+    NAT [label="Cambiar a (ξ, η)\\n¿cómo? → Jacobiano", fillcolor=gold];
+    G [label="Integral de Gauss\\nen (ξ, η)", fillcolor=white];
+    KE [label="K^e = Σ B^T D B · det(J) · w", fillcolor=lightcoral];
+    KGLOB [label="Ensamblar K global\\nResolver K·u = F", fillcolor=lightblue];
+
+    P -> M -> K -> NAT -> G -> KE -> KGLOB;
+}
+#end dot
+
+# §14. Cierre — las tres ideas centrales
+
+'1. **El FEM divide el continuo** en pedazos simples (elementos), cada
+'   uno con sus nodos y funciones de forma.
+'
+'2. **Las coordenadas naturales (ξ, η)** son un truco para tratar todos
+'   los elementos por igual, sin importar su forma o tamaño físico.
+'
+'3. **El Jacobiano es el "puente"** entre el espacio natural y el
+'   físico. Su determinante det(J) es el factor de escala (longitud
+'   en 1D, área en 2D, volumen en 3D) que aparece automáticamente en
+'   cada integral numérica.
+
+#math
+\boxed{K^e = \sum_g B^T D\, B\,\det(J)\,w_g}
+\boxed{F^e = \sum_g N^T \mathbf{f}\,\det(J)\,w_g}
+\boxed{M^e = \sum_g \rho\,N^T N\,\det(J)\,w_g}
+#end math
+
+'Todas las matrices del elemento (rigidez K, fuerzas F, masa M)
+'aparecen multiplicadas por det(J). Sin él, las dimensiones físicas
+'salen mal y el solver da basura. CON él, el FEM funciona.

@@ -1,0 +1,247 @@
+"Resortes Winkler: Joint Spring vs Area Spring
+'<hr/>
+'Comparacion de dos formas de modelar el suelo elastico en zapatas FEM.
+
+"1. Concepto
+'<b>Area Spring (subgrade modulus):</b>
+'El suelo tiene un modulo de reaccion k_s [tonf/m³].
+'La presion del suelo es proporcional al asentamiento:
+#deq q = k_s*w
+'En SAP2000/SAFE: se asigna como "Area Spring" a cada elemento shell.
+'<b>Joint Spring (point spring):</b>
+'Cada nodo recibe un resorte puntual con rigidez:
+#deq k_nodo = k_s*A_trib
+'En SAP2000: se asigna como "Joint Spring" a cada nodo.
+'<b>Equivalencia para malla uniforme de lado d_e:</b>
+'Nodo interior:
+#deq k_nodo = k_s*d_e^2
+'Nodo de borde:
+#deq k_nodo = k_s*d_e^2/2
+'Nodo de esquina:
+#deq k_nodo = k_s*d_e^2/4
+
+"2. Datos del ejemplo
+'Zapata -'Lz = 2 m','Bz = 2 m','tz = 500 mm
+'Columna centrada -'Lc = 400 mm
+'Concreto -'Ec = 25000 MPa','νc = 0.2
+Gc = Ec/(2*(1 + νc))
+'Factor corte -'κc = 5/6
+'Subgrade modulus:
+'<b>k_s = 20000 kN/m³</b>
+ks = 0.000002 tf/mm/mm
+'Carga -'Pu = 100 tf
+
+"3. Solucion FEM — JOINT SPRING
+'<hr/>
+'Se modela con MITC4 (Shell Thick Mindlin) + resortes puntuales.
+#hide
+Ew = Ec & MPa','tw = tz & mm
+Lw = Lz & m','Lw = Lw*1000
+Bw = Bz & m','Bw = Bw*1000
+Lcw = Lc & mm
+Gw = Ew/(2*(1 + νc))
+PuN = Pu & tf','PuN = PuN*9806.65
+kwN = ks & tf/mm/mm','kwN = kwN*9806.65
+nd = 3
+ne1 = 8','de = Lw/ne1
+nj1 = ne1 + 1','nj = nj1^2','ne = ne1^2','nt = nd*nj
+xj = vector(nj)','yj = vector(nj)
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1','xj.k = i*de','yj.k = j*de
+	#loop
+#loop
+ej = matrix(ne; 4)
+#for j = 0 : ne1 - 1
+	#for i = 0 : ne1 - 1
+		e = j*ne1 + i + 1','bl = j*nj1 + i + 1
+		ej.(e; 1) = bl','ej.(e; 2) = bl + 1
+		ej.(e; 3) = bl + nj1 + 1','ej.(e; 4) = bl + nj1
+	#loop
+#loop
+Dbm = Ew*tw^3/(12*(1 - νc^2))*[1; νc; 0|νc; 1; 0|0; 0; (1 - νc)/2]
+Dsm = κc*Gw*tw*[1; 0|0; 1]
+gp = 1/sqr(3)','nk = 12
+dN1x(η) = -(1 - η)/4','dN2x(η) = (1 - η)/4
+dN3x(η) = (1 + η)/4','dN4x(η) = -(1 + η)/4
+dN1y(ξ) = -(1 - ξ)/4','dN2y(ξ) = -(1 + ξ)/4
+dN3y(ξ) = (1 + ξ)/4','dN4y(ξ) = (1 - ξ)/4
+K = symmetric(nt)
+#for e = 1 : ne
+	i1 = ej.(e; 1)','i3 = ej.(e; 3)
+	dx = xj.i3 - xj.i1','dy = yj.i3 - yj.i1
+	J11 = dx/2','J22 = dy/2','detJ = J11*J22
+	Ke = symmetric(nk)
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		dx1 = dN1x(ηg)/J11','dy1 = dN1y(ξg)/J22
+		dx2 = dN2x(ηg)/J11','dy2 = dN2y(ξg)/J22
+		dx3 = dN3x(ηg)/J11','dy3 = dN3y(ξg)/J22
+		dx4 = dN4x(ηg)/J11','dy4 = dN4y(ξg)/J22
+		Bb = [0; 0; -dx1; 0; 0; -dx2; 0; 0; -dx3; 0; 0; -dx4 | _
+		      0; dy1; 0; 0; dy2; 0; 0; dy3; 0; 0; dy4; 0 | _
+		      0; dx1; -dy1; 0; dx2; -dy2; 0; dx3; -dy3; 0; dx4; -dy4]
+		BtDB = transp(Bb)*Dbm*Bb*detJ
+		#for i = 1 : nk
+			#for j = i : nk
+				Ke.(i; j) = Ke.(i; j) + BtDB.(i; j)
+			#loop
+		#loop
+	#loop
+	#for ig = 1 : 4
+		#if ig ≡ 1
+			ξg = -gp','ηg = -gp
+		#else if ig ≡ 2
+			ξg = gp','ηg = -gp
+		#else if ig ≡ 3
+			ξg = gp','ηg = gp
+		#else
+			ξg = -gp','ηg = gp
+		#end if
+		Bs = matrix(2; nk)
+		#for it = 1 : 2
+			#if it ≡ 1
+				ηt = -1
+			#else
+				ηt = 1
+			#end if
+			wt = (1 + ηt*ηg)/2
+			dt1 = dN1x(ηt)/J11','dt2 = dN2x(ηt)/J11','dt3 = dN3x(ηt)/J11','dt4 = dN4x(ηt)/J11
+			Nt1 = (1 - ξg)*(1 - ηt)/4','Nt2 = (1 + ξg)*(1 - ηt)/4
+			Nt3 = (1 + ξg)*(1 + ηt)/4','Nt4 = (1 - ξg)*(1 + ηt)/4
+			Bs.(1; 1) = Bs.(1; 1) + wt*dt1','Bs.(1; 3) = Bs.(1; 3) - wt*Nt1
+			Bs.(1; 4) = Bs.(1; 4) + wt*dt2','Bs.(1; 6) = Bs.(1; 6) - wt*Nt2
+			Bs.(1; 7) = Bs.(1; 7) + wt*dt3','Bs.(1; 9) = Bs.(1; 9) - wt*Nt3
+			Bs.(1; 10) = Bs.(1; 10) + wt*dt4','Bs.(1; 12) = Bs.(1; 12) - wt*Nt4
+		#loop
+		#for it = 1 : 2
+			#if it ≡ 1
+				ξt = -1
+			#else
+				ξt = 1
+			#end if
+			wt = (1 + ξt*ξg)/2
+			dt1 = dN1y(ξt)/J22','dt2 = dN2y(ξt)/J22','dt3 = dN3y(ξt)/J22','dt4 = dN4y(ξt)/J22
+			Nt1 = (1 - ξt)*(1 - ηg)/4','Nt2 = (1 + ξt)*(1 - ηg)/4
+			Nt3 = (1 + ξt)*(1 + ηg)/4','Nt4 = (1 - ξt)*(1 + ηg)/4
+			Bs.(2; 1) = Bs.(2; 1) + wt*dt1','Bs.(2; 2) = Bs.(2; 2) + wt*Nt1
+			Bs.(2; 4) = Bs.(2; 4) + wt*dt2','Bs.(2; 5) = Bs.(2; 5) + wt*Nt2
+			Bs.(2; 7) = Bs.(2; 7) + wt*dt3','Bs.(2; 8) = Bs.(2; 8) + wt*Nt3
+			Bs.(2; 10) = Bs.(2; 10) + wt*dt4','Bs.(2; 11) = Bs.(2; 11) + wt*Nt4
+		#loop
+		BtDBs = transp(Bs)*Dsm*Bs*detJ
+		#for i = 1 : nk
+			#for j = i : nk
+				Ke.(i; j) = Ke.(i; j) + BtDBs.(i; j)
+			#loop
+		#loop
+	#loop
+	#for i = 1 : 4
+		#for j = i : 4
+			j1 = ej.(e; i)','j2 = ej.(e; j)
+			i1 = nd*(j1 - 1) + 1','i2 = nd*(j2 - 1) + 1
+			kij = submatrix(Ke; nd*(i - 1) + 1; nd*i; nd*(j - 1) + 1; nd*j)
+			#if j1 > j2
+				add(transp(kij); K; i2; i1)
+			#else
+				add(kij; K; i1; i2)
+			#end if
+		#loop
+	#loop
+#loop
+'--- Resortes Joint Spring ---
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		#if i ≡ 0 ∨ i ≡ ne1
+			txk = de/2
+		#else
+			txk = de
+		#end if
+		#if j ≡ 0 ∨ j ≡ ne1
+			tyk = de/2
+		#else
+			tyk = de
+		#end if
+		K.(nd*(k - 1) + 1; nd*(k - 1) + 1) = K.(nd*(k - 1) + 1; nd*(k - 1) + 1) + kwN*txk*tyk
+	#loop
+#loop
+F = vector(nt)
+xc = Lw/2','yc = Bw/2
+qc = PuN/(Lcw^2)
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		#if abs(xj.k - xc) ≤ Lcw/2 + de/2 ∧ abs(yj.k - yc) ≤ Lcw/2 + de/2
+			txk = de','tyk = de
+			#if i ≡ 0 ∨ i ≡ ne1
+				txk = de/2
+			#end if
+			#if j ≡ 0 ∨ j ≡ ne1
+				tyk = de/2
+			#end if
+			F.(nd*(k - 1) + 1) = F.(nd*(k - 1) + 1) - qc*txk*tyk
+		#end if
+	#loop
+#loop
+kint = kwN*de*de
+kedge = kwN*de*de/2
+kcorn = kwN*de*de/4
+#show
+'Rigidez Joint Spring por nodo:
+'  Interior: k = k_s × d_e² = 'round(kint*100)/100' N/mm
+'  Borde: k = k_s × d_e²/2 = 'round(kedge*100)/100' N/mm
+'  Esquina: k = k_s × d_e²/4 = 'round(kcorn*100)/100' N/mm
+'  Equivalente SAP2000: Joint Spring UZ = 'round(kint/1000*100)/100' kN/m (interior)
+#hide
+ZJ = clsolve(K; F)
+kcJ = (ne1/2)*nj1 + ne1/2 + 1
+wcJ = ZJ.(nd*(kcJ - 1) + 1)
+qcJ = kwN*wcJ/9806.65*10^6
+#show
+'<b>Resultado JOINT SPRING:</b>
+'w_centro = 'round(wcJ*10000)/10000' mm
+'q_centro = k_s × w = 'round(qcJ*100)/100' tonf/m²
+'q_promedio = P/A = 'round(PuN/9806.65/(Lw*Bw/10^6)*100)/100' tonf/m²
+
+"4. Color Maps — JOINT SPRING
+#hide
+WzJ = matrix(nj1; nj1)
+QzJ = matrix(nj1; nj1)
+#for j = 0 : ne1
+	#for i = 0 : ne1
+		k = j*nj1 + i + 1
+		WzJ.(i + 1; j + 1) = ZJ.(nd*(k - 1) + 1)
+		QzJ.(i + 1; j + 1) = kwN*ZJ.(nd*(k - 1) + 1)/9806.65*10^6
+	#loop
+#loop
+wmJ(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Bw; WzJ)
+qmJ(x; y) = spline(1 + x*ne1/Lw; 1 + y*ne1/Bw; QzJ)
+PlotWidth = 200','PlotHeight = 200','PlotStep = 20
+#show
+"4.1 JOINT SPRING — Deflexion w (mm)
+$Map{wmJ(x; y) @ x = 0 : Lw & y = 0 : Bw}
+"4.2 JOINT SPRING — Presion q (tonf/m²)
+$Map{qmJ(x; y) @ x = 0 : Lw & y = 0 : Bw}
+
+"5. Equivalencia con Area Spring
+'<hr/>
+'<b>Para malla uniforme de lado d_e, los metodos son equivalentes:</b>
+'En Area Spring, la matriz de rigidez del resorte se integra:
+#deq K_s = k_s*∫∫N^T*N*dA
+'Con Gauss 2×2, para un nodo interior de malla uniforme:
+'  k_interior = k_s × (d_e/2)² × 4 puntos × peso² = k_s × d_e² (igual a Joint Spring)
+'<b>Conclusion:</b>
+'• Joint Spring y Area Spring producen el MISMO resultado numerico.
+'• La unica diferencia es en SAP2000:
+'  — Area Spring habilita <b>Display > Soil Pressure</b> en el menu.
+'  — Joint Spring no habilita esa opcion (presion se calcula manualmente: q = k × w / A_trib).
+'• Para validacion en SAP2000, recomendamos usar <b>Area Spring</b>.

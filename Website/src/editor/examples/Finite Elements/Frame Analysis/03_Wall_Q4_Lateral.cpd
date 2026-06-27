@@ -1,0 +1,133 @@
+"Wall Q4 — Lateral Load with OpenSeesPy
+'Concrete wall modeled with Q4 shell elements, lateral pressure
+
+"Problem
+'Wall 4m wide × 3m tall, t=25cm
+'Fixed at base (nodes 1-5)
+'Lateral pressure q = 10 kN/m²
+'E = 25000 MPa, ν = 0.2
+
+"1. Symbolic: Constitutive Matrices
+#deq D_membrane = E*t/(1-ν^2)*[1; ν; 0 | ν; 1; 0 | 0; 0; (1-ν)/2]
+#deq D_bending = E*t^3/(12*(1-ν^2))*[1; ν; 0 | ν; 1; 0 | 0; 0; (1-ν)/2]
+
+"2. Shape Function Derivatives
+#sym
+pdiff((1-a)*(1-b)/4; a)
+pdiff((1+a)*(1-b)/4; a)
+pdiff((1+a)*(1+b)/4; a)
+pdiff((1-a)*(1+b)/4; a)
+#end sym
+
+"3. OpenSeesPy Analysis
+#python
+import openseespy.opensees as ops
+import numpy as np
+
+ops.wipe()
+ops.model('basic', '-ndm', 3, '-ndf', 6)
+
+# Parameters
+Lx, Ly = 4.0, 3.0
+nx, ny = 4, 3
+E, nu, t = 25000e3, 0.2, 0.25
+q = 10.0
+
+# Nodes
+nid = 1
+node_map = {}
+for j in range(ny + 1):
+    for i in range(nx + 1):
+        x = i * Lx / nx
+        y = 0.0
+        z = j * Ly / ny
+        ops.node(nid, x, y, z)
+        node_map[(i, j)] = nid
+        if j == 0:
+            ops.fix(nid, 1, 1, 1, 1, 1, 1)
+        nid += 1
+
+# Material and Section
+ops.nDMaterial('ElasticIsotropic', 1, E, nu)
+ops.section('PlateFiber', 1, 1, t)
+
+# Shell Elements
+eid = 1
+for j in range(ny):
+    for i in range(nx):
+        n1 = node_map[(i, j)]
+        n2 = node_map[(i+1, j)]
+        n3 = node_map[(i+1, j+1)]
+        n4 = node_map[(i, j+1)]
+        ops.element('ShellMITC4', eid, n1, n2, n3, n4, 1)
+        eid += 1
+
+# Lateral Load (out-of-plane = Y direction)
+ops.timeSeries('Linear', 1)
+ops.pattern('Plain', 1, 1)
+dx = Lx / nx
+dz = Ly / ny
+for j in range(1, ny + 1):
+    for i in range(nx + 1):
+        nid = node_map[(i, j)]
+        trib = dx * dz
+        if i == 0 or i == nx:
+            trib *= 0.5
+        if j == ny:
+            trib *= 0.5
+        ops.load(nid, 0.0, q * trib, 0.0, 0.0, 0.0, 0.0)
+
+# Analysis
+ops.system('BandSPD')
+ops.numberer('RCM')
+ops.constraints('Plain')
+ops.integrator('LoadControl', 1.0)
+ops.algorithm('Linear')
+ops.analysis('Static')
+ops.analyze(1)
+
+# Results
+max_uy = 0.0
+max_node = 0
+for j in range(ny + 1):
+    for i in range(nx + 1):
+        nid = node_map[(i, j)]
+        uy = ops.nodeDisp(nid, 2)
+        if abs(uy) > abs(max_uy):
+            max_uy = uy
+            max_node = nid
+
+print(f"Max lateral displacement: node {max_node}")
+print(f"uy_max = {max_uy*1000:.4f} mm")
+print(f"CALCPAD:uy_max={max_uy*1000:.6f}")
+
+# Top center node
+top_center = node_map[(nx//2, ny)]
+uy_top = ops.nodeDisp(top_center, 2)
+print(f"Top center (node {top_center}): uy = {uy_top*1000:.4f} mm")
+print(f"CALCPAD:uy_top={uy_top*1000:.6f}")
+
+ops.wipe()
+#end python
+
+"4. Results
+'Maximum lateral displacement:
+uy_max
+'mm
+
+'Top center displacement:
+uy_top
+'mm
+
+"5. Analytical Check
+'Approximate: δ ≈ α × q × b⁴ / D
+E_val = 25000MPa
+ν_val = 0.2
+t_val = 25cm
+D_plate = E_val*t_val^3/(12*(1 - ν_val^2))
+D_plate|kN*m
+q_val = 10kN/m^2
+b_val = 3m
+'α ≈ 0.0054 for a/b=4/3:
+δ_approx = 0.0054*q_val*b_val^4/D_plate
+δ_approx|mm

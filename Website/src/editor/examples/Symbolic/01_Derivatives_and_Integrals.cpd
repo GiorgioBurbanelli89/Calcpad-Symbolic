@@ -1,0 +1,21 @@
+"Derivatives and Integrals (#sym)
+'Symbolic math powered by AngouriMath
+
+"Derivatives
+#sym diff(x^2 + 3*x + 1; x)
+#sym diff(sin(x)*cos(x); x)
+#sym diff(x^3 - 3*x^2 + 2*x; x; 2)
+
+"Integrals
+#sym integrate(x^2; x)
+#sym integrate(sin(x); x)
+#sym integrate(x^2; x; 0; 1)
+
+"Partial Derivatives
+#sym pdiff(x^2*y + y^3; x)
+#sym pdiff(x^2*y + y^3; y)
+
+"Limits and Series
+#sym limit(sin(x)/x; x; 0)
+#sym series(sin(x); x; 5)
+#sym series(e^x; x; 4)
